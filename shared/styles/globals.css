@@ -9,74 +9,119 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Light Theme - Medical/Clinical */
+/* ============================================================================
+   HELIX INSIGHT THEME
+   Professional Medical/Genomics Platform
+   Based on v0 mock UI - Cream/beige background with dark text
+   ============================================================================ */
+
+/* Light Theme (Default) - Cream/Beige Professional Medical Look */
 :root {
-  --background: oklch(0.99 0.005 200);
-  --foreground: oklch(0.25 0.015 240);
-  --card: oklch(0.97 0.008 220);
-  --card-foreground: oklch(0.25 0.015 240);
-  --popover: oklch(0.97 0.008 220);
-  --popover-foreground: oklch(0.25 0.015 240);
-  --primary: oklch(0.55 0.12 240);
-  --primary-foreground: oklch(0.99 0.005 200);
-  --secondary: oklch(0.92 0.01 220);
-  --secondary-foreground: oklch(0.25 0.015 240);
-  --muted: oklch(0.94 0.008 220);
-  --muted-foreground: oklch(0.50 0.02 240);
-  --accent: oklch(0.55 0.12 240);
-  --accent-foreground: oklch(0.99 0.005 200);
-  --destructive: oklch(0.60 0.20 25);
-  --destructive-foreground: oklch(0.99 0.005 200);
+  /* Main colors - Cream/beige background, dark text */
+  --background: oklch(0.95 0.01 85);
+  --foreground: oklch(0.25 0 0);
+  
+  /* Card colors */
+  --card: oklch(0.98 0.005 85);
+  --card-foreground: oklch(0.25 0 0);
+  
+  /* Popover colors */
+  --popover: oklch(0.98 0.005 85);
+  --popover-foreground: oklch(0.25 0 0);
+  
+  /* Primary - Dark for buttons/links */
+  --primary: oklch(0.25 0 0);
+  --primary-foreground: oklch(0.95 0.01 85);
+  
+  /* Secondary - Subtle beige */
+  --secondary: oklch(0.88 0.015 85);
+  --secondary-foreground: oklch(0.25 0 0);
+  
+  /* Muted - For disabled/subtle elements */
+  --muted: oklch(0.88 0.015 85);
+  --muted-foreground: oklch(0.45 0 0);
+  
+  /* Accent - Same as secondary for consistency */
+  --accent: oklch(0.88 0.015 85);
+  --accent-foreground: oklch(0.25 0 0);
+  
+  /* Semantic colors */
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.60 0.15 150);
   --success-foreground: oklch(0.99 0.005 200);
   --warning: oklch(0.70 0.15 80);
   --warning-foreground: oklch(0.25 0.015 240);
-  --border: oklch(0.88 0.01 220);
-  --input: oklch(0.94 0.008 220);
-  --ring: oklch(0.55 0.12 240);
-  --chart-1: oklch(0.55 0.12 240);
-  --chart-2: oklch(0.60 0.15 150);
-  --chart-3: oklch(0.60 0.20 25);
-  --chart-4: oklch(0.70 0.15 80);
-  --chart-5: oklch(0.50 0.10 280);
+  
+  /* Borders and inputs */
+  --border: oklch(0.82 0.02 85);
+  --input: oklch(0.82 0.02 85);
+  --ring: oklch(0.25 0 0);
+  
+  /* Charts */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  
+  /* Border radius */
   --radius: 0.5rem;
+  
+  /* Sidebar colors */
+  --sidebar: oklch(0.95 0.01 85);
+  --sidebar-foreground: oklch(0.25 0 0);
+  --sidebar-primary: oklch(0.25 0 0);
+  --sidebar-primary-foreground: oklch(0.95 0.01 85);
+  --sidebar-accent: oklch(0.88 0.015 85);
+  --sidebar-accent-foreground: oklch(0.25 0 0);
+  --sidebar-border: oklch(0.82 0.02 85);
+  --sidebar-ring: oklch(0.25 0 0);
 }
 
-/* Dark Theme - Medical/Clinical */
+/* Dark Theme */
 .dark {
-  --background: oklch(0.15 0.01 240);
-  --foreground: oklch(0.92 0.02 220);
-  --card: oklch(0.18 0.012 240);
-  --card-foreground: oklch(0.92 0.02 220);
-  --popover: oklch(0.18 0.012 240);
-  --popover-foreground: oklch(0.92 0.02 220);
-  --primary: oklch(0.70 0.15 240);
-  --primary-foreground: oklch(0.15 0.01 240);
-  --secondary: oklch(0.25 0.015 240);
-  --secondary-foreground: oklch(0.92 0.02 220);
-  --muted: oklch(0.25 0.015 240);
-  --muted-foreground: oklch(0.65 0.03 220);
-  --accent: oklch(0.70 0.15 240);
-  --accent-foreground: oklch(0.15 0.01 240);
-  --destructive: oklch(0.65 0.20 25);
-  --destructive-foreground: oklch(0.99 0.005 200);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
   --success: oklch(0.65 0.15 150);
   --success-foreground: oklch(0.15 0.01 240);
   --warning: oklch(0.75 0.15 80);
   --warning-foreground: oklch(0.15 0.01 240);
-  --border: oklch(0.28 0.015 240);
-  --input: oklch(0.25 0.015 240);
-  --ring: oklch(0.70 0.15 240);
-  --chart-1: oklch(0.70 0.15 240);
-  --chart-2: oklch(0.65 0.15 150);
-  --chart-3: oklch(0.65 0.20 25);
-  --chart-4: oklch(0.75 0.15 80);
-  --chart-5: oklch(0.60 0.10 280);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
 }
 
 @theme {
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, monospace;
+  --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -110,6 +155,14 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
@@ -126,6 +179,7 @@
     @apply bg-background text-foreground;
   }
 
+  /* Remove focus glow from inputs */
   input:focus,
   textarea:focus,
   select:focus {
@@ -133,6 +187,7 @@
     box-shadow: none !important;
   }
 
+  /* Cursor pointer for interactive elements */
   button,
   [role="button"],
   [type="button"],
@@ -150,6 +205,7 @@
     cursor: pointer;
   }
 
+  /* Responsive base font-size */
   html {
     font-size: 14px;
   }
@@ -168,13 +224,17 @@
 }
 
 @layer utilities {
+  /* Text selection control */
   .select-text,
   .select-text * {
     user-select: text !important;
     -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
   }
 }
 
+/* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -182,6 +242,7 @@
 
 ::-webkit-scrollbar-track {
   background: var(--background);
+  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -194,6 +255,7 @@
   background: var(--accent);
 }
 
+/* Firefox scrollbar */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--primary) var(--background);
