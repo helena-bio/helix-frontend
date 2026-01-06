@@ -67,3 +67,37 @@ export interface AnalysisSession {
   created_at: string
   updated_at: string
 }
+
+// ACMG Classification Types
+export interface ACMGClassificationRequest {
+  variant_id: string
+  manual_criteria?: string[]
+  override_class?: string
+}
+
+export interface ACMGClassificationResponse {
+  variant_id: string
+  acmg_class: string
+  acmg_criteria: string[]
+  confidence_score: number
+  evidence: Record<string, unknown>
+}
+
+// Export Types
+export interface ExportRequest {
+  format: 'csv' | 'json' | 'vcf'
+  filters?: VariantFilters
+  include_annotations?: boolean
+}
+
+// Variant Filters (reexport for mutations)
+export interface VariantFilters {
+  acmg_class?: string[]
+  min_cadd?: number
+  max_gnomad_af?: number
+  genes?: string[]
+  chromosomes?: string[]
+  impact?: string[]
+  page?: number
+  page_size?: number
+}
