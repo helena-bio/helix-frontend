@@ -1,0 +1,120 @@
+/**
+ * Analysis Context - UI State Only
+ * Following Lumiere pattern: NO server data in Context
+ * Server data managed by React Query
+ */
+
+'use client'
+
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+
+interface AnalysisContextType {
+  // Sidebar state
+  isSidebarOpen: boolean
+  toggleSidebar: () => void
+  setSidebarOpen: (open: boolean) => void
+  
+  // Module selection
+  selectedModule: string | null
+  setSelectedModule: (module: string | null) => void
+  
+  // Current session (reference only, data comes from React Query)
+  currentSessionId: string | null
+  setCurrentSessionId: (sessionId: string | null) => void
+  
+  // Variant selection
+  selectedVariantId: string | null
+  setSelectedVariantId: (variantId: string | null) => void
+  
+  // Panels
+  isPhenotypePanelOpen: boolean
+  openPhenotypePanel: () => void
+  closePhenotypePanel: () => void
+  
+  isDetailsOpen: boolean
+  openDetails: () => void
+  closeDetails: () => void
+}
+
+const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined)
+
+interface AnalysisProviderProps {
+  children: ReactNode
+}
+
+export function AnalysisProvider({ children }: AnalysisProviderProps) {
+  // Sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  
+  // Module selection
+  const [selectedModule, setSelectedModule] = useState<string | null>(null)
+  
+  // Current session
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  
+  // Variant selection
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  
+  // Panels
+  const [isPhenotypePanelOpen, setIsPhenotypePanelOpen] = useState(false)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  
+  // Sidebar actions
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev)
+  }, [])
+  
+  const setSidebarOpen = useCallback((open: boolean) => {
+    setIsSidebarOpen(open)
+  }, [])
+  
+  // Phenotype panel actions
+  const openPhenotypePanel = useCallback(() => {
+    setIsPhenotypePanelOpen(true)
+  }, [])
+  
+  const closePhenotypePanel = useCallback(() => {
+    setIsPhenotypePanelOpen(false)
+  }, [])
+  
+  // Details panel actions
+  const openDetails = useCallback(() => {
+    setIsDetailsOpen(true)
+  }, [])
+  
+  const closeDetails = useCallback(() => {
+    setIsDetailsOpen(false)
+  }, [])
+  
+  const value: AnalysisContextType = {
+    isSidebarOpen,
+    toggleSidebar,
+    setSidebarOpen,
+    selectedModule,
+    setSelectedModule,
+    currentSessionId,
+    setCurrentSessionId,
+    selectedVariantId,
+    setSelectedVariantId,
+    isPhenotypePanelOpen,
+    openPhenotypePanel,
+    closePhenotypePanel,
+    isDetailsOpen,
+    openDetails,
+    closeDetails,
+  }
+  
+  return (
+    <AnalysisContext.Provider value={value}>
+      {children}
+    </AnalysisContext.Provider>
+  )
+}
+
+export function useAnalysis(): AnalysisContextType {
+  const context = useContext(AnalysisContext)
+  if (!context) {
+    throw new Error('useAnalysis must be used within AnalysisProvider')
+  }
+  return context
+}

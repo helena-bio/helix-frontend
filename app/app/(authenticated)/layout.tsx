@@ -1,33 +1,41 @@
-"use client"
+/**
+ * Authenticated Layout
+ * Main layout for authenticated app with Sidebar + JourneyPanel
+ */
 
-import { useState } from "react"
+'use client'
 
-export default function AuthenticatedLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+import { ReactNode } from 'react'
+import { Sidebar } from '@/components/navigation/Sidebar'
+import { JourneyPanel } from '@/components/navigation/JourneyPanel'
+import { useAnalysis } from '@/contexts/AnalysisContext'
+import { cn } from '@helix/shared/lib/utils'
+
+interface AuthenticatedLayoutProps {
+  children: ReactNode
+}
+
+export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
+  const { isSidebarOpen } = useAnalysis()
+
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
-      {/* Header */}
-      <header className="border-b border-border bg-card h-14 flex items-center px-6 shrink-0">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-primary">Helix Insight</h1>
-          <nav className="flex items-center gap-4 text-sm">
-            <a href="/dashboard" className="text-foreground hover:text-primary transition-colors">
-              Dashboard
-            </a>
-            <a href="/analysis" className="text-foreground hover:text-primary transition-colors">
-              Analysis
-            </a>
-          </nav>
-        </div>
-      </header>
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Main container with sidebar */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        {children}
-      </main>
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Journey Panel */}
+          <JourneyPanel />
+
+          {/* Content */}
+          <main className="flex-1 overflow-auto bg-background">
+            {children}
+          </main>
+        </div>
+      </div>
     </div>
   )
 }

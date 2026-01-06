@@ -1,9 +1,9 @@
 /**
- * HTTP Client for Helix Insight API
- * Token stored in localStorage, read on every request
+ * Base HTTP Client for Helix Insight API
+ * Follows Lumiere pattern with proper error handling
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
 const DEFAULT_TIMEOUT = 30000
 
 export class ApiError extends Error {
@@ -31,26 +31,6 @@ function getAuthToken(): string | null {
   } catch (error) {
     console.error('Failed to read auth token:', error)
     return null
-  }
-}
-
-export function setAuthToken(token: string): void {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem('helix_auth_token', token)
-    } catch (error) {
-      console.error('Failed to set auth token:', error)
-    }
-  }
-}
-
-export function clearAuthToken(): void {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.removeItem('helix_auth_token')
-    } catch (error) {
-      console.error('Failed to clear auth token:', error)
-    }
   }
 }
 
@@ -144,23 +124,32 @@ export async function get<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'GET' })
 }
 
-export async function post<T>(endpoint: string, data?: unknown): Promise<T> {
+export async function post<T>(
+  endpoint: string,
+  data?: unknown
+): Promise<T> {
   return apiRequest<T>(endpoint, {
     method: 'POST',
     body: data ? JSON.stringify(data) : undefined,
   })
 }
 
-export async function put<T>(endpoint: string, data?: unknown): Promise<T> {
+export async function patch<T>(
+  endpoint: string,
+  data?: unknown
+): Promise<T> {
   return apiRequest<T>(endpoint, {
-    method: 'PUT',
+    method: 'PATCH',
     body: data ? JSON.stringify(data) : undefined,
   })
 }
 
-export async function patch<T>(endpoint: string, data?: unknown): Promise<T> {
+export async function put<T>(
+  endpoint: string,
+  data?: unknown
+): Promise<T> {
   return apiRequest<T>(endpoint, {
-    method: 'PATCH',
+    method: 'PUT',
     body: data ? JSON.stringify(data) : undefined,
   })
 }
@@ -169,9 +158,34 @@ export async function del<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'DELETE' })
 }
 
-export const storage = {
-  hasToken: () => !!getAuthToken(),
-  getToken: getAuthToken,
-  setToken: setAuthToken,
-  removeToken: clearAuthToken,
+// File upload helper
+export async function uploadFile<T>(
+  endpoint: string,
+  file: File,
+  additionalFields?: Record<string, string>
+): Promise<T> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  if (additionalFields) {
+    Object.entries(additionalFields).forEach(([key, value]) => {
+      formData.append(key, value)
+    })
+  }
+
+  const url = `${API_URL}${endpoint}`
+  const token = getAuthToken()
+  const headers: Record<string, string> = {}
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+
+  return handleResponse<T>(response)
 }
