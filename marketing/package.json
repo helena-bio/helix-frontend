@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@helix/shared": "file:../shared",
     "next": "16.0.0",
     "next-themes": "^0.4.6",
     "react": "19.2.0",

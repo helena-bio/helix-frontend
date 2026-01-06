@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@helix/shared": "file:../shared",
     "@tanstack/react-query": "^5.56.2",
     "@tanstack/react-query-devtools": "^5.56.2",
     "next": "16.0.0",
