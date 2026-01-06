@@ -5,12 +5,11 @@
 
 'use client'
 
-import { ReactNode, useEffect } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { useAnalysis } from '@/contexts/AnalysisContext'
-import { cn } from '@helix/shared/lib/utils'
 
 interface AuthenticatedLayoutProps {
   children: ReactNode
@@ -19,15 +18,25 @@ interface AuthenticatedLayoutProps {
 export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { isSidebarOpen } = useAnalysis()
   const router = useRouter()
+  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
     // Check authentication
     const token = localStorage.getItem('helix_auth_token')
+    
     if (!token) {
       // Not authenticated - redirect to login
       router.push('/login')
+    } else {
+      // Authenticated - show content
+      setIsChecking(false)
     }
   }, [router])
+
+  // Show nothing while checking auth
+  if (isChecking) {
+    return null
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
