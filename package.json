@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Helix Insight Frontend - Monorepo",
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "pnpm --filter @helix/app dev",
     "dev:marketing": "pnpm --filter @helix/marketing dev",
