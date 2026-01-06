@@ -101,3 +101,12 @@ export interface VariantFilters {
   page?: number
   page_size?: number
 }
+
+// Variants Response (for paginated results)
+export interface VariantsResponse {
+  variants: Variant[]
+  total: number
+  page: number
+  page_size: number
+  has_more: boolean
+}
