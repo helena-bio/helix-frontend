@@ -1,124 +1,85 @@
 /**
- * Variant Analysis Mutation Hooks
- * React Query hooks for POST/PUT/DELETE operations
+ * Variant Analysis Mutations
+ * React Query mutations for upload and processing
  */
 
-import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query'
-import * as api from '@/lib/api/variant-analysis'
-import { variantAnalysisKeys } from '@/hooks/queries/use-variant-analysis-queries'
-import type { 
-  AnalysisSession,
-  ACMGClassificationRequest,
-  ACMGClassificationResponse,
-  ExportRequest
-} from '@/types/variant.types'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { uploadVCFFile, startProcessing } from '@/lib/api/variant-analysis'
+import { useAnalysis } from '@/contexts/AnalysisContext'
+import type { AnalysisSession } from '@/types/variant.types'
+import { toast } from 'sonner'
 
-// Create Session
-export function useCreateSession() {
-  const queryClient = useQueryClient()
-
-  return useMutation<AnalysisSession, Error, { filename: string }>({
-    mutationFn: ({ filename }) => api.createSession(filename),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: variantAnalysisKeys.sessions() })
-    },
-  })
-}
-
-// Upload VCF
+/**
+ * Upload VCF file mutation
+ */
 export function useUploadVCF() {
   const queryClient = useQueryClient()
+  const { setCurrentSessionId } = useAnalysis()
 
-  return useMutation<{ session_id: string; message: string }, Error, { file: File; sessionId?: string }>({
-    mutationFn: ({ file, sessionId }) => api.uploadVCF(file, sessionId),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ 
-        queryKey: variantAnalysisKeys.session(data.session_id) 
+  return useMutation({
+    mutationFn: async ({
+      file,
+      patientId,
+      analysisType = 'germline',
+      genomeBuild = 'GRCh38',
+    }: {
+      file: File
+      patientId: string
+      analysisType?: string
+      genomeBuild?: string
+    }) => {
+      return uploadVCFFile(file, patientId, analysisType, genomeBuild)
+    },
+    onSuccess: (session: AnalysisSession) => {
+      // Set current session
+      setCurrentSessionId(session.id)
+      
+      // Cache session data
+      queryClient.setQueryData(['session', session.id], session)
+      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      
+      toast.success('File uploaded successfully', {
+        description: `Session ${session.id} created`,
       })
-      queryClient.invalidateQueries({ queryKey: variantAnalysisKeys.sessions() })
+    },
+    onError: (error: Error) => {
+      toast.error('Upload failed', {
+        description: error.message,
+      })
     },
   })
 }
 
-// Validate VCF
-export function useValidateVCF() {
+/**
+ * Start processing pipeline mutation
+ */
+export function useStartProcessing() {
   const queryClient = useQueryClient()
 
-  return useMutation<{ status: string; qc_metrics: any }, Error, { sessionId: string }>({
-    mutationFn: ({ sessionId }) => api.validateVCF(sessionId),
+  return useMutation({
+    mutationFn: async ({
+      sessionId,
+      vcfFilePath,
+    }: {
+      sessionId: string
+      vcfFilePath: string
+    }) => {
+      return startProcessing(sessionId, vcfFilePath)
+    },
     onSuccess: (data, variables) => {
+      // Invalidate session to refetch status
       queryClient.invalidateQueries({ 
-        queryKey: variantAnalysisKeys.session(variables.sessionId) 
-      })
-      queryClient.setQueryData(
-        variantAnalysisKeys.qc(variables.sessionId),
-        data.qc_metrics
-      )
-    },
-  })
-}
-
-// Classify Variant (ACMG)
-export function useClassifyVariant() {
-  const queryClient = useQueryClient()
-
-  return useMutation<ACMGClassificationResponse, Error, { sessionId: string; request: ACMGClassificationRequest }>({
-    mutationFn: ({ sessionId, request }) => api.classifyVariant(sessionId, request),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ 
-        queryKey: variantAnalysisKeys.variants(variables.sessionId) 
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: variantAnalysisKeys.variant(variables.sessionId, data.variant_id) 
-      })
-    },
-  })
-}
-
-// Export Variants
-export function useExportVariants() {
-  return useMutation<Blob, Error, { sessionId: string; request: ExportRequest }>({
-    mutationFn: ({ sessionId, request }) => api.exportVariants(sessionId, request),
-    onSuccess: (blob, variables) => {
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `variants_export.${variables.request.format}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-    },
-  })
-}
-
-// Composite Hook: Upload + Validate Flow
-export interface UploadAndValidateParams {
-  file: File
-  sessionId?: string
-}
-
-export function useUploadAndValidate() {
-  const uploadMutation = useUploadVCF()
-  const validateMutation = useValidateVCF()
-
-  return {
-    upload: uploadMutation.mutateAsync,
-    validate: validateMutation.mutateAsync,
-    
-    uploadAndValidate: async (params: UploadAndValidateParams) => {
-      const uploadResult = await uploadMutation.mutateAsync(params)
-      const validateResult = await validateMutation.mutateAsync({
-        sessionId: uploadResult.session_id,
+        queryKey: ['session', variables.sessionId] 
       })
       
-      return {
-        sessionId: uploadResult.session_id,
-        qcMetrics: validateResult.qc_metrics,
-      }
+      toast.success('Processing started', {
+        description: 'Your file is being analyzed',
+      })
     },
-    
-    isLoading: uploadMutation.isPending || validateMutation.isPending,
-    error: uploadMutation.error || validateMutation.error,
-  }
+    onError: (error: Error) => {
+      toast.error('Failed to start processing', {
+        description: error.message,
+      })
+    },
+  })
 }
