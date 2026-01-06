@@ -14,59 +14,42 @@ import type {
 } from '@/types/variant.types'
 
 // Create Session
-export function useCreateSession(): UseMutationResult
-  AnalysisSession,
-  Error,
-  { filename: string }
-> {
+export function useCreateSession() {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<AnalysisSession, Error, { filename: string }>({
     mutationFn: ({ filename }) => api.createSession(filename),
     onSuccess: () => {
-      // Invalidate sessions list
       queryClient.invalidateQueries({ queryKey: variantAnalysisKeys.sessions() })
     },
   })
 }
 
 // Upload VCF
-export function useUploadVCF(): UseMutationResult
-  { session_id: string; message: string },
-  Error,
-  { file: File; sessionId?: string }
-> {
+export function useUploadVCF() {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<{ session_id: string; message: string }, Error, { file: File; sessionId?: string }>({
     mutationFn: ({ file, sessionId }) => api.uploadVCF(file, sessionId),
     onSuccess: (data) => {
-      // Invalidate session to refetch status
       queryClient.invalidateQueries({ 
         queryKey: variantAnalysisKeys.session(data.session_id) 
       })
-      // Invalidate sessions list
       queryClient.invalidateQueries({ queryKey: variantAnalysisKeys.sessions() })
     },
   })
 }
 
 // Validate VCF
-export function useValidateVCF(): UseMutationResult
-  { status: string; qc_metrics: any },
-  Error,
-  { sessionId: string }
-> {
+export function useValidateVCF() {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<{ status: string; qc_metrics: any }, Error, { sessionId: string }>({
     mutationFn: ({ sessionId }) => api.validateVCF(sessionId),
     onSuccess: (data, variables) => {
-      // Update session status
       queryClient.invalidateQueries({ 
         queryKey: variantAnalysisKeys.session(variables.sessionId) 
       })
-      // Set QC metrics in cache
       queryClient.setQueryData(
         variantAnalysisKeys.qc(variables.sessionId),
         data.qc_metrics
@@ -76,21 +59,15 @@ export function useValidateVCF(): UseMutationResult
 }
 
 // Classify Variant (ACMG)
-export function useClassifyVariant(): UseMutationResult
-  ACMGClassificationResponse,
-  Error,
-  { sessionId: string; request: ACMGClassificationRequest }
-> {
+export function useClassifyVariant() {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<ACMGClassificationResponse, Error, { sessionId: string; request: ACMGClassificationRequest }>({
     mutationFn: ({ sessionId, request }) => api.classifyVariant(sessionId, request),
     onSuccess: (data, variables) => {
-      // Invalidate variants list to refetch with updated classification
       queryClient.invalidateQueries({ 
         queryKey: variantAnalysisKeys.variants(variables.sessionId) 
       })
-      // Invalidate specific variant
       queryClient.invalidateQueries({ 
         queryKey: variantAnalysisKeys.variant(variables.sessionId, data.variant_id) 
       })
@@ -99,15 +76,10 @@ export function useClassifyVariant(): UseMutationResult
 }
 
 // Export Variants
-export function useExportVariants(): UseMutationResult
-  Blob,
-  Error,
-  { sessionId: string; request: ExportRequest }
-> {
-  return useMutation({
+export function useExportVariants() {
+  return useMutation<Blob, Error, { sessionId: string; request: ExportRequest }>({
     mutationFn: ({ sessionId, request }) => api.exportVariants(sessionId, request),
     onSuccess: (blob, variables) => {
-      // Trigger download
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -134,12 +106,8 @@ export function useUploadAndValidate() {
     upload: uploadMutation.mutateAsync,
     validate: validateMutation.mutateAsync,
     
-    // Combined flow
     uploadAndValidate: async (params: UploadAndValidateParams) => {
-      // Step 1: Upload
       const uploadResult = await uploadMutation.mutateAsync(params)
-      
-      // Step 2: Validate
       const validateResult = await validateMutation.mutateAsync({
         sessionId: uploadResult.session_id,
       })
