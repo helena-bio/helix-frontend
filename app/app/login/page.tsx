@@ -39,25 +39,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-8">
+      {/* Logo outside card */}
+      <div className="flex items-center gap-2">
+        <Image
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
+          alt="Helix Insight"
+          width={140}
+          height={40}
+          className="h-10 w-auto"
+        />
+        <Image
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
+          alt=""
+          width={28}
+          height={35}
+          className="h-9 w-auto"
+        />
+      </div>
+
+      {/* Card with form */}
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4">
-          <div className="flex items-center justify-center gap-2">
-            <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
-              alt="Helix Insight"
-              width={140}
-              height={40}
-              className="h-8 w-auto"
-            />
-            <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
-              alt=""
-              width={28}
-              height={35}
-              className="h-7 w-auto"
-            />
-          </div>
+        <CardHeader className="space-y-1">
           <CardTitle className="text-center text-2xl">
             Sign in to continue your analysis
           </CardTitle>
