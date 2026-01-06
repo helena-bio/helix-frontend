@@ -29,7 +29,7 @@ export default function LoginPage() {
     if (email === "admin" && password === "admin") {
       localStorage.setItem("helix_auth_token", "dummy-token")
       localStorage.setItem("userName", "Dr. Smith")
-      router.push("/dashboard")
+      router.push("/")
     } else {
       setError("Invalid email or password")
       setIsLoading(false)
