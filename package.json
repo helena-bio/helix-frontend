@@ -1,0 +1,22 @@
+{
+  "name": "helix-insight-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Helix Insight Frontend - Monorepo",
+  "scripts": {
+    "dev": "pnpm --filter @helix/app dev",
+    "dev:marketing": "pnpm --filter @helix/marketing dev",
+    "build": "pnpm --filter @helix/app build",
+    "build:marketing": "pnpm --filter @helix/marketing build",
+    "build:all": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r exec rm -rf node_modules .next dist build"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
