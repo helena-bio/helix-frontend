@@ -31,7 +31,7 @@ export function useSessions(): UseQueryResult<AnalysisSession[], Error> {
   return useQuery({
     queryKey: variantAnalysisKeys.sessions(),
     queryFn: () => api.listSessions(),
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
   })
 }
 
@@ -43,7 +43,7 @@ export function useSession(
     queryKey: variantAnalysisKeys.session(sessionId),
     queryFn: () => api.getSession(sessionId),
     enabled: enabled && !!sessionId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 3,
   })
 }
@@ -57,7 +57,7 @@ export function useQCMetrics(
     queryKey: variantAnalysisKeys.qc(sessionId),
     queryFn: () => api.getQCMetrics(sessionId),
     enabled: enabled && !!sessionId,
-    staleTime: 10 * 60 * 1000, // 10 minutes (QC doesn't change)
+    staleTime: 10 * 60 * 1000,
     retry: 3,
   })
 }
@@ -72,7 +72,7 @@ export function useVariants(
     queryKey: variantAnalysisKeys.variantsList(sessionId, filters),
     queryFn: () => api.getVariants(sessionId, filters),
     enabled: enabled && !!sessionId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 3,
   })
 }
@@ -87,20 +87,17 @@ export function useVariant(
     queryKey: variantAnalysisKeys.variant(sessionId, variantId),
     queryFn: () => api.getVariant(sessionId, variantId),
     enabled: enabled && !!sessionId && !!variantId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
     retry: 3,
   })
 }
 
 // Health Check
-export function useVariantAnalysisHealth(): UseQueryResult
-  { status: string; version: string },
-  Error
-> {
+export function useVariantAnalysisHealth(): UseQueryResult<{ status: string; version: string }, Error> {
   return useQuery({
     queryKey: [...variantAnalysisKeys.all, 'health'],
     queryFn: () => api.healthCheck(),
-    staleTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000,
     retry: 1,
   })
 }
