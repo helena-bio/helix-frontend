@@ -284,7 +284,7 @@ export function ProcessingStatus({
               <AlertDescription className="text-sm">
                 This process typically takes 10-15 minutes for a full genome. 
                 You can safely close this window - processing will continue in the background.
-              </Alert>
+              </AlertDescription>
             </Alert>
           </div>
         </CardContent>

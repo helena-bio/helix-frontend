@@ -78,7 +78,7 @@ export function JourneyPanel() {
   // Fetch session to determine current step
   const { data: session } = useSession(
     currentSessionId || '',
-    !!currentSessionId
+    { enabled: !!currentSessionId }
   )
   
   const currentStep = determineCurrentStep(session?.status)
@@ -146,7 +146,7 @@ export function JourneyPanel() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-sm">{session.filename}</p>
+                  <p className="text-sm">{session.vcf_file_path?.split("/").pop() || "Unknown"}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

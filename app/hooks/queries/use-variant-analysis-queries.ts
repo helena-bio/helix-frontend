@@ -5,9 +5,9 @@
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import * as api from '@/lib/api/variant-analysis'
-import type { 
-  Variant, 
-  QCMetrics, 
+import type {
+  Variant,
+  QCMetrics,
   AnalysisSession,
   VariantsResponse,
   VariantFilters
@@ -20,29 +20,21 @@ export const variantAnalysisKeys = {
   session: (id: string) => [...variantAnalysisKeys.sessions(), id] as const,
   qc: (sessionId: string) => [...variantAnalysisKeys.session(sessionId), 'qc'] as const,
   variants: (sessionId: string) => [...variantAnalysisKeys.session(sessionId), 'variants'] as const,
-  variantsList: (sessionId: string, filters?: VariantFilters) => 
+  variantsList: (sessionId: string, filters?: VariantFilters) =>
     [...variantAnalysisKeys.variants(sessionId), 'list', filters] as const,
-  variant: (sessionId: string, variantId: string) => 
-    [...variantAnalysisKeys.variants(sessionId), variantId] as const,
+  variant: (sessionId: string, variantIdx: number) =>
+    [...variantAnalysisKeys.variants(sessionId), variantIdx] as const,
 }
 
-// Sessions
-export function useSessions(): UseQueryResult<AnalysisSession[], Error> {
-  return useQuery({
-    queryKey: variantAnalysisKeys.sessions(),
-    queryFn: () => api.listSessions(),
-    staleTime: 30 * 1000,
-  })
-}
-
+// Session
 export function useSession(
   sessionId: string,
-  enabled: boolean = true
+  options?: { enabled?: boolean }
 ): UseQueryResult<AnalysisSession, Error> {
   return useQuery({
     queryKey: variantAnalysisKeys.session(sessionId),
     queryFn: () => api.getSession(sessionId),
-    enabled: enabled && !!sessionId,
+    enabled: (options?.enabled ?? true) && !!sessionId,
     staleTime: 5 * 60 * 1000,
     retry: 3,
   })
@@ -51,12 +43,12 @@ export function useSession(
 // QC Metrics
 export function useQCMetrics(
   sessionId: string,
-  enabled: boolean = true
+  options?: { enabled?: boolean }
 ): UseQueryResult<QCMetrics, Error> {
   return useQuery({
     queryKey: variantAnalysisKeys.qc(sessionId),
     queryFn: () => api.getQCMetrics(sessionId),
-    enabled: enabled && !!sessionId,
+    enabled: (options?.enabled ?? true) && !!sessionId,
     staleTime: 10 * 60 * 1000,
     retry: 3,
   })
@@ -66,12 +58,12 @@ export function useQCMetrics(
 export function useVariants(
   sessionId: string,
   filters?: VariantFilters,
-  enabled: boolean = true
+  options?: { enabled?: boolean }
 ): UseQueryResult<VariantsResponse, Error> {
   return useQuery({
     queryKey: variantAnalysisKeys.variantsList(sessionId, filters),
     queryFn: () => api.getVariants(sessionId, filters),
-    enabled: enabled && !!sessionId,
+    enabled: (options?.enabled ?? true) && !!sessionId,
     staleTime: 5 * 60 * 1000,
     retry: 3,
   })
@@ -80,24 +72,14 @@ export function useVariants(
 // Single Variant
 export function useVariant(
   sessionId: string,
-  variantId: string,
-  enabled: boolean = true
-): UseQueryResult<Variant, Error> {
+  variantIdx: number,
+  options?: { enabled?: boolean }
+): UseQueryResult<{ variant: Variant }, Error> {
   return useQuery({
-    queryKey: variantAnalysisKeys.variant(sessionId, variantId),
-    queryFn: () => api.getVariant(sessionId, variantId),
-    enabled: enabled && !!sessionId && !!variantId,
+    queryKey: variantAnalysisKeys.variant(sessionId, variantIdx),
+    queryFn: () => api.getVariant(sessionId, variantIdx),
+    enabled: (options?.enabled ?? true) && !!sessionId,
     staleTime: 10 * 60 * 1000,
     retry: 3,
-  })
-}
-
-// Health Check
-export function useVariantAnalysisHealth(): UseQueryResult<{ status: string; version: string }, Error> {
-  return useQuery({
-    queryKey: [...variantAnalysisKeys.all, 'health'],
-    queryFn: () => api.healthCheck(),
-    staleTime: 60 * 1000,
-    retry: 1,
   })
 }

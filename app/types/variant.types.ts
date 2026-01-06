@@ -1,6 +1,6 @@
 /**
  * Variant Analysis Domain Types
- * Production-ready type definitions for genetic variant data
+ * Production-ready type definitions matching backend API
  */
 
 export interface Variant {
@@ -14,28 +14,18 @@ export interface Variant {
   alternate_allele: string
   genotype: string
   zygosity: 'Homozygous' | 'Heterozygous' | 'Hemizygous'
-  
-  // ACMG Classification
   acmg_class: 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely Benign' | 'Benign'
   acmg_criteria: string[]
-  
-  // Population Frequency
   gnomad_af: number | null
   gnomad_ac: number | null
   gnomad_an: number | null
-  
-  // Functional Predictions
   cadd_score: number | null
   revel_score: number | null
   sift_prediction: string | null
   polyphen_prediction: string | null
-  
-  // ClinVar
   clinvar_significance: string | null
   clinvar_review_status: string | null
   clinvar_stars: number | null
-  
-  // Consequence
   consequence: string
   impact: 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
   biotype: string
@@ -44,53 +34,26 @@ export interface Variant {
 export interface QCMetrics {
   session_id: string
   total_variants: number
-  snvs: number
-  indels: number
   ti_tv_ratio: number
-  heterozygosity_rate: number
-  mean_coverage: number
-  target_coverage: {
-    '10x': number
-    '20x': number
-    '30x': number
-  }
-  genome_build: 'GRCh37' | 'GRCh38'
-  created_at: string
+  het_hom_ratio: number
+  mean_depth: number
+  pct_bases_above_10x: number
+  qc_passed: boolean
+  failure_reasons: string[]
 }
 
 export interface AnalysisSession {
   id: string
-  filename: string
-  file_size: number
-  status: 'uploading' | 'validating' | 'processing' | 'completed' | 'failed'
-  qc_metrics: QCMetrics | null
+  patient_id: string
+  analysis_type: string
+  status: 'created' | 'uploaded' | 'processing' | 'completed' | 'failed'
+  vcf_file_path: string | null
   created_at: string
   updated_at: string
+  completed_at: string | null
+  error_message: string | null
 }
 
-// ACMG Classification Types
-export interface ACMGClassificationRequest {
-  variant_id: string
-  manual_criteria?: string[]
-  override_class?: string
-}
-
-export interface ACMGClassificationResponse {
-  variant_id: string
-  acmg_class: string
-  acmg_criteria: string[]
-  confidence_score: number
-  evidence: Record<string, unknown>
-}
-
-// Export Types
-export interface ExportRequest {
-  format: 'csv' | 'json' | 'vcf'
-  filters?: VariantFilters
-  include_annotations?: boolean
-}
-
-// Variant Filters (reexport for mutations)
 export interface VariantFilters {
   acmg_class?: string[]
   min_cadd?: number
@@ -102,11 +65,12 @@ export interface VariantFilters {
   page_size?: number
 }
 
-// Variants Response (for paginated results)
 export interface VariantsResponse {
-  variants: Variant[]
-  total: number
+  variants: any[]
+  total_count: number
   page: number
   page_size: number
-  has_more: boolean
+  total_pages: number
+  has_next_page: boolean
+  has_previous_page: boolean
 }
