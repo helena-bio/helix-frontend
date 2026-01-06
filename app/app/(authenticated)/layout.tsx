@@ -5,7 +5,8 @@
 
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { useAnalysis } from '@/contexts/AnalysisContext'
@@ -17,6 +18,16 @@ interface AuthenticatedLayoutProps {
 
 export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { isSidebarOpen } = useAnalysis()
+  const router = useRouter()
+
+  useEffect(() => {
+    // Check authentication
+    const token = localStorage.getItem('helix_auth_token')
+    if (!token) {
+      // Not authenticated - redirect to login
+      router.push('/login')
+    }
+  }, [router])
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
