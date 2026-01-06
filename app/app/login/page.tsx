@@ -65,7 +65,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
-              Sign in to continue your analysis
+              Sign in to continue your<br />analysis
             </h1>
             <p className="text-sm text-foreground/60">Secure access to AI-powered variant interpretation</p>
           </div>
