@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@helix/shared/components/ui/button'
 import { Input } from '@helix/shared/components/ui/input'
 import { Label } from '@helix/shared/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@helix/shared/components/ui/card'
+import { Card, CardContent } from '@helix/shared/components/ui/card'
 import Image from 'next/image'
 
 export default function LoginPage() {
@@ -25,12 +25,8 @@ export default function LoginPage() {
     setError('')
     setIsLoading(true)
 
-    // Fixed credentials check
     if (email === 'admin' && password === 'admin') {
-      // Store auth token (dummy for now)
       localStorage.setItem('helix_auth_token', 'dummy-token')
-      
-      // Redirect to dashboard
       router.push('/dashboard')
     } else {
       setError('Invalid credentials. Use admin/admin')
@@ -39,8 +35,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-8">
-      {/* Logo outside card */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-6">
+      {/* Logo outside */}
       <div className="flex items-center gap-2">
         <Image
           src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
@@ -58,17 +54,15 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* Card with form */}
+      {/* Title and description outside card */}
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-semibold">Sign in to continue your analysis</h1>
+        <p className="text-muted-foreground">Secure access to AI-powered variant interpretation</p>
+      </div>
+
+      {/* Card with form only */}
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-center text-2xl">
-            Sign in to continue your analysis
-          </CardTitle>
-          <CardDescription className="text-center">
-            Secure access to AI-powered variant interpretation
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
