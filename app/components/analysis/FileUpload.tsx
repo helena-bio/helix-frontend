@@ -11,6 +11,7 @@
  * - Error handling with retry
  * - Accessibility (ARIA, keyboard)
  * - Performance optimizations (useCallback, useMemo)
+ * - Journey integration (advances to next step on success)
  */
 
 import { useCallback, useMemo, useState, useRef, type ChangeEvent, type DragEvent } from 'react'
@@ -19,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useUploadVCF } from '@/hooks/mutations'
+import { useJourney } from '@/contexts/JourneyContext'
 import { toast } from 'sonner'
 
 // Constants
@@ -43,6 +45,9 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
 
   // Mutations
   const uploadMutation = useUploadVCF()
+
+  // Journey context
+  const { nextStep } = useJourney()
 
   // Computed values
   const isUploading = uploadMutation.isPending
@@ -179,6 +184,9 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
         description: `Session ${result.id} created`,
       })
 
+      // Advance to next step in journey (Upload -> Validation)
+      nextStep()
+
       onUploadSuccess?.(result.id)
     } catch (error) {
       const err = error as Error
@@ -187,7 +195,7 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
       })
       onUploadError?.(err)
     }
-  }, [canSubmit, selectedFile, uploadMutation, onUploadSuccess, onUploadError])
+  }, [canSubmit, selectedFile, uploadMutation, nextStep, onUploadSuccess, onUploadError])
 
   const handleRetry = useCallback(() => {
     uploadMutation.reset()

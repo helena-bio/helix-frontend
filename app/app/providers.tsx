@@ -11,13 +11,14 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@helix/shared/components/ui/sonner'
 import { AnalysisProvider } from '@/contexts/AnalysisContext'
+import { JourneyProvider } from '@/contexts/JourneyContext'
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
       refetchOnWindowFocus: false,
@@ -42,8 +43,10 @@ export function Providers({ children }: ProvidersProps) {
         disableTransitionOnChange
       >
         <AnalysisProvider>
-          {children}
-          <Toaster />
+          <JourneyProvider>
+            {children}
+            <Toaster />
+          </JourneyProvider>
         </AnalysisProvider>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} position="bottom" />

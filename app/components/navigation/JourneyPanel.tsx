@@ -1,11 +1,12 @@
 /**
  * Journey Panel Component
  * Progress tracker for analysis workflow
+ * Uses JourneyContext as single source of truth
  */
 
 'use client'
 
-import { CheckCircle2, Clock, Lock, Upload, X } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, X } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -13,78 +14,49 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@helix/shared/components/ui/tooltip'
+import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
 import { useAnalysis } from '@/contexts/AnalysisContext'
-import { useSession } from '@/hooks/queries/use-variant-analysis-queries'
 import { cn } from '@helix/shared/lib/utils'
 
-type WorkflowStep = 'upload' | 'validation' | 'phenotype' | 'analysis'
-
-interface Step {
-  id: WorkflowStep
-  label: string
-  icon: typeof Upload
-}
-
-const STEPS: Step[] = [
-  { id: 'upload', label: 'Upload', icon: Upload },
-  { id: 'validation', label: 'Validation', icon: CheckCircle2 },
-  { id: 'phenotype', label: 'Phenotype', icon: Clock },
-  { id: 'analysis', label: 'Analysis', icon: Lock },
-]
-
-function getStepStatus(
-  currentStep: WorkflowStep,
-  stepId: WorkflowStep
-): 'completed' | 'current' | 'locked' {
-  const order: WorkflowStep[] = ['upload', 'validation', 'phenotype', 'analysis']
-  const currentIndex = order.indexOf(currentStep)
-  const stepIndex = order.indexOf(stepId)
-
-  if (stepIndex < currentIndex) return 'completed'
-  if (stepIndex === currentIndex) return 'current'
-  return 'locked'
-}
-
-function getIconColor(status: 'completed' | 'current' | 'locked'): string {
-  if (status === 'completed') return 'text-green-600'
-  if (status === 'current') return 'text-orange-500'
-  return 'text-muted-foreground'
-}
-
-function getLineColor(status: 'completed' | 'current' | 'locked'): string {
-  if (status === 'completed') return 'bg-green-600'
-  return 'bg-border'
-}
-
-function determineCurrentStep(sessionStatus?: string): WorkflowStep {
-  if (!sessionStatus) return 'upload'
-  
-  switch (sessionStatus) {
-    case 'uploading':
-      return 'upload'
-    case 'validating':
-    case 'processing':
-      return 'validation'
+function getStepIcon(status: StepStatus) {
+  switch (status) {
     case 'completed':
-      return 'analysis'
-    default:
-      return 'upload'
+      return CheckCircle2
+    case 'current':
+      return Clock
+    case 'locked':
+      return Lock
   }
 }
 
+function getIconColor(status: StepStatus): string {
+  switch (status) {
+    case 'completed':
+      return 'text-green-600'
+    case 'current':
+      return 'text-orange-500'
+    case 'locked':
+      return 'text-muted-foreground'
+  }
+}
+
+function getLineColor(status: StepStatus): string {
+  return status === 'completed' ? 'bg-green-600' : 'bg-border'
+}
+
 export function JourneyPanel() {
+  const { getStepStatus, canNavigateTo, goToStep, resetJourney } = useJourney()
   const { currentSessionId, setCurrentSessionId } = useAnalysis()
-  
-  // Fetch session to determine current step
-  const { data: session } = useSession(
-    currentSessionId || '',
-    { enabled: !!currentSessionId }
-  )
-  
-  const currentStep = determineCurrentStep(session?.status)
-  
+
+  const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
+    if (canNavigateTo(stepId)) {
+      goToStep(stepId)
+    }
+  }
+
   const handleClearFile = () => {
     setCurrentSessionId(null)
+    resetJourney()
   }
 
   return (
@@ -95,33 +67,52 @@ export function JourneyPanel() {
 
         {/* Centered workflow progress */}
         <div className="flex items-center justify-center gap-2">
-          {STEPS.map((step, index) => {
-            const status = getStepStatus(currentStep, step.id)
-            const Icon = status === 'completed' 
-              ? CheckCircle2 
-              : status === 'current' 
-                ? Clock 
-                : Lock
+          {JOURNEY_STEPS.map((step, index) => {
+            const status = getStepStatus(step.id)
+            const Icon = getStepIcon(status)
+            const isClickable = canNavigateTo(step.id)
 
             return (
               <div key={step.id} className="flex items-center gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Icon 
-                    className={cn(
-                      'h-4 w-4 shrink-0',
-                      getIconColor(status)
-                    )} 
-                  />
-                  <p className="text-xs font-medium whitespace-nowrap">
-                    {step.label}
-                  </p>
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div 
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleStepClick(step.id)}
+                        disabled={!isClickable}
+                        className={cn(
+                          'flex items-center gap-2 min-w-0 transition-opacity',
+                          isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            'h-4 w-4 shrink-0',
+                            getIconColor(status)
+                          )}
+                        />
+                        <p className="text-xs font-medium whitespace-nowrap">
+                          {step.label}
+                        </p>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">{step.description}</p>
+                      {!isClickable && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Complete previous steps first
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {index < JOURNEY_STEPS.length - 1 && (
+                  <div
                     className={cn(
                       'w-24 h-0.5',
                       getLineColor(status)
-                    )} 
+                    )}
                   />
                 )}
               </div>
@@ -131,25 +122,16 @@ export function JourneyPanel() {
 
         {/* Right side with Clear File button */}
         <div className="flex-1 flex justify-end pr-4">
-          {session && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleClearFile}
-                    className="h-8 text-xs"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Clear File
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-sm">{session.vcf_file_path?.split("/").pop() || "Unknown"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          {currentSessionId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFile}
+              className="h-8 text-xs"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear File
+            </Button>
           )}
         </div>
       </div>
