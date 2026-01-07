@@ -184,10 +184,12 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
         description: `Session ${result.id} created`,
       })
 
+      // IMPORTANT: First set session ID, then advance journey
+      // This ensures sessionId is available when ValidationStatus renders
+      onUploadSuccess?.(result.id)
+      
       // Advance to next step in journey (Upload -> Validation)
       nextStep()
-
-      onUploadSuccess?.(result.id)
     } catch (error) {
       const err = error as Error
       toast.error('Upload failed', {
