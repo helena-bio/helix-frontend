@@ -1,9 +1,11 @@
 /**
  * HPO API Client
- * 
+ *
  * Functions for searching and fetching HPO terms from Phenotype Matching Service.
  */
 
+// В Vercel: https://api.helixinsight.bio/phenotype/api
+// Локално: http://localhost:9004/api
 const PHENOTYPE_API_URL = process.env.NEXT_PUBLIC_PHENOTYPE_API_URL || 'http://localhost:9004/api'
 
 export interface HPOTerm {
@@ -37,7 +39,7 @@ export async function searchHPOTerms(
   })
 
   const response = await fetch(`${PHENOTYPE_API_URL}/hpo/search?${params.toString()}`)
-  
+
   if (!response.ok) {
     throw new Error(`HPO search failed: ${response.statusText}`)
   }
@@ -50,7 +52,7 @@ export async function searchHPOTerms(
  */
 export async function getHPOTerm(termId: string): Promise<HPOTerm> {
   const response = await fetch(`${PHENOTYPE_API_URL}/hpo/term/${termId}`)
-  
+
   if (!response.ok) {
     throw new Error(`HPO term not found: ${termId}`)
   }
