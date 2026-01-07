@@ -4,8 +4,8 @@
  * Analysis Page - Main Variant Analysis Workflow
  *
  * Journey-driven flow using JourneyContext:
- * 1. Upload + Validation -> UploadValidationFlow (unified component)
- * 2. Phenotype -> Phenotype entry (TODO)
+ * 1. Upload + Validation -> UploadValidationFlow
+ * 2. Phenotype -> PhenotypeEntry
  * 3. Analysis -> Results
  */
 
@@ -14,11 +14,12 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useSession, useQCMetrics } from '@/hooks/queries'
 import {
   UploadValidationFlow,
+  PhenotypeEntry,
   QCMetrics,
   VariantsList
 } from '@/components/analysis'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 export default function AnalysisPage() {
   const { currentSessionId, setCurrentSessionId } = useAnalysis()
@@ -37,12 +38,6 @@ export default function AnalysisPage() {
   // Handle upload+validation complete
   const handleUploadValidationComplete = (sessionId: string) => {
     setCurrentSessionId(sessionId)
-    // nextStep() is called by UploadValidationFlow
-  }
-
-  // Handle phenotype complete - move to analysis
-  const handlePhenotypeComplete = () => {
-    nextStep()
   }
 
   // Handle start over
@@ -71,23 +66,10 @@ export default function AnalysisPage() {
         )
       }
 
-      // TODO: Implement PhenotypeEntry component
       return (
-        <div className="flex items-center justify-center min-h-[400px] p-8">
-          <div className="text-center space-y-6">
-            <h2 className="text-2xl font-bold">Phenotype Entry</h2>
-            <p className="text-muted-foreground">
-              Enter patient phenotype information (HPO terms)
-            </p>
-            <p className="text-sm text-muted-foreground">
-              This step is coming soon. For now, click continue to proceed.
-            </p>
-            <Button onClick={handlePhenotypeComplete} size="lg">
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Continue to Analysis
-            </Button>
-          </div>
-        </div>
+        <PhenotypeEntry
+          sessionId={currentSessionId}
+        />
       )
     }
 
