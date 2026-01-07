@@ -186,9 +186,11 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
 
       // IMPORTANT: First set session ID, then advance journey
       // This ensures sessionId is available when ValidationStatus renders
+      console.log('[FileUpload] calling onUploadSuccess with:', result.id)
       onUploadSuccess?.(result.id)
       
       // Advance to next step in journey (Upload -> Validation)
+      console.log('[FileUpload] calling nextStep')
       nextStep()
     } catch (error) {
       const err = error as Error

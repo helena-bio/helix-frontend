@@ -7,7 +7,7 @@
  * 1. Upload -> FileUpload component
  * 2. Validation -> ValidationStatus (auto-starts validation)
  * 3. Phenotype -> Phenotype entry (TODO)
- * 4. Analysis -> ProcessingStatus -> Results
+ * 4. Analysis -> Results
  */
 
 import { useEffect } from 'react'
@@ -17,16 +17,20 @@ import { useSession, useQCMetrics } from '@/hooks/queries'
 import {
   FileUpload,
   ValidationStatus,
-  ProcessingStatus,
   QCMetrics,
   VariantsList
 } from '@/components/analysis'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 
 export default function AnalysisPage() {
   const { currentSessionId, setCurrentSessionId } = useAnalysis()
   const { currentStep, nextStep, goToStep, resetJourney } = useJourney()
+
+  // DEBUG
+  useEffect(() => {
+    console.log('[AnalysisPage] currentStep:', currentStep, 'sessionId:', currentSessionId)
+  }, [currentStep, currentSessionId])
 
   // Session query for data
   const sessionQuery = useSession(currentSessionId || '', {
@@ -38,15 +42,15 @@ export default function AnalysisPage() {
     enabled: !!currentSessionId && currentStep === 'analysis',
   })
 
-  // Handle upload success - set session and move to validation
+  // Handle upload success - set session ID
   const handleUploadSuccess = (sessionId: string) => {
+    console.log('[AnalysisPage] handleUploadSuccess called with:', sessionId)
     setCurrentSessionId(sessionId)
-    // nextStep() is called by FileUpload component
   }
 
-  // Handle validation complete - move to phenotype
+  // Handle validation complete
   const handleValidationComplete = () => {
-    // nextStep() is called by ValidationStatus component
+    console.log('[AnalysisPage] handleValidationComplete called')
   }
 
   // Handle phenotype complete - move to analysis
@@ -62,6 +66,8 @@ export default function AnalysisPage() {
 
   // Render content based on current journey step
   const renderContent = () => {
+    console.log('[AnalysisPage] renderContent - step:', currentStep, 'sessionId:', currentSessionId)
+    
     switch (currentStep) {
       case 'upload':
         return (
@@ -71,10 +77,14 @@ export default function AnalysisPage() {
         )
 
       case 'validation':
+        // Wait for sessionId to be set
         if (!currentSessionId) {
-          // No session, go back to upload
-          goToStep('upload')
-          return null
+          console.log('[AnalysisPage] validation step but no sessionId, showing loader')
+          return (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )
         }
 
         return (
@@ -86,11 +96,13 @@ export default function AnalysisPage() {
 
       case 'phenotype':
         if (!currentSessionId) {
-          goToStep('upload')
-          return null
+          return (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )
         }
 
-        // TODO: Implement PhenotypeEntry component
         return (
           <div className="flex items-center justify-center min-h-[400px] p-8">
             <div className="text-center space-y-6">
@@ -111,11 +123,13 @@ export default function AnalysisPage() {
 
       case 'analysis':
         if (!currentSessionId) {
-          goToStep('upload')
-          return null
+          return (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          )
         }
 
-        // Show QC metrics if available, otherwise show results
         if (qcQuery.data) {
           return (
             <div className="p-8">
@@ -137,7 +151,6 @@ export default function AnalysisPage() {
           )
         }
 
-        // Show variants list directly
         return (
           <div className="p-8">
             <VariantsList sessionId={currentSessionId} />
