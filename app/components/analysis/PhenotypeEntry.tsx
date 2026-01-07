@@ -5,8 +5,7 @@
  *
  * Features:
  * - Search and add HPO terms with real API
- * - Debounced search for performance
- * - AI-assisted term suggestion from free text
+ * - AI-assisted term suggestion from free text (NLP extraction)
  * - Additional clinical notes
  * - Summary panel
  */
@@ -20,7 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useJourney } from '@/contexts/JourneyContext'
-import { useHPOSearch, useDebounce } from '@/hooks'
+import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
 import { toast } from 'sonner'
 
 interface HPOTerm {
@@ -42,7 +41,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
   const [showAIAssist, setShowAIAssist] = useState(false)
   const [showClinicalNotes, setShowClinicalNotes] = useState(false)
   const [aiInput, setAiInput] = useState('')
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const { nextStep } = useJourney()
 
@@ -55,6 +54,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     limit: 10,
   })
 
+  // HPO extraction mutation
+  const extractMutation = useHPOExtract()
+
   // Filter out already selected terms
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !selectedTerms.find((t) => t.id === term.id)
@@ -62,63 +64,64 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   // Add term to selection
   const addTerm = useCallback((term: HPOTerm) => {
-    setSelectedTerms(prev => [...prev, term])
+    if (!selectedTerms.find((t) => t.id === term.id)) {
+      setSelectedTerms(prev => [...prev, term])
+      toast.success(`Added: ${term.name}`)
+    }
     setSearchQuery('')
-    toast.success(`Added: ${term.name}`)
-  }, [])
+  }, [selectedTerms])
 
   // Remove term from selection
   const removeTerm = useCallback((termId: string) => {
     setSelectedTerms(prev => prev.filter((t) => t.id !== termId))
   }, [])
 
-  // AI-assisted term suggestion (mock for now)
-  const handleAISuggest = useCallback(async () => {
+  // AI-assisted term extraction using NLP
+  const handleGenerateSuggestions = useCallback(async () => {
     if (!aiInput.trim()) return
 
-    setIsProcessing(true)
-    
-    // TODO: Call AI endpoint for term extraction
-    // For now, search for keywords in the input
-    const keywords = aiInput.toLowerCase().split(/\s+/)
-    const searchPromises = keywords
-      .filter(k => k.length >= 3)
-      .slice(0, 3)
-      .map(k => searchHPOTermsAPI(k))
-
     try {
-      const results = await Promise.all(searchPromises)
-      const allTerms = results.flatMap(r => r.terms || [])
+      const result = await extractMutation.mutateAsync(aiInput)
       
-      // Add unique terms that aren't already selected
-      let added = 0
-      const seen = new Set(selectedTerms.map(t => t.id))
-      
-      for (const term of allTerms) {
-        if (!seen.has(term.id) && added < 5) {
-          addTerm(term)
-          seen.add(term.id)
-          added++
+      if (result.terms.length === 0) {
+        toast.info('No HPO terms found in text', {
+          description: 'Try using more specific clinical terminology',
+        })
+        return
+      }
+
+      // Add extracted terms that aren't already selected
+      let addedCount = 0
+      for (const term of result.terms) {
+        if (!selectedTerms.find((t) => t.id === term.hpo_id)) {
+          setSelectedTerms(prev => [...prev, {
+            id: term.hpo_id,
+            name: term.hpo_name,
+          }])
+          addedCount++
         }
       }
 
-      if (added > 0) {
-        toast.success(`Added ${added} HPO term${added > 1 ? 's' : ''} from text`)
+      if (addedCount > 0) {
+        toast.success(`Added ${addedCount} HPO term${addedCount > 1 ? 's' : ''}`, {
+          description: result.terms.map(t => t.hpo_name).join(', '),
+        })
       } else {
-        toast.info('No new matching HPO terms found')
+        toast.info('All extracted terms are already added')
       }
-    } catch (error) {
-      toast.error('Failed to extract HPO terms')
-    } finally {
-      setIsProcessing(false)
+
       setAiInput('')
       setShowAIAssist(false)
+    } catch (error) {
+      toast.error('Failed to extract HPO terms', {
+        description: 'Please try again or add terms manually',
+      })
     }
-  }, [aiInput, selectedTerms, addTerm])
+  }, [aiInput, extractMutation, selectedTerms])
 
   // Save and continue
   const handleSaveAndContinue = useCallback(async () => {
-    setIsProcessing(true)
+    setIsSaving(true)
 
     try {
       // TODO: Save phenotype data to backend
@@ -131,7 +134,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     } catch (error) {
       toast.error('Failed to save phenotype data')
     } finally {
-      setIsProcessing(false)
+      setIsSaving(false)
     }
   }, [selectedTerms, clinicalNotes, nextStep, onComplete])
 
@@ -188,7 +191,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                   {filteredSuggestions.map((term) => (
                     <button
                       key={term.id}
-                      onClick={() => addTerm(term)}
+                      onClick={() => addTerm({ id: term.id, name: term.name, definition: term.definition })}
                       className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
                     >
                       <div className="flex-1 min-w-0">
@@ -273,15 +276,15 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                   className="min-h-[80px] bg-background"
                 />
                 <Button
-                  onClick={handleAISuggest}
-                  disabled={!aiInput.trim() || isProcessing}
+                  onClick={handleGenerateSuggestions}
+                  disabled={!aiInput.trim() || extractMutation.isPending}
                   size="sm"
                   className="w-full"
                 >
-                  {isProcessing ? (
+                  {extractMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
+                      Extracting...
                     </>
                   ) : (
                     <>
@@ -350,9 +353,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
           </Button>
           <Button
             onClick={handleSaveAndContinue}
-            disabled={isProcessing}
+            disabled={isSaving}
           >
-            {isProcessing ? (
+            {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Saving...
@@ -368,16 +371,4 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
       </div>
     </div>
   )
-}
-
-// Helper function for AI suggest
-async function searchHPOTermsAPI(query: string) {
-  try {
-    const baseURL = process.env.NEXT_PUBLIC_PHENOTYPE_API_URL || 'http://localhost:9004/api'
-    const response = await fetch(`${baseURL}/hpo/search?q=${encodeURIComponent(query)}&limit=5`)
-    if (!response.ok) return { terms: [] }
-    return await response.json()
-  } catch {
-    return { terms: [] }
-  }
 }

@@ -14,6 +14,7 @@ export {
   useUploadVCF,
   useStartValidation,
   useStartProcessing,
+  useHPOExtract,
 } from './mutations'
 
 // Utility hooks
