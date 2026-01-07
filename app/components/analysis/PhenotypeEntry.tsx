@@ -4,15 +4,15 @@
  * PhenotypeEntry Component - HPO Terms Entry Page
  *
  * Features:
- * - Search and add HPO terms
+ * - Search and add HPO terms with real API
+ * - Debounced search for performance
  * - AI-assisted term suggestion from free text
  * - Additional clinical notes
  * - Summary panel
- * - Advances to Analysis step on save
  */
 
 import { useState, useCallback } from 'react'
-import { Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna, ArrowRight } from 'lucide-react'
+import { Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna, ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -20,12 +20,13 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useJourney } from '@/contexts/JourneyContext'
+import { useHPOSearch, useDebounce } from '@/hooks'
 import { toast } from 'sonner'
 
 interface HPOTerm {
   id: string
-  label: string
-  isCommon?: boolean
+  name: string
+  definition?: string
 }
 
 interface PhenotypeEntryProps {
@@ -33,25 +34,6 @@ interface PhenotypeEntryProps {
   onComplete?: (data: { hpoTerms: HPOTerm[]; clinicalNotes: string }) => void
   onSkip?: () => void
 }
-
-// Mock HPO terms database - in production this would come from API
-const HPO_SUGGESTIONS: HPOTerm[] = [
-  { id: "HP:0001250", label: "Seizures", isCommon: true },
-  { id: "HP:0001263", label: "Global developmental delay", isCommon: true },
-  { id: "HP:0001249", label: "Intellectual disability", isCommon: true },
-  { id: "HP:0001252", label: "Hypotonia", isCommon: true },
-  { id: "HP:0001298", label: "Encephalopathy", isCommon: false },
-  { id: "HP:0002133", label: "Status epilepticus", isCommon: false },
-  { id: "HP:0001257", label: "Spasticity", isCommon: true },
-  { id: "HP:0000707", label: "Abnormality of the nervous system", isCommon: true },
-  { id: "HP:0001290", label: "Generalized hypotonia", isCommon: false },
-  { id: "HP:0002376", label: "Developmental regression", isCommon: false },
-  { id: "HP:0000252", label: "Microcephaly", isCommon: true },
-  { id: "HP:0001156", label: "Brachydactyly", isCommon: false },
-  { id: "HP:0000316", label: "Hypertelorism", isCommon: false },
-  { id: "HP:0000347", label: "Micrognathia", isCommon: false },
-  { id: "HP:0000369", label: "Low-set ears", isCommon: false },
-]
 
 export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntryProps) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -64,20 +46,25 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   const { nextStep } = useJourney()
 
-  // Filter suggestions based on search query
-  const filteredSuggestions = searchQuery.length > 0
-    ? HPO_SUGGESTIONS.filter(
-        (term) =>
-          (term.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            term.id.toLowerCase().includes(searchQuery.toLowerCase())) &&
-          !selectedTerms.find((t) => t.id === term.id)
-      )
-    : []
+  // Debounce search query for API calls
+  const debouncedQuery = useDebounce(searchQuery, 300)
+
+  // Fetch HPO suggestions from API
+  const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
+    enabled: debouncedQuery.length >= 2,
+    limit: 10,
+  })
+
+  // Filter out already selected terms
+  const filteredSuggestions = searchResults?.terms.filter(
+    (term) => !selectedTerms.find((t) => t.id === term.id)
+  ) || []
 
   // Add term to selection
   const addTerm = useCallback((term: HPOTerm) => {
     setSelectedTerms(prev => [...prev, term])
     setSearchQuery('')
+    toast.success(`Added: ${term.name}`)
   }, [])
 
   // Remove term from selection
@@ -85,56 +72,48 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     setSelectedTerms(prev => prev.filter((t) => t.id !== termId))
   }, [])
 
-  // AI-assisted term suggestion
-  const handleAISuggest = useCallback(() => {
-    const suggestions: HPOTerm[] = []
-    const input = aiInput.toLowerCase()
+  // AI-assisted term suggestion (mock for now)
+  const handleAISuggest = useCallback(async () => {
+    if (!aiInput.trim()) return
 
-    // Mock AI suggestion based on free text keywords
-    if (input.includes('epilepsy') || input.includes('seizure')) {
-      const term = HPO_SUGGESTIONS.find(t => t.id === 'HP:0001250')
-      if (term) suggestions.push(term)
-    }
-    if (input.includes('delay') || input.includes('developmental')) {
-      const term = HPO_SUGGESTIONS.find(t => t.id === 'HP:0001263')
-      if (term) suggestions.push(term)
-    }
-    if (input.includes('hypotonia') || input.includes('low tone') || input.includes('floppy')) {
-      const term = HPO_SUGGESTIONS.find(t => t.id === 'HP:0001252')
-      if (term) suggestions.push(term)
-    }
-    if (input.includes('intellectual') || input.includes('cognitive') || input.includes('mental')) {
-      const term = HPO_SUGGESTIONS.find(t => t.id === 'HP:0001249')
-      if (term) suggestions.push(term)
-    }
-    if (input.includes('microcephaly') || input.includes('small head')) {
-      const term = HPO_SUGGESTIONS.find(t => t.id === 'HP:0000252')
-      if (term) suggestions.push(term)
-    }
-    if (input.includes('regression')) {
-      const term = HPO_SUGGESTIONS.find(t => t.id === 'HP:0002376')
-      if (term) suggestions.push(term)
-    }
+    setIsProcessing(true)
+    
+    // TODO: Call AI endpoint for term extraction
+    // For now, search for keywords in the input
+    const keywords = aiInput.toLowerCase().split(/\s+/)
+    const searchPromises = keywords
+      .filter(k => k.length >= 3)
+      .slice(0, 3)
+      .map(k => searchHPOTermsAPI(k))
 
-    // Add new suggestions that aren't already selected
-    let added = 0
-    suggestions.forEach((term) => {
-      if (!selectedTerms.find((t) => t.id === term.id)) {
-        addTerm(term)
-        added++
+    try {
+      const results = await Promise.all(searchPromises)
+      const allTerms = results.flatMap(r => r.terms || [])
+      
+      // Add unique terms that aren't already selected
+      let added = 0
+      const seen = new Set(selectedTerms.map(t => t.id))
+      
+      for (const term of allTerms) {
+        if (!seen.has(term.id) && added < 5) {
+          addTerm(term)
+          seen.add(term.id)
+          added++
+        }
       }
-    })
 
-    if (added > 0) {
-      toast.success(`Added ${added} HPO term${added > 1 ? 's' : ''}`)
-    } else if (suggestions.length === 0) {
-      toast.info('No matching HPO terms found. Try different keywords.')
-    } else {
-      toast.info('All suggested terms are already added.')
+      if (added > 0) {
+        toast.success(`Added ${added} HPO term${added > 1 ? 's' : ''} from text`)
+      } else {
+        toast.info('No new matching HPO terms found')
+      }
+    } catch (error) {
+      toast.error('Failed to extract HPO terms')
+    } finally {
+      setIsProcessing(false)
+      setAiInput('')
+      setShowAIAssist(false)
     }
-
-    setAiInput('')
-    setShowAIAssist(false)
   }, [aiInput, selectedTerms, addTerm])
 
   // Save and continue
@@ -143,20 +122,18 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
     try {
       // TODO: Save phenotype data to backend
-      // await savePhenotype(sessionId, { hpoTerms: selectedTerms, clinicalNotes })
-
       toast.success('Phenotype data saved', {
         description: `${selectedTerms.length} HPO terms added`,
       })
 
       onComplete?.({ hpoTerms: selectedTerms, clinicalNotes })
-      nextStep() // phenotype -> analysis
+      nextStep()
     } catch (error) {
       toast.error('Failed to save phenotype data')
     } finally {
       setIsProcessing(false)
     }
-  }, [sessionId, selectedTerms, clinicalNotes, nextStep, onComplete])
+  }, [selectedTerms, clinicalNotes, nextStep, onComplete])
 
   // Skip phenotype entry
   const handleSkip = useCallback(() => {
@@ -164,7 +141,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
       description: 'You can add phenotype data later',
     })
     onSkip?.()
-    nextStep() // phenotype -> analysis
+    nextStep()
   }, [nextStep, onSkip])
 
   return (
@@ -200,44 +177,59 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                   placeholder="Search phenotype or HPO term..."
                   className="pl-9"
                 />
+                {isSearching && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
               </div>
 
               {/* Suggestions Dropdown */}
               {filteredSuggestions.length > 0 && (
-                <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-48 overflow-y-auto">
-                  {filteredSuggestions.slice(0, 8).map((term) => (
+                <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
+                  {filteredSuggestions.map((term) => (
                     <button
                       key={term.id}
                       onClick={() => addTerm(term)}
-                      className="w-full text-left p-2 hover:bg-accent rounded flex items-center justify-between group"
+                      className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
                     >
-                      <div>
-                        <span className="text-sm font-medium">{term.label}</span>
-                        <span className="text-xs text-muted-foreground ml-2">({term.id})</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{term.name}</span>
+                          <span className="text-xs text-muted-foreground">({term.id})</span>
+                        </div>
+                        {term.definition && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {term.definition.replace(/^"/, '').replace(/".*$/, '')}
+                          </p>
+                        )}
                       </div>
-                      <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
                     </button>
                   ))}
                 </div>
+              )}
+
+              {/* No results message */}
+              {debouncedQuery.length >= 2 && !isSearching && filteredSuggestions.length === 0 && searchResults && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No matching phenotypes found for "{debouncedQuery}"
+                </p>
               )}
             </div>
 
             {/* Selected Terms */}
             {selectedTerms.length > 0 && (
               <div>
-                <label className="text-sm font-medium mb-2 block">Selected Phenotypes</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Selected Phenotypes ({selectedTerms.length})
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {selectedTerms.map((term) => (
                     <Badge
                       key={term.id}
                       variant="secondary"
-                      className={`px-3 py-1.5 ${
-                        term.isCommon
-                          ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800'
-                          : ''
-                      }`}
+                      className="px-3 py-1.5 bg-primary/10 text-primary border-primary/20"
                     >
-                      {term.label}
+                      {term.name}
                       <span className="text-xs ml-1 opacity-70">({term.id})</span>
                       <button
                         onClick={() => removeTerm(term.id)}
@@ -282,12 +274,21 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 />
                 <Button
                   onClick={handleAISuggest}
-                  disabled={!aiInput.trim()}
+                  disabled={!aiInput.trim() || isProcessing}
                   size="sm"
                   className="w-full"
                 >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Suggestions
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate Suggestions
+                    </>
+                  )}
                 </Button>
               </div>
             </CollapsibleContent>
@@ -352,7 +353,10 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
             disabled={isProcessing}
           >
             {isProcessing ? (
-              'Saving...'
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
             ) : (
               <>
                 Save & Continue
@@ -364,4 +368,16 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
       </div>
     </div>
   )
+}
+
+// Helper function for AI suggest
+async function searchHPOTermsAPI(query: string) {
+  try {
+    const baseURL = process.env.NEXT_PUBLIC_PHENOTYPE_API_URL || 'http://localhost:9004/api'
+    const response = await fetch(`${baseURL}/hpo/search?q=${encodeURIComponent(query)}&limit=5`)
+    if (!response.ok) return { terms: [] }
+    return await response.json()
+  } catch {
+    return { terms: [] }
+  }
 }
