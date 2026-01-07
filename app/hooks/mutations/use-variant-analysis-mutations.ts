@@ -19,25 +19,23 @@ export function useUploadVCF() {
   return useMutation({
     mutationFn: async ({
       file,
-      patientId,
       analysisType = 'germline',
       genomeBuild = 'GRCh38',
     }: {
       file: File
-      patientId: string
       analysisType?: string
       genomeBuild?: string
     }) => {
-      return uploadVCFFile(file, patientId, analysisType, genomeBuild)
+      return uploadVCFFile(file, analysisType, genomeBuild)
     },
     onSuccess: (session: AnalysisSession) => {
       // Set current session
       setCurrentSessionId(session.id)
-      
+
       // Cache session data
       queryClient.setQueryData(['session', session.id], session)
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
-      
+
       toast.success('File uploaded successfully', {
         description: `Session ${session.id} created`,
       })
@@ -68,10 +66,10 @@ export function useStartProcessing() {
     },
     onSuccess: (data, variables) => {
       // Invalidate session to refetch status
-      queryClient.invalidateQueries({ 
-        queryKey: ['session', variables.sessionId] 
+      queryClient.invalidateQueries({
+        queryKey: ['session', variables.sessionId]
       })
-      
+
       toast.success('Processing started', {
         description: 'Your file is being analyzed',
       })

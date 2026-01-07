@@ -44,7 +44,6 @@ export interface QCMetrics {
 
 export interface AnalysisSession {
   id: string
-  patient_id: string
   analysis_type: string
   status: 'created' | 'uploaded' | 'processing' | 'completed' | 'failed'
   vcf_file_path: string | null

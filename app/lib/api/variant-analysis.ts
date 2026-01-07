@@ -4,12 +4,12 @@
  */
 
 import { uploadFile, get, post } from './client'
-import type { 
-  AnalysisSession, 
-  QCMetrics, 
-  Variant, 
-  VariantsResponse, 
-  VariantFilters 
+import type {
+  AnalysisSession,
+  QCMetrics,
+  Variant,
+  VariantsResponse,
+  VariantFilters
 } from '@/types/variant.types'
 
 /**
@@ -17,13 +17,11 @@ import type {
  */
 export async function uploadVCFFile(
   file: File,
-  patientId: string,
   analysisType: string = 'germline',
   genomeBuild: string = 'GRCh38'
 ): Promise<AnalysisSession> {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('patient_id', patientId)
   formData.append('analysis_type', analysisType)
   formData.append('genome_build', genomeBuild)
 
@@ -91,32 +89,32 @@ export async function getVariants(
   filters?: VariantFilters
 ): Promise<VariantsResponse> {
   const params = new URLSearchParams()
-  
+
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  
+
   if (filters?.acmg_class?.length) {
     filters.acmg_class.forEach(c => params.append('acmg_class', c))
   }
-  
+
   if (filters?.genes?.length) {
     filters.genes.forEach(g => params.append('gene_symbol', g))
   }
-  
+
   if (filters?.chromosomes?.length) {
     filters.chromosomes.forEach(chr => params.append('chromosomes', chr))
   }
-  
+
   if (filters?.impact?.length) {
     filters.impact.forEach(i => params.append('impact', i))
   }
-  
+
   if (filters?.min_cadd) params.append('min_confidence', String(filters.min_cadd))
   if (filters?.max_gnomad_af) params.append('max_gnomad_af', String(filters.max_gnomad_af))
-  
+
   const queryString = params.toString()
   const url = `/sessions/${sessionId}/variants${queryString ? `?${queryString}` : ''}`
-  
+
   return get<VariantsResponse>(url)
 }
 
