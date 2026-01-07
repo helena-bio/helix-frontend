@@ -2,147 +2,144 @@
 
 /**
  * Analysis Page - Main Variant Analysis Workflow
- * 
- * Flow:
- * 1. FileUpload -> Upload VCF + create session
- * 2. ProcessingStatus -> Poll task until complete
- * 3. QCMetrics -> Show QC results
- * 4. VariantsList -> Display analyzed variants
+ *
+ * Journey-driven flow using JourneyContext:
+ * 1. Upload -> FileUpload component
+ * 2. Validation -> ValidationStatus (auto-starts validation)
+ * 3. Phenotype -> Phenotype entry (TODO)
+ * 4. Analysis -> ProcessingStatus -> Results
  */
 
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useAnalysis } from '@/contexts/AnalysisContext'
-import { useStartProcessing } from '@/hooks/mutations'
+import { useJourney } from '@/contexts/JourneyContext'
 import { useSession, useQCMetrics } from '@/hooks/queries'
-import { 
-  FileUpload, 
-  ProcessingStatus, 
+import {
+  FileUpload,
+  ValidationStatus,
+  ProcessingStatus,
   QCMetrics,
-  VariantsList 
+  VariantsList
 } from '@/components/analysis'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
-
-type AnalysisStep = 'upload' | 'processing' | 'qc' | 'results'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 
 export default function AnalysisPage() {
   const { currentSessionId, setCurrentSessionId } = useAnalysis()
-  const [step, setStep] = useState<AnalysisStep>('upload')
-  const [taskId, setTaskId] = useState<string | null>(null)
+  const { currentStep, nextStep, goToStep, resetJourney } = useJourney()
 
-  const startProcessingMutation = useStartProcessing()
-
+  // Session query for data
   const sessionQuery = useSession(currentSessionId || '', {
-    enabled: !!currentSessionId && step !== 'upload',
+    enabled: !!currentSessionId,
   })
 
+  // QC metrics query
   const qcQuery = useQCMetrics(currentSessionId || '', {
-    enabled: !!currentSessionId && (step === 'qc' || step === 'results'),
+    enabled: !!currentSessionId && currentStep === 'analysis',
   })
 
-  useEffect(() => {
-    if (currentSessionId && sessionQuery.data) {
-      const status = sessionQuery.data.status
-      
-      if (status === 'uploaded') {
-        setStep('upload')
-      } else if (status === 'processing') {
-        setStep('processing')
-      } else if (status === 'completed') {
-        setStep('results')
-      }
-    }
-  }, [currentSessionId, sessionQuery.data])
-
-  const handleUploadSuccess = async (sessionId: string) => {
+  // Handle upload success - set session and move to validation
+  const handleUploadSuccess = (sessionId: string) => {
     setCurrentSessionId(sessionId)
-    
-    const session = sessionQuery.data
-    if (!session?.vcf_file_path) {
-      console.error('No VCF file path in session')
-      return
-    }
-
-    try {
-      const result = await startProcessingMutation.mutateAsync({
-        sessionId,
-        vcfFilePath: session.vcf_file_path,
-      })
-      
-      setTaskId(result.task_id)
-      setStep('processing')
-    } catch (error) {
-      console.error('Failed to start processing:', error)
-    }
+    // nextStep() is called by FileUpload component
   }
 
-  const handleProcessingComplete = () => {
-    setStep('qc')
+  // Handle validation complete - move to phenotype
+  const handleValidationComplete = () => {
+    // nextStep() is called by ValidationStatus component
   }
 
-  const handleViewResults = () => {
-    setStep('results')
+  // Handle phenotype complete - move to analysis
+  const handlePhenotypeComplete = () => {
+    nextStep()
   }
 
+  // Handle start over
   const handleStartOver = () => {
     setCurrentSessionId(null)
-    setTaskId(null)
-    setStep('upload')
+    resetJourney()
   }
 
+  // Render content based on current journey step
   const renderContent = () => {
-    switch (step) {
+    switch (currentStep) {
       case 'upload':
-        return <FileUpload onUploadSuccess={handleUploadSuccess} />
-
-      case 'processing':
-        if (!currentSessionId || !taskId) {
-          return <div>Error: Missing session or task ID</div>
-        }
-        
         return (
-          <ProcessingStatus
-            taskId={taskId}
-            sessionId={currentSessionId}
-            onComplete={handleProcessingComplete}
+          <FileUpload
+            onUploadSuccess={handleUploadSuccess}
           />
         )
 
-      case 'qc':
-        if (!currentSessionId || !qcQuery.data) {
-          return <div>Loading QC metrics...</div>
+      case 'validation':
+        if (!currentSessionId) {
+          // No session, go back to upload
+          goToStep('upload')
+          return null
         }
 
         return (
-          <div className="max-w-4xl mx-auto p-8">
-            <QCMetrics
-              metrics={qcQuery.data}
-              fileName={sessionQuery.data?.vcf_file_path?.split('/').pop()}
-              onPhenotypeClick={handleViewResults}
-            />
-            
-            <div className="mt-6 flex justify-center">
-              <Button onClick={handleViewResults} size="lg">
-                View Analyzed Variants
+          <ValidationStatus
+            sessionId={currentSessionId}
+            onValidationComplete={handleValidationComplete}
+          />
+        )
+
+      case 'phenotype':
+        if (!currentSessionId) {
+          goToStep('upload')
+          return null
+        }
+
+        // TODO: Implement PhenotypeEntry component
+        return (
+          <div className="flex items-center justify-center min-h-[400px] p-8">
+            <div className="text-center space-y-6">
+              <h2 className="text-2xl font-bold">Phenotype Entry</h2>
+              <p className="text-muted-foreground">
+                Enter patient phenotype information (HPO terms)
+              </p>
+              <p className="text-sm text-muted-foreground">
+                This step is coming soon. For now, click continue to proceed.
+              </p>
+              <Button onClick={handlePhenotypeComplete} size="lg">
+                <ArrowRight className="h-4 w-4 mr-2" />
+                Continue to Analysis
               </Button>
             </div>
           </div>
         )
 
-      case 'results':
+      case 'analysis':
         if (!currentSessionId) {
-          return <div>Error: No session selected</div>
+          goToStep('upload')
+          return null
         }
 
+        // Show QC metrics if available, otherwise show results
+        if (qcQuery.data) {
+          return (
+            <div className="p-8">
+              <div className="max-w-4xl mx-auto mb-8">
+                <QCMetrics
+                  metrics={qcQuery.data}
+                  fileName={sessionQuery.data?.vcf_file_path?.split('/').pop()}
+                />
+              </div>
+
+              <VariantsList sessionId={currentSessionId} />
+
+              <div className="mt-6 text-center">
+                <Button variant="outline" onClick={handleStartOver}>
+                  Start New Analysis
+                </Button>
+              </div>
+            </div>
+          )
+        }
+
+        // Show variants list directly
         return (
           <div className="p-8">
-            <div className="mb-6">
-              <Button variant="ghost" onClick={() => setStep('qc')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to QC Results
-              </Button>
-            </div>
-
             <VariantsList sessionId={currentSessionId} />
 
             <div className="mt-6 text-center">
