@@ -40,6 +40,16 @@ export async function getSession(sessionId: string): Promise<AnalysisSession> {
 }
 
 /**
+ * Start VCF validation task
+ * This validates the VCF file format before processing
+ */
+export async function startValidation(
+  sessionId: string
+): Promise<{ task_id: string; session_id: string; status: string; message: string }> {
+  return post(`/tasks/validate/${sessionId}`, {})
+}
+
+/**
  * Start processing pipeline
  */
 export async function startProcessing(
