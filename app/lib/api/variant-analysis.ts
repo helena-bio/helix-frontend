@@ -13,7 +13,22 @@ import type {
 } from '@/types/variant.types'
 
 /**
+ * Backend upload response (uses session_id)
+ */
+interface UploadVCFBackendResponse {
+  session_id: string
+  filename: string
+  file_size: number
+  file_path: string
+  analysis_type: string
+  genome_build: string
+  status: string
+  message: string
+}
+
+/**
  * Upload VCF file and create session with progress tracking
+ * Transforms backend response to match AnalysisSession type
  */
 export async function uploadVCFFile(
   file: File,
@@ -21,7 +36,7 @@ export async function uploadVCFFile(
   genomeBuild: string = 'GRCh38',
   onProgress?: (progress: number) => void
 ): Promise<AnalysisSession> {
-  return uploadFileWithProgress<AnalysisSession>(
+  const response = await uploadFileWithProgress<UploadVCFBackendResponse>(
     '/upload/vcf',
     file,
     {
@@ -30,6 +45,18 @@ export async function uploadVCFFile(
     },
     onProgress
   )
+
+  // Transform backend response to AnalysisSession
+  return {
+    id: response.session_id,
+    analysis_type: response.analysis_type,
+    status: response.status as AnalysisSession['status'],
+    vcf_file_path: response.file_path,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    completed_at: null,
+    error_message: null,
+  }
 }
 
 /**
