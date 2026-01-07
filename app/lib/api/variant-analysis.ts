@@ -3,7 +3,7 @@
  * Production-ready API endpoints for Helix Insight backend
  */
 
-import { uploadFile, get, post } from './client'
+import { uploadFileWithProgress, get, post } from './client'
 import type {
   AnalysisSession,
   QCMetrics,
@@ -13,29 +13,23 @@ import type {
 } from '@/types/variant.types'
 
 /**
- * Upload VCF file and create session
+ * Upload VCF file and create session with progress tracking
  */
 export async function uploadVCFFile(
   file: File,
   analysisType: string = 'germline',
-  genomeBuild: string = 'GRCh38'
+  genomeBuild: string = 'GRCh38',
+  onProgress?: (progress: number) => void
 ): Promise<AnalysisSession> {
-  const formData = new FormData()
-  formData.append('file', file)
-  formData.append('analysis_type', analysisType)
-  formData.append('genome_build', genomeBuild)
-
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/vcf`, {
-    method: 'POST',
-    body: formData,
-  })
-
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.detail || 'Upload failed')
-  }
-
-  return response.json()
+  return uploadFileWithProgress<AnalysisSession>(
+    '/upload/vcf',
+    file,
+    {
+      analysis_type: analysisType,
+      genome_build: genomeBuild,
+    },
+    onProgress
+  )
 }
 
 /**

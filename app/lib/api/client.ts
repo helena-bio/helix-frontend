@@ -158,7 +158,7 @@ export async function del<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'DELETE' })
 }
 
-// File upload helper
+// File upload helper (without progress)
 export async function uploadFile<T>(
   endpoint: string,
   file: File,
@@ -188,4 +188,86 @@ export async function uploadFile<T>(
   })
 
   return handleResponse<T>(response)
+}
+
+// File upload with progress tracking
+export async function uploadFileWithProgress<T>(
+  endpoint: string,
+  file: File,
+  additionalFields?: Record<string, string>,
+  onProgress?: (progress: number) => void
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    const url = `${API_URL}${endpoint}`
+
+    // Setup form data
+    const formData = new FormData()
+    formData.append('file', file)
+
+    if (additionalFields) {
+      Object.entries(additionalFields).forEach(([key, value]) => {
+        formData.append(key, value)
+      })
+    }
+
+    // Setup auth
+    const token = getAuthToken()
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    }
+
+    // Progress tracking
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable && onProgress) {
+        const percentComplete = (event.loaded / event.total) * 100
+        onProgress(Math.round(percentComplete))
+      }
+    })
+
+    // Success handler
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText)
+          resolve(response)
+        } catch (error) {
+          reject(new ApiError('Invalid JSON response', xhr.status))
+        }
+      } else {
+        try {
+          const errorData = JSON.parse(xhr.responseText)
+          reject(
+            new ApiError(
+              errorData.detail || errorData.message || `HTTP ${xhr.status}`,
+              xhr.status,
+              errorData.code
+            )
+          )
+        } catch {
+          reject(new ApiError(xhr.statusText || `HTTP ${xhr.status}`, xhr.status))
+        }
+      }
+    })
+
+    // Error handler
+    xhr.addEventListener('error', () => {
+      reject(new ApiError('Network error occurred'))
+    })
+
+    // Timeout handler
+    xhr.addEventListener('timeout', () => {
+      reject(new TimeoutError('Upload timeout'))
+    })
+
+    // Abort handler
+    xhr.addEventListener('abort', () => {
+      reject(new ApiError('Upload cancelled'))
+    })
+
+    // Send request
+    xhr.open('POST', url)
+    xhr.timeout = 300000 // 5 minutes for large files
+    xhr.send(formData)
+  })
 }

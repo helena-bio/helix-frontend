@@ -1,12 +1,12 @@
 "use client"
 
 /**
- * FileUpload Component - Production Ready
+ * FileUpload Component - Production Ready with Progress Tracking
  *
  * Features:
  * - Drag & drop with visual feedback
  * - Real API integration with mutations
- * - Upload progress tracking
+ * - Upload progress tracking (REAL progress via XMLHttpRequest)
  * - File validation (client-side)
  * - Error handling with retry
  * - Accessibility (ARIA, keyboard)
@@ -35,6 +35,7 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -154,6 +155,7 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
   const handleRemoveFile = useCallback(() => {
     setSelectedFile(null)
     setValidationError(null)
+    setUploadProgress(0)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -163,11 +165,14 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !selectedFile) return
 
+    setUploadProgress(0)
+
     try {
       const result = await uploadMutation.mutateAsync({
         file: selectedFile,
         analysisType: 'germline',
         genomeBuild: 'GRCh38',
+        onProgress: setUploadProgress,
       })
 
       toast.success('Upload successful', {
@@ -186,6 +191,7 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
 
   const handleRetry = useCallback(() => {
     uploadMutation.reset()
+    setUploadProgress(0)
     handleSubmit()
   }, [uploadMutation, handleSubmit])
 
@@ -194,20 +200,23 @@ export function FileUpload({ onUploadSuccess, onUploadError }: FileUploadProps) 
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
         <div className="w-full max-w-md bg-card border rounded-lg p-8 text-center space-y-6">
-          <div className="inline-flex items-center justify-center p-4 rounded-full bg-primary/10 animate-pulse">
-            <FileCode className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center p-4 rounded-full bg-primary/10">
+            <FileCode className="h-8 w-8 text-primary animate-pulse" />
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-2">Uploading File</h3>
             <p className="text-sm text-muted-foreground">
-              Please wait while we process your VCF file...
+              Please wait while we upload your VCF file...
             </p>
           </div>
 
           <div className="space-y-2">
-            <Progress value={undefined} className="h-2" />
-            <p className="text-xs text-muted-foreground">{selectedFile?.name}</p>
+            <Progress value={uploadProgress} className="h-2" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{selectedFile?.name}</span>
+              <span>{uploadProgress}%</span>
+            </div>
           </div>
         </div>
       </div>

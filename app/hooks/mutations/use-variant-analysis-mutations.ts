@@ -10,7 +10,7 @@ import type { AnalysisSession } from '@/types/variant.types'
 import { toast } from 'sonner'
 
 /**
- * Upload VCF file mutation
+ * Upload VCF file mutation with progress tracking
  */
 export function useUploadVCF() {
   const queryClient = useQueryClient()
@@ -21,12 +21,14 @@ export function useUploadVCF() {
       file,
       analysisType = 'germline',
       genomeBuild = 'GRCh38',
+      onProgress,
     }: {
       file: File
       analysisType?: string
       genomeBuild?: string
+      onProgress?: (progress: number) => void
     }) => {
-      return uploadVCFFile(file, analysisType, genomeBuild)
+      return uploadVCFFile(file, analysisType, genomeBuild, onProgress)
     },
     onSuccess: (session: AnalysisSession) => {
       // Set current session
