@@ -211,7 +211,11 @@ export async function uploadFileWithProgress<T>(
       })
     }
 
-    // Setup auth
+    // CRITICAL: Open connection FIRST
+    xhr.open('POST', url)
+    xhr.timeout = 300000 // 5 minutes for large files
+
+    // THEN set headers (after open)
     const token = getAuthToken()
     if (token) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`)
@@ -265,9 +269,7 @@ export async function uploadFileWithProgress<T>(
       reject(new ApiError('Upload cancelled'))
     })
 
-    // Send request
-    xhr.open('POST', url)
-    xhr.timeout = 300000 // 5 minutes for large files
+    // Send request (LAST step)
     xhr.send(formData)
   })
 }
