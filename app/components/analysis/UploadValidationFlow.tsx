@@ -4,13 +4,11 @@
  * UploadValidationFlow Component - Unified Upload + Validation + QC Experience
  *
  * Seamless flow:
- * 1. File Selection (drag & drop or browse)
- * 2. Upload Progress (real progress via XMLHttpRequest)
- * 3. Validation Progress (polling task status)
- * 4. QC Results display
- * 5. User clicks "Enter Phenotype" -> advances to next step
- *
- * Single UI component throughout - only content changes
+ * 1. File Selection (drag & drop or browse) - Journey: upload
+ * 2. Upload Progress - Journey: upload
+ * 3. Validation Progress - Journey: validation (auto-advance)
+ * 4. QC Results display - Journey: validation
+ * 5. User clicks "Enter Phenotype" -> Journey: phenotype
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
@@ -61,18 +59,27 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
+  const hasAdvancedToValidation = useRef(false)
 
   // Mutations
   const uploadMutation = useUploadVCF()
   const startValidationMutation = useStartValidation()
 
   // Journey context
-  const { nextStep } = useJourney()
+  const { currentStep, nextStep } = useJourney()
 
   // Poll task status when validating
   const { data: taskStatus } = useTaskStatus(taskId, {
     enabled: !!taskId && phase === 'validating',
   })
+
+  // Advance journey to validation when we start validating
+  useEffect(() => {
+    if (phase === 'validating' && currentStep === 'upload' && !hasAdvancedToValidation.current) {
+      hasAdvancedToValidation.current = true
+      nextStep() // upload -> validation
+    }
+  }, [phase, currentStep, nextStep])
 
   // Handle validation task completion
   useEffect(() => {
@@ -89,7 +96,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         setQcResults({
           totalVariants: taskStatus.result?.total_variants || 0,
           sampleCount: taskStatus.result?.sample_count || 1,
-          genomeBuild: 'GRCh38', // Default, could come from backend
+          genomeBuild: 'GRCh38',
         })
         setPhase('qc_results')
         
@@ -224,6 +231,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setUploadProgress(0)
     setValidationProgress(0)
     setPhase('uploading')
+    hasAdvancedToValidation.current = false
 
     try {
       // Phase 1: Upload
@@ -266,6 +274,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setQcResults(null)
     setUploadProgress(0)
     setValidationProgress(0)
+    hasAdvancedToValidation.current = false
     uploadMutation.reset()
     startValidationMutation.reset()
     if (fileInputRef.current) {
@@ -277,7 +286,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const handlePhenotypeClick = useCallback(() => {
     if (sessionId) {
       onComplete?.(sessionId)
-      nextStep()
+      nextStep() // validation -> phenotype
     }
   }, [sessionId, nextStep, onComplete])
 
