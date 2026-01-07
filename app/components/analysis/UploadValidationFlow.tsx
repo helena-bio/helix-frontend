@@ -7,7 +7,7 @@
  * 1. File Selection (drag & drop or browse)
  * 2. Upload Progress (real progress via XMLHttpRequest)
  * 3. Validation Progress (polling task status)
- * 4. Success -> advances to next step
+ * 4. Auto-advance to Phenotype step on success
  *
  * Single UI component throughout - only text/progress changes
  */
@@ -28,7 +28,7 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
 const ALLOWED_EXTENSIONS = ['.vcf', '.vcf.gz']
 
 // Flow phases
-type FlowPhase = 'selection' | 'uploading' | 'validating' | 'success' | 'error'
+type FlowPhase = 'selection' | 'uploading' | 'validating' | 'error'
 
 interface UploadValidationFlowProps {
   onComplete?: (sessionId: string) => void
@@ -76,20 +76,15 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
     if (taskStatus.ready) {
       if (taskStatus.successful) {
-        setPhase('success')
-        setValidationProgress(100)
-        
         toast.success('File validated successfully', {
           description: `${taskStatus.result?.total_variants?.toLocaleString() || 'Unknown'} variants found`,
         })
 
-        // Brief delay to show success state, then advance
-        setTimeout(() => {
-          if (sessionId) {
-            onComplete?.(sessionId)
-            nextStep()
-          }
-        }, 1500)
+        // Immediately advance to next step (Phenotype)
+        if (sessionId) {
+          onComplete?.(sessionId)
+          nextStep()
+        }
       } else if (taskStatus.failed) {
         const error = taskStatus.result?.error || 'Validation failed'
         setPhase('error')
@@ -280,15 +275,8 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         return {
           title: 'Validating VCF File',
           description: 'Checking file format, headers, and structure...',
-          progress: validationProgress || 10, // Show at least 10% while waiting
+          progress: validationProgress || 10,
           showSpinner: true,
-        }
-      case 'success':
-        return {
-          title: 'Validation Complete',
-          description: 'Your VCF file is valid and ready for analysis',
-          progress: 100,
-          showSpinner: false,
         }
       default:
         return null
@@ -298,20 +286,14 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const phaseInfo = getPhaseInfo()
 
   // Render - Processing State (Upload or Validation)
-  if (phase === 'uploading' || phase === 'validating' || phase === 'success') {
+  if (phase === 'uploading' || phase === 'validating') {
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center space-y-6">
-              <div className={`inline-flex items-center justify-center p-4 rounded-full ${
-                phase === 'success' ? 'bg-green-100 dark:bg-green-950' : 'bg-primary/10'
-              }`}>
-                {phase === 'success' ? (
-                  <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
-                ) : (
-                  <FileCode className="h-8 w-8 text-primary animate-pulse" />
-                )}
+              <div className="inline-flex items-center justify-center p-4 rounded-full bg-primary/10">
+                <FileCode className="h-8 w-8 text-primary animate-pulse" />
               </div>
 
               <div>
@@ -333,25 +315,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>This usually takes a few seconds...</span>
-                </div>
-              )}
-
-              {phase === 'success' && taskStatus?.result && (
-                <div className="p-4 bg-muted rounded-lg text-left">
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Variants</span>
-                      <span className="font-medium">
-                        {taskStatus.result.total_variants?.toLocaleString() || 'N/A'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Samples</span>
-                      <span className="font-medium">
-                        {taskStatus.result.sample_count || 'N/A'}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
