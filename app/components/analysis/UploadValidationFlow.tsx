@@ -1,23 +1,25 @@
 "use client"
 
 /**
- * UploadValidationFlow Component - Unified Upload + Validation Experience
+ * UploadValidationFlow Component - Unified Upload + Validation + QC Experience
  *
  * Seamless flow:
  * 1. File Selection (drag & drop or browse)
  * 2. Upload Progress (real progress via XMLHttpRequest)
  * 3. Validation Progress (polling task status)
- * 4. Auto-advance to Phenotype step on success
+ * 4. QC Results display
+ * 5. User clicks "Enter Phenotype" -> advances to next step
  *
- * Single UI component throughout - only text/progress changes
+ * Single UI component throughout - only content changes
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
-import { Upload, FileCode, AlertCircle, CheckCircle2, X, Loader2 } from 'lucide-react'
+import { Upload, FileCode, AlertCircle, CheckCircle2, X, Loader2, Download, Info, User, Dna } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useUploadVCF, useStartValidation } from '@/hooks/mutations'
 import { useTaskStatus } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -28,7 +30,13 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
 const ALLOWED_EXTENSIONS = ['.vcf', '.vcf.gz']
 
 // Flow phases
-type FlowPhase = 'selection' | 'uploading' | 'validating' | 'error'
+type FlowPhase = 'selection' | 'uploading' | 'validating' | 'qc_results' | 'error'
+
+interface QCResults {
+  totalVariants: number
+  sampleCount: number
+  genomeBuild: string
+}
 
 interface UploadValidationFlowProps {
   onComplete?: (sessionId: string) => void
@@ -41,6 +49,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [qcResults, setQcResults] = useState<QCResults | null>(null)
 
   // File selection state
   const [isDragging, setIsDragging] = useState(false)
@@ -76,15 +85,17 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
     if (taskStatus.ready) {
       if (taskStatus.successful) {
+        // Store QC results and show QC screen
+        setQcResults({
+          totalVariants: taskStatus.result?.total_variants || 0,
+          sampleCount: taskStatus.result?.sample_count || 1,
+          genomeBuild: 'GRCh38', // Default, could come from backend
+        })
+        setPhase('qc_results')
+        
         toast.success('File validated successfully', {
           description: `${taskStatus.result?.total_variants?.toLocaleString() || 'Unknown'} variants found`,
         })
-
-        // Immediately advance to next step (Phenotype)
-        if (sessionId) {
-          onComplete?.(sessionId)
-          nextStep()
-        }
       } else if (taskStatus.failed) {
         const error = taskStatus.result?.error || 'Validation failed'
         setPhase('error')
@@ -92,7 +103,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         onError?.(new Error(error))
       }
     }
-  }, [taskStatus, phase, sessionId, nextStep, onComplete, onError])
+  }, [taskStatus, phase, onError])
 
   // Computed values
   const fileSize = useMemo(() => {
@@ -252,6 +263,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setTaskId(null)
     setErrorMessage(null)
     setValidationError(null)
+    setQcResults(null)
     setUploadProgress(0)
     setValidationProgress(0)
     uploadMutation.reset()
@@ -260,6 +272,36 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       fileInputRef.current.value = ''
     }
   }, [uploadMutation, startValidationMutation])
+
+  // Handle phenotype button click - advance to next step
+  const handlePhenotypeClick = useCallback(() => {
+    if (sessionId) {
+      onComplete?.(sessionId)
+      nextStep()
+    }
+  }, [sessionId, nextStep, onComplete])
+
+  // Download QC report
+  const handleDownloadQC = useCallback(() => {
+    if (!qcResults || !selectedFile) return
+    
+    const report = {
+      file: selectedFile.name,
+      timestamp: new Date().toISOString(),
+      qc: {
+        samples: qcResults.sampleCount,
+        genomeBuild: qcResults.genomeBuild,
+        variants: qcResults.totalVariants,
+      },
+    }
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'qc-report.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [qcResults, selectedFile])
 
   // Get current phase info for display
   const getPhaseInfo = () => {
@@ -284,6 +326,105 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   }
 
   const phaseInfo = getPhaseInfo()
+
+  // Render - QC Results State
+  if (phase === 'qc_results' && qcResults) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px] p-8">
+        <div className="max-w-2xl w-full space-y-6">
+          {/* File Info & QC Results Card */}
+          <Card>
+            <CardContent className="p-6">
+              {/* File Header */}
+              <div className="border-b border-border pb-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{selectedFile?.name}</p>
+                    <span className="text-muted-foreground">-</span>
+                    <p className="text-sm text-muted-foreground">{fileSize}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* QC Results Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold">Quality Control Results</h3>
+                <Button variant="ghost" size="sm" onClick={handleDownloadQC}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Report
+                </Button>
+              </div>
+
+              {/* QC Metrics Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Samples Detected</p>
+                  <p className="text-2xl font-bold">{qcResults.sampleCount}</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground">Genome Build</p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-sm">
+                            <strong>GRCh38</strong> - Current human genome reference assembly (released December 2013).
+                            Also known as hg38.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <p className="text-2xl font-bold">{qcResults.genomeBuild}</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Variants</p>
+                  <p className="text-2xl font-bold">{qcResults.totalVariants.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <p className="text-lg font-semibold text-green-600">Valid</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Next Step CTA */}
+          <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="flex items-start gap-3">
+              <User className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold mb-2">Next: Add phenotype data to improve variant prioritization</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Providing patient phenotype information enables more accurate variant-phenotype matching and prioritization.
+                </p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={handlePhenotypeClick}>
+                        <Dna className="h-4 w-4 mr-2" />
+                        Enter Phenotype
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">Enter patient's clinical features using HPO terms</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Render - Processing State (Upload or Validation)
   if (phase === 'uploading' || phase === 'validating') {
