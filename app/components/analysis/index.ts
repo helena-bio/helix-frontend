@@ -1,5 +1,4 @@
-export { FileUpload } from './FileUpload'
+export { UploadValidationFlow } from './UploadValidationFlow'
 export { QCMetrics } from './QCMetrics'
 export { ProcessingStatus } from './ProcessingStatus'
-export { ValidationStatus } from './ValidationStatus'
 export { VariantsList } from './VariantsList'
