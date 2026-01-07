@@ -4,7 +4,7 @@
  * Functions for searching and fetching HPO terms from Phenotype Matching Service.
  */
 
-import { apiClient } from './client'
+const PHENOTYPE_API_URL = process.env.NEXT_PUBLIC_PHENOTYPE_API_URL || 'http://localhost:9004/api'
 
 export interface HPOTerm {
   id: string
@@ -36,26 +36,24 @@ export async function searchHPOTerms(
     limit: limit.toString(),
   })
 
-  const response = await apiClient.get<HPOSearchResponse>(
-    `/hpo/search?${params.toString()}`,
-    {
-      baseURL: process.env.NEXT_PUBLIC_PHENOTYPE_API_URL || 'http://localhost:9004/api',
-    }
-  )
+  const response = await fetch(`${PHENOTYPE_API_URL}/hpo/search?${params.toString()}`)
+  
+  if (!response.ok) {
+    throw new Error(`HPO search failed: ${response.statusText}`)
+  }
 
-  return response
+  return response.json()
 }
 
 /**
  * Get HPO term by ID.
  */
 export async function getHPOTerm(termId: string): Promise<HPOTerm> {
-  const response = await apiClient.get<HPOTerm>(
-    `/hpo/term/${termId}`,
-    {
-      baseURL: process.env.NEXT_PUBLIC_PHENOTYPE_API_URL || 'http://localhost:9004/api',
-    }
-  )
+  const response = await fetch(`${PHENOTYPE_API_URL}/hpo/term/${termId}`)
+  
+  if (!response.ok) {
+    throw new Error(`HPO term not found: ${termId}`)
+  }
 
-  return response
+  return response.json()
 }

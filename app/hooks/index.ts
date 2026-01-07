@@ -1,11 +1,12 @@
 // Query hooks
 export {
   useSession,
-  useSessionList,
-  useVariants,
   useQCMetrics,
+  useVariants,
+  useVariant,
   useTaskStatus,
   useHPOSearch,
+  variantAnalysisKeys,
 } from './queries'
 
 // Mutation hooks
