@@ -6,7 +6,8 @@
  * Journey-driven flow using JourneyContext:
  * 1. Upload + Validation -> UploadValidationFlow
  * 2. Phenotype -> PhenotypeEntry
- * 3. Analysis -> Results
+ * 3. Processing -> ProcessingFlow
+ * 4. Analysis -> Results
  */
 
 import { useAnalysis } from '@/contexts/AnalysisContext'
@@ -15,6 +16,7 @@ import { useSession, useQCMetrics } from '@/hooks/queries'
 import {
   UploadValidationFlow,
   PhenotypeEntry,
+  ProcessingFlow,
   QCMetrics,
   VariantsList
 } from '@/components/analysis'
@@ -73,6 +75,22 @@ export default function AnalysisPage() {
       )
     }
 
+    if (currentStep === 'processing') {
+      if (!currentSessionId) {
+        return (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )
+      }
+
+      return (
+        <ProcessingFlow
+          sessionId={currentSessionId}
+        />
+      )
+    }
+
     if (currentStep === 'analysis') {
       if (!currentSessionId) {
         return (
@@ -82,29 +100,17 @@ export default function AnalysisPage() {
         )
       }
 
-      if (qcQuery.data) {
-        return (
-          <div className="p-8">
+      return (
+        <div className="p-8">
+          {qcQuery.data && (
             <div className="max-w-4xl mx-auto mb-8">
               <QCMetrics
                 metrics={qcQuery.data}
                 fileName={sessionQuery.data?.vcf_file_path?.split('/').pop()}
               />
             </div>
+          )}
 
-            <VariantsList sessionId={currentSessionId} />
-
-            <div className="mt-6 text-center">
-              <Button variant="outline" onClick={handleStartOver}>
-                Start New Analysis
-              </Button>
-            </div>
-          </div>
-        )
-      }
-
-      return (
-        <div className="p-8">
           <VariantsList sessionId={currentSessionId} />
 
           <div className="mt-6 text-center">

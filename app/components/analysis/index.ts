@@ -1,5 +1,6 @@
 export { UploadValidationFlow } from './UploadValidationFlow'
 export { PhenotypeEntry } from './PhenotypeEntry'
-export { QCMetrics } from './QCMetrics'
+export { ProcessingFlow } from './ProcessingFlow'
 export { ProcessingStatus } from './ProcessingStatus'
+export { QCMetrics } from './QCMetrics'
 export { VariantsList } from './VariantsList'

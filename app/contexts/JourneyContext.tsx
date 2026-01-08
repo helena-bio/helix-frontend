@@ -1,9 +1,9 @@
 /**
  * Journey Context - Workflow Step Management
- * 
+ *
  * Manages the current step in the analysis workflow:
- * Upload -> Validation -> Phenotype -> Analysis
- * 
+ * Upload -> Validation -> Phenotype -> Processing -> Analysis
+ *
  * Following Lumiere pattern: UI state only, no server data
  */
 
@@ -21,7 +21,7 @@ import {
 /**
  * Workflow steps in order
  */
-export type JourneyStep = 'upload' | 'validation' | 'phenotype' | 'analysis'
+export type JourneyStep = 'upload' | 'validation' | 'phenotype' | 'processing' | 'analysis'
 
 /**
  * Step status for UI rendering
@@ -61,10 +61,16 @@ export const JOURNEY_STEPS: readonly StepInfo[] = [
     order: 2,
   },
   {
+    id: 'processing',
+    label: 'Processing',
+    description: 'Analyzing variants with ACMG classification',
+    order: 3,
+  },
+  {
     id: 'analysis',
     label: 'Analysis',
     description: 'View and analyze variants',
-    order: 3,
+    order: 4,
   },
 ] as const
 
@@ -74,24 +80,24 @@ export const JOURNEY_STEPS: readonly StepInfo[] = [
 interface JourneyContextType {
   // Current step
   currentStep: JourneyStep
-  
+
   // Navigation actions
   goToStep: (step: JourneyStep) => void
   nextStep: () => void
   previousStep: () => void
   resetJourney: () => void
-  
+
   // Step utilities
   getStepStatus: (step: JourneyStep) => StepStatus
   getStepInfo: (step: JourneyStep) => StepInfo | undefined
   canNavigateTo: (step: JourneyStep) => boolean
-  
+
   // Computed values
   isFirstStep: boolean
   isLastStep: boolean
   currentStepIndex: number
   completedSteps: JourneyStep[]
-  
+
   // Progress
   progressPercentage: number
 }
@@ -103,9 +109,9 @@ interface JourneyProviderProps {
   initialStep?: JourneyStep
 }
 
-export function JourneyProvider({ 
-  children, 
-  initialStep = 'upload' 
+export function JourneyProvider({
+  children,
+  initialStep = 'upload'
 }: JourneyProviderProps) {
   const [currentStep, setCurrentStep] = useState<JourneyStep>(initialStep)
 
@@ -158,7 +164,7 @@ export function JourneyProvider({
   // Get status of a step relative to current
   const getStepStatus = useCallback((step: JourneyStep): StepStatus => {
     const stepIndex = getStepIndex(step)
-    
+
     if (stepIndex < currentStepIndex) return 'completed'
     if (stepIndex === currentStepIndex) return 'current'
     return 'locked'
