@@ -16,9 +16,10 @@
  * - AI-assisted term suggestion from free text (NLP extraction)
  * - Additional clinical notes
  * - Summary panel with selected terms
+ * - Click outside to close dropdown
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna, ArrowRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,6 +52,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
   const [aiInput, setAiInput] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
+  // Ref for click outside detection
+  const searchContainerRef = useRef<HTMLDivElement>(null)
+
   const { nextStep } = useJourney()
 
   // Debounce search query for API calls
@@ -69,6 +73,24 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !selectedTerms.find((t) => t.id === term.id)
   ) || []
+
+  // Click outside to clear search
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node) &&
+        searchQuery.length > 0
+      ) {
+        setSearchQuery('')
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [searchQuery])
 
   // Add term to selection (keep search query)
   const addTerm = useCallback((term: HPOTerm) => {
@@ -186,7 +208,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
         <Card>
           <CardContent className="p-6 space-y-4">
             {/* Search Input */}
-            <div>
+            <div ref={searchContainerRef}>
               <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
