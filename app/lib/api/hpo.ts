@@ -10,7 +10,7 @@ export interface HPOTerm {
   id: string
   name: string
   definition?: string
-  synonyms: string[]
+  synonyms?: string[]
 }
 
 export interface HPOSearchResponse {
@@ -34,6 +34,34 @@ export interface ExtractHPOResponse {
 }
 
 /**
+ * Patient phenotype data structure
+ */
+export interface PatientPhenotype {
+  id: string
+  session_id: string
+  hpo_terms: Array<{
+    hpo_id: string
+    name: string
+    definition?: string
+  }>
+  clinical_notes: string
+  term_count: number
+}
+
+export interface SavePhenotypeRequest {
+  hpo_terms: Array<{
+    hpo_id: string
+    name: string
+    definition?: string
+  }>
+  clinical_notes: string
+}
+
+export interface SavePhenotypeResponse extends PatientPhenotype {
+  message: string
+}
+
+/**
  * Search HPO terms by query string.
  * Used for autocomplete functionality.
  */
@@ -50,10 +78,11 @@ export async function searchHPOTerms(
     limit: limit.toString(),
   })
 
-  const response = await fetch(`${API_URL}/phenotype/api/hpo/search?${params.toString()}`)
+  const url = API_URL + '/phenotype/api/hpo/search?' + params.toString()
+  const response = await fetch(url)
 
   if (!response.ok) {
-    throw new Error(`HPO search failed: ${response.statusText}`)
+    throw new Error('HPO search failed: ' + response.statusText)
   }
 
   return response.json()
@@ -63,10 +92,11 @@ export async function searchHPOTerms(
  * Get HPO term by ID.
  */
 export async function getHPOTerm(termId: string): Promise<HPOTerm> {
-  const response = await fetch(`${API_URL}/phenotype/api/hpo/term/${termId}`)
+  const url = API_URL + '/phenotype/api/hpo/term/' + termId
+  const response = await fetch(url)
 
   if (!response.ok) {
-    throw new Error(`HPO term not found: ${termId}`)
+    throw new Error('HPO term not found: ' + termId)
   }
 
   return response.json()
@@ -80,7 +110,8 @@ export async function extractHPOFromText(text: string): Promise<ExtractHPORespon
     return { terms: [], original_text: text, total: 0 }
   }
 
-  const response = await fetch(`${API_URL}/phenotype/api/hpo/extract`, {
+  const url = API_URL + '/phenotype/api/hpo/extract'
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -89,7 +120,64 @@ export async function extractHPOFromText(text: string): Promise<ExtractHPORespon
   })
 
   if (!response.ok) {
-    throw new Error(`HPO extraction failed: ${response.statusText}`)
+    throw new Error('HPO extraction failed: ' + response.statusText)
+  }
+
+  return response.json()
+}
+
+/**
+ * Save patient phenotype data for a session.
+ */
+export async function savePhenotype(
+  sessionId: string,
+  data: SavePhenotypeRequest
+): Promise<SavePhenotypeResponse> {
+  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to save phenotype: ' + response.statusText)
+  }
+
+  return response.json()
+}
+
+/**
+ * Get patient phenotype data for a session.
+ */
+export async function getPhenotype(sessionId: string): Promise<PatientPhenotype | null> {
+  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
+  const response = await fetch(url)
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to get phenotype: ' + response.statusText)
+  }
+
+  return response.json()
+}
+
+/**
+ * Delete patient phenotype data for a session.
+ */
+export async function deletePhenotype(sessionId: string): Promise<{ deleted: boolean; message: string }> {
+  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
+  const response = await fetch(url, {
+    method: 'DELETE',
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to delete phenotype: ' + response.statusText)
   }
 
   return response.json()

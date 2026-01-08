@@ -17,6 +17,7 @@
  * - Additional clinical notes
  * - Summary panel with selected terms
  * - Click outside to close dropdown
+ * - Save phenotype data to backend
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -28,7 +29,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useJourney } from '@/contexts/JourneyContext'
-import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
+import { useHPOSearch, useDebounce, useHPOExtract, useSavePhenotype } from '@/hooks'
 import { toast } from 'sonner'
 
 interface HPOTerm {
@@ -50,7 +51,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
   const [showAIAssist, setShowAIAssist] = useState(false)
   const [showClinicalNotes, setShowClinicalNotes] = useState(false)
   const [aiInput, setAiInput] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
 
   // Ref for click outside detection
   const searchContainerRef = useRef<HTMLDivElement>(null)
@@ -68,6 +68,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   // HPO extraction mutation
   const extractMutation = useHPOExtract()
+
+  // Save phenotype mutation
+  const saveMutation = useSavePhenotype()
 
   // Filter out already selected terms
   const filteredSuggestions = searchResults?.terms.filter(
@@ -96,9 +99,8 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
   const addTerm = useCallback((term: HPOTerm) => {
     if (!selectedTerms.find((t) => t.id === term.id)) {
       setSelectedTerms(prev => [...prev, term])
-      toast.success(`Added: ${term.name}`)
+      toast.success('Added: ' + term.name)
     }
-    // Don't clear searchQuery - keep it so user can continue selecting
   }, [selectedTerms])
 
   // Remove term from selection
@@ -133,7 +135,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
       }
 
       if (addedCount > 0) {
-        toast.success(`Added ${addedCount} HPO term${addedCount > 1 ? 's' : ''}`, {
+        toast.success('Added ' + addedCount + ' HPO term' + (addedCount > 1 ? 's' : ''), {
           description: result.terms.map(t => t.hpo_name).join(', '),
         })
       } else {
@@ -151,22 +153,35 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   // Save and continue
   const handleSaveAndContinue = useCallback(async () => {
-    setIsSaving(true)
-
     try {
-      // TODO: Save phenotype data to backend
+      // Transform terms to API format
+      const hpoTermsForApi = selectedTerms.map(term => ({
+        hpo_id: term.id,
+        name: term.name,
+        definition: term.definition,
+      }))
+
+      // Save to backend
+      await saveMutation.mutateAsync({
+        sessionId,
+        data: {
+          hpo_terms: hpoTermsForApi,
+          clinical_notes: clinicalNotes,
+        },
+      })
+
       toast.success('Phenotype data saved', {
-        description: `${selectedTerms.length} HPO terms added`,
+        description: selectedTerms.length + ' HPO term' + (selectedTerms.length !== 1 ? 's' : '') + ' added',
       })
 
       onComplete?.({ hpoTerms: selectedTerms, clinicalNotes })
       nextStep()
     } catch (error) {
-      toast.error('Failed to save phenotype data')
-    } finally {
-      setIsSaving(false)
+      toast.error('Failed to save phenotype data', {
+        description: 'Please try again',
+      })
     }
-  }, [selectedTerms, clinicalNotes, nextStep, onComplete])
+  }, [selectedTerms, clinicalNotes, sessionId, saveMutation, nextStep, onComplete])
 
   // Skip phenotype entry
   const handleSkip = useCallback(() => {
@@ -260,9 +275,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               {/* No results message - only show when query exists */}
               {searchQuery.length >= 2 && !isSearching && filteredSuggestions.length === 0 && searchResults && (
                 <p className="mt-2 text-md text-muted-foreground">
-                  {searchResults.terms.length > 0 
+                  {searchResults.terms.length > 0
                     ? 'All matching phenotypes have been added'
-                    : `No matching phenotypes found for "${searchQuery}"`
+                    : 'No matching phenotypes found for "' + searchQuery + '"'
                   }
                 </p>
               )}
@@ -399,9 +414,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
           </Button>
           <Button
             onClick={handleSaveAndContinue}
-            disabled={isSaving}
+            disabled={saveMutation.isPending}
           >
-            {isSaving ? (
+            {saveMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 <span className="text-base">Saving...</span>

@@ -1,21 +1,21 @@
-// Query hooks
+// Queries
+export { useHPOSearch } from './queries/use-hpo-search'
+export { useTaskStatus } from './queries/use-task-status'
 export {
   useSession,
   useQCMetrics,
   useVariants,
-  useVariant,
-  useTaskStatus,
-  useHPOSearch,
-  variantAnalysisKeys,
-} from './queries'
+  useVariantStatistics,
+} from './queries/use-variant-analysis-queries'
 
-// Mutation hooks
+// Mutations
 export {
   useUploadVCF,
-  useStartValidation,
   useStartProcessing,
-  useHPOExtract,
-} from './mutations'
+} from './mutations/use-variant-analysis-mutations'
+export { useStartValidation } from './mutations/use-validation-mutations'
+export { useHPOExtract } from './mutations/use-hpo-extract'
+export { useSavePhenotype, useDeletePhenotype } from './mutations/use-phenotype-mutations'
 
-// Utility hooks
+// Utilities
 export { useDebounce } from './use-debounce'
