@@ -206,7 +206,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
         {/* Search & Add */}
         <Card>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 space-y-3">
             {/* Search Input */}
             <div ref={searchContainerRef}>
               <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
@@ -276,7 +276,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full justify-between p-4 h-auto hover:bg-primary/10"
+                className="w-full justify-between p-3 h-auto hover:bg-primary/10"
               >
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-4 w-4" />
@@ -290,7 +290,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="px-4 pb-4 space-y-3">
+              <div className="px-3 pb-3 space-y-3">
                 <Textarea
                   value={aiInput}
                   onChange={(e) => setAiInput(e.target.value)}
