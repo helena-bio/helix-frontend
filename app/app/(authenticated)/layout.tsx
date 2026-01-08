@@ -1,15 +1,18 @@
 /**
  * Authenticated Layout
- * Main layout for authenticated app with Sidebar + JourneyPanel
+ * Header (Logo + JourneyPanel) + Sidebar + Content
  */
 
 'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { useAnalysis } from '@/contexts/AnalysisContext'
+import { cn } from '@helix/shared/lib/utils'
 
 interface AuthenticatedLayoutProps {
   children: ReactNode
@@ -23,7 +26,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   useEffect(() => {
     // Check authentication
     const token = localStorage.getItem('helix_auth_token')
-    
+
     if (!token) {
       // Not authenticated - redirect to login
       router.push('/login')
@@ -40,21 +43,60 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Main container with sidebar */}
+      {/* Header - Logo + Journey Panel */}
+      <header className="h-14 border-b border-border bg-card flex items-center shrink-0">
+        {/* Logo section - same width as sidebar */}
+        <div
+          className={cn(
+            'h-full flex items-center px-4 border-r border-border shrink-0 transition-all duration-300',
+            isSidebarOpen ? 'w-64' : 'w-16'
+          )}
+        >
+          {isSidebarOpen ? (
+            <Link href="/" className="flex items-center gap-1.5">
+              <Image
+                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
+                alt="Helix Insight"
+                width={140}
+                height={40}
+                className="h-8 w-auto"
+              />
+              <Image
+                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
+                alt=""
+                width={28}
+                height={35}
+                className="h-7 w-auto"
+              />
+            </Link>
+          ) : (
+            <Link href="/" className="flex items-center justify-center w-full">
+              <Image
+                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
+                alt="Helix Insight"
+                width={28}
+                height={35}
+                className="h-7 w-auto"
+              />
+            </Link>
+          )}
+        </div>
+
+        {/* Journey Panel - fills remaining space */}
+        <div className="flex-1 h-full">
+          <JourneyPanel />
+        </div>
+      </header>
+
+      {/* Main area - Sidebar + Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <Sidebar />
 
-        {/* Main content area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Journey Panel */}
-          <JourneyPanel />
-
-          {/* Content */}
-          <main className="flex-1 overflow-auto bg-background">
-            {children}
-          </main>
-        </div>
+        {/* Content */}
+        <main className="flex-1 overflow-auto bg-background">
+          {children}
+        </main>
       </div>
     </div>
   )

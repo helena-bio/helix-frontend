@@ -1,7 +1,7 @@
 /**
  * Journey Panel Component
  * Progress tracker for analysis workflow
- * Uses JourneyContext as single source of truth
+ * Designed to fit in header alongside logo
  */
 
 'use client'
@@ -60,81 +60,74 @@ export function JourneyPanel() {
   }
 
   return (
-    <div className="w-full bg-card border-b border-border px-8 py-4">
-      <div className="flex items-center justify-between gap-8">
-        {/* Left spacer for centering */}
-        <div className="flex-1" />
+    <div className="h-full flex items-center justify-between px-6">
+      {/* Centered workflow progress */}
+      <div className="flex-1 flex items-center justify-center gap-3">
+        {JOURNEY_STEPS.map((step, index) => {
+          const status = getStepStatus(step.id)
+          const Icon = getStepIcon(status)
+          const isClickable = canNavigateTo(step.id)
 
-        {/* Centered workflow progress */}
-        <div className="flex items-center justify-center gap-3">
-          {JOURNEY_STEPS.map((step, index) => {
-            const status = getStepStatus(step.id)
-            const Icon = getStepIcon(status)
-            const isClickable = canNavigateTo(step.id)
-
-            return (
-              <div key={step.id} className="flex items-center gap-3">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => handleStepClick(step.id)}
-                        disabled={!isClickable}
-                        className={cn(
-                          'flex items-center gap-2 min-w-0 transition-opacity',
-                          isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'
-                        )}
-                      >
-                        <Icon
-                          className={cn(
-                            'h-5 w-5 shrink-0',
-                            getIconColor(status)
-                          )}
-                        />
-                        <p className="text-base font-medium whitespace-nowrap">
-                          {step.label}
-                        </p>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-sm">{step.description}</p>
-                      {!isClickable && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Complete previous steps first
-                        </p>
+          return (
+            <div key={step.id} className="flex items-center gap-3">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => handleStepClick(step.id)}
+                      disabled={!isClickable}
+                      className={cn(
+                        'flex items-center gap-2 min-w-0 transition-opacity',
+                        isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'
                       )}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                {index < JOURNEY_STEPS.length - 1 && (
-                  <div
-                    className={cn(
-                      'w-24 h-0.5',
-                      getLineColor(status)
+                    >
+                      <Icon
+                        className={cn(
+                          'h-5 w-5 shrink-0',
+                          getIconColor(status)
+                        )}
+                      />
+                      <p className="text-base font-medium whitespace-nowrap">
+                        {step.label}
+                      </p>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm">{step.description}</p>
+                    {!isClickable && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Complete previous steps first
+                      </p>
                     )}
-                  />
-                )}
-              </div>
-            )
-          })}
-        </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-        {/* Right side with Clear File button */}
-        <div className="flex-1 flex justify-end pr-4">
-          {currentSessionId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearFile}
-              className="h-8 text-sm"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Clear File
-            </Button>
-          )}
-        </div>
+              {index < JOURNEY_STEPS.length - 1 && (
+                <div
+                  className={cn(
+                    'w-20 h-0.5',
+                    getLineColor(status)
+                  )}
+                />
+              )}
+            </div>
+          )
+        })}
       </div>
+
+      {/* Right side - Clear File button */}
+      {currentSessionId && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleClearFile}
+          className="h-8 text-sm shrink-0 ml-4"
+        >
+          <X className="h-4 w-4 mr-2" />
+          Clear File
+        </Button>
+      )}
     </div>
   )
 }
