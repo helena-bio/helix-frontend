@@ -62,7 +62,7 @@ interface VariantsListProps {
 const ACMG_CLASSES = [
   'Pathogenic',
   'Likely Pathogenic',
-  'VUS',
+  'Uncertain Significance',
   'Likely Benign',
   'Benign',
 ]
@@ -75,6 +75,7 @@ const getACMGColor = (classification: string | null) => {
       return 'bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-100 border-red-300'
     case 'Likely Pathogenic':
       return 'bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-100 border-orange-300'
+    case 'Uncertain Significance':
     case 'VUS':
       return 'bg-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-100 border-yellow-300'
     case 'Likely Benign':
@@ -84,6 +85,11 @@ const getACMGColor = (classification: string | null) => {
     default:
       return 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
   }
+}
+
+const getACMGShortName = (classification: string | null) => {
+  if (classification === 'Uncertain Significance') return 'VUS'
+  return classification
 }
 
 export function VariantsList({ sessionId }: VariantsListProps) {
@@ -374,15 +380,15 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                             variant="outline"
                             className={`text-sm ${getACMGColor(variant.acmg_class)}`}
                           >
-                            {variant.acmg_class}
+                            {getACMGShortName(variant.acmg_class)}
                           </Badge>
                         ) : (
                           '-'
                         )}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {variant.gnomad_af
-                          ? variant.gnomad_af.toExponential(2)
+                        {variant.global_af
+                          ? variant.global_af.toExponential(2)
                           : '-'
                         }
                       </TableCell>
@@ -418,14 +424,21 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                               </div>
                             </div>
 
-                            {variant.acmg_criteria && (
+                            {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
                               <div>
                                 <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
                                 <div className="flex flex-wrap gap-2">
-                                  {variant.acmg_criteria.split(',').map((c: string) => (
+                                  {variant.acmg_criteria.split(',').filter((c: string) => c.trim()).map((c: string) => (
                                     <Badge key={c} variant="outline" className="text-sm">{c.trim()}</Badge>
                                   ))}
                                 </div>
+                              </div>
+                            )}
+
+                            {variant.clinical_significance && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-1">ClinVar</p>
+                                <p className="text-base">{variant.clinical_significance}</p>
                               </div>
                             )}
                           </div>
