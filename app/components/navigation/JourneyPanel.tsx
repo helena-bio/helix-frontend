@@ -66,14 +66,14 @@ export function JourneyPanel() {
         <div className="flex-1" />
 
         {/* Centered workflow progress */}
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-3">
           {JOURNEY_STEPS.map((step, index) => {
             const status = getStepStatus(step.id)
             const Icon = getStepIcon(status)
             const isClickable = canNavigateTo(step.id)
 
             return (
-              <div key={step.id} className="flex items-center gap-2">
+              <div key={step.id} className="flex items-center gap-3">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -87,11 +87,11 @@ export function JourneyPanel() {
                       >
                         <Icon
                           className={cn(
-                            'h-4 w-4 shrink-0',
+                            'h-5 w-5 shrink-0',
                             getIconColor(status)
                           )}
                         />
-                        <p className="text-xs font-medium whitespace-nowrap">
+                        <p className="text-base font-medium whitespace-nowrap">
                           {step.label}
                         </p>
                       </button>
@@ -127,7 +127,7 @@ export function JourneyPanel() {
               variant="ghost"
               size="sm"
               onClick={handleClearFile}
-              className="h-8 text-xs"
+              className="h-8 text-sm"
             >
               <X className="h-4 w-4 mr-2" />
               Clear File
