@@ -3,6 +3,14 @@
 /**
  * PhenotypeEntry Component - HPO Terms Entry Page
  *
+ * Typography Scale:
+ * - text-3xl: Page titles
+ * - text-lg: Section headers, card titles
+ * - text-base: Primary content, instructions
+ * - text-md: Secondary descriptions
+ * - text-sm: Helper text, file info
+ * - text-xs: Technical metadata (HPO IDs)
+ *
  * Features:
  * - Search and add HPO terms with real API
  * - AI-assisted term suggestion from free text (NLP extraction)
@@ -82,7 +90,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
     try {
       const result = await extractMutation.mutateAsync(aiInput)
-      
+
       if (result.terms.length === 0) {
         toast.info('No HPO terms found in text', {
           description: 'Try using more specific clinical terminology',
@@ -156,11 +164,11 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
             <Dna className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Enter Phenotype Data</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold">Enter Phenotype Data</h1>
+            <p className="text-base text-muted-foreground mt-1">
               Add patient clinical features (HPO terms)
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-md text-muted-foreground mt-1">
               Adding phenotype data improves variant-phenotype matching and prioritization
             </p>
           </div>
@@ -171,14 +179,14 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
           <CardContent className="p-6 space-y-4">
             {/* Search Input */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Search Phenotypes</label>
+              <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search phenotype or HPO term..."
-                  className="pl-9"
+                  className="pl-9 text-base"
                 />
                 {isSearching && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -196,11 +204,11 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{term.name}</span>
+                          <span className="text-base font-medium">{term.name}</span>
                           <span className="text-xs text-muted-foreground">({term.id})</span>
                         </div>
                         {term.definition && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                             {term.definition.replace(/^"/, '').replace(/".*$/, '')}
                           </p>
                         )}
@@ -213,7 +221,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
               {/* No results message */}
               {debouncedQuery.length >= 2 && !isSearching && filteredSuggestions.length === 0 && searchResults && (
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 text-md text-muted-foreground">
                   No matching phenotypes found for "{debouncedQuery}"
                 </p>
               )}
@@ -222,7 +230,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
             {/* Selected Terms */}
             {selectedTerms.length > 0 && (
               <div>
-                <label className="text-sm font-medium mb-2 block">
+                <label className="text-base font-medium mb-2 block">
                   Selected Phenotypes ({selectedTerms.length})
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -232,7 +240,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                       variant="secondary"
                       className="px-3 py-1.5 bg-primary/10 text-primary border-primary/20"
                     >
-                      {term.name}
+                      <span className="text-sm">{term.name}</span>
                       <span className="text-xs ml-1 opacity-70">({term.id})</span>
                       <button
                         onClick={() => removeTerm(term.id)}
@@ -258,7 +266,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               >
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-4 w-4" />
-                  <span className="font-medium">Suggest HPO terms from free text</span>
+                  <span className="text-base font-medium">Suggest HPO terms from free text</span>
                 </div>
                 {showAIAssist ? (
                   <ChevronUp className="h-4 w-4 text-primary" />
@@ -273,7 +281,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                   value={aiInput}
                   onChange={(e) => setAiInput(e.target.value)}
                   placeholder="Example: Child with epilepsy, developmental delay and hypotonia"
-                  className="min-h-[80px] bg-background"
+                  className="min-h-[80px] bg-background text-base"
                 />
                 <Button
                   onClick={handleGenerateSuggestions}
@@ -284,12 +292,12 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                   {extractMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Extracting...
+                      <span className="text-base">Extracting...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4 mr-2" />
-                      Generate Suggestions
+                      <span className="text-base">Generate Suggestions</span>
                     </>
                   )}
                 </Button>
@@ -307,7 +315,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               ) : (
                 <ChevronDown className="h-4 w-4 mr-2" />
               )}
-              Additional Clinical Notes
+              <span className="text-base">Additional Clinical Notes</span>
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -315,7 +323,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               value={clinicalNotes}
               onChange={(e) => setClinicalNotes(e.target.value)}
               placeholder="e.g. Patient has recurrent febrile seizures and delayed speech..."
-              className="min-h-[100px]"
+              className="min-h-[100px] text-base"
             />
           </CollapsibleContent>
         </Collapsible>
@@ -323,13 +331,13 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
         {/* Summary Panel */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2">
               <Dna className="h-4 w-4" />
               Summary
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2 text-base">
               <li className="flex items-center gap-2">
                 <span className="text-muted-foreground">-</span>
                 <span>
@@ -349,7 +357,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
         {/* Actions */}
         <div className="flex justify-between">
           <Button variant="outline" onClick={handleSkip}>
-            Skip for now
+            <span className="text-base">Skip for now</span>
           </Button>
           <Button
             onClick={handleSaveAndContinue}
@@ -358,11 +366,11 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
+                <span className="text-base">Saving...</span>
               </>
             ) : (
               <>
-                Save & Continue
+                <span className="text-base">Save & Continue</span>
                 <ArrowRight className="h-4 w-4 ml-2" />
               </>
             )}

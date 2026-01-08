@@ -2,7 +2,15 @@
 
 /**
  * VariantsList Component - Paginated Variants Table
- * 
+ *
+ * Typography Scale:
+ * - text-3xl: Page titles
+ * - text-lg: Section headers, card titles
+ * - text-base: Primary content, instructions
+ * - text-md: Secondary descriptions
+ * - text-sm: Helper text, file info
+ * - text-xs: Technical metadata (positions, alleles)
+ *
  * Features:
  * - Server-side pagination
  * - Multiple filters (ACMG, gene, impact, frequency)
@@ -14,7 +22,7 @@
 
 import { useState, useMemo } from 'react'
 import { useVariants } from '@/hooks/queries'
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -35,9 +43,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  ChevronLeft,
+  ChevronRight,
   ChevronDown,
   ChevronUp,
   AlertCircle,
@@ -130,7 +138,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Variants</CardTitle>
+          <CardTitle className="text-lg">Variants</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -151,8 +159,8 @@ export function VariantsList({ sessionId }: VariantsListProps) {
           <div className="flex items-center gap-3 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <div>
-              <p className="font-medium">Failed to load variants</p>
-              <p className="text-sm text-muted-foreground">{error.message}</p>
+              <p className="text-base font-medium">Failed to load variants</p>
+              <p className="text-md text-muted-foreground">{error.message}</p>
             </div>
           </div>
         </CardContent>
@@ -165,13 +173,13 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Variants</CardTitle>
+          <CardTitle className="text-lg">Variants</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12">
             <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-lg font-medium mb-2">No variants found</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-md text-muted-foreground">
               Try adjusting your filters
             </p>
           </div>
@@ -186,19 +194,19 @@ export function VariantsList({ sessionId }: VariantsListProps) {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2">
               <Filter className="h-5 w-5" />
               Filters
             </CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => {
                 setFilters({ page: 1, page_size: 50 })
                 setGeneSearch('')
               }}
             >
-              Clear All
+              <span className="text-sm">Clear All</span>
             </Button>
           </div>
         </CardHeader>
@@ -206,7 +214,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* ACMG Classification */}
             <div className="space-y-2">
-              <Label>ACMG Classification</Label>
+              <Label className="text-base">ACMG Classification</Label>
               <Select
                 value={filters.acmg_class?.[0] || 'all'}
                 onValueChange={(value) =>
@@ -216,7 +224,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                   )
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-base">
                   <SelectValue placeholder="All classifications" />
                 </SelectTrigger>
                 <SelectContent>
@@ -232,7 +240,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
             {/* Impact */}
             <div className="space-y-2">
-              <Label>Impact</Label>
+              <Label className="text-base">Impact</Label>
               <Select
                 value={filters.impact?.[0] || 'all'}
                 onValueChange={(value) =>
@@ -242,7 +250,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                   )
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-base">
                   <SelectValue placeholder="All impacts" />
                 </SelectTrigger>
                 <SelectContent>
@@ -258,7 +266,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
             {/* Gene Search */}
             <div className="space-y-2">
-              <Label>Gene Symbol</Label>
+              <Label className="text-base">Gene Symbol</Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="e.g., BRCA1"
@@ -267,8 +275,9 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleGeneSearchSubmit()
                   }}
+                  className="text-base"
                 />
-                <Button 
+                <Button
                   size="icon"
                   onClick={handleGeneSearchSubmit}
                 >
@@ -282,17 +291,17 @@ export function VariantsList({ sessionId }: VariantsListProps) {
           {(filters.acmg_class || filters.impact || filters.genes) && (
             <div className="mt-4 flex flex-wrap gap-2">
               {filters.acmg_class?.map((cls) => (
-                <Badge key={cls} variant="secondary">
+                <Badge key={cls} variant="secondary" className="text-sm">
                   ACMG: {cls}
                 </Badge>
               ))}
               {filters.impact?.map((imp) => (
-                <Badge key={imp} variant="secondary">
+                <Badge key={imp} variant="secondary" className="text-sm">
                   Impact: {imp}
                 </Badge>
               ))}
               {filters.genes?.map((gene) => (
-                <Badge key={gene} variant="secondary">
+                <Badge key={gene} variant="secondary" className="text-sm">
                   Gene: {gene}
                 </Badge>
               ))}
@@ -306,14 +315,14 @@ export function VariantsList({ sessionId }: VariantsListProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Variants</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
+              <CardTitle className="text-lg">Variants</CardTitle>
+              <p className="text-md text-muted-foreground mt-1">
                 Showing {data.variants.length} of {data.total_count.toLocaleString()} variants
               </p>
             </div>
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
-              Export
+              <span className="text-sm">Export</span>
             </Button>
           </div>
         </CardHeader>
@@ -323,19 +332,19 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>Gene</TableHead>
-                  <TableHead>Position</TableHead>
-                  <TableHead>Change</TableHead>
-                  <TableHead>Consequence</TableHead>
-                  <TableHead>ACMG</TableHead>
-                  <TableHead>gnomAD AF</TableHead>
-                  <TableHead>Score</TableHead>
+                  <TableHead className="text-base">Gene</TableHead>
+                  <TableHead className="text-base">Position</TableHead>
+                  <TableHead className="text-base">Change</TableHead>
+                  <TableHead className="text-base">Consequence</TableHead>
+                  <TableHead className="text-base">ACMG</TableHead>
+                  <TableHead className="text-base">gnomAD AF</TableHead>
+                  <TableHead className="text-base">Score</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.variants.map((variant: any) => (
                   <>
-                    <TableRow 
+                    <TableRow
                       key={variant.variant_idx}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => toggleRow(variant.variant_idx)}
@@ -347,7 +356,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                           <ChevronDown className="h-4 w-4" />
                         )}
                       </TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="text-base font-medium">
                         {variant.gene_symbol || '-'}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
@@ -363,7 +372,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                         {variant.acmg_class ? (
                           <Badge
                             variant="outline"
-                            className={getACMGColor(variant.acmg_class)}
+                            className={`text-sm ${getACMGColor(variant.acmg_class)}`}
                           >
                             {variant.acmg_class}
                           </Badge>
@@ -372,49 +381,49 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                         )}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {variant.gnomad_af 
+                        {variant.gnomad_af
                           ? variant.gnomad_af.toExponential(2)
                           : '-'
                         }
                       </TableCell>
-                      <TableCell>
-                        {variant.priority_score 
+                      <TableCell className="text-base">
+                        {variant.priority_score
                           ? variant.priority_score.toFixed(1)
                           : '-'
                         }
                       </TableCell>
                     </TableRow>
-                    
+
                     {/* Expanded Row */}
                     {expandedRows.has(variant.variant_idx) && (
                       <TableRow>
                         <TableCell colSpan={8} className="bg-muted/30">
                           <div className="p-4 space-y-3">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               <div>
-                                <p className="text-muted-foreground mb-1">HGVS Protein</p>
-                                <p className="font-mono">{variant.hgvs_protein || '-'}</p>
+                                <p className="text-sm text-muted-foreground mb-1">HGVS Protein</p>
+                                <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
                               </div>
                               <div>
-                                <p className="text-muted-foreground mb-1">Impact</p>
-                                <Badge variant="secondary">{variant.impact || '-'}</Badge>
+                                <p className="text-sm text-muted-foreground mb-1">Impact</p>
+                                <Badge variant="secondary" className="text-sm">{variant.impact || '-'}</Badge>
                               </div>
                               <div>
-                                <p className="text-muted-foreground mb-1">Genotype</p>
-                                <p className="font-mono">{variant.genotype || '-'}</p>
+                                <p className="text-sm text-muted-foreground mb-1">Genotype</p>
+                                <p className="text-base font-mono">{variant.genotype || '-'}</p>
                               </div>
                               <div>
-                                <p className="text-muted-foreground mb-1">Depth</p>
-                                <p>{variant.depth || '-'}</p>
+                                <p className="text-sm text-muted-foreground mb-1">Depth</p>
+                                <p className="text-base">{variant.depth || '-'}</p>
                               </div>
                             </div>
-                            
+
                             {variant.acmg_criteria && (
                               <div>
                                 <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
                                 <div className="flex flex-wrap gap-2">
                                   {variant.acmg_criteria.split(',').map((c: string) => (
-                                    <Badge key={c} variant="outline">{c.trim()}</Badge>
+                                    <Badge key={c} variant="outline" className="text-sm">{c.trim()}</Badge>
                                   ))}
                                 </div>
                               </div>
@@ -431,7 +440,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
           {/* Pagination */}
           <div className="flex items-center justify-between px-6 py-4 border-t">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-md text-muted-foreground">
               Page {data.page} of {totalPages}
             </p>
             <div className="flex gap-2">
@@ -442,7 +451,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                 onClick={() => handlePageChange(filters.page! - 1)}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
+                <span className="text-base">Previous</span>
               </Button>
               <Button
                 variant="outline"
@@ -450,7 +459,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                 disabled={!data.has_next_page}
                 onClick={() => handlePageChange(filters.page! + 1)}
               >
-                Next
+                <span className="text-base">Next</span>
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>

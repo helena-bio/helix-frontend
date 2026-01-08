@@ -2,7 +2,15 @@
 
 /**
  * ProcessingStatus Component - Display Pipeline Progress
- * 
+ *
+ * Typography Scale:
+ * - text-3xl: Page titles
+ * - text-lg: Section headers, card titles
+ * - text-base: Primary content, instructions
+ * - text-md: Secondary descriptions
+ * - text-sm: Helper text, file info
+ * - text-xs: Technical metadata
+ *
  * Features:
  * - Real-time polling of task status
  * - Visual progress indicator
@@ -17,10 +25,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle2, 
+import {
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
   FileCode,
   Database,
   Filter,
@@ -76,11 +84,11 @@ const PIPELINE_STAGES: PipelineStage[] = [
   },
 ]
 
-export function ProcessingStatus({ 
-  taskId, 
+export function ProcessingStatus({
+  taskId,
   sessionId,
   onComplete,
-  onError 
+  onError
 }: ProcessingStatusProps) {
   const { data: taskStatus, error, refetch } = useTaskStatus(taskId)
 
@@ -105,23 +113,23 @@ export function ProcessingStatus({
   // Calculate progress
   const getProgress = (): number => {
     if (!taskStatus?.info) return 0
-    
+
     const stage = taskStatus.info.stage as string
     const progress = taskStatus.info.progress as number | undefined
-    
+
     if (typeof progress === 'number') {
       return progress
     }
-    
+
     // Estimate based on stage
-    const stageIndex = PIPELINE_STAGES.findIndex(s => 
+    const stageIndex = PIPELINE_STAGES.findIndex(s =>
       stage?.toLowerCase().includes(s.name.toLowerCase())
     )
-    
+
     if (stageIndex >= 0) {
       return ((stageIndex + 1) / PIPELINE_STAGES.length) * 100
     }
-    
+
     return 0
   }
 
@@ -143,20 +151,20 @@ export function ProcessingStatus({
               <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
                 <AlertCircle className="h-8 w-8 text-destructive" />
               </div>
-              
+
               <div>
                 <h3 className="text-lg font-semibold mb-2">Processing Failed</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-md text-muted-foreground">
                   {error?.message || 'An error occurred during processing'}
                 </p>
               </div>
 
               <div className="flex gap-2 justify-center">
                 <Button onClick={() => refetch()}>
-                  Retry
+                  <span className="text-base">Retry</span>
                 </Button>
                 <Button variant="outline" onClick={() => window.location.reload()}>
-                  Start Over
+                  <span className="text-base">Start Over</span>
                 </Button>
               </div>
             </div>
@@ -176,18 +184,18 @@ export function ProcessingStatus({
               <div className="inline-flex items-center justify-center p-4 rounded-full bg-green-100 dark:bg-green-950">
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
-              
+
               <div>
                 <h3 className="text-lg font-semibold mb-2">Processing Complete</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-md text-muted-foreground">
                   Your variants have been successfully analyzed
                 </p>
               </div>
 
               {taskStatus.result && (
                 <div className="p-4 bg-muted rounded-lg text-left">
-                  <p className="text-sm font-medium mb-2">Summary</p>
-                  <div className="space-y-1 text-sm">
+                  <p className="text-base font-medium mb-2">Summary</p>
+                  <div className="space-y-1 text-base">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Variants Processed</span>
                       <span className="font-medium">
@@ -205,7 +213,7 @@ export function ProcessingStatus({
               )}
 
               <Button className="w-full" onClick={onComplete}>
-                View Results
+                <span className="text-base">View Results</span>
               </Button>
             </div>
           </CardContent>
@@ -225,14 +233,14 @@ export function ProcessingStatus({
               <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary/10 mb-4">
                 <Loader2 className="h-8 w-8 text-primary animate-spin" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Processing VCF File</h3>
-              <p className="text-sm text-muted-foreground">{currentStage}</p>
+              <h3 className="text-lg font-semibold mb-2">Processing VCF File</h3>
+              <p className="text-md text-muted-foreground">{currentStage}</p>
             </div>
 
             {/* Progress Bar */}
             <div className="space-y-2">
               <Progress value={progress} className="h-2" />
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Progress</span>
                 <span>{Math.round(progress)}%</span>
               </div>
@@ -244,7 +252,7 @@ export function ProcessingStatus({
                 const stageProgress = ((index + 1) / PIPELINE_STAGES.length) * 100
                 const isComplete = progress >= stageProgress
                 const isCurrent = currentStage.toLowerCase().includes(stage.name.toLowerCase())
-                
+
                 return (
                   <div
                     key={stage.name}
@@ -255,7 +263,7 @@ export function ProcessingStatus({
                     `}
                   >
                     <div className={`
-                      flex-shrink-0 p-2 rounded-full 
+                      flex-shrink-0 p-2 rounded-full
                       ${isComplete ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-muted'}
                       ${isCurrent ? 'bg-primary/10 text-primary' : ''}
                     `}>
@@ -266,8 +274,8 @@ export function ProcessingStatus({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{stage.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-base font-medium">{stage.name}</p>
+                      <p className="text-sm text-muted-foreground">
                         {stage.description}
                       </p>
                     </div>
@@ -281,8 +289,8 @@ export function ProcessingStatus({
 
             {/* Info Alert */}
             <Alert>
-              <AlertDescription className="text-sm">
-                This process typically takes 10-15 minutes for a full genome. 
+              <AlertDescription className="text-base">
+                This process typically takes 10-15 minutes for a full genome.
                 You can safely close this window - processing will continue in the background.
               </AlertDescription>
             </Alert>

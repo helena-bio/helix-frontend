@@ -2,7 +2,15 @@
 
 /**
  * QCMetrics Component - Display Quality Control Results
- * 
+ *
+ * Typography Scale:
+ * - text-3xl: Page titles
+ * - text-lg: Section headers, card titles
+ * - text-base: Primary content, instructions
+ * - text-md: Secondary descriptions
+ * - text-sm: Helper text, file info
+ * - text-xs: Technical metadata
+ *
  * Features:
  * - Display QC metrics after file upload
  * - Downloadable QC report
@@ -23,22 +31,22 @@ interface QCMetricsProps {
   onPhenotypeClick?: () => void
 }
 
-export function QCMetrics({ 
-  metrics, 
-  fileName, 
+export function QCMetrics({
+  metrics,
+  fileName,
   fileSize,
-  onPhenotypeClick 
+  onPhenotypeClick
 }: QCMetricsProps) {
-  
+
   const handleDownloadReport = () => {
     const report = {
       file: fileName,
       timestamp: new Date().toISOString(),
       metrics,
     }
-    
-    const blob = new Blob([JSON.stringify(report, null, 2)], { 
-      type: 'application/json' 
+
+    const blob = new Blob([JSON.stringify(report, null, 2)], {
+      type: 'application/json'
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -58,10 +66,10 @@ export function QCMetrics({
           <div className="flex items-center gap-3 pb-4 border-b">
             <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <p className="font-medium truncate">{fileName}</p>
+              <p className="text-base font-medium truncate">{fileName}</p>
               {fileSize && (
                 <>
-                  <span className="text-muted-foreground">•</span>
+                  <span className="text-muted-foreground">-</span>
                   <p className="text-sm text-muted-foreground">
                     {(fileSize / 1024 / 1024).toFixed(2)} MB
                   </p>
@@ -72,14 +80,14 @@ export function QCMetrics({
 
           {/* QC Header */}
           <div className="flex items-center justify-between pt-4 mb-4">
-            <h3 className="font-semibold">Quality Control Results</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <h3 className="text-lg font-semibold">Quality Control Results</h3>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleDownloadReport}
             >
               <Download className="h-4 w-4 mr-2" />
-              Download Report
+              <span className="text-sm">Download Report</span>
             </Button>
           </div>
 
@@ -106,7 +114,7 @@ export function QCMetrics({
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <p className="text-sm">
-                        <strong>Transition/Transversion Ratio</strong> - Expected value ~2.0-2.1 for WGS. 
+                        <strong>Transition/Transversion Ratio</strong> - Expected value ~2.0-2.1 for WGS.
                         Values significantly outside this range may indicate sequencing artifacts.
                       </p>
                     </TooltipContent>
@@ -153,8 +161,8 @@ export function QCMetrics({
 
           {/* QC Status */}
           <div className="mt-4 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
-            <p className="text-sm font-medium text-green-900 dark:text-green-100">
-              ✓ Quality control passed
+            <p className="text-base font-medium text-green-900 dark:text-green-100">
+              Quality control passed
             </p>
           </div>
         </CardContent>
@@ -167,19 +175,19 @@ export function QCMetrics({
             <div className="flex items-start gap-3">
               <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold mb-2">
+                <h3 className="text-lg font-semibold mb-2">
                   Next: Add phenotype data to improve variant prioritization
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Providing patient phenotype information enables more accurate 
+                <p className="text-md text-muted-foreground mb-4">
+                  Providing patient phenotype information enables more accurate
                   variant-phenotype matching and prioritization.
                 </p>
-                <Button 
+                <Button
                   onClick={onPhenotypeClick}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   <Dna className="h-4 w-4 mr-2" />
-                  Enter Phenotype
+                  <span className="text-base">Enter Phenotype</span>
                 </Button>
               </div>
             </div>
