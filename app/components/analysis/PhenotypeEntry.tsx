@@ -15,7 +15,7 @@
  * - Search and add HPO terms with real API
  * - AI-assisted term suggestion from free text (NLP extraction)
  * - Additional clinical notes
- * - Summary panel
+ * - Summary panel with selected terms
  */
 
 import { useState, useCallback } from 'react'
@@ -226,33 +226,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 </p>
               )}
             </div>
-
-            {/* Selected Terms */}
-            {selectedTerms.length > 0 && (
-              <div>
-                <label className="text-base font-medium mb-2 block">
-                  Selected Phenotypes ({selectedTerms.length})
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedTerms.map((term) => (
-                    <Badge
-                      key={term.id}
-                      variant="secondary"
-                      className="px-3 py-1.5 bg-primary/10 text-primary border-primary/20"
-                    >
-                      <span className="text-sm">{term.name}</span>
-                      <span className="text-xs ml-1 opacity-70">({term.id})</span>
-                      <button
-                        onClick={() => removeTerm(term.id)}
-                        className="ml-2 hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -328,7 +301,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Summary Panel */}
+        {/* Summary Panel with Selected Terms */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -336,21 +309,45 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               Summary
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <ul className="space-y-2 text-base">
-              <li className="flex items-center gap-2">
-                <span className="text-muted-foreground">-</span>
-                <span>
-                  <strong>{selectedTerms.length}</strong> HPO term{selectedTerms.length !== 1 ? 's' : ''} added
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-muted-foreground">-</span>
-                <span>
-                  <strong>{clinicalNotes.trim() ? '1' : '0'}</strong> clinical note{clinicalNotes.trim() ? '' : 's'}
-                </span>
-              </li>
-            </ul>
+          <CardContent className="pt-0 space-y-4">
+            {/* Stats */}
+            <div className="flex gap-6 text-base">
+              <span>
+                <strong>{selectedTerms.length}</strong> HPO term{selectedTerms.length !== 1 ? 's' : ''} added
+              </span>
+              <span>
+                <strong>{clinicalNotes.trim() ? '1' : '0'}</strong> clinical note{clinicalNotes.trim() ? '' : 's'}
+              </span>
+            </div>
+
+            {/* Selected Terms Tags */}
+            {selectedTerms.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedTerms.map((term) => (
+                  <Badge
+                    key={term.id}
+                    variant="secondary"
+                    className="px-3 py-1.5 bg-primary/10 text-primary border-primary/20"
+                  >
+                    <span className="text-sm">{term.name}</span>
+                    <span className="text-xs ml-1 opacity-70">({term.id})</span>
+                    <button
+                      onClick={() => removeTerm(term.id)}
+                      className="ml-2 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {selectedTerms.length === 0 && (
+              <p className="text-md text-muted-foreground">
+                No phenotypes selected yet. Search above to add HPO terms.
+              </p>
+            )}
           </CardContent>
         </Card>
 
