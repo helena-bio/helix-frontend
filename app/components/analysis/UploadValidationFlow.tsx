@@ -3,6 +3,14 @@
 /**
  * UploadValidationFlow Component - Unified Upload + Validation + QC Experience
  *
+ * Typography Scale:
+ * - text-3xl: Page titles
+ * - text-lg: Section headers, card titles
+ * - text-base: Primary content, instructions
+ * - text-md: Secondary descriptions
+ * - text-sm: Helper text, file info
+ * - text-xs: Technical metadata
+ *
  * Seamless flow:
  * 1. File Selection (drag & drop or browse) - Journey: upload
  * 2. Upload Progress - Journey: upload
@@ -99,7 +107,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
           genomeBuild: 'GRCh38',
         })
         setPhase('qc_results')
-        
+
         toast.success('File validated successfully', {
           description: `${taskStatus.result?.total_variants?.toLocaleString() || 'Unknown'} variants found`,
         })
@@ -293,7 +301,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Download QC report
   const handleDownloadQC = useCallback(() => {
     if (!qcResults || !selectedFile) return
-    
+
     const report = {
       file: selectedFile.name,
       timestamp: new Date().toISOString(),
@@ -349,7 +357,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                 <div className="flex items-center gap-3">
                   <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   <div className="flex items-center gap-2">
-                    <p className="font-medium">{selectedFile?.name}</p>
+                    <p className="text-base font-medium">{selectedFile?.name}</p>
                     <span className="text-muted-foreground">-</span>
                     <p className="text-sm text-muted-foreground">{fileSize}</p>
                   </div>
@@ -358,10 +366,10 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
               {/* QC Results Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">Quality Control Results</h3>
+                <h3 className="text-lg font-semibold">Quality Control Results</h3>
                 <Button variant="ghost" size="sm" onClick={handleDownloadQC}>
                   <Download className="h-4 w-4 mr-2" />
-                  Download Report
+                  <span className="text-sm">Download Report</span>
                 </Button>
               </div>
 
@@ -410,8 +418,8 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
             <div className="flex items-start gap-3">
               <User className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold mb-2">Next: Add phenotype data to improve variant prioritization</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <h3 className="text-lg font-semibold mb-2">Next: Add phenotype data to improve variant prioritization</h3>
+                <p className="text-md text-muted-foreground mb-4">
                   Providing patient phenotype information enables more accurate variant-phenotype matching and prioritization.
                 </p>
                 <TooltipProvider>
@@ -419,7 +427,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                     <TooltipTrigger asChild>
                       <Button onClick={handlePhenotypeClick}>
                         <Dna className="h-4 w-4 mr-2" />
-                        Enter Phenotype
+                        <span className="text-base">Enter Phenotype</span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -448,21 +456,21 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
               <div>
                 <h3 className="text-lg font-semibold mb-2">{phaseInfo?.title}</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-md text-muted-foreground">
                   {phaseInfo?.description}
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Progress value={phaseInfo?.progress || 0} className="h-2" />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{selectedFile?.name}</span>
                   <span>{phaseInfo?.progress}%</span>
                 </div>
               </div>
 
               {phaseInfo?.showSpinner && (
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 text-md text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>This usually takes a few seconds...</span>
                 </div>
@@ -487,15 +495,17 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
               <div>
                 <h3 className="text-lg font-semibold mb-2">Process Failed</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-md text-muted-foreground">
                   {errorMessage || 'An unexpected error occurred'}
                 </p>
               </div>
 
               <div className="flex gap-2 justify-center">
-                <Button onClick={handleSubmit}>Try Again</Button>
+                <Button onClick={handleSubmit}>
+                  <span className="text-base">Try Again</span>
+                </Button>
                 <Button variant="outline" onClick={handleReset}>
-                  Start Over
+                  <span className="text-base">Start Over</span>
                 </Button>
               </div>
             </div>
@@ -512,7 +522,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Upload VCF File</h1>
-          <p className="text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Start your analysis by uploading a genetic variant file
           </p>
         </div>
@@ -559,7 +569,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                   <FileCode className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{selectedFile.name}</p>
+                  <p className="text-base font-medium truncate">{selectedFile.name}</p>
                   <p className="text-sm text-muted-foreground">{fileSize}</p>
                 </div>
               </div>
@@ -584,17 +594,17 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                 <p className="text-lg font-medium mb-2">
                   Drag and drop your VCF file here
                 </p>
-                <p className="text-sm text-muted-foreground mb-1">
+                <p className="text-base text-muted-foreground mb-1">
                   or click to browse
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Supports .vcf and .vcf.gz files (max 2GB)
                 </p>
               </div>
 
               <Button size="lg" onClick={handleBrowseClick}>
                 <Upload className="h-5 w-5 mr-2" />
-                Select File
+                <span className="text-base">Select File</span>
               </Button>
             </div>
           )}
@@ -604,7 +614,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         {validationError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{validationError}</AlertDescription>
+            <AlertDescription className="text-base">{validationError}</AlertDescription>
           </Alert>
         )}
 
@@ -612,7 +622,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         {selectedFile && (
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={handleRemoveFile}>
-              Cancel
+              <span className="text-base">Cancel</span>
             </Button>
             <Button
               onClick={handleSubmit}
@@ -621,7 +631,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
               className="min-w-[120px]"
             >
               <CheckCircle2 className="h-5 w-5 mr-2" />
-              Upload & Analyze
+              <span className="text-base">Upload & Analyze</span>
             </Button>
           </div>
         )}
