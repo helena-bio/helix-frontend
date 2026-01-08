@@ -160,6 +160,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     setSearchQuery('')
   }, [])
 
+  // Show suggestions only when there's a query and results
+  const showSuggestions = searchQuery.length >= 2 && filteredSuggestions.length > 0
+
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
@@ -206,8 +209,8 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 )}
               </div>
 
-              {/* Suggestions Dropdown */}
-              {filteredSuggestions.length > 0 && (
+              {/* Suggestions Dropdown - only show when query exists */}
+              {showSuggestions && (
                 <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
                   {filteredSuggestions.map((term) => (
                     <button
@@ -232,12 +235,12 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 </div>
               )}
 
-              {/* No results message */}
-              {debouncedQuery.length >= 2 && !isSearching && filteredSuggestions.length === 0 && searchResults && (
+              {/* No results message - only show when query exists */}
+              {searchQuery.length >= 2 && !isSearching && filteredSuggestions.length === 0 && searchResults && (
                 <p className="mt-2 text-md text-muted-foreground">
                   {searchResults.terms.length > 0 
                     ? 'All matching phenotypes have been added'
-                    : `No matching phenotypes found for "${debouncedQuery}"`
+                    : `No matching phenotypes found for "${searchQuery}"`
                   }
                 </p>
               )}
