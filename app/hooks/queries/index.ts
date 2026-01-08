@@ -5,5 +5,7 @@ export {
   useQCMetrics,
   useVariants,
   useVariant,
+  useVariantStatistics,
   variantAnalysisKeys,
+  type VariantStatistics,
 } from './use-variant-analysis-queries'

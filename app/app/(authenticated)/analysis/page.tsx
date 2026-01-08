@@ -7,34 +7,33 @@
  * 1. Upload + Validation -> UploadValidationFlow
  * 2. Phenotype -> PhenotypeEntry
  * 3. Processing -> ProcessingFlow
- * 4. Analysis -> Results
+ * 4. Analysis -> AnalysisSummary + VariantsList
  */
 
+import { useState, useCallback } from 'react'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useJourney } from '@/contexts/JourneyContext'
-import { useSession, useQCMetrics } from '@/hooks/queries'
+import { useSession } from '@/hooks/queries'
 import {
   UploadValidationFlow,
   PhenotypeEntry,
   ProcessingFlow,
-  QCMetrics,
+  AnalysisSummary,
   VariantsList
 } from '@/components/analysis'
 import { Button } from '@/components/ui/button'
-import { Loader2 } from 'lucide-react'
+import { Loader2, RotateCcw } from 'lucide-react'
 
 export default function AnalysisPage() {
   const { currentSessionId, setCurrentSessionId } = useAnalysis()
-  const { currentStep, nextStep, resetJourney } = useJourney()
+  const { currentStep, resetJourney } = useJourney()
+
+  // Filter state for passing from Summary to VariantsList
+  const [activeFilter, setActiveFilter] = useState<string | null>(null)
 
   // Session query for data
   const sessionQuery = useSession(currentSessionId || '', {
     enabled: !!currentSessionId,
-  })
-
-  // QC metrics query
-  const qcQuery = useQCMetrics(currentSessionId || '', {
-    enabled: !!currentSessionId && currentStep === 'analysis',
   })
 
   // Handle upload+validation complete
@@ -45,8 +44,19 @@ export default function AnalysisPage() {
   // Handle start over
   const handleStartOver = () => {
     setCurrentSessionId(null)
+    setActiveFilter(null)
     resetJourney()
   }
+
+  // Handle filter from summary
+  const handleFilterByClass = useCallback((acmgClass: string) => {
+    setActiveFilter(acmgClass)
+    // Scroll to variants list
+    const variantsSection = document.getElementById('variants-section')
+    if (variantsSection) {
+      variantsSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [])
 
   // Render content based on current journey step
   const renderContent = () => {
@@ -101,22 +111,32 @@ export default function AnalysisPage() {
       }
 
       return (
-        <div className="p-8">
-          {qcQuery.data && (
-            <div className="max-w-4xl mx-auto mb-8">
-              <QCMetrics
-                metrics={qcQuery.data}
-                fileName={sessionQuery.data?.vcf_file_path?.split('/').pop()}
-              />
+        <div className="p-8 space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Analysis Results</h1>
+              <p className="text-base text-muted-foreground mt-1">
+                {sessionQuery.data?.vcf_file_path?.split('/').pop() || 'VCF Analysis'}
+              </p>
             </div>
-          )}
-
-          <VariantsList sessionId={currentSessionId} />
-
-          <div className="mt-6 text-center">
             <Button variant="outline" onClick={handleStartOver}>
-              Start New Analysis
+              <RotateCcw className="h-4 w-4 mr-2" />
+              <span className="text-base">New Analysis</span>
             </Button>
+          </div>
+
+          {/* Summary Section */}
+          <AnalysisSummary
+            sessionId={currentSessionId}
+            onFilterByClass={handleFilterByClass}
+          />
+
+          {/* Variants Section */}
+          <div id="variants-section">
+            <VariantsList
+              sessionId={currentSessionId}
+            />
           </div>
         </div>
       )
