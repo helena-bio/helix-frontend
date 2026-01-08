@@ -70,13 +70,13 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     (term) => !selectedTerms.find((t) => t.id === term.id)
   ) || []
 
-  // Add term to selection
+  // Add term to selection (keep search query)
   const addTerm = useCallback((term: HPOTerm) => {
     if (!selectedTerms.find((t) => t.id === term.id)) {
       setSelectedTerms(prev => [...prev, term])
       toast.success(`Added: ${term.name}`)
     }
-    setSearchQuery('')
+    // Don't clear searchQuery - keep it so user can continue selecting
   }, [selectedTerms])
 
   // Remove term from selection
@@ -155,6 +155,11 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     nextStep()
   }, [nextStep, onSkip])
 
+  // Clear search
+  const clearSearch = useCallback(() => {
+    setSearchQuery('')
+  }, [])
+
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
@@ -186,10 +191,18 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search phenotype or HPO term..."
-                  className="pl-9 text-base"
+                  className="pl-9 pr-9 text-base"
                 />
                 {isSearching && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+                {searchQuery && !isSearching && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 )}
               </div>
 
@@ -222,7 +235,10 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               {/* No results message */}
               {debouncedQuery.length >= 2 && !isSearching && filteredSuggestions.length === 0 && searchResults && (
                 <p className="mt-2 text-md text-muted-foreground">
-                  No matching phenotypes found for "{debouncedQuery}"
+                  {searchResults.terms.length > 0 
+                    ? 'All matching phenotypes have been added'
+                    : `No matching phenotypes found for "${debouncedQuery}"`
+                  }
                 </p>
               )}
             </div>
