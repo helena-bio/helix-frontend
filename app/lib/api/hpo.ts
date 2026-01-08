@@ -7,7 +7,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
 
 export interface HPOTerm {
-  id: string
+  hpo_id: string
   name: string
   definition?: string
   synonyms?: string[]

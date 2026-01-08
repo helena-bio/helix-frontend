@@ -33,7 +33,7 @@ import { useHPOSearch, useDebounce, useHPOExtract, useSavePhenotype } from '@/ho
 import { toast } from 'sonner'
 
 interface HPOTerm {
-  id: string
+  hpo_id: string
   name: string
   definition?: string
 }
@@ -74,7 +74,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   // Filter out already selected terms
   const filteredSuggestions = searchResults?.terms.filter(
-    (term) => !selectedTerms.find((t) => t.id === term.id)
+    (term) => !selectedTerms.find((t) => t.hpo_id === term.hpo_id)
   ) || []
 
   // Click outside to clear search
@@ -97,7 +97,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   // Add term to selection (keep search query)
   const addTerm = useCallback((term: HPOTerm) => {
-    if (!selectedTerms.find((t) => t.id === term.id)) {
+    if (!selectedTerms.find((t) => t.hpo_id === term.hpo_id)) {
       setSelectedTerms(prev => [...prev, term])
       toast.success('Added: ' + term.name)
     }
@@ -105,7 +105,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   // Remove term from selection
   const removeTerm = useCallback((termId: string) => {
-    setSelectedTerms(prev => prev.filter((t) => t.id !== termId))
+    setSelectedTerms(prev => prev.filter((t) => t.hpo_id !== termId))
   }, [])
 
   // AI-assisted term extraction using NLP
@@ -125,9 +125,9 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
       // Add extracted terms that aren't already selected
       let addedCount = 0
       for (const term of result.terms) {
-        if (!selectedTerms.find((t) => t.id === term.hpo_id)) {
+        if (!selectedTerms.find((t) => t.hpo_id === term.hpo_id)) {
           setSelectedTerms(prev => [...prev, {
-            id: term.hpo_id,
+            hpo_id: term.hpo_id,
             name: term.hpo_name,
           }])
           addedCount++
@@ -156,7 +156,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     try {
       // Transform terms to API format
       const hpoTermsForApi = selectedTerms.map(term => ({
-        hpo_id: term.id,
+        hpo_id: term.hpo_id,
         name: term.name,
         definition: term.definition,
       }))
@@ -251,14 +251,14 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
                   {filteredSuggestions.map((term) => (
                     <button
-                      key={term.id}
-                      onClick={() => addTerm({ id: term.id, name: term.name, definition: term.definition })}
+                      key={term.hpo_id}
+                      onClick={() => addTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
                       className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-base font-medium">{term.name}</span>
-                          <span className="text-xs text-muted-foreground">({term.id})</span>
+                          <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
                         </div>
                         {term.definition && (
                           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
@@ -381,14 +381,14 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               <div className="flex flex-wrap gap-2">
                 {selectedTerms.map((term) => (
                   <Badge
-                    key={term.id}
+                    key={term.hpo_id}
                     variant="secondary"
                     className="px-3 py-1.5 bg-primary/10 text-primary border-primary/20"
                   >
                     <span className="text-sm">{term.name}</span>
-                    <span className="text-xs ml-1 opacity-70">({term.id})</span>
+                    <span className="text-xs ml-1 opacity-70">({term.hpo_id})</span>
                     <button
-                      onClick={() => removeTerm(term.id)}
+                      onClick={() => removeTerm(term.hpo_id)}
                       className="ml-2 hover:text-destructive"
                     >
                       <X className="h-3 w-3" />
