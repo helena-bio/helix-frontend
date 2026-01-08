@@ -5,7 +5,6 @@ export {
   useSession,
   useQCMetrics,
   useVariants,
-  useVariantStatistics,
 } from './queries/use-variant-analysis-queries'
 
 // Mutations
