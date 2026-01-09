@@ -19,14 +19,13 @@ interface AuthenticatedLayoutProps {
 }
 
 export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
-  const { isSidebarOpen, isChatVisible, showChat } = useAnalysis()
+  const { isChatVisible, showChat } = useAnalysis()
   const { currentStep } = useJourney()
   const router = useRouter()
   const [isChecking, setIsChecking] = useState(true)
 
   const isAnalysisComplete = currentStep === 'analysis'
 
-  // Auto-show chat when analysis completes
   useEffect(() => {
     if (isAnalysisComplete) {
       showChat()
@@ -57,24 +56,24 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       </header>
 
       {/* Main area - Sidebar + Content */}
-      <div className="flex-1 flex overflow-hidden" style={{ height: 'calc(100vh - 56px)' }}>
+      <div className="flex-1 flex overflow-hidden">
         <Sidebar />
 
         {shouldShowSplitScreen ? (
-          // Split Screen: Chat (25%) + Context Panel (50%)
-          <>
-            {/* Chat Panel - 25% on large screens, collapses on small */}
-            <div className="hidden lg:flex lg:w-[25%] h-full flex-col border-r">
+          // Split Screen: Chat + Context Panel (50/50 split of remaining space)
+          <div className="flex-1 flex overflow-hidden">
+            {/* Chat Panel - Hidden on small screens */}
+            <div className="hidden lg:flex lg:flex-1 h-full flex-col border-r">
               <ChatPanel />
             </div>
 
-            {/* Context Panel - 50% fixed width */}
-            <div className="w-full lg:w-[50%] h-full">
+            {/* Context Panel - Always visible, takes remaining space */}
+            <div className="flex-1 h-full">
               <ContextPanel>
                 {children}
               </ContextPanel>
             </div>
-          </>
+          </div>
         ) : (
           // Full Width: Pre-analysis workflow
           <main className="flex-1 overflow-auto bg-background">
