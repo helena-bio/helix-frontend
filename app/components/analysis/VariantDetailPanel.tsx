@@ -38,8 +38,8 @@ const InfoRow = ({ label, value, mono = false }: { label: string; value: any; mo
   
   return (
     <div className="flex justify-between items-start py-1.5">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className={`text-sm font-medium text-right ${mono ? 'font-mono' : ''}`}>
+      <span className="text-base text-muted-foreground">{label}</span>
+      <span className={`text-md font-medium text-right ${mono ? 'font-mono' : ''}`}>
         {value}
       </span>
     </div>
@@ -165,7 +165,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               
               {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Evidence Codes</p>
+                  <p className="text-base text-muted-foreground mb-2">Evidence Codes</p>
                   <div className="flex flex-wrap gap-1.5">
                     {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => (
                       <Badge key={c} variant="outline" className="text-xs font-mono">
@@ -178,12 +178,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">Confidence</p>
-                  <p className="text-lg font-bold">{variant.confidence_score?.toFixed(2) || '-'}</p>
+                  <p className="text-base text-muted-foreground">Confidence</p>
+                  <p className="text-md font-bold">{variant.confidence_score?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Priority Score</p>
-                  <p className="text-lg font-bold">{variant.priority_score?.toFixed(1) || '-'}</p>
+                  <p className="text-base text-muted-foreground">Priority Score</p>
+                  <p className="text-md font-bold">{variant.priority_score?.toFixed(1) || '-'}</p>
                 </div>
               </div>
             </CardContent>
@@ -234,7 +234,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 {(variant.sift_pred || variant.sift_score !== null) && (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground w-20">SIFT</span>
+                      <span className="text-base text-muted-foreground w-24">SIFT</span>
                       {variant.sift_pred && (
                         <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.sift_pred)}`}>
                           {variant.sift_pred}
@@ -242,7 +242,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       )}
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-mono">{variant.sift_score?.toFixed(3) || '-'}</span>
+                      <span className="text-md font-mono">{variant.sift_score?.toFixed(3) || '-'}</span>
                     </div>
                   </>
                 )}
@@ -251,7 +251,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 {(variant.alphamissense_pred || variant.alphamissense_score !== null) && (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground w-20">AlphaMissense</span>
+                      <span className="text-base text-muted-foreground w-24">AlphaMissense</span>
                       {variant.alphamissense_pred && (
                         <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.alphamissense_pred)}`}>
                           {variant.alphamissense_pred}
@@ -259,7 +259,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       )}
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-mono">{variant.alphamissense_score?.toFixed(3) || '-'}</span>
+                      <span className="text-md font-mono">{variant.alphamissense_score?.toFixed(3) || '-'}</span>
                     </div>
                   </>
                 )}
@@ -268,7 +268,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 {(variant.metasvm_pred || variant.metasvm_score !== null) && (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground w-20">MetaSVM</span>
+                      <span className="text-base text-muted-foreground w-24">MetaSVM</span>
                       {variant.metasvm_pred && (
                         <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.metasvm_pred)}`}>
                           {variant.metasvm_pred}
@@ -276,7 +276,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       )}
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-mono">{variant.metasvm_score?.toFixed(3) || '-'}</span>
+                      <span className="text-md font-mono">{variant.metasvm_score?.toFixed(3) || '-'}</span>
                     </div>
                   </>
                 )}
@@ -284,9 +284,9 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 {/* DANN */}
                 {variant.dann_score !== null && (
                   <>
-                    <div className="text-sm text-muted-foreground">DANN</div>
+                    <div className="text-base text-muted-foreground">DANN</div>
                     <div className="text-right">
-                      <span className="text-sm font-mono">{variant.dann_score.toFixed(3)}</span>
+                      <span className="text-md font-mono">{variant.dann_score.toFixed(3)}</span>
                     </div>
                   </>
                 )}
@@ -323,20 +323,20 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <CardContent className="space-y-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Genotype</p>
-                  <p className="text-base font-mono font-medium">{variant.genotype || '-'}</p>
+                  <p className="text-base text-muted-foreground">Genotype</p>
+                  <p className="text-md font-mono font-medium">{variant.genotype || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Quality Score</p>
-                  <p className="text-base font-medium">{variant.quality?.toFixed(1) || '-'}</p>
+                  <p className="text-base text-muted-foreground">Quality Score</p>
+                  <p className="text-md font-medium">{variant.quality?.toFixed(1) || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Depth</p>
-                  <p className="text-base font-medium">{variant.depth || '-'}</p>
+                  <p className="text-base text-muted-foreground">Depth</p>
+                  <p className="text-md font-medium">{variant.depth || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">GQ</p>
-                  <p className="text-base font-medium">{variant.genotype_quality || '-'}</p>
+                  <p className="text-base text-muted-foreground">GQ</p>
+                  <p className="text-md font-medium">{variant.genotype_quality || '-'}</p>
                 </div>
               </div>
             </CardContent>
@@ -373,7 +373,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <CardContent>
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Conservation Scores</p>
+                  <p className="text-base text-muted-foreground mb-2">Conservation Scores</p>
                   <div className="grid grid-cols-2 gap-2">
                     <InfoRow label="PhyloP" value={variant.phylop100way_vertebrate?.toFixed(3)} mono />
                     <InfoRow label="GERP" value={variant.gerp_rs?.toFixed(2)} mono />
@@ -381,7 +381,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 </div>
                 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Gene Constraint Metrics</p>
+                  <p className="text-base text-muted-foreground mb-2">Gene Constraint Metrics</p>
                   <div className="grid grid-cols-2 gap-2">
                     <InfoRow label="pLI" value={variant.pli?.toFixed(3)} mono />
                     <InfoRow label="LOEUF" value={variant.oe_lof_upper?.toFixed(3)} mono />
@@ -392,7 +392,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
                 {(variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null) && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">ClinGen Dosage Sensitivity</p>
+                    <p className="text-base text-muted-foreground mb-2">ClinGen Dosage Sensitivity</p>
                     <div className="grid grid-cols-2 gap-2">
                       <InfoRow label="HI Score" value={variant.haploinsufficiency_score} />
                       <InfoRow label="TS Score" value={variant.triplosensitivity_score} />
@@ -414,18 +414,18 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Phenotype Count</span>
-                  <span className="text-base font-medium">{variant.hpo_count}</span>
+                  <span className="text-base text-muted-foreground">Phenotype Count</span>
+                  <span className="text-md font-medium">{variant.hpo_count}</span>
                 </div>
                 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Phenotypes</p>
+                  <p className="text-base text-muted-foreground mb-2">Phenotypes</p>
                   <p className="text-sm">{variant.hpo_phenotypes}</p>
                 </div>
                 
                 {variant.hpo_terms && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">HPO Terms</p>
+                    <p className="text-base text-muted-foreground mb-2">HPO Terms</p>
                     <div className="flex flex-wrap gap-1">
                       {variant.hpo_terms.split(',').filter(Boolean).map((term: string) => (
                         <Badge key={term} variant="secondary" className="text-xs">
