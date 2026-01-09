@@ -10,7 +10,6 @@ import { useState } from 'react'
 import { AnalysisSummary } from './AnalysisSummary'
 import { VariantsList } from './VariantsList'
 import { VariantDetailPanel } from './VariantDetailPanel'
-import { Card } from '@/components/ui/card'
 
 interface AnalysisJourneyViewProps {
   sessionId: string
@@ -20,15 +19,13 @@ export function AnalysisJourneyView({ sessionId }: AnalysisJourneyViewProps) {
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
 
   if (selectedVariantIdx !== null) {
-    // Variant detail view - full screen
+    // Variant detail view - VariantDetailPanel handles its own layout
     return (
-      <Card className="h-full flex flex-col">
-        <VariantDetailPanel
-          sessionId={sessionId}
-          variantIdx={selectedVariantIdx}
-          onBack={() => setSelectedVariantIdx(null)}
-        />
-      </Card>
+      <VariantDetailPanel
+        sessionId={sessionId}
+        variantIdx={selectedVariantIdx}
+        onBack={() => setSelectedVariantIdx(null)}
+      />
     )
   }
 
