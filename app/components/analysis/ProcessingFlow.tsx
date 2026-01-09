@@ -375,7 +375,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
                       className={`
                         flex items-start gap-3 p-3 rounded-lg border transition-all
                         ${isCurrent ? 'bg-primary/5 border-primary/50' : 'bg-background'}
-                        ${isComplete && !isCurrent ? 'opacity-50' : ''}
                       `}
                     >
                       <div className={`
