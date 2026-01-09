@@ -1,10 +1,10 @@
 "use client"
 
 /**
- * VariantsList Component - Paginated Variants Table with Real-time Search
+ * VariantsList Component - Fast Real-time Search
  */
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useVariants } from '@/hooks/queries'
 import {
   Table,
@@ -82,40 +82,52 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     page_size: 50,
   })
   const [geneSearch, setGeneSearch] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+  
+  // Debounce timer ref
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+  const isTyping = useRef(false)
 
   // Query
-  const { data, isLoading, error } = useVariants(sessionId, filters)
+  const { data, isLoading, error, isFetching } = useVariants(sessionId, filters)
 
-  // Real-time search with debounce
+  // Fast debounced search (300ms instead of 500ms)
   useEffect(() => {
-    // Don't trigger on empty string when clearing
-    if (geneSearch === '' && !filters.genes) {
-      return
+    // Clear existing timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
     }
 
-    setIsSearching(true)
-    const timer = setTimeout(() => {
-      if (geneSearch.trim()) {
+    // Mark as typing
+    isTyping.current = true
+
+    // Set new timer
+    debounceTimer.current = setTimeout(() => {
+      isTyping.current = false
+      
+      // Only update if value actually changed
+      const trimmedSearch = geneSearch.trim().toUpperCase()
+      const currentGene = filters.genes?.[0]
+      
+      if (trimmedSearch && trimmedSearch !== currentGene) {
         setFilters(prev => ({ 
           ...prev, 
-          genes: [geneSearch.trim().toUpperCase()],
+          genes: [trimmedSearch],
           page: 1 
         }))
-      } else {
+      } else if (!trimmedSearch && currentGene) {
         setFilters(prev => ({ 
           ...prev, 
           genes: undefined,
           page: 1 
         }))
       }
-      setIsSearching(false)
-    }, 500) // 500ms debounce
+    }, 300)
 
     return () => {
-      clearTimeout(timer)
-      setIsSearching(false)
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
     }
   }, [geneSearch])
 
@@ -153,7 +165,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
   const hasActiveFilters = !!(filters.acmg_class || filters.impact || filters.genes)
 
-  // Loading State
+  // Initial Loading State
   if (isLoading && !data) {
     return (
       <Card>
@@ -188,26 +200,6 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     )
   }
 
-  // Empty State
-  if (!data || data.variants.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Variants</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-lg font-medium mb-2">No variants found</p>
-            <p className="text-md text-muted-foreground">
-              Try adjusting your filters
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -215,7 +207,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
           <div>
             <CardTitle className="text-lg">Variants</CardTitle>
             <p className="text-md text-muted-foreground mt-1">
-              Showing {data.variants.length} of {data.total_count.toLocaleString()} variants
+              {data ? `Showing ${data.variants.length} of ${data.total_count.toLocaleString()} variants` : 'Loading...'}
             </p>
           </div>
           <Button variant="outline" size="sm">
@@ -273,7 +265,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               </SelectContent>
             </Select>
 
-            {/* Gene Search - Real-time */}
+            {/* Gene Search - Fast Real-time */}
             <div className="relative">
               <Input
                 placeholder="e.g., BRCA1"
@@ -281,7 +273,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                 onChange={(e) => setGeneSearch(e.target.value)}
                 className="text-base pr-8"
               />
-              {isSearching && (
+              {isFetching && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
             </div>
@@ -322,14 +314,14 @@ export function VariantsList({ sessionId }: VariantsListProps) {
       </CardHeader>
 
       <CardContent className="p-0">
-        {/* Loading overlay for real-time search */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-        
         <div className="overflow-x-auto relative">
+          {/* Subtle loading indicator */}
+          {isFetching && (
+            <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 z-10">
+              <div className="h-full bg-primary animate-pulse" style={{ width: '50%' }} />
+            </div>
+          )}
+          
           <Table>
             <TableHeader>
               <TableRow>
@@ -344,135 +336,151 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.variants.map((variant: any) => (
-                <>
-                  <TableRow
-                    key={variant.variant_idx}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => toggleRow(variant.variant_idx)}
-                  >
-                    <TableCell>
-                      {expandedRows.has(variant.variant_idx) ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </TableCell>
-                    <TableCell className="text-base font-medium">
-                      {variant.gene_symbol || '-'}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {variant.chromosome}:{variant.position.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {variant.reference_allele}/{variant.alternate_allele}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {variant.consequence || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {variant.acmg_class ? (
-                        <Badge
-                          variant="outline"
-                          className={`text-sm ${getACMGColor(variant.acmg_class)}`}
-                        >
-                          {getACMGShortName(variant.acmg_class)}
-                        </Badge>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {variant.global_af
-                        ? variant.global_af.toExponential(2)
-                        : '-'
-                      }
-                    </TableCell>
-                    <TableCell className="text-base">
-                      {variant.priority_score
-                        ? variant.priority_score.toFixed(1)
-                        : '-'
-                      }
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Expanded Row */}
-                  {expandedRows.has(variant.variant_idx) && (
-                    <TableRow>
-                      <TableCell colSpan={8} className="bg-muted/30">
-                        <div className="p-4 space-y-3">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">HGVS Protein</p>
-                              <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">Impact</p>
-                              <Badge variant="secondary" className="text-sm">{variant.impact || '-'}</Badge>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">Genotype</p>
-                              <p className="text-base font-mono">{variant.genotype || '-'}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">Depth</p>
-                              <p className="text-base">{variant.depth || '-'}</p>
-                            </div>
-                          </div>
-
-                          {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
-                              <div className="flex flex-wrap gap-2">
-                                {variant.acmg_criteria.split(',').filter((c: string) => c.trim()).map((c: string) => (
-                                  <Badge key={c} variant="outline" className="text-sm">{c.trim()}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {variant.clinical_significance && (
-                            <div>
-                              <p className="text-sm text-muted-foreground mb-1">ClinVar</p>
-                              <p className="text-base">{variant.clinical_significance}</p>
-                            </div>
-                          )}
-                        </div>
+              {!data || data.variants.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <div className="text-center py-12">
+                      <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-lg font-medium mb-2">No variants found</p>
+                      <p className="text-md text-muted-foreground">
+                        Try adjusting your filters
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.variants.map((variant: any) => (
+                  <>
+                    <TableRow
+                      key={variant.variant_idx}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => toggleRow(variant.variant_idx)}
+                    >
+                      <TableCell>
+                        {expandedRows.has(variant.variant_idx) ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-base font-medium">
+                        {variant.gene_symbol || '-'}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {variant.chromosome}:{variant.position.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {variant.reference_allele}/{variant.alternate_allele}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {variant.consequence || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {variant.acmg_class ? (
+                          <Badge
+                            variant="outline"
+                            className={`text-sm ${getACMGColor(variant.acmg_class)}`}
+                          >
+                            {getACMGShortName(variant.acmg_class)}
+                          </Badge>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {variant.global_af
+                          ? variant.global_af.toExponential(2)
+                          : '-'
+                        }
+                      </TableCell>
+                      <TableCell className="text-base">
+                        {variant.priority_score
+                          ? variant.priority_score.toFixed(1)
+                          : '-'
+                        }
                       </TableCell>
                     </TableRow>
-                  )}
-                </>
-              ))}
+
+                    {/* Expanded Row */}
+                    {expandedRows.has(variant.variant_idx) && (
+                      <TableRow>
+                        <TableCell colSpan={8} className="bg-muted/30">
+                          <div className="p-4 space-y-3">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-1">HGVS Protein</p>
+                                <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-1">Impact</p>
+                                <Badge variant="secondary" className="text-sm">{variant.impact || '-'}</Badge>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-1">Genotype</p>
+                                <p className="text-base font-mono">{variant.genotype || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-1">Depth</p>
+                                <p className="text-base">{variant.depth || '-'}</p>
+                              </div>
+                            </div>
+
+                            {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {variant.acmg_criteria.split(',').filter((c: string) => c.trim()).map((c: string) => (
+                                    <Badge key={c} variant="outline" className="text-sm">{c.trim()}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {variant.clinical_significance && (
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-1">ClinVar</p>
+                                <p className="text-base">{variant.clinical_significance}</p>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t">
-          <p className="text-md text-muted-foreground">
-            Page {data.page} of {totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!data.has_previous_page}
-              onClick={() => handlePageChange(filters.page! - 1)}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              <span className="text-base">Previous</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!data.has_next_page}
-              onClick={() => handlePageChange(filters.page! + 1)}
-            >
-              <span className="text-base">Next</span>
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+        {data && data.variants.length > 0 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t">
+            <p className="text-md text-muted-foreground">
+              Page {data.page} of {totalPages}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!data.has_previous_page}
+                onClick={() => handlePageChange(filters.page! - 1)}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                <span className="text-base">Previous</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!data.has_next_page}
+                onClick={() => handlePageChange(filters.page! + 1)}
+              >
+                <span className="text-base">Next</span>
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   )
