@@ -1,11 +1,10 @@
 "use client"
 
 /**
- * VariantsList Component - Optimized Real-time Search
- * Best Practice: Separate display value from filter value
+ * VariantsList Component - Fast Real-time Search
  */
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useVariants } from '@/hooks/queries'
 import {
   Table,
@@ -38,23 +37,6 @@ import {
   Loader2
 } from 'lucide-react'
 import type { VariantFilters } from '@/types/variant.types'
-
-// Custom debounce hook - best practice
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value)
-
-  useState(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value)
-    }, delay)
-
-    return () => {
-      clearTimeout(handler)
-    }
-  })
-
-  return debouncedValue
-}
 
 interface VariantsListProps {
   sessionId: string
@@ -94,27 +76,31 @@ const getACMGShortName = (classification: string | null) => {
 }
 
 export function VariantsList({ sessionId }: VariantsListProps) {
-  // Separate state for display vs filter
+  // State
   const [geneInput, setGeneInput] = useState('')
-  const debouncedGeneInput = useDebounce(geneInput, 300)
-  
-  // Filters state
+  const [debouncedGene, setDebouncedGene] = useState('')
   const [filters, setFilters] = useState<VariantFilters>({
     page: 1,
     page_size: 50,
   })
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
-  // Compute actual filter with debounced value (NO uppercase here - backend does it)
-  const activeFilters = useMemo(() => {
-    const trimmed = debouncedGeneInput.trim()
-    return {
-      ...filters,
-      genes: trimmed ? [trimmed] : undefined,
-    }
-  }, [filters, debouncedGeneInput])
+  // Debounce effect - CORRECT implementation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedGene(geneInput.trim())
+    }, 300)
 
-  // Query with computed filters
+    return () => clearTimeout(timer)
+  }, [geneInput])
+
+  // Compute filters with debounced gene
+  const activeFilters = useMemo(() => ({
+    ...filters,
+    genes: debouncedGene ? [debouncedGene] : undefined,
+  }), [filters, debouncedGene])
+
+  // Query
   const { data, isLoading, error, isFetching } = useVariants(sessionId, activeFilters)
 
   // Handlers
@@ -145,10 +131,10 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
   // Computed
   const totalPages = useMemo(() => data?.total_pages ?? 0, [data])
-  const hasActiveFilters = !!(filters.acmg_class || filters.impact || debouncedGeneInput.trim())
-  const isSearching = geneInput !== debouncedGeneInput
+  const hasActiveFilters = !!(filters.acmg_class || filters.impact || debouncedGene)
+  const isSearching = geneInput.trim() !== debouncedGene
 
-  // Initial Loading State
+  // Initial Loading
   if (isLoading && !data) {
     return (
       <Card>
@@ -199,17 +185,14 @@ export function VariantsList({ sessionId }: VariantsListProps) {
           </Button>
         </div>
 
-        {/* Integrated Filters */}
+        {/* Filters */}
         <div className="pt-4 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* ACMG Classification */}
+            {/* ACMG */}
             <Select
               value={filters.acmg_class?.[0] || 'all'}
               onValueChange={(value) =>
-                handleFilterChange(
-                  'acmg_class',
-                  value === 'all' ? undefined : [value]
-                )
+                handleFilterChange('acmg_class', value === 'all' ? undefined : [value])
               }
             >
               <SelectTrigger className="text-base">
@@ -218,9 +201,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 {ACMG_CLASSES.map((cls) => (
-                  <SelectItem key={cls} value={cls}>
-                    {cls}
-                  </SelectItem>
+                  <SelectItem key={cls} value={cls}>{cls}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -229,10 +210,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
             <Select
               value={filters.impact?.[0] || 'all'}
               onValueChange={(value) =>
-                handleFilterChange(
-                  'impact',
-                  value === 'all' ? undefined : [value]
-                )
+                handleFilterChange('impact', value === 'all' ? undefined : [value])
               }
             >
               <SelectTrigger className="text-base">
@@ -241,14 +219,12 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 {IMPACT_LEVELS.map((impact) => (
-                  <SelectItem key={impact} value={impact}>
-                    {impact}
-                  </SelectItem>
+                  <SelectItem key={impact} value={impact}>{impact}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {/* Gene Search - Optimized */}
+            {/* Gene Search */}
             <div className="relative">
               <Input
                 placeholder="e.g., BRCA1"
@@ -262,32 +238,21 @@ export function VariantsList({ sessionId }: VariantsListProps) {
             </div>
           </div>
 
-          {/* Active Filters + Clear All */}
+          {/* Active Filters */}
           {hasActiveFilters && (
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-2">
                 {filters.acmg_class?.map((cls) => (
-                  <Badge key={cls} variant="secondary" className="text-sm">
-                    {cls}
-                  </Badge>
+                  <Badge key={cls} variant="secondary" className="text-sm">{cls}</Badge>
                 ))}
                 {filters.impact?.map((imp) => (
-                  <Badge key={imp} variant="secondary" className="text-sm">
-                    {imp}
-                  </Badge>
+                  <Badge key={imp} variant="secondary" className="text-sm">{imp}</Badge>
                 ))}
-                {debouncedGeneInput.trim() && (
-                  <Badge variant="secondary" className="text-sm">
-                    {debouncedGeneInput.trim()}
-                  </Badge>
+                {debouncedGene && (
+                  <Badge variant="secondary" className="text-sm">{debouncedGene}</Badge>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAllFilters}
-                className="shrink-0"
-              >
+              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="shrink-0">
                 <X className="h-4 w-4 mr-1" />
                 <span className="text-sm">Clear All</span>
               </Button>
@@ -298,7 +263,6 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
       <CardContent className="p-0">
         <div className="overflow-x-auto relative">
-          {/* Progress indicator */}
           {isFetching && (
             <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 z-10">
               <div className="h-full bg-primary w-1/2 animate-pulse" />
@@ -325,9 +289,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                     <div className="text-center py-12">
                       <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-lg font-medium mb-2">No variants found</p>
-                      <p className="text-md text-muted-foreground">
-                        Try adjusting your filters
-                      </p>
+                      <p className="text-md text-muted-foreground">Try adjusting your filters</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -355,36 +317,22 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                       <TableCell className="font-mono text-xs">
                         {variant.reference_allele}/{variant.alternate_allele}
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {variant.consequence || '-'}
-                      </TableCell>
+                      <TableCell className="text-sm">{variant.consequence || '-'}</TableCell>
                       <TableCell>
                         {variant.acmg_class ? (
-                          <Badge
-                            variant="outline"
-                            className={`text-sm ${getACMGColor(variant.acmg_class)}`}
-                          >
+                          <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
                             {getACMGShortName(variant.acmg_class)}
                           </Badge>
-                        ) : (
-                          '-'
-                        )}
+                        ) : '-'}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {variant.global_af
-                          ? variant.global_af.toExponential(2)
-                          : '-'
-                        }
+                        {variant.global_af ? variant.global_af.toExponential(2) : '-'}
                       </TableCell>
                       <TableCell className="text-base">
-                        {variant.priority_score
-                          ? variant.priority_score.toFixed(1)
-                          : '-'
-                        }
+                        {variant.priority_score ? variant.priority_score.toFixed(1) : '-'}
                       </TableCell>
                     </TableRow>
 
-                    {/* Expanded Row */}
                     {expandedRows.has(variant.variant_idx) && (
                       <TableRow>
                         <TableCell colSpan={8} className="bg-muted/30">
