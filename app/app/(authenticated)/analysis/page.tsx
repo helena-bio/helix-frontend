@@ -54,94 +54,88 @@ export default function AnalysisPage() {
   }, [])
 
   // Render content based on current journey step
-  const renderContent = () => {
-    // Upload and Validation use the same unified component
-    if (currentStep === 'upload' || currentStep === 'validation') {
+  if (currentStep === 'upload' || currentStep === 'validation') {
+    return (
+      <UploadValidationFlow
+        onComplete={handleUploadValidationComplete}
+      />
+    )
+  }
+
+  if (currentStep === 'phenotype') {
+    if (!currentSessionId) {
       return (
-        <UploadValidationFlow
-          onComplete={handleUploadValidationComplete}
-        />
-      )
-    }
-
-    if (currentStep === 'phenotype') {
-      if (!currentSessionId) {
-        return (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        )
-      }
-
-      return (
-        <PhenotypeEntry
-          sessionId={currentSessionId}
-        />
-      )
-    }
-
-    if (currentStep === 'processing') {
-      if (!currentSessionId) {
-        return (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        )
-      }
-
-      return (
-        <ProcessingFlow
-          sessionId={currentSessionId}
-        />
-      )
-    }
-
-    if (currentStep === 'analysis') {
-      if (!currentSessionId) {
-        return (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        )
-      }
-
-      // ANALYSIS VIEW - Optimized for ContextPanel (right side)
-      return (
-        <div className="h-full overflow-y-auto">
-          <div className="p-6 space-y-6">
-            {/* Compact Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">Analysis Results</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {sessionQuery.data?.vcf_file_path?.split('/').pop() || 'VCF Analysis'}
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleStartOver}>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                <span className="text-sm">New Analysis</span>
-              </Button>
-            </div>
-
-            {/* Summary Section */}
-            <AnalysisSummary
-              sessionId={currentSessionId}
-              onFilterByClass={handleFilterByClass}
-            />
-
-            {/* Variants Section */}
-            <div id="variants-section">
-              <VariantsList
-                sessionId={currentSessionId}
-              />
-            </div>
-          </div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       )
     }
 
-    return null
+    return (
+      <PhenotypeEntry
+        sessionId={currentSessionId}
+      />
+    )
   }
 
-  return <div className="min-h-screen">{renderContent()}</div>
+  if (currentStep === 'processing') {
+    if (!currentSessionId) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+    }
+
+    return (
+      <ProcessingFlow
+        sessionId={currentSessionId}
+      />
+    )
+  }
+
+  if (currentStep === 'analysis') {
+    if (!currentSessionId) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+    }
+
+    // ANALYSIS VIEW - Optimized for ContextPanel
+    // NO outer wrapper - ContextPanel already provides scroll
+    return (
+      <div className="p-6 space-y-6">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Analysis Results</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {sessionQuery.data?.vcf_file_path?.split('/').pop() || 'VCF Analysis'}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleStartOver}>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            <span className="text-sm">New Analysis</span>
+          </Button>
+        </div>
+
+        {/* Summary Section */}
+        <AnalysisSummary
+          sessionId={currentSessionId}
+          onFilterByClass={handleFilterByClass}
+        />
+
+        {/* Variants Section */}
+        <div id="variants-section">
+          <VariantsList
+            sessionId={currentSessionId}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return null
 }

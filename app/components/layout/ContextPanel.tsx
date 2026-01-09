@@ -2,7 +2,7 @@
 
 /**
  * ContextPanel - Right panel wrapper for module-specific content
- * Displays different content based on active module
+ * Provides scrollable area for content
  */
 
 import { ReactNode } from 'react'
@@ -16,7 +16,8 @@ interface ContextPanelProps {
 export function ContextPanel({ children, className }: ContextPanelProps) {
   return (
     <div className={cn(
-      "flex-1 overflow-y-auto bg-background",
+      "h-full overflow-y-auto overflow-x-hidden bg-background",
+      "[scrollbar-gutter:stable]",
       className
     )}>
       {children}
