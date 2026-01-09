@@ -568,21 +568,21 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
             {/* Text */}
             {selectedFile ? (
-              <div className="flex items-center gap-3">
-                <div className="space-y-2">
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2">
                   <p className="text-lg font-medium">{selectedFile.name}</p>
-                  <p className="text-base text-muted-foreground">{fileSize}</p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleRemoveFile()
+                    }}
+                    className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
+                    aria-label="Remove file"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                  </button>
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleRemoveFile()
-                  }}
-                  className="p-2 hover:bg-destructive/10 rounded-full transition-colors"
-                  aria-label="Remove file"
-                >
-                  <X className="h-5 w-5 text-muted-foreground hover:text-destructive" />
-                </button>
+                <p className="text-base text-muted-foreground">{fileSize}</p>
               </div>
             ) : (
               <div>
