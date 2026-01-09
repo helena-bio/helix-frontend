@@ -352,7 +352,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               value={clinicalNotes}
               onChange={(e) => setClinicalNotes(e.target.value)}
               placeholder="e.g. Patient has recurrent febrile seizures and delayed speech..."
-              className="min-h-[100px] text-base"
+              className="min-h-[100px] text-base bg-background"
             />
           </CollapsibleContent>
         </Collapsible>
