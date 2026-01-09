@@ -86,7 +86,7 @@ const getTierBadge = (tier: number | null) => {
   return { label: `T${tier}`, color: colors[tier as keyof typeof colors] || colors[5] }
 }
 
-const truncateAllele = (allele: string, maxLength: number = 15): string => {
+const truncateAllele = (allele: string, maxLength: number = 10): string => {
   if (allele.length <= maxLength) return allele
   return allele.substring(0, maxLength) + '...'
 }
@@ -133,7 +133,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
               <TableHead className="w-[50px]"></TableHead>
               <TableHead className="text-base">Gene</TableHead>
               <TableHead className="text-base">Position</TableHead>
-              <TableHead className="text-base w-[150px]">Change</TableHead>
+              <TableHead className="text-base w-[120px]">Change</TableHead>
               <TableHead className="text-base">Consequence</TableHead>
               <TableHead className="text-base">Zygosity</TableHead>
               <TableHead className="text-base">ACMG</TableHead>
@@ -180,7 +180,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                         {variant.chromosome}:{variant.position.toLocaleString()}
                       </TableCell>
                       <TableCell 
-                        className="font-mono text-sm max-w-[150px] truncate"
+                        className="font-mono text-sm max-w-[120px] truncate"
                         title={changeText}
                       >
                         {truncateAllele(variant.reference_allele)}/{truncateAllele(variant.alternate_allele)}
