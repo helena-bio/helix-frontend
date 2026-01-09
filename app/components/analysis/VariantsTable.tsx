@@ -58,7 +58,7 @@ const getACMGShortName = (classification: string | null) => {
 
 const getZygosityBadge = (genotype: string | null) => {
   if (!genotype) return { label: '-', color: 'bg-gray-100' }
-  
+
   if (genotype === '0/1' || genotype === '1/0' || genotype === '0|1' || genotype === '1|0' || genotype === 'het') {
     return { label: 'Het', color: 'bg-blue-100 text-blue-900 border-blue-300' }
   }
@@ -68,13 +68,13 @@ const getZygosityBadge = (genotype: string | null) => {
   if (genotype === '1' || genotype === '1/.' || genotype === '.|1' || genotype === 'hemi') {
     return { label: 'Hemi', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
   }
-  
+
   return { label: genotype, color: 'bg-gray-100' }
 }
 
 const getTierBadge = (tier: number | null) => {
   if (!tier) return null
-  
+
   const colors = {
     1: 'bg-red-100 text-red-900 border-red-300',
     2: 'bg-orange-100 text-orange-900 border-orange-300',
@@ -82,15 +82,15 @@ const getTierBadge = (tier: number | null) => {
     4: 'bg-blue-100 text-blue-900 border-blue-300',
     5: 'bg-gray-100 text-gray-900 border-gray-300',
   }
-  
+
   return { label: `T${tier}`, color: colors[tier as keyof typeof colors] || colors[5] }
 }
 
 export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }: VariantsTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
-  const toggleRow = useCallback((variantIdx: number, e: React.MouseEvent) => {
-    e.stopPropagation()
+  // Toggle expand/collapse when clicking on row
+  const toggleRow = useCallback((variantIdx: number) => {
     setExpandedRows(prev => {
       const next = new Set(prev)
       if (next.has(variantIdx)) {
@@ -102,7 +102,9 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
     })
   }, [])
 
-  const handleRowClick = useCallback((variantIdx: number) => {
+  // Open detail panel when clicking ExternalLink icon
+  const handleDetailClick = useCallback((variantIdx: number, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent row toggle
     if (onVariantClick) {
       onVariantClick(variantIdx)
     }
@@ -150,14 +152,15 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
               data.variants.map((variant: any) => {
                 const zygosity = getZygosityBadge(variant.genotype)
                 const tier = getTierBadge(variant.priority_tier)
-                
+
                 return (
                   <>
                     <TableRow
                       key={variant.variant_idx}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => toggleRow(variant.variant_idx)}
                     >
-                      <TableCell onClick={(e) => toggleRow(variant.variant_idx, e)}>
+                      <TableCell>
                         {expandedRows.has(variant.variant_idx) ? (
                           <ChevronUp className="h-4 w-4" />
                         ) : (
@@ -200,7 +203,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRowClick(variant.variant_idx)}
+                          onClick={(e) => handleDetailClick(variant.variant_idx, e)}
                           className="h-8 w-8 p-0"
                           title="View full details"
                         >
