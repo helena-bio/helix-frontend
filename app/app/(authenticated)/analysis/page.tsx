@@ -2,12 +2,7 @@
 
 /**
  * Analysis Page - Main Variant Analysis Workflow
- *
- * Journey-driven flow using JourneyContext:
- * 1. Upload + Validation -> UploadValidationFlow
- * 2. Phenotype -> PhenotypeEntry
- * 3. Processing -> ProcessingFlow
- * 4. Analysis -> AnalysisSummary + VariantsList
+ * After analysis complete, shows in ContextPanel (right side of split screen)
  */
 
 import { useState, useCallback } from 'react'
@@ -110,33 +105,36 @@ export default function AnalysisPage() {
         )
       }
 
+      // ANALYSIS VIEW - Optimized for ContextPanel (right side)
       return (
-        <div className="p-8 space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Analysis Results</h1>
-              <p className="text-base text-muted-foreground mt-1">
-                {sessionQuery.data?.vcf_file_path?.split('/').pop() || 'VCF Analysis'}
-              </p>
+        <div className="h-full overflow-y-auto">
+          <div className="p-6 space-y-6">
+            {/* Compact Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold">Analysis Results</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {sessionQuery.data?.vcf_file_path?.split('/').pop() || 'VCF Analysis'}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleStartOver}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                <span className="text-sm">New Analysis</span>
+              </Button>
             </div>
-            <Button variant="outline" onClick={handleStartOver}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              <span className="text-base">New Analysis</span>
-            </Button>
-          </div>
 
-          {/* Summary Section */}
-          <AnalysisSummary
-            sessionId={currentSessionId}
-            onFilterByClass={handleFilterByClass}
-          />
-
-          {/* Variants Section */}
-          <div id="variants-section">
-            <VariantsList
+            {/* Summary Section */}
+            <AnalysisSummary
               sessionId={currentSessionId}
+              onFilterByClass={handleFilterByClass}
             />
+
+            {/* Variants Section */}
+            <div id="variants-section">
+              <VariantsList
+                sessionId={currentSessionId}
+              />
+            </div>
           </div>
         </div>
       )

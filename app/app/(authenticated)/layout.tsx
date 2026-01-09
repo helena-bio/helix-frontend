@@ -1,6 +1,6 @@
 /**
  * Authenticated Layout
- * Header (Logo + JourneyPanel) + Sidebar + Content
+ * Conditional: Full width before analysis / Split screen after analysis
  */
 
 'use client'
@@ -11,7 +11,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
+import { ChatPanel } from '@/components/chat'
+import { ContextPanel } from '@/components/layout'
 import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useJourney } from '@/contexts/JourneyContext'
 import { cn } from '@helix/shared/lib/utils'
 
 interface AuthenticatedLayoutProps {
@@ -19,9 +22,20 @@ interface AuthenticatedLayoutProps {
 }
 
 export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
-  const { isSidebarOpen } = useAnalysis()
+  const { isSidebarOpen, isChatVisible, showChat } = useAnalysis()
+  const { currentStep } = useJourney()
   const router = useRouter()
   const [isChecking, setIsChecking] = useState(true)
+
+  // Check if analysis is complete (show split screen)
+  const isAnalysisComplete = currentStep === 'analysis'
+
+  // Auto-show chat when analysis completes
+  useEffect(() => {
+    if (isAnalysisComplete) {
+      showChat()
+    }
+  }, [isAnalysisComplete, showChat])
 
   useEffect(() => {
     // Check authentication
@@ -88,15 +102,30 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
         </div>
       </header>
 
-      {/* Main area - Sidebar + Content */}
+      {/* Main area - Sidebar + Content (conditional split) */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <Sidebar />
 
-        {/* Content */}
-        <main className="flex-1 overflow-auto bg-background">
-          {children}
-        </main>
+        {/* Content Area - CONDITIONAL RENDERING */}
+        {isChatVisible && isAnalysisComplete ? (
+          // SPLIT SCREEN: Chat + Context Panel
+          <>
+            <div className="w-[40%] h-full">
+              <ChatPanel />
+            </div>
+            <div className="flex-1 h-full">
+              <ContextPanel>
+                {children}
+              </ContextPanel>
+            </div>
+          </>
+        ) : (
+          // FULL WIDTH: Pre-analysis workflow
+          <main className="flex-1 overflow-auto bg-background">
+            {children}
+          </main>
+        )}
       </div>
     </div>
   )
