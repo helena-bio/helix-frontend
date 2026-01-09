@@ -124,10 +124,10 @@ export function VariantsTable({ data, isFetching, onPageChange }: VariantsTableP
                     <TableCell className="text-base font-medium">
                       {variant.gene_symbol || '-'}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
+                    <TableCell className="font-mono text-sm">
                       {variant.chromosome}:{variant.position.toLocaleString()}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
+                    <TableCell className="font-mono text-sm">
                       {variant.reference_allele}/{variant.alternate_allele}
                     </TableCell>
                     <TableCell className="text-sm">{variant.consequence || '-'}</TableCell>
@@ -138,7 +138,7 @@ export function VariantsTable({ data, isFetching, onPageChange }: VariantsTableP
                         </Badge>
                       ) : '-'}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
+                    <TableCell className="font-mono text-sm">
                       {variant.global_af ? variant.global_af.toExponential(2) : '-'}
                     </TableCell>
                     <TableCell className="text-base">
