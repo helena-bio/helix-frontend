@@ -230,7 +230,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 {variant.clinvar_variation_id && (
                   <div className="pt-2">
                     
-                      href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
+                      <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline flex items-center gap-1"
