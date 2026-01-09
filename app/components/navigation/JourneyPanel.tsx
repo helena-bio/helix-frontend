@@ -1,11 +1,12 @@
 /**
  * Journey Panel Component
- * Progress tracker for analysis workflow
- * Designed to fit in header alongside logo
+ * Progress tracker for analysis workflow with logo
  */
 
 'use client'
 
+import Link from 'next/link'
+import Image from 'next/image'
 import { CheckCircle2, Clock, Lock, X } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -60,9 +61,27 @@ export function JourneyPanel() {
   }
 
   return (
-    <div className="h-full flex items-center justify-between px-6">
-      {/* Centered workflow progress */}
-      <div className="flex-1 flex items-center justify-center gap-3">
+    <div className="h-full flex items-center gap-6 overflow-hidden">
+      {/* Logo - Always visible, fixed left */}
+      <Link href="/" className="flex items-center gap-1.5 shrink-0 pl-6">
+        <Image
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
+          alt="Helix Insight"
+          width={140}
+          height={40}
+          className="h-8 w-auto"
+        />
+        <Image
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
+          alt=""
+          width={28}
+          height={35}
+          className="h-7 w-auto"
+        />
+      </Link>
+
+      {/* Workflow progress - Center, scrollable if needed */}
+      <div className="flex-1 flex items-center justify-center gap-3 overflow-x-auto px-4">
         {JOURNEY_STEPS.map((step, index) => {
           const status = getStepStatus(step.id)
           const Icon = getStepIcon(status)
@@ -116,13 +135,13 @@ export function JourneyPanel() {
         })}
       </div>
 
-      {/* Right side - Clear File button */}
+      {/* Clear File button - Right side, fixed */}
       {currentSessionId && (
         <Button
           variant="ghost"
           size="sm"
           onClick={handleClearFile}
-          className="h-8 text-sm shrink-0 ml-4"
+          className="h-8 text-sm shrink-0 mr-6"
         >
           <X className="h-4 w-4 mr-2" />
           Clear File
