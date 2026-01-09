@@ -568,9 +568,21 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
             {/* Text */}
             {selectedFile ? (
-              <div className="space-y-2">
-                <p className="text-lg font-medium">{selectedFile.name}</p>
-                <p className="text-base text-muted-foreground">{fileSize}</p>
+              <div className="flex items-center gap-3">
+                <div className="space-y-2">
+                  <p className="text-lg font-medium">{selectedFile.name}</p>
+                  <p className="text-base text-muted-foreground">{fileSize}</p>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleRemoveFile()
+                  }}
+                  className="p-2 hover:bg-destructive/10 rounded-full transition-colors"
+                  aria-label="Remove file"
+                >
+                  <X className="h-5 w-5 text-muted-foreground hover:text-destructive" />
+                </button>
               </div>
             ) : (
               <div>
@@ -588,29 +600,17 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
             {/* Button */}
             {selectedFile ? (
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleRemoveFile()
-                  }}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  <span className="text-base">Remove</span>
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleSubmit()
-                  }}
-                  disabled={!canSubmit}
-                >
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  <span className="text-base">Upload & Analyze</span>
-                </Button>
-              </div>
+              <Button
+                size="lg"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSubmit()
+                }}
+                disabled={!canSubmit}
+              >
+                <CheckCircle2 className="h-5 w-5 mr-2" />
+                <span className="text-base">Upload & Analyze</span>
+              </Button>
             ) : (
               <Button size="lg" onClick={handleBrowseClick}>
                 <Upload className="h-5 w-5 mr-2" />
