@@ -60,20 +60,20 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
         <Sidebar />
 
         {shouldShowSplitScreen ? (
-          // Split Screen: Chat + Context Panel (50/50 split of remaining space)
-          <div className="flex-1 flex overflow-hidden">
-            {/* Chat Panel - Hidden on small screens */}
-            <div className="hidden lg:flex lg:flex-1 h-full flex-col border-r">
+          // Split Screen Layout
+          <>
+            {/* Chat Panel - 50% on desktop, hidden on laptop */}
+            <div className="hidden xl:block xl:w-1/2 h-full border-r">
               <ChatPanel />
             </div>
 
-            {/* Context Panel - Always visible, takes remaining space */}
-            <div className="flex-1 h-full">
+            {/* Context Panel - 50% on desktop, 100% on laptop */}
+            <div className="w-full xl:w-1/2 h-full">
               <ContextPanel>
                 {children}
               </ContextPanel>
             </div>
-          </div>
+          </>
         ) : (
           // Full Width: Pre-analysis workflow
           <main className="flex-1 overflow-auto bg-background">

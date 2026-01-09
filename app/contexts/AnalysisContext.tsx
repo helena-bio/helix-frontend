@@ -67,17 +67,14 @@ export function AnalysisProvider({ children }: AnalysisProviderProps) {
   // Chat visibility
   const [isChatVisible, setIsChatVisible] = useState(false)
 
-  // Responsive sidebar - reacts to screen size changes
+  // Responsive sidebar - matches xl breakpoint (1280px)
   useEffect(() => {
     const handleResize = () => {
-      const isLargeScreen = window.matchMedia('(min-width: 1024px)').matches
+      const isLargeScreen = window.matchMedia('(min-width: 1280px)').matches
       setIsSidebarOpen(isLargeScreen)
     }
 
-    // Set initial state
     handleResize()
-
-    // Listen for resize events
     window.addEventListener('resize', handleResize)
 
     return () => {
