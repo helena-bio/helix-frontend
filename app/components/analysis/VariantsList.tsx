@@ -14,10 +14,11 @@ import { Card, CardHeader } from '@/components/ui/card'
 
 interface VariantsListProps {
   sessionId: string
+  onVariantClick?: (variantIdx: number) => void
 }
 
 // Inner component that uses filter context
-function VariantsListInner({ sessionId }: VariantsListProps) {
+function VariantsListInner({ sessionId, onVariantClick }: VariantsListProps) {
   const { activeFilters } = useVariantsFilter()
 
   console.log('📋 VariantsListInner render') // Debug log
@@ -40,18 +41,21 @@ function VariantsListInner({ sessionId }: VariantsListProps) {
       </CardHeader>
 
       {/* Table Section - Data consumer, re-renders on data change */}
-      <TableSection sessionId={sessionId} />
+      <TableSection 
+        sessionId={sessionId}
+        onVariantClick={onVariantClick}
+      />
     </Card>
   )
 }
 
 // Main exported component
-export function VariantsList({ sessionId }: VariantsListProps) {
+export function VariantsList({ sessionId, onVariantClick }: VariantsListProps) {
   console.log('🌳 VariantsList (Provider) render') // Debug log
 
   return (
     <VariantsFilterProvider>
-      <VariantsListInner sessionId={sessionId} />
+      <VariantsListInner sessionId={sessionId} onVariantClick={onVariantClick} />
     </VariantsFilterProvider>
   )
 }

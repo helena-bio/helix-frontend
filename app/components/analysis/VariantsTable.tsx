@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  ExternalLink,
 } from 'lucide-react'
 import type { VariantsResponse } from '@/types/variant.types'
 
@@ -29,6 +30,7 @@ interface VariantsTableProps {
   data: VariantsResponse | undefined
   isFetching: boolean
   onPageChange: (page: number) => void
+  onVariantClick?: (variantIdx: number) => void
 }
 
 const getACMGColor = (classification: string | null) => {
@@ -57,13 +59,13 @@ const getACMGShortName = (classification: string | null) => {
 const getZygosityBadge = (genotype: string | null) => {
   if (!genotype) return { label: '-', color: 'bg-gray-100' }
   
-  if (genotype === '0/1' || genotype === '1/0' || genotype === '0|1' || genotype === '1|0') {
+  if (genotype === '0/1' || genotype === '1/0' || genotype === '0|1' || genotype === '1|0' || genotype === 'het') {
     return { label: 'Het', color: 'bg-blue-100 text-blue-900 border-blue-300' }
   }
-  if (genotype === '1/1' || genotype === '1|1') {
+  if (genotype === '1/1' || genotype === '1|1' || genotype === 'hom') {
     return { label: 'Hom', color: 'bg-purple-100 text-purple-900 border-purple-300' }
   }
-  if (genotype === '1' || genotype === '1/.' || genotype === '.|1') {
+  if (genotype === '1' || genotype === '1/.' || genotype === '.|1' || genotype === 'hemi') {
     return { label: 'Hemi', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
   }
   
@@ -84,10 +86,11 @@ const getTierBadge = (tier: number | null) => {
   return { label: `T${tier}`, color: colors[tier as keyof typeof colors] || colors[5] }
 }
 
-export function VariantsTable({ data, isFetching, onPageChange }: VariantsTableProps) {
+export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }: VariantsTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
-  const toggleRow = useCallback((variantIdx: number) => {
+  const toggleRow = useCallback((variantIdx: number, e: React.MouseEvent) => {
+    e.stopPropagation()
     setExpandedRows(prev => {
       const next = new Set(prev)
       if (next.has(variantIdx)) {
@@ -98,6 +101,12 @@ export function VariantsTable({ data, isFetching, onPageChange }: VariantsTableP
       return next
     })
   }, [])
+
+  const handleRowClick = useCallback((variantIdx: number) => {
+    if (onVariantClick) {
+      onVariantClick(variantIdx)
+    }
+  }, [onVariantClick])
 
   const totalPages = data?.total_pages ?? 0
 
@@ -123,12 +132,13 @@ export function VariantsTable({ data, isFetching, onPageChange }: VariantsTableP
               <TableHead className="text-base">ACMG</TableHead>
               <TableHead className="text-base">gnomAD AF</TableHead>
               <TableHead className="text-base">Tier</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {!data || data.variants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9}>
+                <TableCell colSpan={10}>
                   <div className="text-center py-12">
                     <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-lg font-medium mb-2">No variants found</p>
@@ -146,9 +156,8 @@ export function VariantsTable({ data, isFetching, onPageChange }: VariantsTableP
                     <TableRow
                       key={variant.variant_idx}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => toggleRow(variant.variant_idx)}
                     >
-                      <TableCell>
+                      <TableCell onClick={(e) => toggleRow(variant.variant_idx, e)}>
                         {expandedRows.has(variant.variant_idx) ? (
                           <ChevronUp className="h-4 w-4" />
                         ) : (
@@ -187,11 +196,22 @@ export function VariantsTable({ data, isFetching, onPageChange }: VariantsTableP
                           </Badge>
                         ) : '-'}
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRowClick(variant.variant_idx)}
+                          className="h-8 w-8 p-0"
+                          title="View full details"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
 
                     {expandedRows.has(variant.variant_idx) && (
                       <TableRow>
-                        <TableCell colSpan={9} className="bg-muted/30">
+                        <TableCell colSpan={10} className="bg-muted/30">
                           <div className="p-4 space-y-3">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                               <div>

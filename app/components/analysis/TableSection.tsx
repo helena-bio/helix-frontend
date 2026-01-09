@@ -14,9 +14,10 @@ import { Loader2, AlertCircle } from 'lucide-react'
 
 interface TableSectionProps {
   sessionId: string
+  onVariantClick?: (variantIdx: number) => void
 }
 
-export function TableSection({ sessionId }: TableSectionProps) {
+export function TableSection({ sessionId, onVariantClick }: TableSectionProps) {
   const { activeFilters, setPage } = useVariantsFilter()
 
   console.log('🔄 TableSection render') // Debug log
@@ -56,6 +57,7 @@ export function TableSection({ sessionId }: TableSectionProps) {
         data={data}
         isFetching={isFetching}
         onPageChange={setPage}
+        onVariantClick={onVariantClick}
       />
     </CardContent>
   )
