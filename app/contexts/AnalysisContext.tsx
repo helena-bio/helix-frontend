@@ -6,7 +6,7 @@
 
 'use client'
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 
 interface AnalysisContextType {
   // Sidebar state
@@ -48,8 +48,8 @@ interface AnalysisProviderProps {
 }
 
 export function AnalysisProvider({ children }: AnalysisProviderProps) {
-  // Sidebar state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  // Sidebar state - responsive default (closed on small screens)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // Module selection
   const [selectedModule, setSelectedModule] = useState<string | null>(null)
@@ -66,6 +66,12 @@ export function AnalysisProvider({ children }: AnalysisProviderProps) {
 
   // Chat visibility
   const [isChatVisible, setIsChatVisible] = useState(false)
+
+  // Set responsive default for sidebar on mount
+  useEffect(() => {
+    const isLargeScreen = window.matchMedia('(min-width: 1024px)').matches
+    setIsSidebarOpen(isLargeScreen)
+  }, [])
 
   // Sidebar actions
   const toggleSidebar = useCallback(() => {
