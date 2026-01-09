@@ -1,34 +1,82 @@
 /**
  * Variant Analysis Domain Types
- * Production-ready type definitions matching backend API
+ * Production-ready type definitions matching backend API and DuckDB schema
  */
 
 export interface Variant {
-  id: string
-  gene: string
-  hgvs_cdna: string
-  hgvs_protein: string
+  variant_idx: number
+  session_id: string
   chromosome: string
   position: number
   reference_allele: string
   alternate_allele: string
-  genotype: string
-  zygosity: 'Homozygous' | 'Heterozygous' | 'Hemizygous'
-  acmg_class: 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely Benign' | 'Benign'
-  acmg_criteria: string[]
-  gnomad_af: number | null
-  gnomad_ac: number | null
-  gnomad_an: number | null
-  cadd_score: number | null
-  revel_score: number | null
-  sift_prediction: string | null
-  polyphen_prediction: string | null
-  clinvar_significance: string | null
-  clinvar_review_status: string | null
-  clinvar_stars: number | null
-  consequence: string
-  impact: 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
-  biotype: string
+  variant_type: number | null
+  rsid: string | null
+  gene_symbol: string | null
+  gene_id: string | null
+  transcript_id: string | null
+  hgvs_genomic: string | null
+  hgvs_cdna: string | null
+  hgvs_protein: string | null
+  consequence: string | null
+  impact: string | null
+  biotype: string | null
+  exon_number: string | null
+  domains: string | null
+  genotype: string | null
+  quality: number | null
+  depth: number | null
+  allelic_depth: number | null
+  genotype_quality: number | null
+  filter_status: string | null
+  global_af: number | null
+  global_ac: number | null
+  global_an: number | null
+  global_hom: number | null
+  af_grpmax: number | null
+  popmax: string | null
+  clinical_significance: string | null
+  review_status: string | null
+  review_stars: number | null
+  clinvar_variation_id: string | null
+  clinvar_rsid: string | null
+  disease_name: string | null
+  hgvsp: number | null
+  sift_pred: string | null
+  sift_score: number | null
+  alphamissense_pred: string | null
+  alphamissense_score: number | null
+  metasvm_pred: string | null
+  metasvm_score: number | null
+  dann_score: number | null
+  phylop100way_vertebrate: number | null
+  gerp_rs: number | null
+  pli: number | null
+  oe_lof_upper: number | null
+  oe_lof: number | null
+  mis_z: number | null
+  hpo_phenotypes: string | null
+  hpo_terms: string | null
+  hpo_count: number | null
+  hpo_frequency_data: string | null
+  hpo_disease_ids: string | null
+  hpo_gene_id: string | null
+  haploinsufficiency_score: number | null
+  triplosensitivity_score: number | null
+  acmg_class: string | null
+  acmg_criteria: string | null
+  confidence_score: number | null
+  pass_quality_filter: boolean | null
+  pass_frequency_filter: boolean | null
+  pass_impact_filter: boolean | null
+  is_final_candidate: boolean | null
+  compound_het_candidate: boolean | null
+  priority_score: number | null
+  priority_tier: number | null
+  is_flagged: boolean | null
+  flag_reason: number | null
+  processing_notes: number | null
+  raw_data: string | null
 }
 
 export interface QCMetrics {
@@ -45,7 +93,7 @@ export interface QCMetrics {
 export interface AnalysisSession {
   id: string
   analysis_type: string
-  status: 'created' | 'uploaded' | 'processing' | 'completed' | 'failed'
+  status: 'pending' | 'validated' | 'processing' | 'completed' | 'failed'
   vcf_file_path: string | null
   created_at: string
   updated_at: string
