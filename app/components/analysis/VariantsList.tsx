@@ -2,10 +2,10 @@
 
 /**
  * VariantsList - Filters + Table wrapper
- * Filters DON'T re-render, only VariantsTable does
+ * Filters are MEMOIZED to prevent re-render
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, memo } from 'react'
 import { useVariants } from '@/hooks/queries'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +36,108 @@ const ACMG_CLASSES = [
 
 const IMPACT_LEVELS = ['HIGH', 'MODERATE', 'LOW', 'MODIFIER']
 
+// Memoized Filter Controls - won't re-render
+const FilterControls = memo(({ 
+  geneInput, 
+  onGeneInputChange, 
+  filters, 
+  onFilterChange,
+  isSearching,
+  isFetching 
+}: {
+  geneInput: string
+  onGeneInputChange: (value: string) => void
+  filters: VariantFilters
+  onFilterChange: (key: keyof VariantFilters, value: any) => void
+  isSearching: boolean
+  isFetching: boolean
+}) => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <Select
+      value={filters.acmg_class?.[0] || 'all'}
+      onValueChange={(value) =>
+        onFilterChange('acmg_class', value === 'all' ? undefined : [value])
+      }
+    >
+      <SelectTrigger className="text-base">
+        <SelectValue placeholder="ACMG Classification" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All</SelectItem>
+        {ACMG_CLASSES.map((cls) => (
+          <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+
+    <Select
+      value={filters.impact?.[0] || 'all'}
+      onValueChange={(value) =>
+        onFilterChange('impact', value === 'all' ? undefined : [value])
+      }
+    >
+      <SelectTrigger className="text-base">
+        <SelectValue placeholder="Impact" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All</SelectItem>
+        {IMPACT_LEVELS.map((impact) => (
+          <SelectItem key={impact} value={impact}>{impact}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+
+    <div className="relative">
+      <Input
+        placeholder="e.g., BRCA1"
+        value={geneInput}
+        onChange={(e) => onGeneInputChange(e.target.value)}
+        className="text-base pr-8"
+      />
+      {(isSearching || isFetching) && (
+        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+      )}
+    </div>
+  </div>
+))
+FilterControls.displayName = 'FilterControls'
+
+// Memoized Active Filters Display
+const ActiveFilters = memo(({ 
+  filters, 
+  debouncedGene, 
+  onClearAll 
+}: {
+  filters: VariantFilters
+  debouncedGene: string
+  onClearAll: () => void
+}) => {
+  const hasActiveFilters = !!(filters.acmg_class || filters.impact || debouncedGene)
+  
+  if (!hasActiveFilters) return null
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex flex-wrap gap-2">
+        {filters.acmg_class?.map((cls) => (
+          <Badge key={cls} variant="secondary" className="text-sm">{cls}</Badge>
+        ))}
+        {filters.impact?.map((imp) => (
+          <Badge key={imp} variant="secondary" className="text-sm">{imp}</Badge>
+        ))}
+        {debouncedGene && (
+          <Badge variant="secondary" className="text-sm">{debouncedGene}</Badge>
+        )}
+      </div>
+      <Button variant="ghost" size="sm" onClick={onClearAll} className="shrink-0">
+        <X className="h-4 w-4 mr-1" />
+        <span className="text-sm">Clear All</span>
+      </Button>
+    </div>
+  )
+})
+ActiveFilters.displayName = 'ActiveFilters'
+
 export function VariantsList({ sessionId }: VariantsListProps) {
   // State
   const [geneInput, setGeneInput] = useState('')
@@ -62,7 +164,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
   // Query
   const { data, isLoading, error, isFetching } = useVariants(sessionId, activeFilters)
 
-  // Handlers
+  // Handlers - memoized
   const handleFilterChange = useCallback((key: keyof VariantFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
   }, [])
@@ -76,7 +178,6 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     setGeneInput('')
   }, [])
 
-  const hasActiveFilters = !!(filters.acmg_class || filters.impact || debouncedGene)
   const isSearching = geneInput.trim() !== debouncedGene
 
   // Initial Loading
@@ -119,11 +220,11 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
   return (
     <Card>
-      {/* HEADER - Does NOT re-render */}
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg">Variants</CardTitle>
+            {/* This updates but doesn't cause filter re-render */}
             <p className="text-md text-muted-foreground mt-1">
               {data ? `Showing ${data.variants.length} of ${data.total_count.toLocaleString()} variants` : 'Loading...'}
             </p>
@@ -134,82 +235,29 @@ export function VariantsList({ sessionId }: VariantsListProps) {
           </Button>
         </div>
 
-        {/* Filters - STABLE, don't re-render */}
+        {/* Memoized Filters - won't re-render on data change */}
         <div className="pt-4 space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <Select
-              value={filters.acmg_class?.[0] || 'all'}
-              onValueChange={(value) =>
-                handleFilterChange('acmg_class', value === 'all' ? undefined : [value])
-              }
-            >
-              <SelectTrigger className="text-base">
-                <SelectValue placeholder="ACMG Classification" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                {ACMG_CLASSES.map((cls) => (
-                  <SelectItem key={cls} value={cls}>{cls}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={filters.impact?.[0] || 'all'}
-              onValueChange={(value) =>
-                handleFilterChange('impact', value === 'all' ? undefined : [value])
-              }
-            >
-              <SelectTrigger className="text-base">
-                <SelectValue placeholder="Impact" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                {IMPACT_LEVELS.map((impact) => (
-                  <SelectItem key={impact} value={impact}>{impact}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="relative">
-              <Input
-                placeholder="e.g., BRCA1"
-                value={geneInput}
-                onChange={(e) => setGeneInput(e.target.value)}
-                className="text-base pr-8"
-              />
-              {(isSearching || isFetching) && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-            </div>
-          </div>
-
-          {hasActiveFilters && (
-            <div className="flex items-center justify-between">
-              <div className="flex flex-wrap gap-2">
-                {filters.acmg_class?.map((cls) => (
-                  <Badge key={cls} variant="secondary" className="text-sm">{cls}</Badge>
-                ))}
-                {filters.impact?.map((imp) => (
-                  <Badge key={imp} variant="secondary" className="text-sm">{imp}</Badge>
-                ))}
-                {debouncedGene && (
-                  <Badge variant="secondary" className="text-sm">{debouncedGene}</Badge>
-                )}
-              </div>
-              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="shrink-0">
-                <X className="h-4 w-4 mr-1" />
-                <span className="text-sm">Clear All</span>
-              </Button>
-            </div>
-          )}
+          <FilterControls
+            geneInput={geneInput}
+            onGeneInputChange={setGeneInput}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            isSearching={isSearching}
+            isFetching={isFetching}
+          />
+          
+          <ActiveFilters
+            filters={filters}
+            debouncedGene={debouncedGene}
+            onClearAll={clearAllFilters}
+          />
         </div>
       </CardHeader>
 
-      {/* TABLE - Only this re-renders */}
+      {/* TABLE - Only this re-renders on data change */}
       <CardContent className="p-0">
-        <VariantsTable 
-          data={data} 
+        <VariantsTable
+          data={data}
           isFetching={isFetching}
           onPageChange={handlePageChange}
         />
