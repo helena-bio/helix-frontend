@@ -11,8 +11,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
-import { ChatPanel } from '@/components/chat'
-import { ContextPanel } from '@/components/layout'
+import { ChatPanel } from '@/components/chat/ChatPanel'
+import { ContextPanel } from '@/components/layout/ContextPanel'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { cn } from '@helix/shared/lib/utils'
@@ -30,9 +30,19 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   // Check if analysis is complete (show split screen)
   const isAnalysisComplete = currentStep === 'analysis'
 
+  // DEBUG: Log state
+  useEffect(() => {
+    console.log('🔍 Layout Debug:', {
+      currentStep,
+      isAnalysisComplete,
+      isChatVisible,
+    })
+  }, [currentStep, isAnalysisComplete, isChatVisible])
+
   // Auto-show chat when analysis completes
   useEffect(() => {
     if (isAnalysisComplete) {
+      console.log('✅ Analysis complete! Showing chat...')
       showChat()
     }
   }, [isAnalysisComplete, showChat])
@@ -42,24 +52,24 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
     const token = localStorage.getItem('helix_auth_token')
 
     if (!token) {
-      // Not authenticated - redirect to login
       router.push('/login')
     } else {
-      // Authenticated - show content
       setIsChecking(false)
     }
   }, [router])
 
-  // Show nothing while checking auth
   if (isChecking) {
     return null
   }
+
+  // DEBUG: Show what we're rendering
+  const shouldShowSplitScreen = isChatVisible && isAnalysisComplete
+  console.log('🎨 Rendering:', shouldShowSplitScreen ? 'SPLIT SCREEN' : 'FULL WIDTH')
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Header - Logo + Journey Panel */}
       <header className="h-14 border-b border-border bg-card flex items-center shrink-0">
-        {/* Logo section - same width as sidebar */}
         <div
           className={cn(
             'h-full flex items-center px-4 border-r border-border shrink-0 transition-all duration-300',
@@ -96,7 +106,6 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
           )}
         </div>
 
-        {/* Journey Panel - fills remaining space */}
         <div className="flex-1 h-full">
           <JourneyPanel />
         </div>
@@ -104,14 +113,13 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
 
       {/* Main area - Sidebar + Content (conditional split) */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
         <Sidebar />
 
         {/* Content Area - CONDITIONAL RENDERING */}
-        {isChatVisible && isAnalysisComplete ? (
+        {shouldShowSplitScreen ? (
           // SPLIT SCREEN: Chat + Context Panel
           <>
-            <div className="w-[40%] h-full">
+            <div className="w-[40%] h-full border-r border-border">
               <ChatPanel />
             </div>
             <div className="flex-1 h-full">
