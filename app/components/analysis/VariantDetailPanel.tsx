@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Progress } from '@/components/ui/progress'
 import { 
   ArrowLeft, 
   ExternalLink, 
@@ -17,13 +16,13 @@ import {
   Loader2,
   Dna,
   Shield,
-  BarChart3,
   Activity,
   Users,
   FileText,
   Gauge,
   Target,
-  TrendingUp
+  TrendingUp,
+  Star
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
 
@@ -77,6 +76,28 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
   const { data, isLoading, error } = useVariant(sessionId, variantIdx)
   
   const variant = data?.variant
+
+  // Check if we have prediction data
+  const hasPredictions = variant && (
+    variant.sift_pred || variant.sift_score !== null ||
+    variant.alphamissense_pred || variant.alphamissense_score !== null ||
+    variant.metasvm_pred || variant.metasvm_score !== null ||
+    variant.dann_score !== null
+  )
+
+  // Check if we have gnomAD data
+  const hasGnomAD = variant && (
+    variant.global_af !== null || variant.global_ac !== null ||
+    variant.global_an !== null || variant.global_hom !== null
+  )
+
+  // Check if we have conservation data
+  const hasConservation = variant && (
+    variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null ||
+    variant.pli !== null || variant.oe_lof_upper !== null ||
+    variant.oe_lof !== null || variant.mis_z !== null ||
+    variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null
+  )
 
   if (isLoading) {
     return (
@@ -147,7 +168,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
       <ScrollArea className="flex-1">
         <div className="p-6 space-y-6">
           
-          {/* TOP PRIORITY: ACMG Classification */}
+          {/* ACMG Classification - Always show, full width */}
           <Card className={variant.acmg_class ? 'border-2' : ''}>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -189,256 +210,276 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </CardContent>
           </Card>
 
-          {/* Clinical Significance (ClinVar) */}
-          {(variant.clinical_significance || variant.clinvar_variation_id) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Clinical Significance (ClinVar)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <InfoRow label="Significance" value={variant.clinical_significance} />
-                <InfoRow label="Review Status" value={variant.review_status} />
-                <InfoRow label="Stars" value={variant.review_stars ? '⭐'.repeat(variant.review_stars) : null} />
-                <InfoRow label="Disease" value={variant.disease_name} />
-                {variant.clinvar_variation_id && (
-                  <div className="pt-2">
+          {/* 2-column grid for remaining cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Clinical Significance (ClinVar) */}
+            {(variant.clinical_significance || variant.clinvar_variation_id) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    ClinVar
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <InfoRow label="Significance" value={variant.clinical_significance} />
+                  <InfoRow label="Review Status" value={variant.review_status} />
+                  {variant.review_stars && (
+                    <div className="flex justify-between items-start py-1.5">
+                      <span className="text-base text-muted-foreground">Review Stars</span>
+                      <div className="flex gap-0.5">
+                        {[...Array(variant.review_stars)].map((_, i) => (
+                          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <InfoRow label="Disease" value={variant.disease_name} />
+                  {variant.clinvar_variation_id && (
+                    <div className="pt-2">
+                      
+                        <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                      >
+                        View in ClinVar
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pathogenicity Predictions */}
+            {hasPredictions && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Predictions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    {(variant.sift_pred || variant.sift_score !== null) && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base text-muted-foreground">SIFT</span>
+                          {variant.sift_pred && (
+                            <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.sift_pred)}`}>
+                              {variant.sift_pred}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-md font-mono">{variant.sift_score?.toFixed(3) || '-'}</span>
+                        </div>
+                      </>
+                    )}
                     
-                      <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline flex items-center gap-1"
-                    >
-                      View in ClinVar
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                    {(variant.alphamissense_pred || variant.alphamissense_score !== null) && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base text-muted-foreground">AlphaMissense</span>
+                          {variant.alphamissense_pred && (
+                            <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.alphamissense_pred)}`}>
+                              {variant.alphamissense_pred}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-md font-mono">{variant.alphamissense_score?.toFixed(3) || '-'}</span>
+                        </div>
+                      </>
+                    )}
+                    
+                    {(variant.metasvm_pred || variant.metasvm_score !== null) && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base text-muted-foreground">MetaSVM</span>
+                          {variant.metasvm_pred && (
+                            <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.metasvm_pred)}`}>
+                              {variant.metasvm_pred}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="text-md font-mono">{variant.metasvm_score?.toFixed(3) || '-'}</span>
+                        </div>
+                      </>
+                    )}
+                    
+                    {variant.dann_score !== null && (
+                      <>
+                        <div className="text-base text-muted-foreground">DANN</div>
+                        <div className="text-right">
+                          <span className="text-md font-mono">{variant.dann_score.toFixed(3)}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Pathogenicity Predictions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Pathogenicity Predictions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                {/* SIFT */}
-                {(variant.sift_pred || variant.sift_score !== null) && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-base text-muted-foreground w-24">SIFT</span>
-                      {variant.sift_pred && (
-                        <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.sift_pred)}`}>
-                          {variant.sift_pred}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <span className="text-md font-mono">{variant.sift_score?.toFixed(3) || '-'}</span>
-                    </div>
-                  </>
-                )}
-                
-                {/* AlphaMissense */}
-                {(variant.alphamissense_pred || variant.alphamissense_score !== null) && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-base text-muted-foreground w-24">AlphaMissense</span>
-                      {variant.alphamissense_pred && (
-                        <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.alphamissense_pred)}`}>
-                          {variant.alphamissense_pred}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <span className="text-md font-mono">{variant.alphamissense_score?.toFixed(3) || '-'}</span>
-                    </div>
-                  </>
-                )}
-                
-                {/* MetaSVM */}
-                {(variant.metasvm_pred || variant.metasvm_score !== null) && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-base text-muted-foreground w-24">MetaSVM</span>
-                      {variant.metasvm_pred && (
-                        <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.metasvm_pred)}`}>
-                          {variant.metasvm_pred}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <span className="text-md font-mono">{variant.metasvm_score?.toFixed(3) || '-'}</span>
-                    </div>
-                  </>
-                )}
-                
-                {/* DANN */}
-                {variant.dann_score !== null && (
-                  <>
-                    <div className="text-base text-muted-foreground">DANN</div>
-                    <div className="text-right">
-                      <span className="text-md font-mono">{variant.dann_score.toFixed(3)}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            {/* Population Frequencies */}
+            {hasGnomAD && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    gnomAD
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <InfoRow label="Global AF" value={variant.global_af?.toExponential(4)} mono />
+                  <InfoRow label="Allele Count" value={variant.global_ac?.toLocaleString()} />
+                  <InfoRow label="Allele Number" value={variant.global_an?.toLocaleString()} />
+                  <InfoRow label="Homozygotes" value={variant.global_hom} />
+                  <InfoRow label="PopMax" value={variant.popmax} />
+                  <InfoRow label="PopMax AF" value={variant.af_grpmax?.toExponential(4)} mono />
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Population Frequencies */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Population Frequencies (gnomAD)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <InfoRow label="Global AF" value={variant.global_af?.toExponential(4)} mono />
-              <InfoRow label="Allele Count" value={variant.global_ac?.toLocaleString()} />
-              <InfoRow label="Allele Number" value={variant.global_an?.toLocaleString()} />
-              <InfoRow label="Homozygotes" value={variant.global_hom} />
-              <InfoRow label="PopMax" value={variant.popmax} />
-              <InfoRow label="PopMax AF" value={variant.af_grpmax?.toExponential(4)} mono />
-            </CardContent>
-          </Card>
-
-          {/* Quality Metrics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Gauge className="h-5 w-5" />
-                Quality Metrics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-base text-muted-foreground">Genotype</p>
-                  <p className="text-md font-mono font-medium">{variant.genotype || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-base text-muted-foreground">Quality Score</p>
-                  <p className="text-md font-medium">{variant.quality?.toFixed(1) || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-base text-muted-foreground">Depth</p>
-                  <p className="text-md font-medium">{variant.depth || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-base text-muted-foreground">GQ</p>
-                  <p className="text-md font-medium">{variant.genotype_quality || '-'}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Variant Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Dna className="h-5 w-5" />
-                Variant Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <InfoRow label="HGVS Genomic" value={variant.hgvs_genomic} mono />
-              <InfoRow label="HGVS cDNA" value={variant.hgvs_cdna} mono />
-              <InfoRow label="HGVS Protein" value={variant.hgvs_protein} mono />
-              <InfoRow label="Consequence" value={variant.consequence} />
-              <InfoRow label="Impact" value={variant.impact} />
-              <InfoRow label="Transcript" value={variant.transcript_id} mono />
-              <InfoRow label="Exon" value={variant.exon_number} />
-              <InfoRow label="Biotype" value={variant.biotype} />
-            </CardContent>
-          </Card>
-
-          {/* Conservation & Constraint */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Conservation & Constraint
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-base text-muted-foreground mb-2">Conservation Scores</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <InfoRow label="PhyloP" value={variant.phylop100way_vertebrate?.toFixed(3)} mono />
-                    <InfoRow label="GERP" value={variant.gerp_rs?.toFixed(2)} mono />
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-base text-muted-foreground mb-2">Gene Constraint Metrics</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <InfoRow label="pLI" value={variant.pli?.toFixed(3)} mono />
-                    <InfoRow label="LOEUF" value={variant.oe_lof_upper?.toFixed(3)} mono />
-                    <InfoRow label="oe LoF" value={variant.oe_lof?.toFixed(3)} mono />
-                    <InfoRow label="Missense Z" value={variant.mis_z?.toFixed(2)} mono />
-                  </div>
-                </div>
-
-                {(variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null) && (
-                  <div>
-                    <p className="text-base text-muted-foreground mb-2">ClinGen Dosage Sensitivity</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <InfoRow label="HI Score" value={variant.haploinsufficiency_score} />
-                      <InfoRow label="TS Score" value={variant.triplosensitivity_score} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* HPO Phenotypes */}
-          {variant.hpo_phenotypes && (
+            {/* Quality Metrics */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Associated Phenotypes (HPO)
+                  <Gauge className="h-5 w-5" />
+                  Quality
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-base text-muted-foreground">Phenotype Count</span>
-                  <span className="text-md font-medium">{variant.hpo_count}</span>
-                </div>
-                
-                <div>
-                  <p className="text-base text-muted-foreground mb-2">Phenotypes</p>
-                  <p className="text-sm">{variant.hpo_phenotypes}</p>
-                </div>
-                
-                {variant.hpo_terms && (
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-base text-muted-foreground mb-2">HPO Terms</p>
-                    <div className="flex flex-wrap gap-1">
-                      {variant.hpo_terms.split(',').filter(Boolean).map((term: string) => (
-                        <Badge key={term} variant="secondary" className="text-xs">
-                          {term.trim()}
-                        </Badge>
-                      ))}
-                    </div>
+                    <p className="text-base text-muted-foreground">Genotype</p>
+                    <p className="text-md font-mono font-medium">{variant.genotype || '-'}</p>
                   </div>
-                )}
+                  <div>
+                    <p className="text-base text-muted-foreground">Quality</p>
+                    <p className="text-md font-medium">{variant.quality?.toFixed(1) || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-base text-muted-foreground">Depth</p>
+                    <p className="text-md font-medium">{variant.depth || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-base text-muted-foreground">GQ</p>
+                    <p className="text-md font-medium">{variant.genotype_quality || '-'}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
 
+            {/* Variant Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Dna className="h-5 w-5" />
+                  Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <InfoRow label="HGVS Genomic" value={variant.hgvs_genomic} mono />
+                <InfoRow label="HGVS cDNA" value={variant.hgvs_cdna} mono />
+                <InfoRow label="HGVS Protein" value={variant.hgvs_protein} mono />
+                <InfoRow label="Consequence" value={variant.consequence} />
+                <InfoRow label="Impact" value={variant.impact} />
+                <InfoRow label="Transcript" value={variant.transcript_id} mono />
+                <InfoRow label="Exon" value={variant.exon_number} />
+                <InfoRow label="Biotype" value={variant.biotype} />
+              </CardContent>
+            </Card>
+
+            {/* Conservation & Constraint */}
+            {hasConservation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Conservation
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null) && (
+                      <div>
+                        <p className="text-base text-muted-foreground mb-2">Scores</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <InfoRow label="PhyloP" value={variant.phylop100way_vertebrate?.toFixed(3)} mono />
+                          <InfoRow label="GERP" value={variant.gerp_rs?.toFixed(2)} mono />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(variant.pli !== null || variant.oe_lof_upper !== null || 
+                      variant.oe_lof !== null || variant.mis_z !== null) && (
+                      <div>
+                        <p className="text-base text-muted-foreground mb-2">Gene Constraints</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <InfoRow label="pLI" value={variant.pli?.toFixed(3)} mono />
+                          <InfoRow label="LOEUF" value={variant.oe_lof_upper?.toFixed(3)} mono />
+                          <InfoRow label="oe LoF" value={variant.oe_lof?.toFixed(3)} mono />
+                          <InfoRow label="Missense Z" value={variant.mis_z?.toFixed(2)} mono />
+                        </div>
+                      </div>
+                    )}
+
+                    {(variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null) && (
+                      <div>
+                        <p className="text-base text-muted-foreground mb-2">ClinGen Dosage</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <InfoRow label="HI Score" value={variant.haploinsufficiency_score} />
+                          <InfoRow label="TS Score" value={variant.triplosensitivity_score} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* HPO Phenotypes */}
+            {variant.hpo_phenotypes && (
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Phenotypes (HPO)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base text-muted-foreground">Count</span>
+                    <span className="text-md font-medium">{variant.hpo_count}</span>
+                  </div>
+                  
+                  <div>
+                    <p className="text-base text-muted-foreground mb-2">Phenotypes</p>
+                    <p className="text-sm">{variant.hpo_phenotypes}</p>
+                  </div>
+                  
+                  {variant.hpo_terms && (
+                    <div>
+                      <p className="text-base text-muted-foreground mb-2">HPO Terms</p>
+                      <div className="flex flex-wrap gap-1">
+                        {variant.hpo_terms.split(',').filter(Boolean).map((term: string) => (
+                          <Badge key={term} variant="secondary" className="text-xs">
+                            {term.trim()}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+          </div>
         </div>
       </ScrollArea>
     </div>
