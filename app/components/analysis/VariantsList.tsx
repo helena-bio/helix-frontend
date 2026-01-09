@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * VariantsList Component - Fast Real-time Search
+ * VariantsList Component - Optimized for SPEED with NO flickering
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
@@ -17,7 +17,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -85,22 +84,21 @@ export function VariantsList({ sessionId }: VariantsListProps) {
   })
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
-  // Debounce effect - CORRECT implementation
+  // Debounce - 200ms for speed
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedGene(geneInput.trim())
-    }, 300)
-
+    }, 200)
     return () => clearTimeout(timer)
   }, [geneInput])
 
-  // Compute filters with debounced gene
+  // Compute filters
   const activeFilters = useMemo(() => ({
     ...filters,
     genes: debouncedGene ? [debouncedGene] : undefined,
   }), [filters, debouncedGene])
 
-  // Query
+  // Query - keepPreviousData is KEY for no flickering
   const { data, isLoading, error, isFetching } = useVariants(sessionId, activeFilters)
 
   // Handlers
@@ -134,18 +132,21 @@ export function VariantsList({ sessionId }: VariantsListProps) {
   const hasActiveFilters = !!(filters.acmg_class || filters.impact || debouncedGene)
   const isSearching = geneInput.trim() !== debouncedGene
 
-  // Initial Loading
+  // ONLY show skeleton on INITIAL load (no data yet)
   if (isLoading && !data) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Variants</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Variants</CardTitle>
+              <p className="text-md text-muted-foreground mt-1">Loading variants...</p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {[...Array(10)].map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         </CardContent>
       </Card>
@@ -263,9 +264,10 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
       <CardContent className="p-0">
         <div className="overflow-x-auto relative">
+          {/* Subtle progress bar - ONLY visual indicator */}
           {isFetching && (
-            <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 z-10">
-              <div className="h-full bg-primary w-1/2 animate-pulse" />
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary/30 z-10 overflow-hidden">
+              <div className="h-full bg-primary animate-[shimmer_1s_ease-in-out_infinite] w-1/3" />
             </div>
           )}
           
@@ -298,7 +300,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                   <>
                     <TableRow
                       key={variant.variant_idx}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => toggleRow(variant.variant_idx)}
                     >
                       <TableCell>
@@ -394,7 +396,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={!data.has_previous_page}
+                disabled={!data.has_previous_page || isFetching}
                 onClick={() => handlePageChange(filters.page! - 1)}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
@@ -403,7 +405,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={!data.has_next_page}
+                disabled={!data.has_next_page || isFetching}
                 onClick={() => handlePageChange(filters.page! + 1)}
               >
                 <span className="text-base">Next</span>
