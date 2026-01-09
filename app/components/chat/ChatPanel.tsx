@@ -138,8 +138,8 @@ export function ChatPanel() {
         </div>
       </div>
 
-      {/* Input */}
-      <div className="px-6 py-4 border-t border-border shrink-0">
+      {/* Input - NO border-top, white background */}
+      <div className="px-6 py-4 shrink-0 bg-background">
         <div className="relative">
           <textarea
             ref={textareaRef}
@@ -148,7 +148,7 @@ export function ChatPanel() {
             onKeyDown={handleKeyDown}
             placeholder="Ask about variants, genes, or phenotypes..."
             rows={3}
-            className="w-full px-4 py-3 pr-12 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-base"
+            className="w-full px-4 py-3 pr-12 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-base"
           />
           <Button
             size="icon"
