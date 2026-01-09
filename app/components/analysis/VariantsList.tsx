@@ -1,10 +1,11 @@
 "use client"
 
 /**
- * VariantsList Component - Fast Real-time Search
+ * VariantsList Component - Optimized Real-time Search
+ * Best Practice: Separate display value from filter value
  */
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useVariants } from '@/hooks/queries'
 import {
   Table,
@@ -37,6 +38,23 @@ import {
   Loader2
 } from 'lucide-react'
 import type { VariantFilters } from '@/types/variant.types'
+
+// Custom debounce hook - best practice
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useState(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  })
+
+  return debouncedValue
+}
 
 interface VariantsListProps {
   sessionId: string
@@ -76,76 +94,44 @@ const getACMGShortName = (classification: string | null) => {
 }
 
 export function VariantsList({ sessionId }: VariantsListProps) {
+  // Separate state for display vs filter
+  const [geneInput, setGeneInput] = useState('')
+  const debouncedGeneInput = useDebounce(geneInput, 400)
+  
   // Filters state
   const [filters, setFilters] = useState<VariantFilters>({
     page: 1,
     page_size: 50,
   })
-  const [geneSearch, setGeneSearch] = useState('')
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
-  
-  // Debounce timer ref
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
-  const isTyping = useRef(false)
 
-  // Query
-  const { data, isLoading, error, isFetching } = useVariants(sessionId, filters)
-
-  // Fast debounced search (300ms instead of 500ms)
-  useEffect(() => {
-    // Clear existing timer
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current)
+  // Compute actual filter with debounced value
+  const activeFilters = useMemo(() => {
+    const trimmed = debouncedGeneInput.trim().toUpperCase()
+    return {
+      ...filters,
+      genes: trimmed ? [trimmed] : undefined,
     }
+  }, [filters, debouncedGeneInput])
 
-    // Mark as typing
-    isTyping.current = true
-
-    // Set new timer
-    debounceTimer.current = setTimeout(() => {
-      isTyping.current = false
-      
-      // Only update if value actually changed
-      const trimmedSearch = geneSearch.trim().toUpperCase()
-      const currentGene = filters.genes?.[0]
-      
-      if (trimmedSearch && trimmedSearch !== currentGene) {
-        setFilters(prev => ({ 
-          ...prev, 
-          genes: [trimmedSearch],
-          page: 1 
-        }))
-      } else if (!trimmedSearch && currentGene) {
-        setFilters(prev => ({ 
-          ...prev, 
-          genes: undefined,
-          page: 1 
-        }))
-      }
-    }, 300)
-
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current)
-      }
-    }
-  }, [geneSearch])
+  // Query with computed filters
+  const { data, isLoading, error, isFetching } = useVariants(sessionId, activeFilters)
 
   // Handlers
-  const handleFilterChange = (key: keyof VariantFilters, value: any) => {
+  const handleFilterChange = useCallback((key: keyof VariantFilters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }))
-  }
+  }, [])
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     setFilters(prev => ({ ...prev, page: newPage }))
-  }
+  }, [])
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setFilters({ page: 1, page_size: 50 })
-    setGeneSearch('')
-  }
+    setGeneInput('')
+  }, [])
 
-  const toggleRow = (variantIdx: number) => {
+  const toggleRow = useCallback((variantIdx: number) => {
     setExpandedRows(prev => {
       const next = new Set(prev)
       if (next.has(variantIdx)) {
@@ -155,15 +141,12 @@ export function VariantsList({ sessionId }: VariantsListProps) {
       }
       return next
     })
-  }
+  }, [])
 
   // Computed
-  const totalPages = useMemo(() => {
-    if (!data) return 0
-    return data.total_pages
-  }, [data])
-
-  const hasActiveFilters = !!(filters.acmg_class || filters.impact || filters.genes)
+  const totalPages = useMemo(() => data?.total_pages ?? 0, [data])
+  const hasActiveFilters = !!(filters.acmg_class || filters.impact || debouncedGeneInput.trim())
+  const isSearching = geneInput !== debouncedGeneInput
 
   // Initial Loading State
   if (isLoading && !data) {
@@ -265,15 +248,15 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               </SelectContent>
             </Select>
 
-            {/* Gene Search - Fast Real-time */}
+            {/* Gene Search - Optimized */}
             <div className="relative">
               <Input
                 placeholder="e.g., BRCA1"
-                value={geneSearch}
-                onChange={(e) => setGeneSearch(e.target.value)}
+                value={geneInput}
+                onChange={(e) => setGeneInput(e.target.value)}
                 className="text-base pr-8"
               />
-              {isFetching && (
+              {(isSearching || isFetching) && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
             </div>
@@ -293,11 +276,11 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                     {imp}
                   </Badge>
                 ))}
-                {filters.genes?.map((gene) => (
-                  <Badge key={gene} variant="secondary" className="text-sm">
-                    {gene}
+                {debouncedGeneInput.trim() && (
+                  <Badge variant="secondary" className="text-sm">
+                    {debouncedGeneInput.trim().toUpperCase()}
                   </Badge>
-                ))}
+                )}
               </div>
               <Button
                 variant="ghost"
@@ -315,10 +298,10 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
       <CardContent className="p-0">
         <div className="overflow-x-auto relative">
-          {/* Subtle loading indicator */}
+          {/* Progress indicator */}
           {isFetching && (
             <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 z-10">
-              <div className="h-full bg-primary animate-pulse" style={{ width: '50%' }} />
+              <div className="h-full bg-primary w-1/2 animate-pulse" />
             </div>
           )}
           
