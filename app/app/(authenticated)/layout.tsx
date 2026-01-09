@@ -68,8 +68,8 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header - Logo + Journey Panel */}
-      <header className="h-14 border-b border-border bg-card flex items-center shrink-0">
+      {/* Header - Logo + Journey Panel - FIXED */}
+      <header className="h-14 border-b border-border bg-card flex items-center shrink-0 sticky top-0 z-50">
         <div
           className={cn(
             'h-full flex items-center px-4 border-r border-border shrink-0 transition-all duration-300',
@@ -112,16 +112,20 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       </header>
 
       {/* Main area - Sidebar + Content (conditional split) */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Height = 100vh - 56px (header) */}
+      <div className="flex-1 flex overflow-hidden" style={{ height: 'calc(100vh - 56px)' }}>
         <Sidebar />
 
         {/* Content Area - CONDITIONAL RENDERING */}
         {shouldShowSplitScreen ? (
           // SPLIT SCREEN: Chat + Context Panel
           <>
-            <div className="w-[40%] h-full border-r border-border">
+            {/* Chat Panel - 40% width, full height with scroll */}
+            <div className="w-[40%] h-full flex flex-col">
               <ChatPanel />
             </div>
+            
+            {/* Context Panel - 60% width, full height with scroll */}
             <div className="flex-1 h-full">
               <ContextPanel>
                 {children}
