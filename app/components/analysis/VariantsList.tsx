@@ -96,7 +96,7 @@ const getACMGShortName = (classification: string | null) => {
 export function VariantsList({ sessionId }: VariantsListProps) {
   // Separate state for display vs filter
   const [geneInput, setGeneInput] = useState('')
-  const debouncedGeneInput = useDebounce(geneInput, 400)
+  const debouncedGeneInput = useDebounce(geneInput, 300)
   
   // Filters state
   const [filters, setFilters] = useState<VariantFilters>({
@@ -105,9 +105,9 @@ export function VariantsList({ sessionId }: VariantsListProps) {
   })
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
-  // Compute actual filter with debounced value
+  // Compute actual filter with debounced value (NO uppercase here - backend does it)
   const activeFilters = useMemo(() => {
-    const trimmed = debouncedGeneInput.trim().toUpperCase()
+    const trimmed = debouncedGeneInput.trim()
     return {
       ...filters,
       genes: trimmed ? [trimmed] : undefined,
@@ -278,7 +278,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
                 ))}
                 {debouncedGeneInput.trim() && (
                   <Badge variant="secondary" className="text-sm">
-                    {debouncedGeneInput.trim().toUpperCase()}
+                    {debouncedGeneInput.trim()}
                   </Badge>
                 )}
               </div>
