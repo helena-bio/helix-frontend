@@ -1,10 +1,10 @@
 "use client"
 
 /**
- * VariantsList Component - Paginated Variants Table with Integrated Filters
+ * VariantsList Component - Paginated Variants Table with Real-time Search
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useVariants } from '@/hooks/queries'
 import {
   Table,
@@ -32,9 +32,9 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Search,
   Download,
-  X
+  X,
+  Loader2
 } from 'lucide-react'
 import type { VariantFilters } from '@/types/variant.types'
 
@@ -82,10 +82,42 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     page_size: 50,
   })
   const [geneSearch, setGeneSearch] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
   // Query
   const { data, isLoading, error } = useVariants(sessionId, filters)
+
+  // Real-time search with debounce
+  useEffect(() => {
+    // Don't trigger on empty string when clearing
+    if (geneSearch === '' && !filters.genes) {
+      return
+    }
+
+    setIsSearching(true)
+    const timer = setTimeout(() => {
+      if (geneSearch.trim()) {
+        setFilters(prev => ({ 
+          ...prev, 
+          genes: [geneSearch.trim().toUpperCase()],
+          page: 1 
+        }))
+      } else {
+        setFilters(prev => ({ 
+          ...prev, 
+          genes: undefined,
+          page: 1 
+        }))
+      }
+      setIsSearching(false)
+    }, 500) // 500ms debounce
+
+    return () => {
+      clearTimeout(timer)
+      setIsSearching(false)
+    }
+  }, [geneSearch])
 
   // Handlers
   const handleFilterChange = (key: keyof VariantFilters, value: any) => {
@@ -94,14 +126,6 @@ export function VariantsList({ sessionId }: VariantsListProps) {
 
   const handlePageChange = (newPage: number) => {
     setFilters(prev => ({ ...prev, page: newPage }))
-  }
-
-  const handleGeneSearchSubmit = () => {
-    if (geneSearch.trim()) {
-      handleFilterChange('genes', [geneSearch.trim().toUpperCase()])
-    } else {
-      handleFilterChange('genes', undefined)
-    }
   }
 
   const clearAllFilters = () => {
@@ -130,7 +154,7 @@ export function VariantsList({ sessionId }: VariantsListProps) {
   const hasActiveFilters = !!(filters.acmg_class || filters.impact || filters.genes)
 
   // Loading State
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <Card>
         <CardHeader>
@@ -249,23 +273,17 @@ export function VariantsList({ sessionId }: VariantsListProps) {
               </SelectContent>
             </Select>
 
-            {/* Gene Search */}
-            <div className="flex gap-2">
+            {/* Gene Search - Real-time */}
+            <div className="relative">
               <Input
                 placeholder="e.g., BRCA1"
                 value={geneSearch}
                 onChange={(e) => setGeneSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleGeneSearchSubmit()
-                }}
-                className="text-base"
+                className="text-base pr-8"
               />
-              <Button
-                size="icon"
-                onClick={handleGeneSearchSubmit}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
+              {isSearching && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
             </div>
           </div>
 
@@ -304,7 +322,14 @@ export function VariantsList({ sessionId }: VariantsListProps) {
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Loading overlay for real-time search */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+        
+        <div className="overflow-x-auto relative">
           <Table>
             <TableHeader>
               <TableRow>
