@@ -102,7 +102,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
     })
   }, [])
 
-  // Open detail panel when clicking ExternalLink icon
+  // Open detail panel when clicking ExternalLink icon OR expanded row
   const handleDetailClick = useCallback((variantIdx: number, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent row toggle
     if (onVariantClick) {
@@ -213,7 +213,10 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                     </TableRow>
 
                     {expandedRows.has(variant.variant_idx) && (
-                      <TableRow>
+                      <TableRow 
+                        className="cursor-pointer hover:bg-muted/70 transition-colors"
+                        onClick={(e) => handleDetailClick(variant.variant_idx, e)}
+                      >
                         <TableCell colSpan={10} className="bg-muted/30">
                           <div className="p-4 space-y-3">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
