@@ -45,7 +45,7 @@ const FilterControls = memo(({ isFetching }: { isFetching: boolean }) => {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* ACMG Classification */}
       <div className="space-y-2">
-        <Label htmlFor="acmg-filter" className="text-sm text-muted-foreground">
+        <Label htmlFor="acmg-filter" className="text-md text-muted-foreground">
           Classification
         </Label>
         <Select
@@ -68,7 +68,7 @@ const FilterControls = memo(({ isFetching }: { isFetching: boolean }) => {
 
       {/* Impact Level */}
       <div className="space-y-2">
-        <Label htmlFor="impact-filter" className="text-sm text-muted-foreground">
+        <Label htmlFor="impact-filter" className="text-md text-muted-foreground">
           Impact Level
         </Label>
         <Select
@@ -91,7 +91,7 @@ const FilterControls = memo(({ isFetching }: { isFetching: boolean }) => {
 
       {/* Gene Search */}
       <div className="space-y-2">
-        <Label htmlFor="gene-search" className="text-sm text-muted-foreground">
+        <Label htmlFor="gene-search" className="text-md text-muted-foreground">
           Search by Gene
         </Label>
         <div className="relative">
