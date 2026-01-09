@@ -11,7 +11,6 @@ import { useVariantsFilter } from './VariantsFilterContext'
 import { VariantsTable } from './VariantsTable'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, AlertCircle } from 'lucide-react'
-import { keepPreviousData } from '@tanstack/react-query'
 
 interface TableSectionProps {
   sessionId: string
@@ -23,9 +22,7 @@ export function TableSection({ sessionId }: TableSectionProps) {
   console.log('🔄 TableSection render') // Debug log
 
   // Subscribe to data - this WILL cause re-renders
-  const { data, isLoading, error, isFetching } = useVariants(sessionId, activeFilters, {
-    placeholderData: keepPreviousData, // Show old data while fetching new
-  })
+  const { data, isLoading, error, isFetching } = useVariants(sessionId, activeFilters)
 
   // Initial Loading
   if (isLoading && !data) {
