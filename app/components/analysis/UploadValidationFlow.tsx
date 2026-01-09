@@ -527,19 +527,18 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
           </p>
         </div>
 
-        {/* File Upload Zone */}
+        {/* File Upload Zone - Keep same layout with or without file */}
         <div
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           className={`
-            relative border-2 border-dashed rounded-lg transition-all
+            relative border-2 border-dashed rounded-lg p-12 transition-all
             ${isDragging
               ? 'border-primary bg-primary/5 scale-[1.02]'
               : 'border-border hover:border-primary/50 hover:bg-accent/5'
             }
-            ${selectedFile ? 'p-6' : 'p-12'}
           `}
           role="button"
           tabIndex={0}
@@ -561,35 +560,19 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
             aria-label="File input"
           />
 
-          {selectedFile ? (
-            // Selected File Display
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="flex-shrink-0 p-2 rounded bg-primary/10">
-                  <FileCode className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-medium truncate">{selectedFile.name}</p>
-                  <p className="text-sm text-muted-foreground">{fileSize}</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRemoveFile}
-                disabled={phase !== 'selection'}
-                aria-label="Remove file"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+          <div className="flex flex-col items-center gap-6 text-center">
+            {/* Icon */}
+            <div className="p-6 rounded-full bg-primary/10">
+              <FileCode className="h-12 w-12 text-primary" />
             </div>
-          ) : (
-            // Empty State
-            <div className="flex flex-col items-center gap-6 text-center">
-              <div className="p-6 rounded-full bg-primary/10">
-                <FileCode className="h-12 w-12 text-primary" />
-              </div>
 
+            {/* Text */}
+            {selectedFile ? (
+              <div className="space-y-2">
+                <p className="text-lg font-medium">{selectedFile.name}</p>
+                <p className="text-base text-muted-foreground">{fileSize}</p>
+              </div>
+            ) : (
               <div>
                 <p className="text-lg font-medium mb-2">
                   Drag and drop your VCF file here
@@ -601,13 +584,40 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                   Supports .vcf and .vcf.gz files (max 2GB)
                 </p>
               </div>
+            )}
 
+            {/* Button */}
+            {selectedFile ? (
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleRemoveFile()
+                  }}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  <span className="text-base">Remove</span>
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleSubmit()
+                  }}
+                  disabled={!canSubmit}
+                >
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  <span className="text-base">Upload & Analyze</span>
+                </Button>
+              </div>
+            ) : (
               <Button size="lg" onClick={handleBrowseClick}>
                 <Upload className="h-5 w-5 mr-2" />
                 <span className="text-base">Select File</span>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Validation Error */}
@@ -616,24 +626,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-base">{validationError}</AlertDescription>
           </Alert>
-        )}
-
-        {/* Submit Button */}
-        {selectedFile && (
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={handleRemoveFile}>
-              <span className="text-base">Cancel</span>
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              size="lg"
-              className="min-w-[120px]"
-            >
-              <CheckCircle2 className="h-5 w-5 mr-2" />
-              <span className="text-base">Upload & Analyze</span>
-            </Button>
-          </div>
         )}
       </div>
     </div>
