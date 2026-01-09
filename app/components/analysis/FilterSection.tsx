@@ -10,6 +10,7 @@ import { memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -41,51 +42,70 @@ const FilterControls = memo(({ isFetching }: { isFetching: boolean }) => {
   const { geneInput, setGeneInput, filters, updateFilter, isSearching } = useVariantsFilter()
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <Select
-        value={filters.acmg_class?.[0] || 'all'}
-        onValueChange={(value) =>
-          updateFilter('acmg_class', value === 'all' ? undefined : [value])
-        }
-      >
-        <SelectTrigger className="text-base">
-          <SelectValue placeholder="ACMG Classification" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All</SelectItem>
-          {ACMG_CLASSES.map((cls) => (
-            <SelectItem key={cls} value={cls}>{cls}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* ACMG Classification */}
+      <div className="space-y-2">
+        <Label htmlFor="acmg-filter" className="text-sm text-muted-foreground">
+          Classification
+        </Label>
+        <Select
+          value={filters.acmg_class?.[0] || 'all'}
+          onValueChange={(value) =>
+            updateFilter('acmg_class', value === 'all' ? undefined : [value])
+          }
+        >
+          <SelectTrigger id="acmg-filter" className="text-base">
+            <SelectValue placeholder="All Classifications" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classifications</SelectItem>
+            {ACMG_CLASSES.map((cls) => (
+              <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Select
-        value={filters.impact?.[0] || 'all'}
-        onValueChange={(value) =>
-          updateFilter('impact', value === 'all' ? undefined : [value])
-        }
-      >
-        <SelectTrigger className="text-base">
-          <SelectValue placeholder="Impact" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All</SelectItem>
-          {IMPACT_LEVELS.map((impact) => (
-            <SelectItem key={impact} value={impact}>{impact}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* Impact Level */}
+      <div className="space-y-2">
+        <Label htmlFor="impact-filter" className="text-sm text-muted-foreground">
+          Impact Level
+        </Label>
+        <Select
+          value={filters.impact?.[0] || 'all'}
+          onValueChange={(value) =>
+            updateFilter('impact', value === 'all' ? undefined : [value])
+          }
+        >
+          <SelectTrigger id="impact-filter" className="text-base">
+            <SelectValue placeholder="All Impact Levels" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Impact Levels</SelectItem>
+            {IMPACT_LEVELS.map((impact) => (
+              <SelectItem key={impact} value={impact}>{impact}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <div className="relative">
-        <Input
-          placeholder="e.g., BRCA1"
-          value={geneInput}
-          onChange={(e) => setGeneInput(e.target.value)}
-          className="text-base pr-8"
-        />
-        {(isSearching || isFetching) && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-        )}
+      {/* Gene Search */}
+      <div className="space-y-2">
+        <Label htmlFor="gene-search" className="text-sm text-muted-foreground">
+          Search by Gene
+        </Label>
+        <div className="relative">
+          <Input
+            id="gene-search"
+            placeholder="e.g., BRCA1"
+            value={geneInput}
+            onChange={(e) => setGeneInput(e.target.value)}
+            className="text-base pr-8"
+          />
+          {(isSearching || isFetching) && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+          )}
+        </div>
       </div>
     </div>
   )
