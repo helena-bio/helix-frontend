@@ -185,9 +185,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
 
   // Skip phenotype entry
   const handleSkip = useCallback(() => {
-    toast.info('Skipping phenotype entry', {
-      description: 'You can add phenotype data later',
-    })
     onSkip?.()
     nextStep()
   }, [nextStep, onSkip])
