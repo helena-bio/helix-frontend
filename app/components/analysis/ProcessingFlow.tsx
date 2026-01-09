@@ -68,13 +68,13 @@ const PIPELINE_STAGES: PipelineStage[] = [
     description: 'Applying quality filters',
   },
   {
-    id: 'vep',
+    id: 'vep_annotation',
     name: 'VEP Annotation',
     icon: <Sparkles className="h-4 w-4" />,
     description: 'Annotating variant effects (parallel)',
   },
   {
-    id: 'annotation',
+    id: 'reference_annotation',
     name: 'Reference Annotation',
     icon: <Database className="h-4 w-4" />,
     description: 'Adding gnomAD, ClinVar, dbNSFP data',
@@ -153,28 +153,24 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     }
   }, [taskStatus, nextStep, onComplete, onError])
 
-  // Calculate progress from task info
+  // Get progress from backend
   const getProgress = useCallback((): number => {
     if (!taskStatus?.info) return hasStarted ? 5 : 0
 
+    // Use progress from backend if available
     const progress = taskStatus.info.progress as number | undefined
     if (typeof progress === 'number') {
       return progress
     }
 
-    const stage = (taskStatus.info.stage as string)?.toLowerCase() || ''
-
-    // Map stage to progress
-    if (stage.includes('initial') || stage.includes('start')) return 5
-    if (stage.includes('pars')) return 15
-    if (stage.includes('filter')) return 25
-    if (stage.includes('vep')) return 45
-    if (stage.includes('annotation')) return 70
-    if (stage.includes('class')) return 85
-    if (stage.includes('export') || stage.includes('complet')) return 95
-
     return 10
   }, [taskStatus, hasStarted])
+
+  // Get completed stages from backend
+  const getCompletedStages = useCallback((): string[] => {
+    if (!taskStatus?.info?.completed_stages) return []
+    return taskStatus.info.completed_stages as string[]
+  }, [taskStatus])
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
@@ -182,20 +178,35 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
     }
-    return taskStatus.info.stage as string
+    
+    const stage = taskStatus.info.stage as string
+    
+    // Format stage name for display
+    const stageNames: Record<string, string> = {
+      'initializing': 'Initializing pipeline',
+      'parsing': 'Parsing VCF file',
+      'filtering': 'Filtering variants',
+      'vep_annotation': 'Running VEP annotation',
+      'reference_annotation': 'Annotating with reference data',
+      'classification': 'Classifying variants',
+      'export': 'Exporting results',
+      'completed': 'Processing complete'
+    }
+    
+    return stageNames[stage] || stage
   }, [taskStatus, hasStarted])
 
-  // Check if a stage is complete based on progress
-  const isStageComplete = useCallback((stageIndex: number): boolean => {
-    const progress = getProgress()
-    const stageThresholds = [15, 25, 45, 70, 85, 95]
-    return progress >= stageThresholds[stageIndex]
-  }, [getProgress])
+  // Check if a stage is complete based on completed_stages from backend
+  const isStageComplete = useCallback((stageId: string): boolean => {
+    const completedStages = getCompletedStages()
+    return completedStages.includes(stageId)
+  }, [getCompletedStages])
 
   // Check if a stage is current
   const isStageActive = useCallback((stageId: string): boolean => {
-    const stage = (taskStatus?.info?.stage as string)?.toLowerCase() || ''
-    return stage.includes(stageId.toLowerCase())
+    const currentStage = taskStatus?.info?.stage as string | undefined
+    if (!currentStage) return false
+    return currentStage === stageId
   }, [taskStatus])
 
   // Retry handler
@@ -340,7 +351,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
                 <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary/10 mb-4">
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
-                <p className="text-lg font-medium">{currentStage}</p>
+                <p className="text-lg font-medium capitalize">{currentStage}</p>
               </div>
 
               {/* Progress Bar */}
@@ -354,8 +365,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
               {/* Pipeline Stages */}
               <div className="space-y-3">
-                {PIPELINE_STAGES.map((stage, index) => {
-                  const isComplete = isStageComplete(index)
+                {PIPELINE_STAGES.map((stage) => {
+                  const isComplete = isStageComplete(stage.id)
                   const isCurrent = isStageActive(stage.id)
 
                   return (
