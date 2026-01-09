@@ -86,6 +86,11 @@ const getTierBadge = (tier: number | null) => {
   return { label: `T${tier}`, color: colors[tier as keyof typeof colors] || colors[5] }
 }
 
+const truncateAllele = (allele: string, maxLength: number = 15): string => {
+  if (allele.length <= maxLength) return allele
+  return allele.substring(0, maxLength) + '...'
+}
+
 export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }: VariantsTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
@@ -128,7 +133,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
               <TableHead className="w-[50px]"></TableHead>
               <TableHead className="text-base">Gene</TableHead>
               <TableHead className="text-base">Position</TableHead>
-              <TableHead className="text-base">Change</TableHead>
+              <TableHead className="text-base w-[150px]">Change</TableHead>
               <TableHead className="text-base">Consequence</TableHead>
               <TableHead className="text-base">Zygosity</TableHead>
               <TableHead className="text-base">ACMG</TableHead>
@@ -152,6 +157,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
               data.variants.map((variant: any) => {
                 const zygosity = getZygosityBadge(variant.genotype)
                 const tier = getTierBadge(variant.priority_tier)
+                const changeText = `${variant.reference_allele}/${variant.alternate_allele}`
 
                 return (
                   <>
@@ -173,8 +179,11 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                       <TableCell className="font-mono text-sm">
                         {variant.chromosome}:{variant.position.toLocaleString()}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {variant.reference_allele}/{variant.alternate_allele}
+                      <TableCell 
+                        className="font-mono text-sm max-w-[150px] truncate"
+                        title={changeText}
+                      >
+                        {truncateAllele(variant.reference_allele)}/{truncateAllele(variant.alternate_allele)}
                       </TableCell>
                       <TableCell className="text-sm">{variant.consequence || '-'}</TableCell>
                       <TableCell>
@@ -213,7 +222,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                     </TableRow>
 
                     {expandedRows.has(variant.variant_idx) && (
-                      <TableRow 
+                      <TableRow
                         className="cursor-pointer hover:bg-muted/70 transition-colors"
                         onClick={(e) => handleDetailClick(variant.variant_idx, e)}
                       >
