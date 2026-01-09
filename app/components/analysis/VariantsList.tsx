@@ -1,23 +1,7 @@
 "use client"
 
 /**
- * VariantsList Component - Paginated Variants Table
- *
- * Typography Scale:
- * - text-3xl: Page titles
- * - text-lg: Section headers, card titles
- * - text-base: Primary content, instructions
- * - text-md: Secondary descriptions
- * - text-sm: Helper text, file info
- * - text-xs: Technical metadata (positions, alleles)
- *
- * Features:
- * - Server-side pagination
- * - Multiple filters (ACMG, gene, impact, frequency)
- * - Sort by multiple columns
- * - Expandable rows for details
- * - Export functionality
- * - Loading states with skeletons
+ * VariantsList Component - Paginated Variants Table with Integrated Filters
  */
 
 import { useState, useMemo } from 'react'
@@ -33,7 +17,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
@@ -50,8 +33,8 @@ import {
   ChevronUp,
   AlertCircle,
   Search,
-  Filter,
-  Download
+  Download,
+  X
 } from 'lucide-react'
 import type { VariantFilters } from '@/types/variant.types'
 
@@ -121,6 +104,11 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     }
   }
 
+  const clearAllFilters = () => {
+    setFilters({ page: 1, page_size: 50 })
+    setGeneSearch('')
+  }
+
   const toggleRow = (variantIdx: number) => {
     setExpandedRows(prev => {
       const next = new Set(prev)
@@ -138,6 +126,8 @@ export function VariantsList({ sessionId }: VariantsListProps) {
     if (!data) return 0
     return data.total_pages
   }, [data])
+
+  const hasActiveFilters = !!(filters.acmg_class || filters.impact || filters.genes)
 
   // Loading State
   if (isLoading) {
@@ -195,290 +185,270 @@ export function VariantsList({ sessionId }: VariantsListProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setFilters({ page: 1, page_size: 50 })
-                setGeneSearch('')
-              }}
-            >
-              <span className="text-sm">Clear All</span>
-            </Button>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Variants</CardTitle>
+            <p className="text-md text-muted-foreground mt-1">
+              Showing {data.variants.length} of {data.total_count.toLocaleString()} variants
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            <span className="text-sm">Export</span>
+          </Button>
+        </div>
+
+        {/* Integrated Filters */}
+        <div className="pt-4 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {/* ACMG Classification */}
-            <div className="space-y-2">
-              <Label className="text-base">ACMG Classification</Label>
-              <Select
-                value={filters.acmg_class?.[0] || 'all'}
-                onValueChange={(value) =>
-                  handleFilterChange(
-                    'acmg_class',
-                    value === 'all' ? undefined : [value]
-                  )
-                }
-              >
-                <SelectTrigger className="text-base">
-                  <SelectValue placeholder="All classifications" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {ACMG_CLASSES.map((cls) => (
-                    <SelectItem key={cls} value={cls}>
-                      {cls}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={filters.acmg_class?.[0] || 'all'}
+              onValueChange={(value) =>
+                handleFilterChange(
+                  'acmg_class',
+                  value === 'all' ? undefined : [value]
+                )
+              }
+            >
+              <SelectTrigger className="text-base">
+                <SelectValue placeholder="ACMG Classification" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {ACMG_CLASSES.map((cls) => (
+                  <SelectItem key={cls} value={cls}>
+                    {cls}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Impact */}
-            <div className="space-y-2">
-              <Label className="text-base">Impact</Label>
-              <Select
-                value={filters.impact?.[0] || 'all'}
-                onValueChange={(value) =>
-                  handleFilterChange(
-                    'impact',
-                    value === 'all' ? undefined : [value]
-                  )
-                }
-              >
-                <SelectTrigger className="text-base">
-                  <SelectValue placeholder="All impacts" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {IMPACT_LEVELS.map((impact) => (
-                    <SelectItem key={impact} value={impact}>
-                      {impact}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={filters.impact?.[0] || 'all'}
+              onValueChange={(value) =>
+                handleFilterChange(
+                  'impact',
+                  value === 'all' ? undefined : [value]
+                )
+              }
+            >
+              <SelectTrigger className="text-base">
+                <SelectValue placeholder="Impact" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {IMPACT_LEVELS.map((impact) => (
+                  <SelectItem key={impact} value={impact}>
+                    {impact}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             {/* Gene Search */}
-            <div className="space-y-2">
-              <Label className="text-base">Gene Symbol</Label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="e.g., BRCA1"
-                  value={geneSearch}
-                  onChange={(e) => setGeneSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleGeneSearchSubmit()
-                  }}
-                  className="text-base"
-                />
-                <Button
-                  size="icon"
-                  onClick={handleGeneSearchSubmit}
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g., BRCA1"
+                value={geneSearch}
+                onChange={(e) => setGeneSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleGeneSearchSubmit()
+                }}
+                className="text-base"
+              />
+              <Button
+                size="icon"
+                onClick={handleGeneSearchSubmit}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
-          {/* Active Filters Display */}
-          {(filters.acmg_class || filters.impact || filters.genes) && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {filters.acmg_class?.map((cls) => (
-                <Badge key={cls} variant="secondary" className="text-sm">
-                  ACMG: {cls}
-                </Badge>
-              ))}
-              {filters.impact?.map((imp) => (
-                <Badge key={imp} variant="secondary" className="text-sm">
-                  Impact: {imp}
-                </Badge>
-              ))}
-              {filters.genes?.map((gene) => (
-                <Badge key={gene} variant="secondary" className="text-sm">
-                  Gene: {gene}
-                </Badge>
-              ))}
+          {/* Active Filters + Clear All */}
+          {hasActiveFilters && (
+            <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-2">
+                {filters.acmg_class?.map((cls) => (
+                  <Badge key={cls} variant="secondary" className="text-sm">
+                    {cls}
+                  </Badge>
+                ))}
+                {filters.impact?.map((imp) => (
+                  <Badge key={imp} variant="secondary" className="text-sm">
+                    {imp}
+                  </Badge>
+                ))}
+                {filters.genes?.map((gene) => (
+                  <Badge key={gene} variant="secondary" className="text-sm">
+                    {gene}
+                  </Badge>
+                ))}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="shrink-0"
+              >
+                <X className="h-4 w-4 mr-1" />
+                <span className="text-sm">Clear All</span>
+              </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </CardHeader>
 
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg">Variants</CardTitle>
-              <p className="text-md text-muted-foreground mt-1">
-                Showing {data.variants.length} of {data.total_count.toLocaleString()} variants
-              </p>
-            </div>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              <span className="text-sm">Export</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead className="text-base">Gene</TableHead>
-                  <TableHead className="text-base">Position</TableHead>
-                  <TableHead className="text-base">Change</TableHead>
-                  <TableHead className="text-base">Consequence</TableHead>
-                  <TableHead className="text-base">ACMG</TableHead>
-                  <TableHead className="text-base">gnomAD AF</TableHead>
-                  <TableHead className="text-base">Score</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.variants.map((variant: any) => (
-                  <>
-                    <TableRow
-                      key={variant.variant_idx}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => toggleRow(variant.variant_idx)}
-                    >
-                      <TableCell>
-                        {expandedRows.has(variant.variant_idx) ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-base font-medium">
-                        {variant.gene_symbol || '-'}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {variant.chromosome}:{variant.position.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {variant.reference_allele}/{variant.alternate_allele}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {variant.consequence || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {variant.acmg_class ? (
-                          <Badge
-                            variant="outline"
-                            className={`text-sm ${getACMGColor(variant.acmg_class)}`}
-                          >
-                            {getACMGShortName(variant.acmg_class)}
-                          </Badge>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {variant.global_af
-                          ? variant.global_af.toExponential(2)
-                          : '-'
-                        }
-                      </TableCell>
-                      <TableCell className="text-base">
-                        {variant.priority_score
-                          ? variant.priority_score.toFixed(1)
-                          : '-'
-                        }
-                      </TableCell>
-                    </TableRow>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
+                <TableHead className="text-base">Gene</TableHead>
+                <TableHead className="text-base">Position</TableHead>
+                <TableHead className="text-base">Change</TableHead>
+                <TableHead className="text-base">Consequence</TableHead>
+                <TableHead className="text-base">ACMG</TableHead>
+                <TableHead className="text-base">gnomAD AF</TableHead>
+                <TableHead className="text-base">Score</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.variants.map((variant: any) => (
+                <>
+                  <TableRow
+                    key={variant.variant_idx}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => toggleRow(variant.variant_idx)}
+                  >
+                    <TableCell>
+                      {expandedRows.has(variant.variant_idx) ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-base font-medium">
+                      {variant.gene_symbol || '-'}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {variant.chromosome}:{variant.position.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {variant.reference_allele}/{variant.alternate_allele}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {variant.consequence || '-'}
+                    </TableCell>
+                    <TableCell>
+                      {variant.acmg_class ? (
+                        <Badge
+                          variant="outline"
+                          className={`text-sm ${getACMGColor(variant.acmg_class)}`}
+                        >
+                          {getACMGShortName(variant.acmg_class)}
+                        </Badge>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {variant.global_af
+                        ? variant.global_af.toExponential(2)
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell className="text-base">
+                      {variant.priority_score
+                        ? variant.priority_score.toFixed(1)
+                        : '-'
+                      }
+                    </TableCell>
+                  </TableRow>
 
-                    {/* Expanded Row */}
-                    {expandedRows.has(variant.variant_idx) && (
-                      <TableRow>
-                        <TableCell colSpan={8} className="bg-muted/30">
-                          <div className="p-4 space-y-3">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">HGVS Protein</p>
-                                <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Impact</p>
-                                <Badge variant="secondary" className="text-sm">{variant.impact || '-'}</Badge>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Genotype</p>
-                                <p className="text-base font-mono">{variant.genotype || '-'}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Depth</p>
-                                <p className="text-base">{variant.depth || '-'}</p>
+                  {/* Expanded Row */}
+                  {expandedRows.has(variant.variant_idx) && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="bg-muted/30">
+                        <div className="p-4 space-y-3">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">HGVS Protein</p>
+                              <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">Impact</p>
+                              <Badge variant="secondary" className="text-sm">{variant.impact || '-'}</Badge>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">Genotype</p>
+                              <p className="text-base font-mono">{variant.genotype || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">Depth</p>
+                              <p className="text-base">{variant.depth || '-'}</p>
+                            </div>
+                          </div>
+
+                          {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
+                              <div className="flex flex-wrap gap-2">
+                                {variant.acmg_criteria.split(',').filter((c: string) => c.trim()).map((c: string) => (
+                                  <Badge key={c} variant="outline" className="text-sm">{c.trim()}</Badge>
+                                ))}
                               </div>
                             </div>
+                          )}
 
-                            {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {variant.acmg_criteria.split(',').filter((c: string) => c.trim()).map((c: string) => (
-                                    <Badge key={c} variant="outline" className="text-sm">{c.trim()}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                          {variant.clinical_significance && (
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-1">ClinVar</p>
+                              <p className="text-base">{variant.clinical_significance}</p>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
-                            {variant.clinical_significance && (
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">ClinVar</p>
-                                <p className="text-base">{variant.clinical_significance}</p>
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                ))}
-              </TableBody>
-            </Table>
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-6 py-4 border-t">
+          <p className="text-md text-muted-foreground">
+            Page {data.page} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!data.has_previous_page}
+              onClick={() => handlePageChange(filters.page! - 1)}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              <span className="text-base">Previous</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!data.has_next_page}
+              onClick={() => handlePageChange(filters.page! + 1)}
+            >
+              <span className="text-base">Next</span>
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-6 py-4 border-t">
-            <p className="text-md text-muted-foreground">
-              Page {data.page} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!data.has_previous_page}
-                onClick={() => handlePageChange(filters.page! - 1)}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                <span className="text-base">Previous</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!data.has_next_page}
-                onClick={() => handlePageChange(filters.page! + 1)}
-              >
-                <span className="text-base">Next</span>
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
