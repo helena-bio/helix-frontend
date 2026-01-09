@@ -9,7 +9,7 @@
 import { useVariants } from '@/hooks/queries'
 import { useVariantsFilter } from './VariantsFilterContext'
 import { VariantsTable } from './VariantsTable'
-import { Card, CardContent } from '@/components/ui/card'
+import { CardContent } from '@/components/ui/card'
 import { Loader2, AlertCircle } from 'lucide-react'
 
 interface TableSectionProps {
@@ -27,42 +27,36 @@ export function TableSection({ sessionId }: TableSectionProps) {
   // Initial Loading
   if (isLoading && !data) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </CardContent>
-      </Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </CardContent>
     )
   }
 
   // Error State
   if (error) {
     return (
-      <Card className="border-destructive">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3 text-destructive">
-            <AlertCircle className="h-5 w-5" />
-            <div>
-              <p className="text-base font-medium">Failed to load variants</p>
-              <p className="text-md text-muted-foreground">{error.message}</p>
-            </div>
+      <CardContent className="pt-6 border-t border-destructive">
+        <div className="flex items-center gap-3 text-destructive">
+          <AlertCircle className="h-5 w-5" />
+          <div>
+            <p className="text-base font-medium">Failed to load variants</p>
+            <p className="text-md text-muted-foreground">{error.message}</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardContent>
     )
   }
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <VariantsTable
-          data={data}
-          isFetching={isFetching}
-          onPageChange={setPage}
-        />
-      </CardContent>
-    </Card>
+    <CardContent className="p-0">
+      <VariantsTable
+        data={data}
+        isFetching={isFetching}
+        onPageChange={setPage}
+      />
+    </CardContent>
   )
 }

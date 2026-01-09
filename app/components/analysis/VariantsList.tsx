@@ -10,7 +10,7 @@ import { VariantsFilterProvider, useVariantsFilter } from './VariantsFilterConte
 import { FilterSection } from './FilterSection'
 import { TableSection } from './TableSection'
 import { useVariants } from '@/hooks/queries'
-import { CardHeader } from '@/components/ui/card'
+import { Card, CardHeader } from '@/components/ui/card'
 
 interface VariantsListProps {
   sessionId: string
@@ -29,21 +29,19 @@ function VariantsListInner({ sessionId }: VariantsListProps) {
   })
 
   return (
-    <div className="space-y-4">
+    <Card>
       {/* Filter Section - Isolated, stable */}
-      <div className="bg-card rounded-lg border">
-        <CardHeader>
-          <FilterSection
-            isFetching={isFetching}
-            totalCount={data?.total_count}
-            currentCount={data?.variants.length}
-          />
-        </CardHeader>
-      </div>
+      <CardHeader className="space-y-4">
+        <FilterSection
+          isFetching={isFetching}
+          totalCount={data?.total_count}
+          currentCount={data?.variants.length}
+        />
+      </CardHeader>
 
       {/* Table Section - Data consumer, re-renders on data change */}
       <TableSection sessionId={sessionId} />
-    </div>
+    </Card>
   )
 }
 
