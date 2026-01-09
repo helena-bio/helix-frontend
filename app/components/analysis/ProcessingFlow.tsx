@@ -71,13 +71,13 @@ const PIPELINE_STAGES: PipelineStage[] = [
     id: 'vep_annotation',
     name: 'VEP Annotation',
     icon: <Sparkles className="h-4 w-4" />,
-    description: 'Annotating variant effects (parallel)',
+    description: 'Annotating variant effects',
   },
   {
     id: 'reference_annotation',
     name: 'Reference Annotation',
     icon: <Database className="h-4 w-4" />,
-    description: 'Adding gnomAD, ClinVar, dbNSFP data',
+    description: 'Adding reference data',
   },
   {
     id: 'classification',
@@ -187,7 +187,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       'parsing': 'Parsing VCF file',
       'filtering': 'Filtering variants',
       'vep_annotation': 'Running VEP annotation',
-      'reference_annotation': 'Annotating with reference data',
+      'reference_annotation': 'Adding reference data',
       'classification': 'Classifying variants',
       'export': 'Exporting results',
       'completed': 'Processing complete'
