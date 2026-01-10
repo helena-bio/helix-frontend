@@ -105,11 +105,14 @@ export function Sidebar() {
             <TooltipTrigger asChild>
               <Button
                 variant={selectedModule === null ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
+                className={cn(
+                  "h-8",
+                  isSidebarOpen ? "flex-1 justify-start mr-2" : "w-8 px-2"
+                )}
                 onClick={() => setSelectedModule(null)}
               >
-                <Home className="h-4 w-4" />
+                <Home className="h-4 w-4 shrink-0" />
+                {isSidebarOpen && <span className="ml-2 text-base">Home</span>}
               </Button>
             </TooltipTrigger>
             {!isSidebarOpen && (
@@ -125,7 +128,7 @@ export function Sidebar() {
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="h-8 w-8"
+          className="h-8 w-8 shrink-0"
         >
           {isSidebarOpen ? (
             <ChevronLeft className="h-4 w-4" />
