@@ -2,7 +2,7 @@
 
 /**
  * ChatPanel - AI Assistant Chat Interface
- * No toggle button needed - Sidebar always visible
+ * Right border separates from View Panel
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -79,7 +79,7 @@ export function ChatPanel() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col bg-background border-r border-border">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
