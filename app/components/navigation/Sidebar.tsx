@@ -2,7 +2,9 @@
 
 /**
  * Sidebar Navigation Component
- * Collapsible navigation menu with toggle button at top
+ * Two states:
+ * - Expanded (256px): Full text labels
+ * - Collapsed (64px): Icon-only mode
  */
 
 import Link from 'next/link'
@@ -91,38 +93,60 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="h-full flex flex-col bg-card">
-      {/* Toggle button at top */}
-      <div className="flex items-center justify-between px-2 py-2 border-b border-border">
-        <span className="text-sm font-medium px-2">Navigation</span>
+    <aside className={cn(
+      "h-full flex flex-col bg-card transition-all duration-300",
+      isSidebarOpen ? "w-64" : "w-16"
+    )}>
+      {/* Toggle button */}
+      <div className="flex items-center justify-end px-2 py-2 border-b border-border h-[53px] shrink-0">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
           className="h-8 w-8"
         >
-          <ChevronLeft className="h-4 w-4" />
+          {isSidebarOpen ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
         </Button>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {/* Home */}
-        <Button
-          variant={selectedModule === null ? 'secondary' : 'ghost'}
-          className="w-full justify-start"
-          onClick={() => setSelectedModule(null)}
-        >
-          <Home className="h-5 w-5" />
-          <span className="ml-3 text-base">Home</span>
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={selectedModule === null ? 'secondary' : 'ghost'}
+                className={cn(
+                  "w-full",
+                  isSidebarOpen ? "justify-start" : "justify-center px-2"
+                )}
+                onClick={() => setSelectedModule(null)}
+              >
+                <Home className="h-5 w-5 shrink-0" />
+                {isSidebarOpen && <span className="ml-3 text-base">Home</span>}
+              </Button>
+            </TooltipTrigger>
+            {!isSidebarOpen && (
+              <TooltipContent side="right">
+                <p className="text-sm">Home</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
 
-        {/* Modules Section */}
-        <div className="pt-4 pb-2">
-          <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Modules
-          </p>
-        </div>
+        {/* Modules Section Header - only when expanded */}
+        {isSidebarOpen && (
+          <div className="pt-4 pb-2">
+            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Modules
+            </p>
+          </div>
+        )}
 
         {/* Module Items */}
         {MODULES.map((module) => {
@@ -136,17 +160,29 @@ export function Sidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md opacity-50 cursor-not-allowed"
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2 rounded-md opacity-50 cursor-not-allowed",
+                        !isSidebarOpen && "justify-center px-2"
+                      )}
                     >
                       <Icon className="h-5 w-5 shrink-0" />
-                      <span className="flex-1 text-base text-left">
-                        {module.name}
-                      </span>
-                      <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {isSidebarOpen && (
+                        <>
+                          <span className="flex-1 text-base text-left">
+                            {module.name}
+                          </span>
+                          <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                        </>
+                      )}
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right">
-                    <p className="text-sm">Upload a VCF file to activate this module</p>
+                    <p className="text-sm">
+                      {isSidebarOpen 
+                        ? 'Upload a VCF file to activate this module'
+                        : `${module.name} (locked)`
+                      }
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -154,33 +190,63 @@ export function Sidebar() {
           }
 
           return (
-            <Button
-              key={module.id}
-              variant={isSelected ? 'secondary' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => handleModuleClick(module.id, module.requiresSession)}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span className="ml-3 text-base">{module.name}</span>
-            </Button>
+            <TooltipProvider key={module.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isSelected ? 'secondary' : 'ghost'}
+                    className={cn(
+                      "w-full",
+                      isSidebarOpen ? "justify-start" : "justify-center px-2"
+                    )}
+                    onClick={() => handleModuleClick(module.id, module.requiresSession)}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {isSidebarOpen && <span className="ml-3 text-base">{module.name}</span>}
+                  </Button>
+                </TooltipTrigger>
+                {!isSidebarOpen && (
+                  <TooltipContent side="right">
+                    <p className="text-sm">{module.name}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           )
         })}
       </nav>
 
       {/* User Menu */}
-      <div className="border-t border-border p-2">
-        <Button
-          variant="ghost"
-          className="w-full justify-start hover:bg-accent"
-        >
-          <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold shrink-0">
-            D
-          </div>
-          <div className="ml-3 flex-1 text-left">
-            <div className="text-base font-medium">Dr. Smith</div>
-            <div className="text-sm text-muted-foreground">Starter plan</div>
-          </div>
-        </Button>
+      <div className="border-t border-border p-2 shrink-0">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full hover:bg-accent",
+                  isSidebarOpen ? "justify-start" : "justify-center px-2"
+                )}
+              >
+                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold shrink-0">
+                  D
+                </div>
+                {isSidebarOpen && (
+                  <div className="ml-3 flex-1 text-left">
+                    <div className="text-base font-medium">Dr. Smith</div>
+                    <div className="text-sm text-muted-foreground">Starter plan</div>
+                  </div>
+                )}
+              </Button>
+            </TooltipTrigger>
+            {!isSidebarOpen && (
+              <TooltipContent side="right">
+                <p className="text-sm">Dr. Smith</p>
+                <p className="text-xs text-muted-foreground">Starter plan</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </aside>
   )

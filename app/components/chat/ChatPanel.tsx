@@ -2,11 +2,11 @@
 
 /**
  * ChatPanel - AI Assistant Chat Interface
- * Shows toggle button when sidebar is hidden
+ * No toggle button needed - Sidebar always visible
  */
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Square, Sparkles, ChevronRight } from 'lucide-react'
+import { Send, Square, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 
@@ -25,7 +25,7 @@ export function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { currentSessionId, selectedModule, isSidebarOpen, toggleSidebar } = useAnalysis()
+  const { currentSessionId, selectedModule } = useAnalysis()
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -80,19 +80,9 @@ export function ChatPanel() {
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header with toggle button when sidebar is hidden */}
+      {/* Header */}
       <div className="px-6 py-4 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
-          {!isSidebarOpen && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8 shrink-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
           <Sparkles className="h-5 w-5 text-primary shrink-0" />
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold">AI Assistant</h2>
