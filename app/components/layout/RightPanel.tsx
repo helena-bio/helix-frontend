@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * RightPanel - View Panel (60% of screen, always visible)
+ * RightPanel - View Panel (50% of screen, always visible)
  * Displays selected module content:
  * - Variant Analysis
  * - VUS Prioritization
@@ -19,7 +19,7 @@ interface RightPanelProps {
 
 export function RightPanel({ children }: RightPanelProps) {
   return (
-    <div className="w-[60%] h-full overflow-y-auto bg-background">
+    <div className="w-[50%] h-full overflow-y-auto bg-background">
       {children}
     </div>
   )
