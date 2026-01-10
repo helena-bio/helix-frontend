@@ -4,7 +4,7 @@
  * Authenticated Layout
  * Two modes:
  * 1. Pre-analysis: Full width workflow (upload, validation, phenotype, processing)
- * 2. Post-analysis: Split view (50% Chat/Sidebar + 50% View Panel)
+ * 2. Post-analysis: Split view (45% Chat/Sidebar + 55% View Panel)
  */
 
 import { ReactNode, useEffect, useState } from 'react'
@@ -49,7 +49,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       {/* Main area */}
       <div className="flex-1 overflow-hidden">
         {isAnalysisComplete ? (
-          // Split View: 50% (Sidebar+Chat) + 50% (View Panel)
+          // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
           <SplitView>
             {children}
           </SplitView>

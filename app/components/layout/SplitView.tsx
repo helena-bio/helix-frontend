@@ -1,9 +1,9 @@
 "use client"
 
 /**
- * SplitView - Fixed 50/50 split layout
- * Left: Sidebar + Chat (50%)
- * Right: View Panel (50%)
+ * SplitView - Fixed 55/45 split layout
+ * Left: Sidebar + Chat (45%)
+ * Right: View Panel (55%)
  * 
  * This layout is shown ONLY after analysis workflow is complete
  */
@@ -19,10 +19,10 @@ interface SplitViewProps {
 export function SplitView({ children }: SplitViewProps) {
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Left Panel - Sidebar + Chat (50%) */}
+      {/* Left Panel - Sidebar + Chat (45%) */}
       <LeftPanel />
 
-      {/* Right Panel - View Panel (50%) */}
+      {/* Right Panel - View Panel (55%) */}
       <RightPanel>
         {children}
       </RightPanel>
