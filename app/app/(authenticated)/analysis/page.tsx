@@ -2,28 +2,23 @@
 
 /**
  * Analysis Page - Main Variant Analysis Workflow
- * After analysis complete, shows in ContextPanel (right side of split screen)
+ * Pre-analysis: Shows workflow steps (upload, validation, phenotype, processing)
+ * Post-analysis: Shows ModuleRouter in View Panel (60%)
  */
 
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useJourney } from '@/contexts/JourneyContext'
-import { useSession } from '@/hooks/queries'
 import {
   UploadValidationFlow,
   PhenotypeEntry,
   ProcessingFlow,
-  AnalysisJourneyView
+  ModuleRouter
 } from '@/components/analysis'
 import { Loader2 } from 'lucide-react'
 
 export default function AnalysisPage() {
   const { currentSessionId, setCurrentSessionId } = useAnalysis()
-  const { currentStep, resetJourney } = useJourney()
-
-  // Session query for data
-  const sessionQuery = useSession(currentSessionId || '', {
-    enabled: !!currentSessionId,
-  })
+  const { currentStep } = useJourney()
 
   // Handle upload+validation complete
   const handleUploadValidationComplete = (sessionId: string) => {
@@ -80,9 +75,9 @@ export default function AnalysisPage() {
       )
     }
 
-    // ANALYSIS VIEW - Uses AnalysisJourneyView for chat + variant detail switching
+    // ANALYSIS VIEW - Shows in View Panel (60%), ModuleRouter handles different views
     return (
-      <AnalysisJourneyView sessionId={currentSessionId} />
+      <ModuleRouter sessionId={currentSessionId} />
     )
   }
 

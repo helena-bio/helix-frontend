@@ -2,15 +2,13 @@
 
 /**
  * ChatPanel - AI Assistant Chat Interface
- * Left panel in split-screen layout (appears after analysis complete)
- * Context-aware based on active module
+ * Shows toggle button when sidebar is hidden
  */
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Square, Sparkles } from 'lucide-react'
+import { Send, Square, Sparkles, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
-import { useJourney } from '@/contexts/JourneyContext'
 
 interface Message {
   id: string
@@ -27,8 +25,7 @@ export function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { currentSessionId, selectedModule } = useAnalysis()
-  const { currentStep } = useJourney()
+  const { currentSessionId, selectedModule, isSidebarOpen, toggleSidebar } = useAnalysis()
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -82,19 +79,31 @@ export function ChatPanel() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background border-r border-border">
-      {/* Header */}
+    <div className="h-full flex flex-col bg-background">
+      {/* Header with toggle button when sidebar is hidden */}
       <div className="px-6 py-4 border-b border-border shrink-0">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">AI Assistant</h2>
+        <div className="flex items-center gap-3">
+          {!isSidebarOpen && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="h-8 w-8 shrink-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+          <Sparkles className="h-5 w-5 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-semibold">AI Assistant</h2>
+            <p className="text-sm text-muted-foreground truncate">
+              {selectedModule === 'vus'
+                ? 'VUS Prioritization Assistant'
+                : 'Variant Analysis Assistant'
+              }
+            </p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {selectedModule === 'vus' 
-            ? 'VUS Prioritization Assistant'
-            : 'Variant Analysis Assistant'
-          }
-        </p>
       </div>
 
       {/* Messages */}
@@ -138,7 +147,7 @@ export function ChatPanel() {
         </div>
       </div>
 
-      {/* Input - NO border-top, white background */}
+      {/* Input */}
       <div className="px-6 py-4 shrink-0 bg-background">
         <div className="relative">
           <textarea

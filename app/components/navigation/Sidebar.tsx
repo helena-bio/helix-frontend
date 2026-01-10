@@ -1,9 +1,9 @@
+"use client"
+
 /**
  * Sidebar Navigation Component
- * Navigation menu without logo (logo is in header)
+ * Collapsible navigation menu with toggle button at top
  */
-
-'use client'
 
 import Link from 'next/link'
 import {
@@ -85,57 +85,43 @@ export function Sidebar() {
 
   const handleModuleClick = (moduleId: string, requiresSession: boolean) => {
     if (requiresSession && !currentSessionId) {
-      // Module locked - do nothing, tooltip will show
       return
     }
     setSelectedModule(moduleId)
   }
 
   return (
-    <aside
-      className={cn(
-        'border-r border-border bg-card transition-all duration-300 flex flex-col',
-        isSidebarOpen ? 'w-64' : 'w-16'
-      )}
-    >
-      {/* Toggle button */}
-      <div className="flex items-center justify-end px-2 py-2">
+    <aside className="h-full flex flex-col bg-card">
+      {/* Toggle button at top */}
+      <div className="flex items-center justify-between px-2 py-2 border-b border-border">
+        <span className="text-sm font-medium px-2">Navigation</span>
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
           className="h-8 w-8"
         >
-          {isSidebarOpen ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+          <ChevronLeft className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 space-y-1">
+      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
         {/* Home */}
         <Button
           variant={selectedModule === null ? 'secondary' : 'ghost'}
-          className={cn(
-            'w-full justify-start',
-            !isSidebarOpen && 'justify-center px-2'
-          )}
+          className="w-full justify-start"
           onClick={() => setSelectedModule(null)}
         >
           <Home className="h-5 w-5" />
-          {isSidebarOpen && <span className="ml-3 text-base">Home</span>}
+          <span className="ml-3 text-base">Home</span>
         </Button>
 
         {/* Modules Section */}
         <div className="pt-4 pb-2">
-          {isSidebarOpen && (
-            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Modules
-            </p>
-          )}
+          <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Modules
+          </p>
         </div>
 
         {/* Module Items */}
@@ -150,21 +136,13 @@ export function Sidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2 rounded-md',
-                        'opacity-50 cursor-not-allowed',
-                        !isSidebarOpen && 'justify-center px-2'
-                      )}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md opacity-50 cursor-not-allowed"
                     >
                       <Icon className="h-5 w-5 shrink-0" />
-                      {isSidebarOpen && (
-                        <>
-                          <span className="flex-1 text-base text-left">
-                            {module.name}
-                          </span>
-                          <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
-                        </>
-                      )}
+                      <span className="flex-1 text-base text-left">
+                        {module.name}
+                      </span>
+                      <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right">
@@ -179,37 +157,29 @@ export function Sidebar() {
             <Button
               key={module.id}
               variant={isSelected ? 'secondary' : 'ghost'}
-              className={cn(
-                'w-full justify-start',
-                !isSidebarOpen && 'justify-center px-2'
-              )}
+              className="w-full justify-start"
               onClick={() => handleModuleClick(module.id, module.requiresSession)}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              {isSidebarOpen && <span className="ml-3 text-base">{module.name}</span>}
+              <span className="ml-3 text-base">{module.name}</span>
             </Button>
           )
         })}
       </nav>
 
-      {/* User Menu - placeholder for now */}
+      {/* User Menu */}
       <div className="border-t border-border p-2">
         <Button
           variant="ghost"
-          className={cn(
-            'w-full justify-start hover:bg-accent',
-            !isSidebarOpen && 'justify-center px-2'
-          )}
+          className="w-full justify-start hover:bg-accent"
         >
           <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold shrink-0">
             D
           </div>
-          {isSidebarOpen && (
-            <div className="ml-3 flex-1 text-left">
-              <div className="text-base font-medium">Dr. Smith</div>
-              <div className="text-sm text-muted-foreground">Starter plan</div>
-            </div>
-          )}
+          <div className="ml-3 flex-1 text-left">
+            <div className="text-base font-medium">Dr. Smith</div>
+            <div className="text-sm text-muted-foreground">Starter plan</div>
+          </div>
         </Button>
       </div>
     </aside>
