@@ -94,11 +94,11 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "h-full flex flex-col bg-card transition-all duration-300",
+      "h-full flex flex-col bg-card transition-all duration-300 border-r border-border",
       isSidebarOpen ? "w-64" : "w-16"
     )}>
       {/* Header: Home button + Toggle button */}
-      <div className="flex items-center justify-between px-2 py-2 border-b border-border h-[53px] shrink-0">
+      <div className="flex items-center justify-between px-2 py-2 h-[53px] shrink-0">
         {/* Home button */}
         <TooltipProvider>
           <Tooltip>
