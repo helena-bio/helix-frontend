@@ -97,8 +97,30 @@ export function Sidebar() {
       "h-full flex flex-col bg-card transition-all duration-300",
       isSidebarOpen ? "w-64" : "w-16"
     )}>
-      {/* Toggle button */}
-      <div className="flex items-center justify-end px-2 py-2 border-b border-border h-[53px] shrink-0">
+      {/* Header: Home button + Toggle button */}
+      <div className="flex items-center justify-between px-2 py-2 border-b border-border h-[53px] shrink-0">
+        {/* Home button */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={selectedModule === null ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setSelectedModule(null)}
+              >
+                <Home className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            {!isSidebarOpen && (
+              <TooltipContent side="right">
+                <p className="text-sm">Home</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* Toggle button */}
         <Button
           variant="ghost"
           size="icon"
@@ -115,33 +137,9 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {/* Home */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={selectedModule === null ? 'secondary' : 'ghost'}
-                className={cn(
-                  "w-full",
-                  isSidebarOpen ? "justify-start" : "justify-center px-2"
-                )}
-                onClick={() => setSelectedModule(null)}
-              >
-                <Home className="h-5 w-5 shrink-0" />
-                {isSidebarOpen && <span className="ml-3 text-base">Home</span>}
-              </Button>
-            </TooltipTrigger>
-            {!isSidebarOpen && (
-              <TooltipContent side="right">
-                <p className="text-sm">Home</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
-
         {/* Modules Section Header - only when expanded */}
         {isSidebarOpen && (
-          <div className="pt-4 pb-2">
+          <div className="pt-2 pb-2">
             <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Modules
             </p>
