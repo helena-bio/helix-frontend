@@ -1,31 +1,27 @@
 "use client"
 
 /**
- * ChatPanel - AI Assistant Chat Interface
- * Right border separates from View Panel
+ * ChatPanel - AI Assistant Chat Interface with Streaming
+ * Real-time streaming responses from AI service
  */
 
 import { useState, useRef, useEffect } from 'react'
 import { Send, Square, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
-  isStreaming?: boolean
-}
+import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
+import type { Message } from '@/types/ai.types'
 
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [conversationId, setConversationId] = useState<string | undefined>()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { currentSessionId, selectedModule } = useAnalysis()
+  const { streamMessage } = useAIChatStream()
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -54,21 +50,71 @@ export function ChatPanel() {
       timestamp: new Date(),
     }
 
+    // Add user message
     setMessages(prev => [...prev, userMessage])
     setInputValue('')
     setIsSending(true)
 
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `I understand you're asking about: "${userMessage.content}". This is a placeholder response. The actual AI integration will be implemented next.`,
-        timestamp: new Date(),
-      }
-      setMessages(prev => [...prev, assistantMessage])
+    // Create streaming message placeholder
+    const streamingMessageId = (Date.now() + 1).toString()
+    const streamingMessage: Message = {
+      id: streamingMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      isStreaming: true,
+    }
+
+    setMessages(prev => [...prev, streamingMessage])
+
+    try {
+      await streamMessage({
+        message: userMessage.content,
+        conversation_id: conversationId,
+        session_id: currentSessionId || undefined,
+        onToken: (token: string) => {
+          // Update streaming message with new token
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === streamingMessageId
+                ? { ...msg, content: msg.content + token }
+                : msg
+            )
+          )
+        },
+        onComplete: (fullMessage: string) => {
+          // Mark message as complete
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === streamingMessageId
+                ? { ...msg, isStreaming: false }
+                : msg
+            )
+          )
+          setIsSending(false)
+        },
+        onError: (error: Error) => {
+          console.error('AI chat error:', error)
+          
+          // Update message with error
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === streamingMessageId
+                ? {
+                    ...msg,
+                    content: `Error: ${error.message}. Please try again.`,
+                    isStreaming: false,
+                  }
+                : msg
+            )
+          )
+          setIsSending(false)
+        },
+      })
+    } catch (error) {
+      console.error('Stream initialization error:', error)
       setIsSending(false)
-    }, 1000)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -116,13 +162,16 @@ export function ChatPanel() {
                 >
                   <p className="text-base leading-relaxed whitespace-pre-line">
                     {message.content}
+                    {message.isStreaming && (
+                      <span className="inline-block w-2 h-4 ml-1 bg-primary/50 animate-pulse" />
+                    )}
                   </p>
                 </div>
               </div>
             </div>
           ))}
 
-          {isSending && (
+          {isSending && messages[messages.length - 1]?.content === '' && (
             <div className="flex gap-3 justify-start">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 border border-primary/30 flex-shrink-0">
                 <Sparkles className="h-4 w-4 text-primary animate-pulse" />
@@ -147,7 +196,8 @@ export function ChatPanel() {
             onKeyDown={handleKeyDown}
             placeholder="Ask about variants, genes, or phenotypes..."
             rows={3}
-            className="w-full px-4 py-3 pr-12 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-base"
+            disabled={isSending}
+            className="w-full px-4 py-3 pr-12 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-base disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Button
             size="icon"
