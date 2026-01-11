@@ -5,7 +5,7 @@
  * Routes to appropriate chart component based on visualization config
  */
 
-import { ACMGPieChart, ImpactBarChart, GeneBarChart, ChromosomeBarChart } from '@/components/charts'
+import { PieChart, BarChart } from '@/components/charts'
 import type { VisualizationConfig } from '@/types/visualization.types'
 
 interface QueryVisualizationProps {
@@ -17,23 +17,15 @@ export function QueryVisualization({ data, config }: QueryVisualizationProps) {
   // Route to appropriate chart component
   switch (config.type) {
     case 'acmg_pie':
-      return <ACMGPieChart data={data} config={config} />
-    
+      return <PieChart data={data} config={config} />
+
     case 'impact_bar':
-      return <ImpactBarChart data={data} config={config} />
-    
     case 'gene_bar':
-      return <GeneBarChart data={data} config={config} />
-    
     case 'chromosome_bar':
-      return <ChromosomeBarChart data={data} config={config} />
-    
     case 'consequence_bar':
-      // Similar to gene_bar but for consequences
-      return <GeneBarChart data={data} config={config as any} />
-    
+      return <BarChart data={data} config={config as any} />
+
     case 'clinical_scatter':
-      // TODO: Implement scatter plot (Phase 3)
       return (
         <div className="p-6 bg-muted/50 rounded-lg">
           <p className="text-base font-medium">Clinical Scatter Plot</p>
@@ -42,44 +34,62 @@ export function QueryVisualization({ data, config }: QueryVisualizationProps) {
           </p>
         </div>
       )
-    
+
     case 'table':
-      // Fallback to table view
+      // DEFENSIVE: Check data
+      if (!data || data.length === 0) {
+        return (
+          <div className="p-6 bg-muted/50 rounded-lg">
+            <p className="text-base font-medium">{config.title}</p>
+            <p className="text-sm text-muted-foreground mt-2">No data available</p>
+          </div>
+        )
+      }
+
       return (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                {data.length > 0 && Object.keys(data[0]).map(key => (
-                  <th key={key} className="px-4 py-2 text-left font-medium">
-                    {key}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, i) => (
-                <tr key={i} className="border-b">
-                  {Object.values(row).map((val: any, j) => (
-                    <td key={j} className="px-4 py-2">
-                      {typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                    </td>
+        <div className="w-full">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">{config.title}</h3>
+            {config.description && (
+              <p className="text-sm text-muted-foreground">{config.description}</p>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  {Object.keys(data[0]).map(key => (
+                    <th key={key} className="px-4 py-2 text-left font-medium bg-muted/50">
+                      {key}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.map((row, i) => (
+                  <tr key={i} className="border-b border-border hover:bg-muted/30">
+                    {Object.values(row).map((val: any, j) => (
+                      <td key={j} className="px-4 py-2">
+                        {typeof val === 'object' && val !== null
+                          ? JSON.stringify(val)
+                          : String(val ?? '')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )
-    
+
     default: {
-      // Explicit type assertion for default case
-      const unknownConfig = config as { type: string }
+      const unknownConfig = config as { type: string; title: string }
       return (
         <div className="p-6 bg-muted/50 rounded-lg">
-          <p className="text-base font-medium">Unknown Visualization Type</p>
+          <p className="text-base font-medium">{unknownConfig.title || 'Unknown Visualization'}</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Type: {unknownConfig.type}
+            Visualization type "{unknownConfig.type}" is not supported
           </p>
         </div>
       )

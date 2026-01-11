@@ -2,7 +2,11 @@
  * Chart Components for Genomics Visualization
  */
 
-export { ACMGPieChart } from './ACMGPieChart'
-export { ImpactBarChart } from './ImpactBarChart'
-export { GeneBarChart } from './GeneBarChart'
-export { ChromosomeBarChart } from './ChromosomeBarChart'
+export { PieChart } from './PieChart'
+export { BarChart } from './BarChart'
+
+// Legacy exports (deprecated) - backward compatibility
+export { PieChart as ACMGPieChart } from './PieChart'
+export { BarChart as ImpactBarChart } from './BarChart'
+export { BarChart as GeneBarChart } from './BarChart'
+export { BarChart as ChromosomeBarChart } from './BarChart'
