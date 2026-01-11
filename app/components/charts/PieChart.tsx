@@ -3,6 +3,7 @@
 /**
  * Universal Pie Chart Component
  * Generic pie chart with custom colors and labels
+ * Uses Tailwind CSS color palette for consistency with dashboard
  */
 
 import { PieChart as RechartsBase, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
@@ -19,6 +20,15 @@ interface PieChartConfig {
 interface PieChartProps {
   data: any[]
   config: PieChartConfig
+}
+
+// Tailwind color palette matching AnalysisSummary component
+const TAILWIND_COLORS = {
+  'Pathogenic': '#ef4444',           // red-500
+  'Likely Pathogenic': '#f97316',    // orange-500
+  'Uncertain Significance': '#eab308', // yellow-500
+  'Likely Benign': '#3b82f6',        // blue-500
+  'Benign': '#22c55e',               // green-500
 }
 
 export function PieChart({ data, config }: PieChartProps) {
@@ -62,6 +72,13 @@ export function PieChart({ data, config }: PieChartProps) {
     )
   }
 
+  // Use Tailwind colors if available, fallback to config colors
+  const getColor = (name: string): string => {
+    return TAILWIND_COLORS[name as keyof typeof TAILWIND_COLORS] || 
+           config.colors[name] || 
+           '#cbd5e1' // gray-300 fallback
+  }
+
   return (
     <div className="w-full">
       <div className="mb-4">
@@ -86,7 +103,7 @@ export function PieChart({ data, config }: PieChartProps) {
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={config.colors[entry.name] || '#cbd5e1'}
+                fill={getColor(entry.name)}
               />
             ))}
           </Pie>
