@@ -5,6 +5,7 @@
 
 import { apiRequest } from './client'
 
+// Use environment variable or fallback to localhost for development
 const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 
 export interface ChatMessage {
