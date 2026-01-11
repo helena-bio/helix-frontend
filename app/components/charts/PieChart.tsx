@@ -22,24 +22,22 @@ interface PieChartProps {
 }
 
 // Dashboard-matching colors
-// Fill: Background colors (светли)
-// Labels/Legend: Text colors (тъмни)
 const CHART_FILL_COLORS: Record<string, string> = {
-  'Pathogenic': '#fff085',           // Светло жълто
-  'Likely Pathogenic': '#ffd6a7',    // Светло праскова
-  'Uncertain Significance': '#fff085', // Светло жълто  
-  'Likely Benign': '#bedbff',        // Светло синьо
-  'Benign': '#b9f8cf',               // Светло зелено
-  'default': '#cbd5e1',              // gray-300
+  'Pathogenic': '#fff085',
+  'Likely Pathogenic': '#ffd6a7',
+  'Uncertain Significance': '#fff085',
+  'Likely Benign': '#bedbff',
+  'Benign': '#b9f8cf',
+  'default': '#cbd5e1',
 }
 
 const CHART_TEXT_COLORS: Record<string, string> = {
-  'Pathogenic': '#c10007',           // Тъмно червено
-  'Likely Pathogenic': '#a65f00',    // Тъмно оранжево
-  'Uncertain Significance': '#ca3500', // Тъмно кафяво
-  'Likely Benign': '#1447e6',        // Тъмно синьо
-  'Benign': '#008236',               // Тъмно зелено
-  'default': '#475569',              // slate-600
+  'Pathogenic': '#c10007',
+  'Likely Pathogenic': '#a65f00',
+  'Uncertain Significance': '#ca3500',
+  'Likely Benign': '#1447e6',
+  'Benign': '#008236',
+  'default': '#475569',
 }
 
 export function PieChart({ data, config }: PieChartProps) {
@@ -88,6 +86,27 @@ export function PieChart({ data, config }: PieChartProps) {
     return CHART_TEXT_COLORS[name] || CHART_TEXT_COLORS['default']
   }
 
+  const renderLabel = (props: any) => {
+    const { cx, cy, midAngle, outerRadius, name, percent } = props
+    const RADIAN = Math.PI / 180
+    const radius = outerRadius + 25
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill={getTextColor(name)}
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        style={{ fontSize: '14px', fontWeight: 500 }}
+      >
+        {`${name}: ${((percent || 0) * 100).toFixed(1)}%`}
+      </text>
+    )
+  }
+
   return (
     <div className="w-full">
       <div className="mb-4">
@@ -104,10 +123,7 @@ export function PieChart({ data, config }: PieChartProps) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) => ({
-              value: `${name}: ${((percent || 0) * 100).toFixed(1)}%`,
-              fill: getTextColor(name),
-            })}
+            label={renderLabel}
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"
