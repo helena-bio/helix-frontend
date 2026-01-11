@@ -6,6 +6,8 @@
  */
 
 import { PieChart, BarChart } from '@/components/charts'
+import { VariantsCompactTable } from '@/components/analysis'
+import { useAnalysis } from '@/contexts/AnalysisContext'
 import type { VisualizationConfig } from '@/types/visualization.types'
 
 interface QueryVisualizationProps {
@@ -14,6 +16,14 @@ interface QueryVisualizationProps {
 }
 
 export function QueryVisualization({ data, config }: QueryVisualizationProps) {
+  const { setSelectedVariantId, openDetails } = useAnalysis()
+
+  // Handler for variant click - opens detail panel
+  const handleVariantClick = (variantIdx: number) => {
+    setSelectedVariantId(variantIdx.toString())
+    openDetails()
+  }
+
   // Route to appropriate chart component
   switch (config.type) {
     case 'acmg_pie':
@@ -39,17 +49,42 @@ export function QueryVisualization({ data, config }: QueryVisualizationProps) {
       // DEFENSIVE: Check data
       if (!data || data.length === 0) {
         return (
-          <div className="p-6 bg-muted/50 rounded-lg">
+          <div className="p-4 bg-muted/50 rounded-lg">
             <p className="text-base font-medium">{config.title}</p>
             <p className="text-sm text-muted-foreground mt-2">No data available</p>
           </div>
         )
       }
 
+      // Check if this is variant data (has variant_idx column)
+      const isVariantData = data.length > 0 && 'variant_idx' in data[0]
+
+      if (isVariantData) {
+        // Use compact table for variants
+        return (
+          <div className="w-full">
+            <div className="mb-3">
+              <h3 className="text-base font-semibold">{config.title}</h3>
+              {config.description && (
+                <p className="text-sm text-muted-foreground">{config.description}</p>
+              )}
+            </div>
+            <VariantsCompactTable
+              data={data}
+              onVariantClick={handleVariantClick}
+            />
+            <div className="mt-3 text-xs text-muted-foreground">
+              {data.length} variants • Click any row to view details
+            </div>
+          </div>
+        )
+      }
+
+      // Fallback: generic table for non-variant data
       return (
         <div className="w-full">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">{config.title}</h3>
+          <div className="mb-3">
+            <h3 className="text-base font-semibold">{config.title}</h3>
             {config.description && (
               <p className="text-sm text-muted-foreground">{config.description}</p>
             )}
@@ -57,9 +92,9 @@ export function QueryVisualization({ data, config }: QueryVisualizationProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b border-border">
+                <tr className="border-b border-border bg-muted/50">
                   {Object.keys(data[0]).map(key => (
-                    <th key={key} className="px-4 py-2 text-left font-medium bg-muted/50">
+                    <th key={key} className="px-3 py-2 text-left text-xs font-semibold">
                       {key}
                     </th>
                   ))}
@@ -69,7 +104,7 @@ export function QueryVisualization({ data, config }: QueryVisualizationProps) {
                 {data.map((row, i) => (
                   <tr key={i} className="border-b border-border hover:bg-muted/30">
                     {Object.values(row).map((val: any, j) => (
-                      <td key={j} className="px-4 py-2">
+                      <td key={j} className="px-3 py-2 text-xs">
                         {typeof val === 'object' && val !== null
                           ? JSON.stringify(val)
                           : String(val ?? '')}
