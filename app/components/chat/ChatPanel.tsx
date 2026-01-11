@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo, memo } from 'react'
 import { Send, Square, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
@@ -9,6 +9,74 @@ import { QueryVisualization } from './QueryVisualization'
 import ReactMarkdown from 'react-markdown'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent } from '@/lib/api/ai'
+
+// Memoized MessageBubble component to prevent unnecessary re-renders
+const MessageBubble = memo(function MessageBubble({ message }: { message: Message }) {
+  if (message.type === 'text' && message.content) {
+    return (
+      <div
+        className={`rounded-2xl px-4 py-3 ${
+          message.role === 'user'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-card border border-primary/20'
+        }`}
+      >
+        <div className="text-base leading-relaxed prose prose-sm dark:prose-invert max-w-none
+          prose-p:my-2 prose-ul:my-2 prose-ol:my-2
+          prose-strong:text-foreground prose-strong:font-semibold
+          prose-em:text-foreground
+          prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+          prose-pre:bg-muted prose-pre:text-foreground">
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+          {message.isStreaming && (
+            <span className="inline-block w-2 h-4 ml-1 bg-primary/50 animate-pulse" />
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (message.type === 'query_result' && message.queryData) {
+    return (
+      <div className="p-4 bg-card border border-border rounded-lg">
+        <details className="mb-4">
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+            View SQL Query
+          </summary>
+          <pre className="mt-2 p-3 bg-muted rounded text-xs overflow-x-auto">
+            <code>{message.queryData.sql}</code>
+          </pre>
+        </details>
+
+        {message.queryData.visualization && (
+          <QueryVisualization
+            data={message.queryData.results}
+            config={message.queryData.visualization}
+          />
+        )}
+
+        <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
+          <span>{message.queryData.rows_returned} rows</span>
+          <span>•</span>
+          <span>{message.queryData.execution_time_ms}ms</span>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if content or streaming state changes
+  const prev = prevProps.message
+  const next = nextProps.message
+  
+  return (
+    prev.id === next.id &&
+    prev.content === next.content &&
+    prev.isStreaming === next.isStreaming &&
+    prev.type === next.type
+  )
+})
 
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -75,9 +143,6 @@ export function ChatPanel() {
     let queryDetected = false
     let queryResultMessageId: string | null = null
     let continuationMessageId: string | null = null
-    let tokenCount = 0
-
-    console.log('🚀 [CHAT] Starting stream...')
 
     try {
       await streamMessage({
@@ -85,9 +150,6 @@ export function ChatPanel() {
         conversation_id: conversationId,
         session_id: currentSessionId || undefined,
         onToken: (token: string) => {
-          tokenCount++
-          console.log(`📝 [TOKEN #${tokenCount}] "${token.substring(0, 20)}..."`)
-
           setMessages(prev =>
             prev.map(msg => {
               if (msg.id === streamingMessageId) {
@@ -95,7 +157,6 @@ export function ChatPanel() {
 
                 if (!queryDetected && hasQueryTool(newContent)) {
                   queryDetected = true
-                  console.log('🔍 [QUERY DETECTED] Stopping first message!')
                   return {
                     ...msg,
                     content: cleanXMLTags(newContent).trim(),
@@ -119,13 +180,6 @@ export function ChatPanel() {
           )
         },
         onQueryResult: (result: QueryResultEvent) => {
-          console.log('📊 [QUERY RESULT RECEIVED]', {
-            sql: result.sql.substring(0, 50) + '...',
-            rows: result.rows_returned,
-            hasViz: !!result.visualization,
-            vizType: result.visualization?.type,
-          })
-
           setMessages(prev =>
             prev.map(msg =>
               msg.id === streamingMessageId && msg.isStreaming
@@ -151,11 +205,6 @@ export function ChatPanel() {
             },
           }
 
-          console.log('✅ [INSERTING QUERY MESSAGE]', {
-            id: queryResultMessageId,
-            dataRows: result.results.length,
-          })
-
           continuationMessageId = `${streamingMessageId}-continuation`
           const continuationMessage: Message = {
             id: continuationMessageId,
@@ -168,27 +217,14 @@ export function ChatPanel() {
 
           setMessages(prev => {
             const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
-            console.log('📍 [INSERT POSITION]', { msgIndex, totalMessages: prev.length })
-            
             if (msgIndex === -1) return prev
 
             const newMessages = [...prev]
             newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
-            
-            console.log('✨ [MESSAGES INSERTED]', {
-              newTotal: newMessages.length,
-              insertedAt: msgIndex + 1,
-            })
-            
             return newMessages
           })
         },
         onComplete: (fullMessage: string) => {
-          console.log('🏁 [STREAM COMPLETE]', {
-            totalTokens: tokenCount,
-            messageLength: fullMessage.length,
-          })
-
           setMessages(prev =>
             prev.map(msg => {
               if (msg.id === streamingMessageId || msg.id === continuationMessageId) {
@@ -200,7 +236,7 @@ export function ChatPanel() {
           setIsSending(false)
         },
         onError: (error: Error) => {
-          console.error('❌ [CHAT ERROR]', error)
+          console.error('[CHAT ERROR]', error)
 
           setMessages(prev =>
             prev.map(msg =>
@@ -217,7 +253,7 @@ export function ChatPanel() {
         },
       })
     } catch (error) {
-      console.error('❌ [STREAM INIT ERROR]', error)
+      console.error('[STREAM INIT ERROR]', error)
       setIsSending(false)
     }
   }
@@ -248,74 +284,18 @@ export function ChatPanel() {
 
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="space-y-6 max-w-4xl">
-          {messages.map((message) => {
-            if (message.type === 'query_result') {
-              console.log('🎨 [RENDERING QUERY]', {
-                id: message.id,
-                hasData: !!message.queryData,
-                rows: message.queryData?.results.length,
-              })
-            }
-
-            return (
-              <div
-                key={message.id}
-                className={`flex gap-3 ${
-                  message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                <div className={`${message.role === 'user' ? 'max-w-[80%]' : 'w-full'}`}>
-                  {message.type === 'text' && message.content && (
-                    <div
-                      className={`rounded-2xl px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card border border-primary/20'
-                      }`}
-                    >
-                      <div className="text-base leading-relaxed prose prose-sm dark:prose-invert max-w-none
-                        prose-p:my-2 prose-ul:my-2 prose-ol:my-2
-                        prose-strong:text-foreground prose-strong:font-semibold
-                        prose-em:text-foreground
-                        prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                        prose-pre:bg-muted prose-pre:text-foreground">
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
-                        {message.isStreaming && (
-                          <span className="inline-block w-2 h-4 ml-1 bg-primary/50 animate-pulse" />
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {message.type === 'query_result' && message.queryData && (
-                    <div className="p-4 bg-card border border-border rounded-lg">
-                      <details className="mb-4">
-                        <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
-                          View SQL Query
-                        </summary>
-                        <pre className="mt-2 p-3 bg-muted rounded text-xs overflow-x-auto">
-                          <code>{message.queryData.sql}</code>
-                        </pre>
-                      </details>
-
-                      {message.queryData.visualization && (
-                        <QueryVisualization
-                          data={message.queryData.results}
-                          config={message.queryData.visualization}
-                        />
-                      )}
-
-                      <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
-                        <span>{message.queryData.rows_returned} rows</span>
-                        <span>•</span>
-                        <span>{message.queryData.execution_time_ms}ms</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex gap-3 ${
+                message.role === 'user' ? 'justify-end' : 'justify-start'
+              }`}
+            >
+              <div className={`${message.role === 'user' ? 'max-w-[80%]' : 'w-full'}`}>
+                <MessageBubble message={message} />
               </div>
-            )
-          })}
+            </div>
+          ))}
 
           {isSending && messages[messages.length - 1]?.content === '' && (
             <div className="flex gap-3 justify-start">
