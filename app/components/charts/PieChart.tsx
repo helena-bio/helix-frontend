@@ -2,17 +2,21 @@
 
 /**
  * Universal Pie Chart Component
- * Colors are defined in frontend only - backend sends data structure, not styling
+ * Uses Tailwind theme colors via CSS custom properties
  */
 
 import { PieChart as RechartsBase, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import resolveConfig from 'tailwindcss/resolveConfig'
+import tailwindConfig from '@/tailwind.config'
+
+const fullConfig = resolveConfig(tailwindConfig)
 
 interface PieChartConfig {
   title: string
   description?: string
   category_column: string
   value_column: string
-  colors?: Record<string, string> // DEPRECATED: Frontend defines colors
+  colors?: Record<string, string>
   note?: string
 }
 
@@ -21,27 +25,26 @@ interface PieChartProps {
   config: PieChartConfig
 }
 
-// Frontend-defined color palette (matching AnalysisSummary)
+// Extract Tailwind colors matching AnalysisSummary component
 const CHART_COLORS: Record<string, string> = {
-  // ACMG Classifications
-  'Pathogenic': '#ef4444',           // red-500
-  'Likely Pathogenic': '#f97316',    // orange-500
-  'Uncertain Significance': '#eab308', // yellow-500
-  'Likely Benign': '#3b82f6',        // blue-500
-  'Benign': '#22c55e',               // green-500
+  // ACMG Classifications - using red/orange/yellow/blue/green-500 for visibility
+  'Pathogenic': fullConfig.theme.colors.red[500],
+  'Likely Pathogenic': fullConfig.theme.colors.orange[500],
+  'Uncertain Significance': fullConfig.theme.colors.yellow[500],
+  'Likely Benign': fullConfig.theme.colors.blue[500],
+  'Benign': fullConfig.theme.colors.green[500],
   
   // Impact Levels
-  'HIGH': '#ef4444',      // red-500
-  'MODERATE': '#f97316',  // orange-500
-  'LOW': '#eab308',       // yellow-500
-  'MODIFIER': '#9ca3af',  // gray-400
+  'HIGH': fullConfig.theme.colors.red[500],
+  'MODERATE': fullConfig.theme.colors.orange[500],
+  'LOW': fullConfig.theme.colors.yellow[500],
+  'MODIFIER': fullConfig.theme.colors.gray[400],
   
   // Fallback
-  'default': '#cbd5e1',   // gray-300
+  'default': fullConfig.theme.colors.indigo[500],
 }
 
 export function PieChart({ data, config }: PieChartProps) {
-  // DEFENSIVE: Check if data exists and is valid
   if (!data || data.length === 0) {
     return (
       <div className="w-full p-6 bg-muted/50 rounded-lg">
@@ -56,7 +59,6 @@ export function PieChart({ data, config }: PieChartProps) {
     )
   }
 
-  // Transform data for Recharts
   const chartData = data
     .map(item => ({
       name: item[config.category_column],
@@ -64,7 +66,6 @@ export function PieChart({ data, config }: PieChartProps) {
     }))
     .filter(item => item.name && item.value !== undefined && item.value !== null)
 
-  // DEFENSIVE: Check transformed data
   if (chartData.length === 0) {
     return (
       <div className="w-full p-6 bg-muted/50 rounded-lg">
@@ -81,7 +82,6 @@ export function PieChart({ data, config }: PieChartProps) {
     )
   }
 
-  // Get color for category (frontend-defined only)
   const getColor = (name: string): string => {
     return CHART_COLORS[name] || CHART_COLORS['default']
   }
