@@ -1,8 +1,8 @@
 "use client"
 
 /**
- * Universal Pie Chart Component
- * Uses Tailwind color shades matching AnalysisSummary component
+ * Universal Pie Chart Component  
+ * Colors extracted from dashboard LAB values converted to hex
  */
 
 import { PieChart as RechartsBase, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
@@ -21,24 +21,25 @@ interface PieChartProps {
   config: PieChartConfig
 }
 
-// Tailwind color shades matching AnalysisSummary component
-// Dashboard uses bg-X-50 + text-X-700, so we use X-600 for pie chart visibility
-const CHART_COLORS: Record<string, string> = {
-  // ACMG Classifications - using 600 shades for good contrast in pie chart
-  'Pathogenic': '#dc2626',           // red-600
-  'Likely Pathogenic': '#ea580c',    // orange-600
-  'Uncertain Significance': '#ca8a04', // yellow-600
-  'Likely Benign': '#2563eb',        // blue-600
-  'Benign': '#16a34a',               // green-600
-  
-  // Impact Levels - matching AnalysisSummary dots
-  'HIGH': '#ef4444',      // red-500
-  'MODERATE': '#f97316',  // orange-500
-  'LOW': '#eab308',       // yellow-500
-  'MODIFIER': '#9ca3af',  // gray-400
-  
-  // Fallback
-  'default': '#6366f1',   // indigo-500
+// Dashboard-matching colors
+// Fill: Background colors (светли)
+// Labels/Legend: Text colors (тъмни)
+const CHART_FILL_COLORS: Record<string, string> = {
+  'Pathogenic': '#fff085',           // Светло жълто
+  'Likely Pathogenic': '#ffd6a7',    // Светло праскова
+  'Uncertain Significance': '#fff085', // Светло жълто  
+  'Likely Benign': '#bedbff',        // Светло синьо
+  'Benign': '#b9f8cf',               // Светло зелено
+  'default': '#cbd5e1',              // gray-300
+}
+
+const CHART_TEXT_COLORS: Record<string, string> = {
+  'Pathogenic': '#c10007',           // Тъмно червено
+  'Likely Pathogenic': '#a65f00',    // Тъмно оранжево
+  'Uncertain Significance': '#ca3500', // Тъмно кафяво
+  'Likely Benign': '#1447e6',        // Тъмно синьо
+  'Benign': '#008236',               // Тъмно зелено
+  'default': '#475569',              // slate-600
 }
 
 export function PieChart({ data, config }: PieChartProps) {
@@ -79,8 +80,12 @@ export function PieChart({ data, config }: PieChartProps) {
     )
   }
 
-  const getColor = (name: string): string => {
-    return CHART_COLORS[name] || CHART_COLORS['default']
+  const getFillColor = (name: string): string => {
+    return CHART_FILL_COLORS[name] || CHART_FILL_COLORS['default']
+  }
+
+  const getTextColor = (name: string): string => {
+    return CHART_TEXT_COLORS[name] || CHART_TEXT_COLORS['default']
   }
 
   return (
@@ -99,7 +104,10 @@ export function PieChart({ data, config }: PieChartProps) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(1)}%`}
+            label={({ name, percent }) => ({
+              value: `${name}: ${((percent || 0) * 100).toFixed(1)}%`,
+              fill: getTextColor(name),
+            })}
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"
@@ -107,7 +115,7 @@ export function PieChart({ data, config }: PieChartProps) {
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={getColor(entry.name)}
+                fill={getFillColor(entry.name)}
               />
             ))}
           </Pie>
@@ -122,7 +130,11 @@ export function PieChart({ data, config }: PieChartProps) {
           <Legend
             verticalAlign="bottom"
             height={36}
-            formatter={(value) => <span className="text-sm">{value}</span>}
+            formatter={(value) => (
+              <span className="text-sm" style={{ color: getTextColor(value) }}>
+                {value}
+              </span>
+            )}
           />
         </RechartsBase>
       </ResponsiveContainer>
