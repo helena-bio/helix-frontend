@@ -63,19 +63,10 @@ export function QueryVisualization({ data, config }: QueryVisualizationProps) {
         // Use compact table for variants
         return (
           <div className="w-full">
-            <div className="mb-3">
-              <h3 className="text-base font-semibold">{config.title}</h3>
-              {config.description && (
-                <p className="text-sm text-muted-foreground">{config.description}</p>
-              )}
-            </div>
             <VariantsCompactTable
               data={data}
               onVariantClick={handleVariantClick}
             />
-            <div className="mt-3 text-xs text-muted-foreground">
-              {data.length} variants • Click any row to view details
-            </div>
           </div>
         )
       }
