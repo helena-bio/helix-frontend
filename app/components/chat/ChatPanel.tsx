@@ -160,7 +160,7 @@ export function ChatPanel() {
                       : 'bg-card border border-primary/20'
                   }`}
                 >
-                  <p className="text-base leading-relaxed whitespace-pre-line">
+                  <p className="text-base leading-relaxed whitespace-pre-wrap">
                     {message.content}
                     {message.isStreaming && (
                       <span className="inline-block w-2 h-4 ml-1 bg-primary/50 animate-pulse" />

@@ -40,6 +40,7 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
 
 /**
  * Send chat message with streaming (SSE)
+ * Returns tokens exactly as received from backend
  */
 export async function* streamChatMessage(
   request: ChatRequest
@@ -78,7 +79,7 @@ export async function* streamChatMessage(
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim()
+          const data = line.slice(6) // Remove 'data: ' prefix
           
           if (data === '[DONE]') {
             return
@@ -88,7 +89,10 @@ export async function* streamChatMessage(
             throw new Error(data)
           }
           
-          yield data
+          // Yield token exactly as received (no trim!)
+          if (data) {
+            yield data
+          }
         }
       }
     }
