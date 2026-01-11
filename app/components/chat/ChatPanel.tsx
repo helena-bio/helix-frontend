@@ -3,7 +3,7 @@
 /**
  * ChatPanel - AI Assistant Chat Interface with Streaming
  * Real-time streaming responses from AI service
- * WITH QUERY VISUALIZATION SUPPORT AND CLEAN UI
+ * WITH QUERY VISUALIZATION SUPPORT, CLEAN UI, AND MARKDOWN RENDERING
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
+import ReactMarkdown from 'react-markdown'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent } from '@/lib/api/ai'
 
@@ -49,7 +50,8 @@ export function ChatPanel() {
    * Removes <query_database>...</query_database> tags
    */
   const cleanXMLTags = (content: string): string => {
-    return content.replace(/<query_database>.*?<\/query_database>/gs, '')
+    // Use [\s\S] instead of . with 's' flag for compatibility
+    return content.replace(/<query_database>[\s\S]*?<\/query_database>/g, '')
   }
 
   /**
@@ -101,7 +103,7 @@ export function ChatPanel() {
             prev.map(msg => {
               if (msg.id === streamingMessageId) {
                 const newContent = msg.content + token
-                
+
                 // Detect query tool trigger
                 if (!queryDetected && hasQueryTool(newContent)) {
                   queryDetected = true
@@ -112,21 +114,21 @@ export function ChatPanel() {
                     isStreaming: false,
                   }
                 }
-                
+
                 // If query detected, route tokens to continuation message
                 if (queryDetected && continuationMessageId) {
                   return msg
                 }
-                
+
                 // Normal streaming
                 return { ...msg, content: cleanXMLTags(newContent) }
               }
-              
+
               // Route tokens to continuation message after query
               if (msg.id === continuationMessageId && queryDetected) {
                 return { ...msg, content: msg.content + token }
               }
-              
+
               return msg
             })
           )
@@ -260,12 +262,17 @@ export function ChatPanel() {
                         : 'bg-card border border-primary/20'
                     }`}
                   >
-                    <p className="text-base leading-relaxed whitespace-pre-wrap">
-                      {message.content}
+                    <div className="text-base leading-relaxed prose prose-sm dark:prose-invert max-w-none
+                      prose-p:my-2 prose-ul:my-2 prose-ol:my-2
+                      prose-strong:text-foreground prose-strong:font-semibold
+                      prose-em:text-foreground
+                      prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                      prose-pre:bg-muted prose-pre:text-foreground">
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
                       {message.isStreaming && (
                         <span className="inline-block w-2 h-4 ml-1 bg-primary/50 animate-pulse" />
                       )}
-                    </p>
+                    </div>
                   </div>
                 )}
 
