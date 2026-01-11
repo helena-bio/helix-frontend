@@ -3,6 +3,7 @@
 /**
  * ChatPanel - AI Assistant Chat Interface with Streaming
  * Real-time streaming responses from AI service
+ * WITH QUERY VISUALIZATION SUPPORT
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -10,6 +11,7 @@ import { Send, Square, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
+import { QueryVisualization } from './QueryVisualization'
 import type { Message } from '@/types/ai.types'
 
 export function ChatPanel() {
@@ -36,6 +38,7 @@ export function ChatPanel() {
         role: 'assistant',
         content: "Hello! I'm your AI assistant for variant analysis. I can help you understand the results, filter variants, and provide clinical insights. What would you like to know?",
         timestamp: new Date(),
+        type: 'text',
       }])
     }
   }, [currentSessionId])
@@ -48,6 +51,7 @@ export function ChatPanel() {
       role: 'user',
       content: inputValue.trim(),
       timestamp: new Date(),
+      type: 'text',
     }
 
     // Add user message
@@ -63,6 +67,7 @@ export function ChatPanel() {
       content: '',
       timestamp: new Date(),
       isStreaming: true,
+      type: 'text',
     }
 
     setMessages(prev => [...prev, streamingMessage])
@@ -74,8 +79,8 @@ export function ChatPanel() {
         session_id: currentSessionId || undefined,
         onToken: (token: string) => {
           // Update streaming message with new token
-          setMessages(prev => 
-            prev.map(msg => 
+          setMessages(prev =>
+            prev.map(msg =>
               msg.id === streamingMessageId
                 ? { ...msg, content: msg.content + token }
                 : msg
@@ -84,8 +89,8 @@ export function ChatPanel() {
         },
         onComplete: (fullMessage: string) => {
           // Mark message as complete
-          setMessages(prev => 
-            prev.map(msg => 
+          setMessages(prev =>
+            prev.map(msg =>
               msg.id === streamingMessageId
                 ? { ...msg, isStreaming: false }
                 : msg
@@ -95,10 +100,10 @@ export function ChatPanel() {
         },
         onError: (error: Error) => {
           console.error('AI chat error:', error)
-          
+
           // Update message with error
-          setMessages(prev => 
-            prev.map(msg => 
+          setMessages(prev =>
+            prev.map(msg =>
               msg.id === streamingMessageId
                 ? {
                     ...msg,
@@ -144,7 +149,7 @@ export function ChatPanel() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-6 max-w-4xl">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -152,7 +157,8 @@ export function ChatPanel() {
                 message.role === 'user' ? 'justify-end' : 'justify-start'
               }`}
             >
-              <div className={`max-w-[80%] ${message.role === 'user' ? '' : 'w-full'}`}>
+              <div className={`${message.role === 'user' ? 'max-w-[80%]' : 'w-full'}`}>
+                {/* Message Content */}
                 <div
                   className={`rounded-2xl px-4 py-3 ${
                     message.role === 'user'
@@ -167,6 +173,36 @@ export function ChatPanel() {
                     )}
                   </p>
                 </div>
+
+                {/* Query Visualization (if present) */}
+                {message.type === 'query_result' && message.queryData && (
+                  <div className="mt-4 p-4 bg-card border border-border rounded-lg">
+                    {/* SQL Query (collapsible) */}
+                    <details className="mb-4">
+                      <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+                        View SQL Query
+                      </summary>
+                      <pre className="mt-2 p-3 bg-muted rounded text-xs overflow-x-auto">
+                        <code>{message.queryData.sql}</code>
+                      </pre>
+                    </details>
+
+                    {/* Visualization */}
+                    {message.queryData.visualization && (
+                      <QueryVisualization
+                        data={message.queryData.results}
+                        config={message.queryData.visualization}
+                      />
+                    )}
+
+                    {/* Execution Stats */}
+                    <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
+                      <span>{message.queryData.rows_returned} rows</span>
+                      <span>•</span>
+                      <span>{message.queryData.execution_time_ms}ms</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

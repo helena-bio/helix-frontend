@@ -2,12 +2,24 @@
  * AI Chat Types
  */
 
+import type { VisualizationConfig } from './visualization.types'
+
 export interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
   isStreaming?: boolean
+  
+  // Query result extensions
+  type?: 'text' | 'query_result'
+  queryData?: {
+    sql: string
+    results: any[]
+    rows_returned: number
+    execution_time_ms: number
+    visualization?: VisualizationConfig
+  }
 }
 
 export interface Conversation {
