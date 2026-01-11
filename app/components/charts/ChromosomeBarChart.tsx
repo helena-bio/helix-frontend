@@ -53,7 +53,7 @@ export function ChromosomeBarChart({ data, config }: ChromosomeBarChartProps) {
             label={{ value: 'Variant Count', angle: -90, position: 'insideLeft' }}
           />
           <Tooltip 
-            formatter={(value: number) => [`${value} variants`, 'Count']}
+            formatter={(value: number | undefined) => [`${value || 0} variants`, 'Count']}
             labelFormatter={(label) => `Chromosome ${label}`}
             contentStyle={{
               backgroundColor: 'hsl(var(--card))',

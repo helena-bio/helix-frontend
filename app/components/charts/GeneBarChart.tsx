@@ -86,7 +86,7 @@ export function GeneBarChart({ data, config }: GeneBarChartProps) {
             />
             <YAxis tick={{ fill: 'hsl(var(--foreground))' }} />
             <Tooltip 
-              formatter={(value: number) => [`${value} variants`, 'Count']}
+              formatter={(value: number | undefined) => [`${value || 0} variants`, 'Count']}
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',

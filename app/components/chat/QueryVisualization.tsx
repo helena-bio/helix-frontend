@@ -72,14 +72,17 @@ export function QueryVisualization({ data, config }: QueryVisualizationProps) {
         </div>
       )
     
-    default:
+    default: {
+      // Explicit type assertion for default case
+      const unknownConfig = config as { type: string }
       return (
         <div className="p-6 bg-muted/50 rounded-lg">
           <p className="text-base font-medium">Unknown Visualization Type</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Type: {config.type}
+            Type: {unknownConfig.type}
           </p>
         </div>
       )
+    }
   }
 }
