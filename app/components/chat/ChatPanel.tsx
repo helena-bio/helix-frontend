@@ -13,6 +13,7 @@ import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import type { Message } from '@/types/ai.types'
+import type { QueryResultEvent } from '@/lib/api/ai'
 
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -87,6 +88,33 @@ export function ChatPanel() {
             )
           )
         },
+        onQueryResult: (result: QueryResultEvent) => {
+          // Add query result message
+          const queryResultMessage: Message = {
+            id: `${streamingMessageId}-query`,
+            role: 'assistant',
+            content: '', // No text content for query results
+            timestamp: new Date(),
+            type: 'query_result',
+            queryData: {
+              sql: result.sql,
+              results: result.results,
+              rows_returned: result.rows_returned,
+              execution_time_ms: result.execution_time_ms,
+              visualization: result.visualization,
+            },
+          }
+
+          // Insert query result AFTER the current streaming message
+          setMessages(prev => {
+            const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
+            if (msgIndex === -1) return prev
+            
+            const newMessages = [...prev]
+            newMessages.splice(msgIndex + 1, 0, queryResultMessage)
+            return newMessages
+          })
+        },
         onComplete: (fullMessage: string) => {
           // Mark message as complete
           setMessages(prev =>
@@ -158,23 +186,25 @@ export function ChatPanel() {
               }`}
             >
               <div className={`${message.role === 'user' ? 'max-w-[80%]' : 'w-full'}`}>
-                {/* Message Content */}
-                <div
-                  className={`rounded-2xl px-4 py-3 ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-card border border-primary/20'
-                  }`}
-                >
-                  <p className="text-base leading-relaxed whitespace-pre-wrap">
-                    {message.content}
-                    {message.isStreaming && (
-                      <span className="inline-block w-2 h-4 ml-1 bg-primary/50 animate-pulse" />
-                    )}
-                  </p>
-                </div>
+                {/* Text Message Content */}
+                {message.type === 'text' && (
+                  <div
+                    className={`rounded-2xl px-4 py-3 ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card border border-primary/20'
+                    }`}
+                  >
+                    <p className="text-base leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                      {message.isStreaming && (
+                        <span className="inline-block w-2 h-4 ml-1 bg-primary/50 animate-pulse" />
+                      )}
+                    </p>
+                  </div>
+                )}
 
-                {/* Query Visualization (if present) */}
+                {/* Query Visualization */}
                 {message.type === 'query_result' && message.queryData && (
                   <div className="mt-4 p-4 bg-card border border-border rounded-lg">
                     {/* SQL Query (collapsible) */}

@@ -1,17 +1,15 @@
 /**
  * AI Chat Mutations
- * Handles streaming chat with AI service
+ * Handles streaming chat with AI service and query visualizations
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { sendChatMessage, streamChatMessage, type ChatRequest } from '@/lib/api/ai'
+import { useMutation } from '@tanstack/react-query'
+import { sendChatMessage, streamChatMessage, type ChatRequest, type QueryResultEvent } from '@/lib/api/ai'
 
 /**
  * Buffered chat mutation (non-streaming)
  */
 export function useAIChat() {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: async (request: ChatRequest) => {
       return sendChatMessage(request)
@@ -23,15 +21,17 @@ export function useAIChat() {
 }
 
 /**
- * Streaming chat hook
+ * Streaming chat hook with query result support
+ * 
  * Usage:
  * 
  * const { streamMessage } = useAIChatStream()
  * 
  * await streamMessage({
- *   message: 'Hello',
+ *   message: 'Show me ACMG distribution',
  *   session_id: 'abc123',
  *   onToken: (token) => console.log(token),
+ *   onQueryResult: (result) => console.log('Query result:', result),
  *   onComplete: (fullMessage) => console.log('Done:', fullMessage),
  *   onError: (error) => console.error(error)
  * })
@@ -42,6 +42,7 @@ export function useAIChatStream() {
     conversation_id,
     session_id,
     onToken,
+    onQueryResult,
     onComplete,
     onError,
   }: {
@@ -49,6 +50,7 @@ export function useAIChatStream() {
     conversation_id?: string
     session_id?: string
     onToken: (token: string) => void
+    onQueryResult?: (result: QueryResultEvent) => void
     onComplete: (fullMessage: string) => void
     onError: (error: Error) => void
   }) => {
@@ -61,9 +63,17 @@ export function useAIChatStream() {
         session_id,
       })
 
-      for await (const token of stream) {
-        fullMessage += token
-        onToken(token)
+      for await (const event of stream) {
+        if (event.type === 'token') {
+          // Text token
+          fullMessage += event.data
+          onToken(event.data)
+        } else if (event.type === 'query_result') {
+          // Query result with visualization
+          if (onQueryResult) {
+            onQueryResult(event.data)
+          }
+        }
       }
 
       onComplete(fullMessage)
