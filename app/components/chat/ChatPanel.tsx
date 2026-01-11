@@ -4,6 +4,7 @@
  * ChatPanel - AI Assistant Chat Interface with Streaming
  * Real-time streaming responses from AI service
  * WITH QUERY VISUALIZATION SUPPORT, CLEAN UI, AND MARKDOWN RENDERING
+ * FIXED: Chart shows immediately when query result arrives
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -50,7 +51,6 @@ export function ChatPanel() {
    * Removes <query_database>...</query_database> tags
    */
   const cleanXMLTags = (content: string): string => {
-    // Use [\s\S] instead of . with 's' flag for compatibility
     return content.replace(/<query_database>[\s\S]*?<\/query_database>/g, '')
   }
 
@@ -91,6 +91,7 @@ export function ChatPanel() {
     setMessages(prev => [...prev, streamingMessage])
 
     let queryDetected = false
+    let queryResultMessageId: string | null = null
     let continuationMessageId: string | null = null
 
     try {
@@ -101,6 +102,7 @@ export function ChatPanel() {
         onToken: (token: string) => {
           setMessages(prev =>
             prev.map(msg => {
+              // First streaming message (before query)
               if (msg.id === streamingMessageId) {
                 const newContent = msg.content + token
 
@@ -115,16 +117,15 @@ export function ChatPanel() {
                   }
                 }
 
-                // If query detected, route tokens to continuation message
-                if (queryDetected && continuationMessageId) {
-                  return msg
+                // Normal streaming (before query detected)
+                if (!queryDetected) {
+                  return { ...msg, content: cleanXMLTags(newContent) }
                 }
 
-                // Normal streaming
-                return { ...msg, content: cleanXMLTags(newContent) }
+                return msg
               }
 
-              // Route tokens to continuation message after query
+              // Continuation message (after query result)
               if (msg.id === continuationMessageId && queryDetected) {
                 return { ...msg, content: msg.content + token }
               }
@@ -134,18 +135,21 @@ export function ChatPanel() {
           )
         },
         onQueryResult: (result: QueryResultEvent) => {
-          // Mark first message as complete
+          // Mark first message as complete (if not already)
           setMessages(prev =>
             prev.map(msg =>
-              msg.id === streamingMessageId
+              msg.id === streamingMessageId && msg.isStreaming
                 ? { ...msg, isStreaming: false }
                 : msg
             )
           )
 
-          // Add query result message
+          // Create query result message ID
+          queryResultMessageId = `${streamingMessageId}-query`
+
+          // Add query result message IMMEDIATELY (with data already present)
           const queryResultMessage: Message = {
-            id: `${streamingMessageId}-query`,
+            id: queryResultMessageId,
             role: 'assistant',
             content: '',
             timestamp: new Date(),
@@ -170,13 +174,13 @@ export function ChatPanel() {
             type: 'text',
           }
 
-          // Insert query result and continuation message
+          // Insert BOTH messages at once (query result + continuation placeholder)
           setMessages(prev => {
             const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
             if (msgIndex === -1) return prev
 
             const newMessages = [...prev]
-            // Insert chart, then continuation message
+            // Insert query result, then continuation message
             newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
             return newMessages
           })
@@ -276,7 +280,7 @@ export function ChatPanel() {
                   </div>
                 )}
 
-                {/* Query Visualization */}
+                {/* Query Visualization - SHOWS IMMEDIATELY */}
                 {message.type === 'query_result' && message.queryData && (
                   <div className="p-4 bg-card border border-border rounded-lg">
                     {/* SQL Query (collapsible) */}
@@ -289,7 +293,7 @@ export function ChatPanel() {
                       </pre>
                     </details>
 
-                    {/* Visualization */}
+                    {/* Visualization - renders IMMEDIATELY with data */}
                     {message.queryData.visualization && (
                       <QueryVisualization
                         data={message.queryData.results}
