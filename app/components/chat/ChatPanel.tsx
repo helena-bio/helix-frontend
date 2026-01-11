@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useMemo, memo } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { Send, Square, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
@@ -43,9 +43,11 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
           <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
             View SQL Query
           </summary>
-          <pre className="mt-2 p-3 bg-muted rounded text-xs overflow-x-auto">
-            <code>{message.queryData.sql}</code>
-          </pre>
+          <div className="mt-2 p-3 bg-muted rounded overflow-x-auto">
+            <pre className="text-xs font-mono whitespace-pre-wrap break-words">
+              <code>{message.queryData.sql}</code>
+            </pre>
+          </div>
         </details>
 
         {message.queryData.visualization && (
@@ -69,7 +71,7 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
   // Custom comparison: only re-render if content or streaming state changes
   const prev = prevProps.message
   const next = nextProps.message
-  
+
   return (
     prev.id === next.id &&
     prev.content === next.content &&
