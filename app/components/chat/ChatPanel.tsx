@@ -3,7 +3,7 @@
 /**
  * ChatPanel - AI Assistant Chat Interface with Streaming
  * Real-time streaming responses from AI service
- * WITH QUERY VISUALIZATION SUPPORT
+ * WITH QUERY VISUALIZATION SUPPORT AND CLEAN UI
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -44,6 +44,21 @@ export function ChatPanel() {
     }
   }, [currentSessionId])
 
+  /**
+   * Clean XML tags from message content
+   * Removes <query_database>...</query_database> tags
+   */
+  const cleanXMLTags = (content: string): string => {
+    return content.replace(/<query_database>.*?<\/query_database>/gs, '')
+  }
+
+  /**
+   * Detect if message contains query tool trigger
+   */
+  const hasQueryTool = (content: string): boolean => {
+    return /<query_database>/.test(content)
+  }
+
   const handleSend = async () => {
     if (!inputValue.trim() || isSending) return
 
@@ -73,27 +88,64 @@ export function ChatPanel() {
 
     setMessages(prev => [...prev, streamingMessage])
 
+    let queryDetected = false
+    let continuationMessageId: string | null = null
+
     try {
       await streamMessage({
         message: userMessage.content,
         conversation_id: conversationId,
         session_id: currentSessionId || undefined,
         onToken: (token: string) => {
-          // Update streaming message with new token
           setMessages(prev =>
-            prev.map(msg =>
-              msg.id === streamingMessageId
-                ? { ...msg, content: msg.content + token }
-                : msg
-            )
+            prev.map(msg => {
+              if (msg.id === streamingMessageId) {
+                const newContent = msg.content + token
+                
+                // Detect query tool trigger
+                if (!queryDetected && hasQueryTool(newContent)) {
+                  queryDetected = true
+                  // Stop this message and clean XML tags
+                  return {
+                    ...msg,
+                    content: cleanXMLTags(newContent).trim(),
+                    isStreaming: false,
+                  }
+                }
+                
+                // If query detected, route tokens to continuation message
+                if (queryDetected && continuationMessageId) {
+                  return msg
+                }
+                
+                // Normal streaming
+                return { ...msg, content: cleanXMLTags(newContent) }
+              }
+              
+              // Route tokens to continuation message after query
+              if (msg.id === continuationMessageId && queryDetected) {
+                return { ...msg, content: msg.content + token }
+              }
+              
+              return msg
+            })
           )
         },
         onQueryResult: (result: QueryResultEvent) => {
+          // Mark first message as complete
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === streamingMessageId
+                ? { ...msg, isStreaming: false }
+                : msg
+            )
+          )
+
           // Add query result message
           const queryResultMessage: Message = {
             id: `${streamingMessageId}-query`,
             role: 'assistant',
-            content: '', // No text content for query results
+            content: '',
             timestamp: new Date(),
             type: 'query_result',
             queryData: {
@@ -105,24 +157,37 @@ export function ChatPanel() {
             },
           }
 
-          // Insert query result AFTER the current streaming message
+          // Create continuation message for analysis AFTER chart
+          continuationMessageId = `${streamingMessageId}-continuation`
+          const continuationMessage: Message = {
+            id: continuationMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            isStreaming: true,
+            type: 'text',
+          }
+
+          // Insert query result and continuation message
           setMessages(prev => {
             const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
             if (msgIndex === -1) return prev
-            
+
             const newMessages = [...prev]
-            newMessages.splice(msgIndex + 1, 0, queryResultMessage)
+            // Insert chart, then continuation message
+            newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
             return newMessages
           })
         },
         onComplete: (fullMessage: string) => {
-          // Mark message as complete
+          // Mark all messages as complete
           setMessages(prev =>
-            prev.map(msg =>
-              msg.id === streamingMessageId
-                ? { ...msg, isStreaming: false }
-                : msg
-            )
+            prev.map(msg => {
+              if (msg.id === streamingMessageId || msg.id === continuationMessageId) {
+                return { ...msg, isStreaming: false }
+              }
+              return msg
+            })
           )
           setIsSending(false)
         },
@@ -187,7 +252,7 @@ export function ChatPanel() {
             >
               <div className={`${message.role === 'user' ? 'max-w-[80%]' : 'w-full'}`}>
                 {/* Text Message Content */}
-                {message.type === 'text' && (
+                {message.type === 'text' && message.content && (
                   <div
                     className={`rounded-2xl px-4 py-3 ${
                       message.role === 'user'
@@ -206,7 +271,7 @@ export function ChatPanel() {
 
                 {/* Query Visualization */}
                 {message.type === 'query_result' && message.queryData && (
-                  <div className="mt-4 p-4 bg-card border border-border rounded-lg">
+                  <div className="p-4 bg-card border border-border rounded-lg">
                     {/* SQL Query (collapsible) */}
                     <details className="mb-4">
                       <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
