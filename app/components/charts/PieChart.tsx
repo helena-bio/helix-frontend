@@ -2,7 +2,7 @@
 
 /**
  * Universal Pie Chart Component
- * Uses Tailwind default color palette (matching AnalysisSummary)
+ * Uses Tailwind color shades matching AnalysisSummary component
  */
 
 import { PieChart as RechartsBase, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
@@ -21,17 +21,17 @@ interface PieChartProps {
   config: PieChartConfig
 }
 
-// Tailwind default color palette - matching AnalysisSummary component
-// These are the exact values from Tailwind CSS v3 default theme
+// Tailwind color shades matching AnalysisSummary component
+// Dashboard uses bg-X-50 + text-X-700, so we use X-600 for pie chart visibility
 const CHART_COLORS: Record<string, string> = {
-  // ACMG Classifications - using 500 shades (same as AnalysisSummary icons/text)
-  'Pathogenic': '#ef4444',           // red-500
-  'Likely Pathogenic': '#f97316',    // orange-500
-  'Uncertain Significance': '#eab308', // yellow-500
-  'Likely Benign': '#3b82f6',        // blue-500
-  'Benign': '#22c55e',               // green-500
+  // ACMG Classifications - using 600 shades for good contrast in pie chart
+  'Pathogenic': '#dc2626',           // red-600
+  'Likely Pathogenic': '#ea580c',    // orange-600
+  'Uncertain Significance': '#ca8a04', // yellow-600
+  'Likely Benign': '#2563eb',        // blue-600
+  'Benign': '#16a34a',               // green-600
   
-  // Impact Levels - same as AnalysisSummary
+  // Impact Levels - matching AnalysisSummary dots
   'HIGH': '#ef4444',      // red-500
   'MODERATE': '#f97316',  // orange-500
   'LOW': '#eab308',       // yellow-500
