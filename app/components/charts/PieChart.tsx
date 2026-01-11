@@ -2,14 +2,10 @@
 
 /**
  * Universal Pie Chart Component
- * Uses Tailwind theme colors via CSS custom properties
+ * Uses Tailwind default color palette (matching AnalysisSummary)
  */
 
 import { PieChart as RechartsBase, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import resolveConfig from 'tailwindcss/resolveConfig'
-import tailwindConfig from '@/tailwind.config'
-
-const fullConfig = resolveConfig(tailwindConfig)
 
 interface PieChartConfig {
   title: string
@@ -25,23 +21,24 @@ interface PieChartProps {
   config: PieChartConfig
 }
 
-// Extract Tailwind colors matching AnalysisSummary component
+// Tailwind default color palette - matching AnalysisSummary component
+// These are the exact values from Tailwind CSS v3 default theme
 const CHART_COLORS: Record<string, string> = {
-  // ACMG Classifications - using red/orange/yellow/blue/green-500 for visibility
-  'Pathogenic': fullConfig.theme.colors.red[500],
-  'Likely Pathogenic': fullConfig.theme.colors.orange[500],
-  'Uncertain Significance': fullConfig.theme.colors.yellow[500],
-  'Likely Benign': fullConfig.theme.colors.blue[500],
-  'Benign': fullConfig.theme.colors.green[500],
+  // ACMG Classifications - using 500 shades (same as AnalysisSummary icons/text)
+  'Pathogenic': '#ef4444',           // red-500
+  'Likely Pathogenic': '#f97316',    // orange-500
+  'Uncertain Significance': '#eab308', // yellow-500
+  'Likely Benign': '#3b82f6',        // blue-500
+  'Benign': '#22c55e',               // green-500
   
-  // Impact Levels
-  'HIGH': fullConfig.theme.colors.red[500],
-  'MODERATE': fullConfig.theme.colors.orange[500],
-  'LOW': fullConfig.theme.colors.yellow[500],
-  'MODIFIER': fullConfig.theme.colors.gray[400],
+  // Impact Levels - same as AnalysisSummary
+  'HIGH': '#ef4444',      // red-500
+  'MODERATE': '#f97316',  // orange-500
+  'LOW': '#eab308',       // yellow-500
+  'MODIFIER': '#9ca3af',  // gray-400
   
   // Fallback
-  'default': fullConfig.theme.colors.indigo[500],
+  'default': '#6366f1',   // indigo-500
 }
 
 export function PieChart({ data, config }: PieChartProps) {
