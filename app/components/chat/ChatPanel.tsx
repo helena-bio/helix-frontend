@@ -151,6 +151,9 @@ export function ChatPanel() {
         message: userMessage.content,
         conversation_id: conversationId,
         session_id: currentSessionId || undefined,
+        onConversationStarted: (id: string) => {
+          setConversationId(id)
+        },
         onToken: (token: string) => {
           setMessages(prev =>
             prev.map(msg => {
