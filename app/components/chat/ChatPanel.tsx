@@ -44,7 +44,7 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
             View SQL Query
           </summary>
           <div className="mt-2 p-3 bg-muted rounded overflow-x-auto">
-            <pre className="text-xs font-mono whitespace-pre-wrap break-words">
+            <pre className="text-sm font-mono whitespace-pre-wrap break-words">
               <code>{message.queryData.sql}</code>
             </pre>
           </div>
