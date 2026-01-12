@@ -170,7 +170,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
   return (
     <div className="space-y-6">
       {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Total Variants */}
         <Card>
           <CardContent className="pt-6">
