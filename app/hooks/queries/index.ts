@@ -9,3 +9,4 @@ export {
   variantAnalysisKeys,
   type VariantStatistics,
 } from './use-variant-analysis-queries'
+export { usePhenotype, phenotypeKeys } from './use-phenotype'

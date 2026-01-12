@@ -8,6 +8,7 @@
 
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useJourney } from '@/contexts/JourneyContext'
+import { PhenotypeProvider } from '@/contexts/PhenotypeContext'
 import {
   UploadValidationFlow,
   PhenotypeEntry,
@@ -44,9 +45,9 @@ export default function AnalysisPage() {
     }
 
     return (
-      <PhenotypeEntry
-        sessionId={currentSessionId}
-      />
+      <PhenotypeProvider sessionId={currentSessionId}>
+        <PhenotypeEntry sessionId={currentSessionId} />
+      </PhenotypeProvider>
     )
   }
 
@@ -60,9 +61,7 @@ export default function AnalysisPage() {
     }
 
     return (
-      <ProcessingFlow
-        sessionId={currentSessionId}
-      />
+      <ProcessingFlow sessionId={currentSessionId} />
     )
   }
 
@@ -75,9 +74,11 @@ export default function AnalysisPage() {
       )
     }
 
-    // ANALYSIS VIEW - Shows in View Panel (60%), ModuleRouter handles different views
+    // ANALYSIS VIEW - Wrap with PhenotypeProvider for AI context
     return (
-      <ModuleRouter sessionId={currentSessionId} />
+      <PhenotypeProvider sessionId={currentSessionId}>
+        <ModuleRouter sessionId={currentSessionId} />
+      </PhenotypeProvider>
     )
   }
 

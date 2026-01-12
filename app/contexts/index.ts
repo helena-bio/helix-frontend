@@ -1,6 +1,3 @@
-/**
- * Contexts Exports
- */
-
-export * from './AnalysisContext'
-export * from './JourneyContext'
+export { AnalysisProvider, useAnalysis } from './AnalysisContext'
+export { JourneyProvider, useJourney } from './JourneyContext'
+export { PhenotypeProvider, usePhenotypeContext } from './PhenotypeContext'
