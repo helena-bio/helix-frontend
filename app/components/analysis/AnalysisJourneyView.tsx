@@ -31,7 +31,7 @@ export function AnalysisJourneyView({ sessionId }: AnalysisJourneyViewProps) {
 
   // Default view - Summary + Variants list
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-6 py-4 space-y-6">
       <AnalysisSummary sessionId={sessionId} />
       <VariantsList 
         sessionId={sessionId}
