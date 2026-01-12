@@ -26,6 +26,11 @@ export interface ChatResponse {
   message: string
 }
 
+export interface ConversationStartedEvent {
+  type: 'conversation_started'
+  conversation_id: string
+}
+
 export interface QueryResultEvent {
   type: 'query_result'
   sql: string
@@ -35,8 +40,9 @@ export interface QueryResultEvent {
   visualization?: VisualizationConfig
 }
 
-export type StreamEvent = 
+export type StreamEvent =
   | { type: 'token'; data: string }
+  | { type: 'conversation_started'; data: ConversationStartedEvent }
   | { type: 'query_result'; data: QueryResultEvent }
 
 /**
@@ -54,7 +60,7 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
 
 /**
  * Send chat message with streaming (SSE)
- * Returns tokens AND query result events
+ * Returns conversation_started, tokens, AND query result events
  */
 export async function* streamChatMessage(
   request: ChatRequest
@@ -111,7 +117,17 @@ export async function* streamChatMessage(
           }
 
           // Handle based on event type
-          if (currentEvent === 'query_result') {
+          if (currentEvent === 'conversation_started') {
+            // Parse conversation_started JSON
+            try {
+              const conversationEvent = JSON.parse(data) as ConversationStartedEvent
+              yield { type: 'conversation_started', data: conversationEvent }
+            } catch (e) {
+              console.error('Failed to parse conversation_started:', e)
+            }
+            // Reset to default event type
+            currentEvent = 'message'
+          } else if (currentEvent === 'query_result') {
             // Parse query result JSON
             try {
               const queryResult = JSON.parse(data) as QueryResultEvent
