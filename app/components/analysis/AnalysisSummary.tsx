@@ -140,7 +140,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
     return (
       <div className="space-y-6">
         <Skeleton className="h-32 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Skeleton className="h-64 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
@@ -238,7 +238,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
       </div>
 
       {/* Classification Breakdown & Impact */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* ACMG Classification */}
         <Card>
           <CardHeader>
