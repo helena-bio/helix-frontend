@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, memo } from 'react'
 import { Send, Square, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
+import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import ReactMarkdown from 'react-markdown'
@@ -89,6 +90,7 @@ export function ChatPanel() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { currentSessionId, selectedModule } = useAnalysis()
+  const { phenotype } = usePhenotypeContext()
   const { streamMessage } = useAIChatStream()
 
   useEffect(() => {
@@ -147,10 +149,29 @@ export function ChatPanel() {
     let continuationMessageId: string | null = null
 
     try {
+      // Build metadata with phenotype context
+      const metadata: Record<string, any> = {}
+      
+      if (phenotype && phenotype.hpo_terms.length > 0) {
+        metadata.phenotype_context = {
+          hpo_terms: phenotype.hpo_terms.map(t => ({
+            hpo_id: t.hpo_id,
+            name: t.name,
+          })),
+          hpo_ids: phenotype.hpo_terms.map(t => t.hpo_id),
+          term_count: phenotype.term_count,
+        }
+        
+        if (phenotype.clinical_notes) {
+          metadata.phenotype_context.clinical_notes = phenotype.clinical_notes
+        }
+      }
+
       await streamMessage({
         message: userMessage.content,
         conversation_id: conversationId,
         session_id: currentSessionId || undefined,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
         onConversationStarted: (id: string) => {
           setConversationId(id)
         },
@@ -285,6 +306,14 @@ export function ChatPanel() {
             </p>
           </div>
         </div>
+        
+        {/* Phenotype Context Indicator */}
+        {phenotype && phenotype.hpo_terms.length > 0 && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+            <span>{phenotype.term_count} phenotype{phenotype.term_count !== 1 ? 's' : ''} active</span>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4">
