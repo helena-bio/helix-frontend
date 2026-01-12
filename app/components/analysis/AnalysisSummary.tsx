@@ -152,7 +152,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
   if (error) {
     return (
       <Card className="border-destructive">
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <div className="flex items-center gap-3 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <div>
@@ -173,7 +173,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         {/* Total Variants */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
                 <Dna className="h-5 w-5 text-primary" />
@@ -188,7 +188,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
 
         {/* Clinically Significant */}
         <Card className={clinicallySignificant > 0 ? 'border-red-200 dark:border-red-800' : ''}>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${clinicallySignificant > 0 ? 'bg-red-100 dark:bg-red-950' : 'bg-muted'}`}>
                 <AlertCircle className={`h-5 w-5 ${clinicallySignificant > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`} />
@@ -203,7 +203,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
 
         {/* VUS Count */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-950">
                 <HelpCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
@@ -220,7 +220,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
 
         {/* Benign */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950">
                 <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
