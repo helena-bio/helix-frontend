@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, memo } from 'react'
-import { Send, Square, Sparkles } from 'lucide-react'
+import { Send, Square, Sparkles, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
@@ -11,7 +11,10 @@ import ReactMarkdown from 'react-markdown'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent } from '@/lib/api/ai'
 
-// Memoized MessageBubble component to prevent unnecessary re-renders
+// ============================================================================
+// MESSAGE COMPONENTS
+// ============================================================================
+
 const MessageBubble = memo(function MessageBubble({ message }: { message: Message }) {
   if (message.type === 'text' && message.content) {
     return (
@@ -69,10 +72,8 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
 
   return null
 }, (prevProps, nextProps) => {
-  // Custom comparison: only re-render if content or streaming state changes
   const prev = prevProps.message
   const next = nextProps.message
-
   return (
     prev.id === next.id &&
     prev.content === next.content &&
@@ -81,10 +82,34 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
   )
 })
 
+const ThinkingIndicator = memo(function ThinkingIndicator({ mode = 'thinking' }: { mode?: 'thinking' | 'querying' }) {
+  return (
+    <div className="flex gap-3 justify-start">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 border border-primary/30 flex-shrink-0">
+        {mode === 'querying' ? (
+          <Database className="h-4 w-4 text-primary animate-pulse" />
+        ) : (
+          <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+        )}
+      </div>
+      <div className="px-4 py-3">
+        <p className="text-base text-muted-foreground">
+          {mode === 'querying' ? 'Querying database...' : 'Thinking...'}
+        </p>
+      </div>
+    </div>
+  )
+})
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isQuerying, setIsQuerying] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -92,6 +117,10 @@ export function ChatPanel() {
   const { currentSessionId, selectedModule } = useAnalysis()
   const { phenotype } = usePhenotypeContext()
   const { streamMessage } = useAIChatStream()
+
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -109,6 +138,10 @@ export function ChatPanel() {
     }
   }, [currentSessionId])
 
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
+
   const cleanXMLTags = (content: string): string => {
     return content.replace(/<query_database>[\s\S]*?<\/query_database>/g, '')
   }
@@ -116,6 +149,10 @@ export function ChatPanel() {
   const hasQueryTool = (content: string): boolean => {
     return /<query_database>/.test(content)
   }
+
+  // ============================================================================
+  // MESSAGE HANDLING
+  // ============================================================================
 
   const handleSend = async () => {
     if (!inputValue.trim() || isSending) return
@@ -145,13 +182,12 @@ export function ChatPanel() {
     setMessages(prev => [...prev, streamingMessage])
 
     let queryDetected = false
-    let queryResultMessageId: string | null = null
     let continuationMessageId: string | null = null
 
     try {
-      // Build metadata with phenotype context
+      // Build phenotype metadata
       const metadata: Record<string, any> = {}
-      
+
       if (phenotype && phenotype.hpo_terms.length > 0) {
         metadata.phenotype_context = {
           hpo_terms: phenotype.hpo_terms.map(t => ({
@@ -161,7 +197,7 @@ export function ChatPanel() {
           hpo_ids: phenotype.hpo_terms.map(t => t.hpo_id),
           term_count: phenotype.term_count,
         }
-        
+
         if (phenotype.clinical_notes) {
           metadata.phenotype_context.clinical_notes = phenotype.clinical_notes
         }
@@ -172,17 +208,22 @@ export function ChatPanel() {
         conversation_id: conversationId,
         session_id: currentSessionId || undefined,
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        
         onConversationStarted: (id: string) => {
           setConversationId(id)
         },
+        
         onToken: (token: string) => {
           setMessages(prev =>
             prev.map(msg => {
+              // Handle main streaming message
               if (msg.id === streamingMessageId) {
                 const newContent = msg.content + token
 
+                // Query tool detected - freeze main message
                 if (!queryDetected && hasQueryTool(newContent)) {
                   queryDetected = true
+                  setIsQuerying(true)
                   return {
                     ...msg,
                     content: cleanXMLTags(newContent).trim(),
@@ -190,6 +231,7 @@ export function ChatPanel() {
                   }
                 }
 
+                // Normal streaming (before query detection)
                 if (!queryDetected) {
                   return { ...msg, content: cleanXMLTags(newContent) }
                 }
@@ -197,6 +239,7 @@ export function ChatPanel() {
                 return msg
               }
 
+              // Handle continuation message (after query result)
               if (msg.id === continuationMessageId && queryDetected) {
                 return { ...msg, content: msg.content + token }
               }
@@ -205,7 +248,11 @@ export function ChatPanel() {
             })
           )
         },
+        
         onQueryResult: (result: QueryResultEvent) => {
+          setIsQuerying(false)
+
+          // Finalize main message
           setMessages(prev =>
             prev.map(msg =>
               msg.id === streamingMessageId && msg.isStreaming
@@ -214,8 +261,8 @@ export function ChatPanel() {
             )
           )
 
-          queryResultMessageId = `${streamingMessageId}-query`
-
+          // Create query result message
+          const queryResultMessageId = `${streamingMessageId}-query`
           const queryResultMessage: Message = {
             id: queryResultMessageId,
             role: 'assistant',
@@ -231,6 +278,7 @@ export function ChatPanel() {
             },
           }
 
+          // Create continuation message for AI response after query
           continuationMessageId = `${streamingMessageId}-continuation`
           const continuationMessage: Message = {
             id: continuationMessageId,
@@ -241,6 +289,7 @@ export function ChatPanel() {
             type: 'text',
           }
 
+          // Insert query result + continuation after main message
           setMessages(prev => {
             const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
             if (msgIndex === -1) return prev
@@ -250,7 +299,8 @@ export function ChatPanel() {
             return newMessages
           })
         },
-        onComplete: (fullMessage: string) => {
+        
+        onComplete: () => {
           setMessages(prev =>
             prev.map(msg => {
               if (msg.id === streamingMessageId || msg.id === continuationMessageId) {
@@ -260,7 +310,9 @@ export function ChatPanel() {
             })
           )
           setIsSending(false)
+          setIsQuerying(false)
         },
+        
         onError: (error: Error) => {
           console.error('[CHAT ERROR]', error)
 
@@ -276,11 +328,13 @@ export function ChatPanel() {
             )
           )
           setIsSending(false)
+          setIsQuerying(false)
         },
       })
     } catch (error) {
       console.error('[STREAM INIT ERROR]', error)
       setIsSending(false)
+      setIsQuerying(false)
     }
   }
 
@@ -291,8 +345,20 @@ export function ChatPanel() {
     }
   }
 
+  // ============================================================================
+  // RENDER
+  // ============================================================================
+
+  // Determine if we should show thinking indicator
+  const shouldShowThinking = isSending && (
+    messages.length === 0 ||
+    messages[messages.length - 1]?.content === '' ||
+    isQuerying
+  )
+
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
+      {/* Header */}
       <div className="px-6 py-4 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 text-primary shrink-0" />
@@ -306,7 +372,7 @@ export function ChatPanel() {
             </p>
           </div>
         </div>
-        
+
         {/* Phenotype Context Indicator */}
         {phenotype && phenotype.hpo_terms.length > 0 && (
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
@@ -316,6 +382,7 @@ export function ChatPanel() {
         )}
       </div>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="space-y-6 max-w-4xl">
           {messages.map((message) => (
@@ -331,21 +398,16 @@ export function ChatPanel() {
             </div>
           ))}
 
-          {isSending && messages[messages.length - 1]?.content === '' && (
-            <div className="flex gap-3 justify-start">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 border border-primary/30 flex-shrink-0">
-                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-              </div>
-              <div className="px-4 py-3">
-                <p className="text-base text-muted-foreground">Thinking...</p>
-              </div>
-            </div>
+          {/* Thinking/Querying Indicator */}
+          {shouldShowThinking && (
+            <ThinkingIndicator mode={isQuerying ? 'querying' : 'thinking'} />
           )}
 
           <div ref={messagesEndRef} />
         </div>
       </div>
 
+      {/* Input */}
       <div className="px-6 py-4 shrink-0 bg-background">
         <div className="relative">
           <textarea
