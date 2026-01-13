@@ -210,59 +210,58 @@ export function ChatPanel() {
         },
         
         onQueryResult: (result: QueryResultEvent) => {
-          // Show querying indicator BEFORE result appears
+          // Show querying indicator immediately
           setIsQuerying(true)
           
-          // Small delay to show indicator
-          setTimeout(() => {
-            setIsQuerying(false)
-            
-            // Finalize current streaming message
-            setMessages(prev =>
-              prev.map(msg =>
-                msg.id === streamingMessageId && msg.isStreaming
-                  ? { ...msg, isStreaming: false }
-                  : msg
-              )
+          // Finalize current streaming message
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === streamingMessageId && msg.isStreaming
+                ? { ...msg, isStreaming: false }
+                : msg
             )
+          )
 
-            // Add query result message
-            const queryResultMessageId = `${streamingMessageId}-query-${Date.now()}`
-            const queryResultMessage: Message = {
-              id: queryResultMessageId,
-              role: 'assistant',
-              content: '',
-              timestamp: new Date(),
-              type: 'query_result',
-              queryData: {
-                sql: result.sql,
-                results: result.results,
-                rows_returned: result.rows_returned,
-                execution_time_ms: result.execution_time_ms,
-                visualization: result.visualization,
-              },
-            }
+          // Add query result message
+          const queryResultMessageId = `${streamingMessageId}-query-${Date.now()}`
+          const queryResultMessage: Message = {
+            id: queryResultMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            type: 'query_result',
+            queryData: {
+              sql: result.sql,
+              results: result.results,
+              rows_returned: result.rows_returned,
+              execution_time_ms: result.execution_time_ms,
+              visualization: result.visualization,
+            },
+          }
 
-            // Add new streaming message for continuation
-            const continuationMessageId = `${streamingMessageId}-continuation-${Date.now()}`
-            const continuationMessage: Message = {
-              id: continuationMessageId,
-              role: 'assistant',
-              content: '',
-              timestamp: new Date(),
-              isStreaming: true,
-              type: 'text',
-            }
+          // Add new streaming message for continuation (below query result)
+          const continuationMessageId = `${streamingMessageId}-continuation-${Date.now()}`
+          const continuationMessage: Message = {
+            id: continuationMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            isStreaming: true,
+            type: 'text',
+          }
 
-            setMessages(prev => {
-              const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
-              if (msgIndex === -1) return prev
+          setMessages(prev => {
+            const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
+            if (msgIndex === -1) return prev
 
-              const newMessages = [...prev]
-              newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
-              return newMessages
-            })
-          }, 500) // 500ms to show "Querying database..." indicator
+            const newMessages = [...prev]
+            // Insert: query result, then continuation message below it
+            newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
+            return newMessages
+          })
+
+          // Hide querying indicator immediately after inserting messages
+          setIsQuerying(false)
         },
         
         onComplete: () => {
@@ -309,8 +308,8 @@ export function ChatPanel() {
   // RENDER
   // ============================================================================
 
-  // Determine if we should show thinking indicator
-  const shouldShowThinking = (isSending && messages[messages.length - 1]?.content === '') || isQuerying
+  // Show thinking indicator only at very start (before first token)
+  const shouldShowThinking = isSending && messages[messages.length - 1]?.content === ''
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
@@ -354,9 +353,14 @@ export function ChatPanel() {
             </div>
           ))}
 
-          {/* Thinking/Querying Indicator */}
+          {/* Thinking Indicator - only at very start */}
           {shouldShowThinking && (
-            <ThinkingIndicator mode={isQuerying ? 'querying' : 'thinking'} />
+            <ThinkingIndicator mode="thinking" />
+          )}
+
+          {/* Querying Indicator - shown during query execution */}
+          {isQuerying && (
+            <ThinkingIndicator mode="querying" />
           )}
 
           <div ref={messagesEndRef} />
