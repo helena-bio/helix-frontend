@@ -2,7 +2,6 @@
  * AI Chat Mutations
  * Handles streaming chat with AI service and query visualizations
  */
-
 import { useMutation } from '@tanstack/react-query'
 import { sendChatMessage, streamChatMessage, type ChatRequest, type QueryResultEvent, type ConversationStartedEvent } from '@/lib/api/ai'
 
@@ -31,6 +30,7 @@ export function useAIChat() {
  *   message: 'Show me ACMG distribution',
  *   conversation_id: 'uuid-here',  // Optional: pass for conversation continuity
  *   session_id: 'abc123',
+ *   metadata: { phenotype_context: { ... } },  // Optional: phenotype context
  *   onConversationStarted: (conversationId) => setConversationId(conversationId),
  *   onToken: (token) => console.log(token),
  *   onQueryResult: (result) => console.log('Query result:', result),
@@ -43,6 +43,7 @@ export function useAIChatStream() {
     message,
     conversation_id,
     session_id,
+    metadata,
     onConversationStarted,
     onToken,
     onQueryResult,
@@ -52,6 +53,7 @@ export function useAIChatStream() {
     message: string
     conversation_id?: string
     session_id?: string
+    metadata?: Record<string, any>
     onConversationStarted?: (conversationId: string) => void
     onToken: (token: string) => void
     onQueryResult?: (result: QueryResultEvent) => void
@@ -65,6 +67,7 @@ export function useAIChatStream() {
         message,
         conversation_id,
         session_id,
+        metadata,
       })
 
       for await (const event of stream) {
