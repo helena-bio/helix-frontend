@@ -4,7 +4,6 @@
  * Manages patient phenotype data (HPO terms) for the current session.
  * Provides methods to add/remove terms and update clinical notes.
  */
-
 'use client'
 
 import { createContext, useContext, ReactNode } from 'react'
@@ -56,7 +55,7 @@ export function PhenotypeProvider({ sessionId, children }: PhenotypeProviderProp
     if (!sessionId) throw new Error('No session ID')
 
     const existingTerms = phenotype?.hpo_terms || []
-    
+
     // Check if term already exists
     if (existingTerms.some(t => t.hpo_id === term.hpo_id)) {
       return
@@ -74,6 +73,7 @@ export function PhenotypeProvider({ sessionId, children }: PhenotypeProviderProp
     if (!sessionId) throw new Error('No session ID')
 
     const existingTerms = phenotype?.hpo_terms || []
+
     const updatedData: SavePhenotypeRequest = {
       hpo_terms: existingTerms.filter(t => t.hpo_id !== hpoId),
       clinical_notes: phenotype?.clinical_notes || '',
@@ -94,7 +94,7 @@ export function PhenotypeProvider({ sessionId, children }: PhenotypeProviderProp
   }
 
   const value: PhenotypeContextValue = {
-    phenotype,
+    phenotype: phenotype ?? null,
     isLoading,
     error: error as Error | null,
     updatePhenotype,
