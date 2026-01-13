@@ -1,5 +1,6 @@
 export * from './use-hpo-extract'
 export * from './use-phenotype-mutations'
+export * from './use-phenotype-matching'
 export * from './use-validation-mutations'
 export * from './use-variant-analysis-mutations'
 export * from './use-ai-chat'

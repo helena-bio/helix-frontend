@@ -182,3 +182,65 @@ export async function deletePhenotype(sessionId: string): Promise<{ deleted: boo
 
   return response.json()
 }
+
+// ============================================
+// PHENOTYPE MATCHING API
+// ============================================
+
+export interface VariantPhenotypeInput {
+  variant_idx: number
+  gene_symbol: string
+  hpo_ids: string[]
+}
+
+export interface SimilarityMatch {
+  patient_hpo_id: string
+  patient_hpo_name: string
+  best_match_hpo_id: string | null
+  best_match_hpo_name: string | null
+  similarity_score: number
+}
+
+export interface VariantMatchResult {
+  variant_idx: number
+  gene_symbol: string
+  phenotype_match_score: number
+  matched_terms: number
+  total_patient_terms: number
+  total_variant_terms: number
+  individual_matches: SimilarityMatch[]
+}
+
+export interface MatchVariantPhenotypesRequest {
+  patient_hpo_ids: string[]
+  variants: VariantPhenotypeInput[]
+}
+
+export interface MatchVariantPhenotypesResponse {
+  patient_hpo_count: number
+  variants_analyzed: number
+  results: VariantMatchResult[]
+}
+
+/**
+ * Match patient phenotype against variant phenotypes using semantic similarity.
+ * Returns variants ranked by phenotype match score.
+ */
+export async function matchVariantPhenotypes(
+  request: MatchVariantPhenotypesRequest
+): Promise<MatchVariantPhenotypesResponse> {
+  const url = API_URL + '/phenotype/api/matching/variants'
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  })
+
+  if (!response.ok) {
+    throw new Error('Phenotype matching failed: ' + response.statusText)
+  }
+
+  return response.json()
+}

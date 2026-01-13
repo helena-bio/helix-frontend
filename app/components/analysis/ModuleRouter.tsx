@@ -7,6 +7,7 @@
 
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { AnalysisJourneyView } from './AnalysisJourneyView'
+import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
 
 interface ModuleRouterProps {
   sessionId: string
@@ -40,24 +41,9 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
     )
   }
 
-  // Phenotype Matching
+  // Phenotype Matching - Now functional!
   if (selectedModule === 'phenotype') {
-    return (
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Phenotype Matching</h1>
-          <p className="text-base text-muted-foreground">
-            Match variants to patient phenotypes using HPO terms and semantic similarity.
-          </p>
-          <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-md font-medium">Coming soon...</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This feature is under development.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+    return <PhenotypeMatchingView sessionId={sessionId} />
   }
 
   // Literature Analysis
