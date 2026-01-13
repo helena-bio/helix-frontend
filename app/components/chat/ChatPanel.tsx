@@ -139,18 +139,6 @@ export function ChatPanel() {
   }, [currentSessionId])
 
   // ============================================================================
-  // UTILITY FUNCTIONS
-  // ============================================================================
-
-  const cleanXMLTags = (content: string): string => {
-    return content.replace(/<query_database>[\s\S]*?<\/query_database>/g, '')
-  }
-
-  const hasQueryTool = (content: string): boolean => {
-    return /<query_database>/.test(content)
-  }
-
-  // ============================================================================
   // MESSAGE HANDLING
   // ============================================================================
 
@@ -181,11 +169,8 @@ export function ChatPanel() {
 
     setMessages(prev => [...prev, streamingMessage])
 
-    let queryDetected = false
-    let continuationMessageId: string | null = null
-
     try {
-      // Build phenotype metadata
+      // Build metadata with phenotype context
       const metadata: Record<string, any> = {}
 
       if (phenotype && phenotype.hpo_terms.length > 0) {
@@ -216,98 +201,73 @@ export function ChatPanel() {
         onToken: (token: string) => {
           setMessages(prev =>
             prev.map(msg => {
-              // Handle main streaming message
               if (msg.id === streamingMessageId) {
-                const newContent = msg.content + token
-
-                // Query tool detected - freeze main message
-                if (!queryDetected && hasQueryTool(newContent)) {
-                  queryDetected = true
-                  setIsQuerying(true)
-                  return {
-                    ...msg,
-                    content: cleanXMLTags(newContent).trim(),
-                    isStreaming: false,
-                  }
-                }
-
-                // Normal streaming (before query detection)
-                if (!queryDetected) {
-                  return { ...msg, content: cleanXMLTags(newContent) }
-                }
-
-                return msg
-              }
-
-              // Handle continuation message (after query result)
-              if (msg.id === continuationMessageId && queryDetected) {
                 return { ...msg, content: msg.content + token }
               }
-
               return msg
             })
           )
         },
         
         onQueryResult: (result: QueryResultEvent) => {
-          setIsQuerying(false)
-
-          // Finalize main message
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === streamingMessageId && msg.isStreaming
-                ? { ...msg, isStreaming: false }
-                : msg
+          // Show querying indicator BEFORE result appears
+          setIsQuerying(true)
+          
+          // Small delay to show indicator
+          setTimeout(() => {
+            setIsQuerying(false)
+            
+            // Finalize current streaming message
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === streamingMessageId && msg.isStreaming
+                  ? { ...msg, isStreaming: false }
+                  : msg
+              )
             )
-          )
 
-          // Create query result message
-          const queryResultMessageId = `${streamingMessageId}-query`
-          const queryResultMessage: Message = {
-            id: queryResultMessageId,
-            role: 'assistant',
-            content: '',
-            timestamp: new Date(),
-            type: 'query_result',
-            queryData: {
-              sql: result.sql,
-              results: result.results,
-              rows_returned: result.rows_returned,
-              execution_time_ms: result.execution_time_ms,
-              visualization: result.visualization,
-            },
-          }
+            // Add query result message
+            const queryResultMessageId = `${streamingMessageId}-query-${Date.now()}`
+            const queryResultMessage: Message = {
+              id: queryResultMessageId,
+              role: 'assistant',
+              content: '',
+              timestamp: new Date(),
+              type: 'query_result',
+              queryData: {
+                sql: result.sql,
+                results: result.results,
+                rows_returned: result.rows_returned,
+                execution_time_ms: result.execution_time_ms,
+                visualization: result.visualization,
+              },
+            }
 
-          // Create continuation message for AI response after query
-          continuationMessageId = `${streamingMessageId}-continuation`
-          const continuationMessage: Message = {
-            id: continuationMessageId,
-            role: 'assistant',
-            content: '',
-            timestamp: new Date(),
-            isStreaming: true,
-            type: 'text',
-          }
+            // Add new streaming message for continuation
+            const continuationMessageId = `${streamingMessageId}-continuation-${Date.now()}`
+            const continuationMessage: Message = {
+              id: continuationMessageId,
+              role: 'assistant',
+              content: '',
+              timestamp: new Date(),
+              isStreaming: true,
+              type: 'text',
+            }
 
-          // Insert query result + continuation after main message
-          setMessages(prev => {
-            const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
-            if (msgIndex === -1) return prev
+            setMessages(prev => {
+              const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
+              if (msgIndex === -1) return prev
 
-            const newMessages = [...prev]
-            newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
-            return newMessages
-          })
+              const newMessages = [...prev]
+              newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
+              return newMessages
+            })
+          }, 500) // 500ms to show "Querying database..." indicator
         },
         
         onComplete: () => {
           setMessages(prev =>
-            prev.map(msg => {
-              if (msg.id === streamingMessageId || msg.id === continuationMessageId) {
-                return { ...msg, isStreaming: false }
-              }
-              return msg
-            })
+            prev.map(msg => ({ ...msg, isStreaming: false }))
           )
           setIsSending(false)
           setIsQuerying(false)
@@ -350,11 +310,7 @@ export function ChatPanel() {
   // ============================================================================
 
   // Determine if we should show thinking indicator
-  const shouldShowThinking = isSending && (
-    messages.length === 0 ||
-    messages[messages.length - 1]?.content === '' ||
-    isQuerying
-  )
+  const shouldShowThinking = (isSending && messages[messages.length - 1]?.content === '') || isQuerying
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
