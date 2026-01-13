@@ -74,12 +74,8 @@ export default function AnalysisPage() {
       )
     }
 
-    // ANALYSIS VIEW - Wrap with PhenotypeProvider for AI context
-    return (
-      <PhenotypeProvider sessionId={currentSessionId}>
-        <ModuleRouter sessionId={currentSessionId} />
-      </PhenotypeProvider>
-    )
+    // ANALYSIS VIEW - PhenotypeProvider already wrapped in layout
+    return <ModuleRouter sessionId={currentSessionId} />
   }
 
   return null

@@ -11,7 +11,9 @@ import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
+import { PhenotypeProvider } from '@/contexts/PhenotypeContext'
 import { useJourney } from '@/contexts/JourneyContext'
+import { useAnalysis } from '@/contexts/AnalysisContext'
 
 interface AuthenticatedLayoutProps {
   children: ReactNode
@@ -19,6 +21,7 @@ interface AuthenticatedLayoutProps {
 
 export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { currentStep } = useJourney()
+  const { currentSessionId } = useAnalysis()
   const router = useRouter()
   const [isChecking, setIsChecking] = useState(true)
 
@@ -27,7 +30,6 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
 
   useEffect(() => {
     const token = localStorage.getItem('helix_auth_token')
-
     if (!token) {
       router.push('/login')
     } else {
@@ -50,9 +52,12 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <div className="flex-1 overflow-hidden">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          <SplitView>
-            {children}
-          </SplitView>
+          // Wrap with PhenotypeProvider for AI chat context
+          <PhenotypeProvider sessionId={currentSessionId}>
+            <SplitView>
+              {children}
+            </SplitView>
+          </PhenotypeProvider>
         ) : (
           // Full Width: Pre-analysis workflow
           <main className="h-full overflow-auto bg-background">
