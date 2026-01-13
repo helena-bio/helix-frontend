@@ -5,6 +5,7 @@ import { Send, Square, Sparkles, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
+import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import ReactMarkdown from 'react-markdown'
@@ -116,15 +117,21 @@ export function ChatPanel() {
   const [isSending, setIsSending] = useState(false)
   const [isQuerying, setIsQuerying] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
-  
+
   // Track current streaming message ID for multi-round support
   const currentStreamingIdRef = useRef<string | null>(null)
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { currentSessionId, selectedModule } = useAnalysis()
   const { phenotype } = usePhenotypeContext()
+
+  // Get variant statistics for analysis context
+  const { data: statistics } = useVariantStatistics(currentSessionId || '', {
+    enabled: !!currentSessionId,
+  })
+
   const { streamMessage } = useAIChatStream()
 
   // ============================================================================
@@ -169,7 +176,7 @@ export function ChatPanel() {
     // Create initial streaming message
     const streamingMessageId = (Date.now() + 1).toString()
     currentStreamingIdRef.current = streamingMessageId
-    
+
     const streamingMessage: Message = {
       id: streamingMessageId,
       role: 'assistant',
@@ -182,9 +189,10 @@ export function ChatPanel() {
     setMessages(prev => [...prev, streamingMessage])
 
     try {
-      // Build metadata with phenotype context
+      // Build metadata with phenotype AND analysis context
       const metadata: Record<string, any> = {}
 
+      // Phenotype context
       if (phenotype && phenotype.hpo_terms.length > 0) {
         metadata.phenotype_context = {
           hpo_terms: phenotype.hpo_terms.map(t => ({
@@ -197,6 +205,16 @@ export function ChatPanel() {
 
         if (phenotype.clinical_notes) {
           metadata.phenotype_context.clinical_notes = phenotype.clinical_notes
+        }
+      }
+
+      // Analysis summary context (variant statistics)
+      if (statistics) {
+        metadata.analysis_summary = {
+          total_variants: statistics.total_variants,
+          classification_breakdown: statistics.classification_breakdown,
+          impact_breakdown: statistics.impact_breakdown,
+          top_genes: statistics.top_genes.slice(0, 10), // Top 10 genes
         }
       }
 
@@ -213,7 +231,7 @@ export function ChatPanel() {
         onToken: (token: string) => {
           const currentId = currentStreamingIdRef.current
           if (!currentId) return
-          
+
           setMessages(prev =>
             prev.map(msg => {
               if (msg.id === currentId && msg.isStreaming) {
@@ -227,7 +245,7 @@ export function ChatPanel() {
         onQueryingStarted: () => {
           // Show querying indicator
           setIsQuerying(true)
-          
+
           // Finalize current streaming message (text before query)
           const currentId = currentStreamingIdRef.current
           if (currentId) {
@@ -268,11 +286,11 @@ export function ChatPanel() {
         onRoundComplete: () => {
           // Hide querying indicator (in case it's still showing)
           setIsQuerying(false)
-          
+
           // Create new streaming message for next round
           const newStreamingId = `continuation-${Date.now()}`
           currentStreamingIdRef.current = newStreamingId
-          
+
           const continuationMessage: Message = {
             id: newStreamingId,
             role: 'assistant',
@@ -337,7 +355,7 @@ export function ChatPanel() {
   // ============================================================================
 
   // Filter out empty messages for display
-  const displayMessages = messages.filter(msg => 
+  const displayMessages = messages.filter(msg =>
     msg.type === 'query_result' || msg.content || msg.isStreaming
   )
 
