@@ -3,7 +3,15 @@
  * Handles streaming chat with AI service and query visualizations
  */
 import { useMutation } from '@tanstack/react-query'
-import { sendChatMessage, streamChatMessage, type ChatRequest, type QueryResultEvent, type ConversationStartedEvent } from '@/lib/api/ai'
+import { 
+  sendChatMessage, 
+  streamChatMessage, 
+  type ChatRequest, 
+  type QueryResultEvent, 
+  type ConversationStartedEvent,
+  type QueryingStartedEvent,
+  type RoundCompleteEvent,
+} from '@/lib/api/ai'
 
 /**
  * Buffered chat mutation (non-streaming)
@@ -22,19 +30,30 @@ export function useAIChat() {
 /**
  * Streaming chat hook with conversation continuity and query result support
  *
+ * Events:
+ * - onConversationStarted: Called with conversation_id at start
+ * - onToken: Called for each text token
+ * - onQueryingStarted: Called when AI starts database query (show indicator)
+ * - onQueryResult: Called with query results (hide indicator, show results)
+ * - onRoundComplete: Called after query, before next round (create new bubble)
+ * - onComplete: Called when stream ends
+ * - onError: Called on error
+ *
  * Usage:
  *
  * const { streamMessage } = useAIChatStream()
  *
  * await streamMessage({
  *   message: 'Show me ACMG distribution',
- *   conversation_id: 'uuid-here',  // Optional: pass for conversation continuity
+ *   conversation_id: 'uuid-here',
  *   session_id: 'abc123',
- *   metadata: { phenotype_context: { ... } },  // Optional: phenotype context
+ *   metadata: { phenotype_context: { ... } },
  *   onConversationStarted: (conversationId) => setConversationId(conversationId),
- *   onToken: (token) => console.log(token),
- *   onQueryResult: (result) => console.log('Query result:', result),
- *   onComplete: (fullMessage) => console.log('Done:', fullMessage),
+ *   onToken: (token) => appendToMessage(token),
+ *   onQueryingStarted: () => setIsQuerying(true),
+ *   onQueryResult: (result) => addQueryResult(result),
+ *   onRoundComplete: () => createNewMessageBubble(),
+ *   onComplete: () => setIsSending(false),
  *   onError: (error) => console.error(error)
  * })
  */
@@ -46,7 +65,9 @@ export function useAIChatStream() {
     metadata,
     onConversationStarted,
     onToken,
+    onQueryingStarted,
     onQueryResult,
+    onRoundComplete,
     onComplete,
     onError,
   }: {
@@ -56,12 +77,12 @@ export function useAIChatStream() {
     metadata?: Record<string, any>
     onConversationStarted?: (conversationId: string) => void
     onToken: (token: string) => void
+    onQueryingStarted?: () => void
     onQueryResult?: (result: QueryResultEvent) => void
-    onComplete: (fullMessage: string) => void
+    onRoundComplete?: () => void
+    onComplete: () => void
     onError: (error: Error) => void
   }) => {
-    let fullMessage = ''
-
     try {
       const stream = streamChatMessage({
         message,
@@ -78,17 +99,26 @@ export function useAIChatStream() {
           }
         } else if (event.type === 'token') {
           // Text token
-          fullMessage += event.data
           onToken(event.data)
+        } else if (event.type === 'querying_started') {
+          // AI is querying database - show indicator
+          if (onQueryingStarted) {
+            onQueryingStarted()
+          }
         } else if (event.type === 'query_result') {
           // Query result with visualization
           if (onQueryResult) {
             onQueryResult(event.data)
           }
+        } else if (event.type === 'round_complete') {
+          // Round complete - create new message bubble for next round
+          if (onRoundComplete) {
+            onRoundComplete()
+          }
         }
       }
 
-      onComplete(fullMessage)
+      onComplete()
     } catch (error) {
       onError(error as Error)
     }

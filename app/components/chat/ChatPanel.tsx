@@ -16,7 +16,12 @@ import type { QueryResultEvent } from '@/lib/api/ai'
 // ============================================================================
 
 const MessageBubble = memo(function MessageBubble({ message }: { message: Message }) {
-  if (message.type === 'text' && message.content) {
+  // Skip empty text messages (continuation placeholders)
+  if (message.type === 'text' && !message.content && !message.isStreaming) {
+    return null
+  }
+
+  if (message.type === 'text' && (message.content || message.isStreaming)) {
     return (
       <div
         className={`rounded-2xl px-4 py-3 ${
@@ -63,7 +68,7 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
 
         <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
           <span>{message.queryData.rows_returned} rows</span>
-          <span>•</span>
+          <span>-</span>
           <span>{message.queryData.execution_time_ms}ms</span>
         </div>
       </div>
@@ -111,6 +116,10 @@ export function ChatPanel() {
   const [isSending, setIsSending] = useState(false)
   const [isQuerying, setIsQuerying] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
+  
+  // Track current streaming message ID for multi-round support
+  const currentStreamingIdRef = useRef<string | null>(null)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -157,7 +166,10 @@ export function ChatPanel() {
     setInputValue('')
     setIsSending(true)
 
+    // Create initial streaming message
     const streamingMessageId = (Date.now() + 1).toString()
+    currentStreamingIdRef.current = streamingMessageId
+    
     const streamingMessage: Message = {
       id: streamingMessageId,
       role: 'assistant',
@@ -193,37 +205,48 @@ export function ChatPanel() {
         conversation_id: conversationId,
         session_id: currentSessionId || undefined,
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-        
+
         onConversationStarted: (id: string) => {
           setConversationId(id)
         },
-        
+
         onToken: (token: string) => {
+          const currentId = currentStreamingIdRef.current
+          if (!currentId) return
+          
           setMessages(prev =>
             prev.map(msg => {
-              if (msg.id === streamingMessageId) {
+              if (msg.id === currentId && msg.isStreaming) {
                 return { ...msg, content: msg.content + token }
               }
               return msg
             })
           )
         },
-        
-        onQueryResult: (result: QueryResultEvent) => {
-          // Show querying indicator immediately
+
+        onQueryingStarted: () => {
+          // Show querying indicator
           setIsQuerying(true)
           
-          // Finalize current streaming message
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === streamingMessageId && msg.isStreaming
-                ? { ...msg, isStreaming: false }
-                : msg
+          // Finalize current streaming message (text before query)
+          const currentId = currentStreamingIdRef.current
+          if (currentId) {
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === currentId && msg.isStreaming
+                  ? { ...msg, isStreaming: false }
+                  : msg
+              )
             )
-          )
+          }
+        },
+
+        onQueryResult: (result: QueryResultEvent) => {
+          // Hide querying indicator
+          setIsQuerying(false)
 
           // Add query result message
-          const queryResultMessageId = `${streamingMessageId}-query-${Date.now()}`
+          const queryResultMessageId = `query-${Date.now()}`
           const queryResultMessage: Message = {
             id: queryResultMessageId,
             role: 'assistant',
@@ -239,10 +262,19 @@ export function ChatPanel() {
             },
           }
 
-          // Add new streaming message for continuation (below query result)
-          const continuationMessageId = `${streamingMessageId}-continuation-${Date.now()}`
+          setMessages(prev => [...prev, queryResultMessage])
+        },
+
+        onRoundComplete: () => {
+          // Hide querying indicator (in case it's still showing)
+          setIsQuerying(false)
+          
+          // Create new streaming message for next round
+          const newStreamingId = `continuation-${Date.now()}`
+          currentStreamingIdRef.current = newStreamingId
+          
           const continuationMessage: Message = {
-            id: continuationMessageId,
+            id: newStreamingId,
             role: 'assistant',
             content: '',
             timestamp: new Date(),
@@ -250,50 +282,46 @@ export function ChatPanel() {
             type: 'text',
           }
 
-          setMessages(prev => {
-            const msgIndex = prev.findIndex(m => m.id === streamingMessageId)
-            if (msgIndex === -1) return prev
-
-            const newMessages = [...prev]
-            // Insert: query result, then continuation message below it
-            newMessages.splice(msgIndex + 1, 0, queryResultMessage, continuationMessage)
-            return newMessages
-          })
-
-          // Hide querying indicator immediately after inserting messages
-          setIsQuerying(false)
+          setMessages(prev => [...prev, continuationMessage])
         },
-        
+
         onComplete: () => {
+          // Finalize all streaming messages
           setMessages(prev =>
             prev.map(msg => ({ ...msg, isStreaming: false }))
           )
           setIsSending(false)
           setIsQuerying(false)
+          currentStreamingIdRef.current = null
         },
-        
+
         onError: (error: Error) => {
           console.error('[CHAT ERROR]', error)
 
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === streamingMessageId
-                ? {
-                    ...msg,
-                    content: `Error: ${error.message}. Please try again.`,
-                    isStreaming: false,
-                  }
-                : msg
+          const currentId = currentStreamingIdRef.current
+          if (currentId) {
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === currentId
+                  ? {
+                      ...msg,
+                      content: `Error: ${error.message}. Please try again.`,
+                      isStreaming: false,
+                    }
+                  : msg
+              )
             )
-          )
+          }
           setIsSending(false)
           setIsQuerying(false)
+          currentStreamingIdRef.current = null
         },
       })
     } catch (error) {
       console.error('[STREAM INIT ERROR]', error)
       setIsSending(false)
       setIsQuerying(false)
+      currentStreamingIdRef.current = null
     }
   }
 
@@ -308,8 +336,14 @@ export function ChatPanel() {
   // RENDER
   // ============================================================================
 
+  // Filter out empty messages for display
+  const displayMessages = messages.filter(msg => 
+    msg.type === 'query_result' || msg.content || msg.isStreaming
+  )
+
   // Show thinking indicator only at very start (before first token)
-  const shouldShowThinking = isSending && messages[messages.length - 1]?.content === ''
+  const lastMessage = displayMessages[displayMessages.length - 1]
+  const shouldShowThinking = isSending && !isQuerying && lastMessage?.isStreaming && lastMessage?.content === ''
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
@@ -340,7 +374,7 @@ export function ChatPanel() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <div className="space-y-6 max-w-4xl">
-          {messages.map((message) => (
+          {displayMessages.map((message) => (
             <div
               key={message.id}
               className={`flex gap-3 ${
@@ -358,7 +392,7 @@ export function ChatPanel() {
             <ThinkingIndicator mode="thinking" />
           )}
 
-          {/* Querying Indicator - shown during query execution */}
+          {/* Querying Indicator - shown during database query */}
           {isQuerying && (
             <ThinkingIndicator mode="querying" />
           )}

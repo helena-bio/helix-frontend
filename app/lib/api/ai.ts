@@ -32,6 +32,10 @@ export interface ConversationStartedEvent {
   conversation_id: string
 }
 
+export interface QueryingStartedEvent {
+  type: 'querying_started'
+}
+
 export interface QueryResultEvent {
   type: 'query_result'
   sql: string
@@ -41,10 +45,17 @@ export interface QueryResultEvent {
   visualization?: VisualizationConfig
 }
 
+export interface RoundCompleteEvent {
+  type: 'round_complete'
+  round: number
+}
+
 export type StreamEvent =
   | { type: 'token'; data: string }
   | { type: 'conversation_started'; data: ConversationStartedEvent }
+  | { type: 'querying_started'; data: QueryingStartedEvent }
   | { type: 'query_result'; data: QueryResultEvent }
+  | { type: 'round_complete'; data: RoundCompleteEvent }
 
 /**
  * Send chat message (buffered response)
@@ -61,7 +72,13 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
 
 /**
  * Send chat message with streaming (SSE)
- * Returns conversation_started, tokens, AND query result events
+ * 
+ * Event types:
+ * - conversation_started: Initial event with conversation_id
+ * - querying_started: AI is querying the database (show indicator)
+ * - query_result: Query completed with results
+ * - round_complete: Round finished, next round starting (create new bubble)
+ * - token: Regular text token
  */
 export async function* streamChatMessage(
   request: ChatRequest
@@ -119,24 +136,36 @@ export async function* streamChatMessage(
 
           // Handle based on event type
           if (currentEvent === 'conversation_started') {
-            // Parse conversation_started JSON
             try {
               const conversationEvent = JSON.parse(data) as ConversationStartedEvent
               yield { type: 'conversation_started', data: conversationEvent }
             } catch (e) {
               console.error('Failed to parse conversation_started:', e)
             }
-            // Reset to default event type
+            currentEvent = 'message'
+          } else if (currentEvent === 'querying_started') {
+            try {
+              const queryingEvent = JSON.parse(data) as QueryingStartedEvent
+              yield { type: 'querying_started', data: queryingEvent }
+            } catch (e) {
+              console.error('Failed to parse querying_started:', e)
+            }
             currentEvent = 'message'
           } else if (currentEvent === 'query_result') {
-            // Parse query result JSON
             try {
               const queryResult = JSON.parse(data) as QueryResultEvent
               yield { type: 'query_result', data: queryResult }
             } catch (e) {
               console.error('Failed to parse query result:', e)
             }
-            // Reset to default event type
+            currentEvent = 'message'
+          } else if (currentEvent === 'round_complete') {
+            try {
+              const roundEvent = JSON.parse(data) as RoundCompleteEvent
+              yield { type: 'round_complete', data: roundEvent }
+            } catch (e) {
+              console.error('Failed to parse round_complete:', e)
+            }
             currentEvent = 'message'
           } else {
             // Regular text token
