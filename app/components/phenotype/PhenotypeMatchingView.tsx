@@ -7,7 +7,7 @@
  * Reuses VariantsList component for consistent variant display.
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { Search, Plus, X, Play, Dna, Loader2, Sparkles, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -58,10 +58,24 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   })
 
   // Get variants with HPO data for matching
-  const { data: variantsData, isLoading: variantsLoading } = useVariants(sessionId, {
+  const { data: variantsData, isLoading: variantsLoading, error: variantsError } = useVariants(sessionId, {
     page: 1,
     page_size: 5000,
   })
+
+  // DEBUG LOGGING
+  useEffect(() => {
+    console.log('=== PHENOTYPE MATCHING DEBUG ===')
+    console.log('sessionId:', sessionId)
+    console.log('variantsLoading:', variantsLoading)
+    console.log('variantsError:', variantsError)
+    console.log('variantsData:', variantsData)
+    console.log('variants count:', variantsData?.variants?.length)
+    if (variantsData?.variants?.length) {
+      const withHPO = variantsData.variants.filter((v: any) => v.hpo_phenotypes).length
+      console.log('variants with HPO:', withHPO)
+    }
+  }, [sessionId, variantsData, variantsLoading, variantsError])
 
   const selectedTerms = phenotype?.hpo_terms || []
 
@@ -114,6 +128,11 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   // Run matching
   const handleRunMatching = useCallback(async () => {
+    console.log('=== RUN MATCHING DEBUG ===')
+    console.log('selectedTerms:', selectedTerms)
+    console.log('variantsData:', variantsData)
+    console.log('variantsData?.variants?.length:', variantsData?.variants?.length)
+
     if (!selectedTerms.length) {
       toast.error('No phenotypes selected', {
         description: 'Add at least one HPO term to run matching',
@@ -122,6 +141,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     }
 
     if (!variantsData?.variants?.length) {
+      console.log('ERROR: No variants available')
       toast.error('No variants available', {
         description: 'Upload and process a VCF file first',
       })
@@ -136,6 +156,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         gene_symbol: v.gene_symbol || 'Unknown',
         hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
       }))
+
+    console.log('variantsWithHPO count:', variantsWithHPO.length)
 
     if (!variantsWithHPO.length) {
       toast.error('No variants with HPO annotations', {
@@ -157,6 +179,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         description: `Analyzed ${result.variants_analyzed} variants`,
       })
     } catch (error) {
+      console.error('Matching error:', error)
       toast.error('Matching failed', {
         description: 'Please try again',
       })
@@ -273,7 +296,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
           <div className="flex gap-3 pt-2">
             <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground">
-              Phenotype matching uses semantic similarity (Lin score) to compare patient HPO terms 
+              Phenotype matching uses semantic similarity (Lin score) to compare patient HPO terms
               against gene-phenotype associations from OMIM/HPO databases.
             </p>
           </div>
