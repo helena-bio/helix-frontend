@@ -9,6 +9,8 @@ import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent } from '@/lib/api/ai'
 
@@ -33,11 +35,15 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
       >
         <div className="text-base leading-relaxed prose prose-sm dark:prose-invert max-w-none
           prose-p:my-2 prose-ul:my-2 prose-ol:my-2
+          prose-li:my-1
           prose-strong:text-foreground prose-strong:font-semibold
           prose-em:text-foreground
           prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-          prose-pre:bg-muted prose-pre:text-foreground">
-          <ReactMarkdown>{message.content}</ReactMarkdown>
+          prose-pre:bg-muted prose-pre:text-foreground
+          prose-headings:mt-4 prose-headings:mb-2">
+          <ReactMarkdown remarkPlugins={[remarkBreaks, remarkGfm]}>
+            {message.content}
+          </ReactMarkdown>
         </div>
       </div>
     )
