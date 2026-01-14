@@ -8,6 +8,7 @@
  * - Expandable to show all variants for each gene
  * - Shows variant details from phenotype matching
  * - Compact button design
+ * - Auto-loads results when phenotypes already selected
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
@@ -208,6 +209,35 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
       setAggregatedResults(aggregated)
     }
   }, [matchResults])
+
+  // Auto-load matching results if phenotypes already selected on component mount
+  useEffect(() => {
+    if (selectedTerms.length > 0 && !matchResults && variantsData?.variants?.length && !matchingMutation.isPending) {
+      const runAutoMatching = async () => {
+        const variantsWithHPO = variantsData.variants
+          .filter((v: any) => v.hpo_phenotypes)
+          .map((v: any, idx: number) => ({
+            variant_idx: v.variant_idx || idx,
+            gene_symbol: v.gene_symbol || 'Unknown',
+            hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
+          }))
+
+        if (variantsWithHPO.length > 0) {
+          try {
+            const result = await matchingMutation.mutateAsync({
+              patient_hpo_ids: selectedTerms.map(t => t.hpo_id),
+              variants: variantsWithHPO,
+            })
+            setMatchResults(result.results)
+          } catch (error) {
+            console.error('Auto-matching failed:', error)
+          }
+        }
+      }
+
+      runAutoMatching()
+    }
+  }, [selectedTerms, variantsData, matchResults, matchingMutation])
 
   // Filter suggestions
   const filteredSuggestions = searchResults?.terms.filter(
