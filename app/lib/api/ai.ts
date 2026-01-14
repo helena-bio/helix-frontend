@@ -6,7 +6,6 @@
 import { apiRequest } from './client'
 import type { VisualizationConfig } from '@/types/visualization.types'
 
-// Use environment variable or fallback to localhost for development
 const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 
 export interface ChatMessage {
@@ -72,7 +71,7 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
 
 /**
  * Send chat message with streaming (SSE)
- * 
+ *
  * Event types:
  * - conversation_started: Initial event with conversation_id
  * - querying_started: AI is querying the database (show indicator)
@@ -100,77 +99,52 @@ export async function* streamChatMessage(
     throw new Error('Response body is not readable')
   }
 
-  const decoder = new TextDecoder()
+  const decoder = new TextDecoder('utf-8')
   let buffer = ''
-  let currentEvent = 'message' // Default event type
+  let currentEvent = 'message'
 
   try {
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-
-      // Keep last incomplete line in buffer
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        // SSE event type line
-        if (line.startsWith('event: ')) {
-          currentEvent = line.slice(7).trim()
-          continue
+      
+      if (done) {
+        // Process any remaining buffer
+        if (buffer.trim()) {
+          const lines = buffer.split('\n')
+          for (const line of lines) {
+            const event = parseLine(line, currentEvent)
+            if (event) {
+              if (event.newEventType) {
+                currentEvent = event.newEventType
+              } else if (event.streamEvent) {
+                yield event.streamEvent
+                if (event.streamEvent.type !== 'token') {
+                  currentEvent = 'message'
+                }
+              }
+            }
+          }
         }
+        break
+      }
 
-        // SSE data line
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6) // Remove 'data: ' prefix
-
-          if (data === '[DONE]') {
-            return
-          }
-
-          if (data.startsWith('[ERROR:')) {
-            throw new Error(data)
-          }
-
-          // Handle based on event type
-          if (currentEvent === 'conversation_started') {
-            try {
-              const conversationEvent = JSON.parse(data) as ConversationStartedEvent
-              yield { type: 'conversation_started', data: conversationEvent }
-            } catch (e) {
-              console.error('Failed to parse conversation_started:', e)
-            }
-            currentEvent = 'message'
-          } else if (currentEvent === 'querying_started') {
-            try {
-              const queryingEvent = JSON.parse(data) as QueryingStartedEvent
-              yield { type: 'querying_started', data: queryingEvent }
-            } catch (e) {
-              console.error('Failed to parse querying_started:', e)
-            }
-            currentEvent = 'message'
-          } else if (currentEvent === 'query_result') {
-            try {
-              const queryResult = JSON.parse(data) as QueryResultEvent
-              yield { type: 'query_result', data: queryResult }
-            } catch (e) {
-              console.error('Failed to parse query result:', e)
-            }
-            currentEvent = 'message'
-          } else if (currentEvent === 'round_complete') {
-            try {
-              const roundEvent = JSON.parse(data) as RoundCompleteEvent
-              yield { type: 'round_complete', data: roundEvent }
-            } catch (e) {
-              console.error('Failed to parse round_complete:', e)
-            }
-            currentEvent = 'message'
-          } else {
-            // Regular text token
-            if (data) {
-              yield { type: 'token', data }
+      // Decode chunk and add to buffer
+      buffer += decoder.decode(value, { stream: true })
+      
+      // Process complete lines only
+      let newlineIndex: number
+      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, newlineIndex)
+        buffer = buffer.slice(newlineIndex + 1)
+        
+        const event = parseLine(line, currentEvent)
+        if (event) {
+          if (event.newEventType) {
+            currentEvent = event.newEventType
+          } else if (event.streamEvent) {
+            yield event.streamEvent
+            if (event.streamEvent.type !== 'token') {
+              currentEvent = 'message'
             }
           }
         }
@@ -179,4 +153,79 @@ export async function* streamChatMessage(
   } finally {
     reader.releaseLock()
   }
+}
+
+/**
+ * Parse a single SSE line
+ */
+function parseLine(
+  line: string,
+  currentEvent: string
+): { newEventType?: string; streamEvent?: StreamEvent } | null {
+  // Empty line - ignore
+  if (!line.trim()) {
+    return null
+  }
+
+  // SSE event type line
+  if (line.startsWith('event: ')) {
+    return { newEventType: line.slice(7).trim() }
+  }
+
+  // SSE data line
+  if (line.startsWith('data: ')) {
+    const data = line.slice(6)
+
+    if (data === '[DONE]') {
+      return null
+    }
+
+    if (data.startsWith('[ERROR:')) {
+      throw new Error(data)
+    }
+
+    // Handle based on event type
+    switch (currentEvent) {
+      case 'conversation_started':
+        try {
+          const conversationEvent = JSON.parse(data) as ConversationStartedEvent
+          return { streamEvent: { type: 'conversation_started', data: conversationEvent } }
+        } catch {
+          return null
+        }
+
+      case 'querying_started':
+        try {
+          const queryingEvent = JSON.parse(data) as QueryingStartedEvent
+          return { streamEvent: { type: 'querying_started', data: queryingEvent } }
+        } catch {
+          return null
+        }
+
+      case 'query_result':
+        try {
+          const queryResult = JSON.parse(data) as QueryResultEvent
+          return { streamEvent: { type: 'query_result', data: queryResult } }
+        } catch {
+          return null
+        }
+
+      case 'round_complete':
+        try {
+          const roundEvent = JSON.parse(data) as RoundCompleteEvent
+          return { streamEvent: { type: 'round_complete', data: roundEvent } }
+        } catch {
+          return null
+        }
+
+      default:
+        // Regular text token - return as-is (preserve whitespace)
+        if (data) {
+          return { streamEvent: { type: 'token', data } }
+        }
+        return null
+    }
+  }
+
+  return null
 }
