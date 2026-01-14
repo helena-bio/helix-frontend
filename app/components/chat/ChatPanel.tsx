@@ -38,9 +38,6 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
           prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
           prose-pre:bg-muted prose-pre:text-foreground">
           <ReactMarkdown>{message.content}</ReactMarkdown>
-          {message.isStreaming && (
-            <span className="inline-block w-0.5 h-4 ml-0.5 bg-primary animate-pulse align-middle" />
-          )}
         </div>
       </div>
     )
