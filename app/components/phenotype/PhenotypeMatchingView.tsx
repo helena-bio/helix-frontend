@@ -4,11 +4,11 @@
  * PhenotypeMatchingView Component
  *
  * Displays phenotype matching results between patient HPO terms and variant HPO annotations.
- * Uses table layout similar to VariantsTable for consistency.
+ * Reuses VariantsList component for consistent variant display.
  */
 
 import { useState, useCallback, useMemo } from 'react'
-import { Search, Plus, X, Play, Dna, Loader2, Sparkles, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, ExternalLink } from 'lucide-react'
+import { Search, Plus, X, Play, Dna, Loader2, Sparkles, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, ArrowUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -58,7 +58,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   })
 
   // Get variants with HPO data for matching
-  const { data: variantsData } = useVariants(sessionId, {
+  const { data: variantsData, isLoading: variantsLoading } = useVariants(sessionId, {
     page: 1,
     page_size: 5000,
   })
@@ -128,6 +128,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
       return
     }
 
+    // Prepare variants with HPO data
     const variantsWithHPO = variantsData.variants
       .filter((v: any) => v.hpo_phenotypes)
       .map((v: any, idx: number) => ({
@@ -177,7 +178,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </div>
       </div>
 
-      {/* Patient Phenotypes Card - Compact */}
+      {/* Patient Phenotypes Card */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -185,47 +186,52 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             Patient Phenotypes
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-start gap-4">
-            {/* Search Input */}
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search HPO terms..."
-                className="pl-9"
-              />
-              {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />
-              )}
-              
-              {/* Search Suggestions Dropdown */}
-              {searchQuery.length >= 2 && filteredSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-background border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {filteredSuggestions.map((term) => (
-                    <button
-                      key={term.hpo_id}
-                      onClick={() => handleAddTerm(term)}
-                      className="w-full text-left p-2 hover:bg-accent flex items-center justify-between group border-b last:border-b-0"
-                    >
-                      <div>
-                        <span className="text-sm font-medium">{term.name}</span>
-                        <span className="text-xs text-muted-foreground ml-2">({term.hpo_id})</span>
-                      </div>
-                      <Plus className="h-4 w-4 opacity-0 group-hover:opacity-100" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+        <CardContent className="space-y-4">
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search HPO terms..."
+              className="pl-9"
+            />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />
+            )}
+          </div>
 
-            {/* Selected Terms */}
-            <div className="flex flex-wrap gap-2 flex-1 min-h-[40px] items-center">
-              {selectedTerms.length === 0 ? (
-                <span className="text-sm text-muted-foreground">No phenotypes selected. Search and add HPO terms.</span>
-              ) : (
-                selectedTerms.map((term) => (
+          {/* Search Suggestions */}
+          {searchQuery.length >= 2 && filteredSuggestions.length > 0 && (
+            <div className="border rounded-lg max-h-48 overflow-y-auto">
+              {filteredSuggestions.map((term) => (
+                <button
+                  key={term.hpo_id}
+                  onClick={() => handleAddTerm(term)}
+                  className="w-full text-left p-3 hover:bg-accent flex items-center justify-between group border-b last:border-b-0"
+                >
+                  <div>
+                    <span className="text-sm font-medium">{term.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">({term.hpo_id})</span>
+                  </div>
+                  <Plus className="h-4 w-4 opacity-0 group-hover:opacity-100" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Selected Terms */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">
+              Selected Terms ({selectedTerms.length})
+            </p>
+            {selectedTerms.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                No phenotypes selected. Search and add HPO terms above.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {selectedTerms.map((term) => (
                   <Badge
                     key={term.hpo_id}
                     variant="secondary"
@@ -239,28 +245,37 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-            {/* Run Matching Button */}
-            <Button
-              onClick={handleRunMatching}
-              disabled={selectedTerms.length === 0 || matchingMutation.isPending}
-              className="shrink-0"
-            >
-              {matchingMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Matching...
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Run Matching
-                </>
-              )}
-            </Button>
+          {/* Run Matching Button */}
+          <Button
+            onClick={handleRunMatching}
+            disabled={selectedTerms.length === 0 || matchingMutation.isPending || variantsLoading}
+            className="w-full"
+          >
+            {matchingMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Matching...
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-2" />
+                Run Phenotype Matching
+              </>
+            )}
+          </Button>
+
+          {/* Info text */}
+          <div className="flex gap-3 pt-2">
+            <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              Phenotype matching uses semantic similarity (Lin score) to compare patient HPO terms 
+              against gene-phenotype associations from OMIM/HPO databases.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -269,7 +284,10 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Match Results</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ArrowUpDown className="h-4 w-4" />
+              Match Results
+            </CardTitle>
             {matchResults && (
               <span className="text-sm text-muted-foreground">
                 {totalResults} variants with phenotype data
@@ -342,7 +360,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
                           {/* Expanded Row */}
                           {expandedRows.has(result.variant_idx) && (
-                            <TableRow>
+                            <TableRow key={`${result.variant_idx}-expanded`}>
                               <TableCell colSpan={6} className="bg-muted/30">
                                 <div className="p-4">
                                   <p className="text-sm font-medium mb-3">Individual Term Matches</p>
@@ -354,7 +372,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                                       >
                                         <div className="flex items-center gap-2 text-sm">
                                           <span className="font-medium">{match.patient_hpo_name}</span>
-                                          <span className="text-muted-foreground">→</span>
+                                          <span className="text-muted-foreground">-</span>
                                           <span className={match.similarity_score > 0.5 ? 'text-green-600' : 'text-muted-foreground'}>
                                             {match.best_match_hpo_name || 'No match'}
                                           </span>
