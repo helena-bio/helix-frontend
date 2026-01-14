@@ -230,7 +230,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             })
             setMatchResults(result.results)
           } catch (error) {
-            console.error('Auto-matching failed:', error)
           }
         }
       }
@@ -331,7 +330,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         description: `Analyzed ${result.variants_analyzed} variants`,
       })
     } catch (error) {
-      console.error('Matching error:', error)
       toast.error('Matching failed', {
         description: 'Please try again',
       })
