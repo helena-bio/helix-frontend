@@ -21,9 +21,5 @@
   "engines": {
     "node": ">=20.9.0",
     "npm": ">=9.0.0"
-  },
-  "dependencies": {
-    "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.1"
   }
 }
