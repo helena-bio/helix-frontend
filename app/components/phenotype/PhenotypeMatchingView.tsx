@@ -6,7 +6,7 @@
  * Displays phenotype matching results AGGREGATED BY GENE.
  * - One row per gene (not per variant)
  * - Expandable to show all variants for each gene
- * - Shows variant details: HGVS, consequence, ACMG class
+ * - Shows variant details from phenotype matching
  * - Compact button design
  */
 
@@ -110,86 +110,65 @@ function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedRe
 }
 
 /**
- * Variant row component - shows detailed info for each variant under a gene
+ * Variant row component - shows matching results for each variant
  */
 function VariantDetailRow({ variant }: { variant: VariantMatchResult }) {
   return (
     <div className="p-3 border rounded bg-background/50 hover:bg-background transition-colors">
       <div className="flex items-start justify-between gap-4">
-        {/* Left side - Identity */}
+        {/* Left side - Variant Index */}
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
-            {variant.hgvs_protein && (
-              <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                {variant.hgvs_protein}
-              </code>
-            )}
-            {variant.consequence && (
-              <Badge variant="outline" className="text-xs">
-                {variant.consequence.split('_').join(' ')}
-              </Badge>
-            )}
+            <Badge variant="outline" className="text-sm font-mono">
+              Variant #{variant.variant_idx}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {variant.total_variant_terms} HPO terms
+            </Badge>
           </div>
 
-          {/* HGVS notations */}
-          {(variant.hgvs_genomic || variant.hgvs_cdna) && (
-            <div className="text-xs text-muted-foreground space-y-1">
-              {variant.hgvs_genomic && (
-                <div className="font-mono">
-                  <span className="font-medium">Genomic:</span> {variant.hgvs_genomic}
-                </div>
-              )}
-              {variant.hgvs_cdna && (
-                <div className="font-mono">
-                  <span className="font-medium">cDNA:</span> {variant.hgvs_cdna}
-                </div>
-              )}
-            </div>
-          )}
+          {/* HPO Matches for this variant */}
+          <div className="text-xs text-muted-foreground">
+            <span className="font-medium">Matched:</span> {variant.matched_terms}/{variant.total_patient_terms} patient phenotypes
+          </div>
         </div>
 
-        {/* Right side - Scores & Classification */}
+        {/* Right side - Phenotype Score */}
         <div className="flex items-center gap-4">
-          {/* Phenotype Score */}
           <div className="text-center">
             <Badge variant="outline" className={`${getScoreColor(variant.phenotype_match_score)}`}>
               {variant.phenotype_match_score.toFixed(1)}
             </Badge>
             <p className="text-xs text-muted-foreground mt-1">
-              {variant.matched_terms}/{variant.total_patient_terms}
+              {getScoreLabel(variant.phenotype_match_score)}
             </p>
           </div>
-
-          {/* ACMG (if available in future) */}
-          {variant.acmg_class && (
-            <div className="text-center">
-              <Badge variant="outline" className="text-xs">
-                {variant.acmg_class}
-              </Badge>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Matched phenotypes */}
+      {/* Matched HPO terms */}
       {variant.individual_matches.length > 0 && (
         <div className="mt-2 pt-2 border-t">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Matched HPO Terms:</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2">HPO Term Matches:</p>
           <div className="flex flex-wrap gap-1">
             {variant.individual_matches
               .filter(m => m.similarity_score > 0.5)
+              .slice(0, 8)
               .map((match, idx) => (
                 <Badge
                   key={idx}
                   variant="secondary"
                   className="text-xs bg-green-50 text-green-700"
+                  title={`${(match.similarity_score * 100).toFixed(0)}% similarity`}
                 >
                   {match.patient_hpo_name}
-                  {match.best_match_hpo_name && match.best_match_hpo_name !== match.patient_hpo_name && (
-                    <span className="ml-1 opacity-70">→ {match.best_match_hpo_name}</span>
-                  )}
                 </Badge>
               ))}
+            {variant.individual_matches.filter(m => m.similarity_score > 0.5).length > 8 && (
+              <Badge variant="outline" className="text-xs">
+                +{variant.individual_matches.filter(m => m.similarity_score > 0.5).length - 8} more
+              </Badge>
+            )}
           </div>
         </div>
       )}
@@ -416,7 +395,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             )}
           </div>
 
-          {/* Run Matching Button - COMPACT (w-auto instead of w-full) */}
+          {/* Run Matching Button - COMPACT */}
           <Button
             onClick={handleRunMatching}
             disabled={selectedTerms.length === 0 || matchingMutation.isPending || variantsLoading}
@@ -491,7 +470,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                   <TableBody>
                     {paginatedResults.map((geneResult) => (
                       <>
-                        {/* Gene Row - AGGREGATED (one per gene) */}
+                        {/* Gene Row - AGGREGATED */}
                         <TableRow
                           key={geneResult.gene_symbol}
                           className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -528,7 +507,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                           </TableCell>
                         </TableRow>
 
-                        {/* Expanded Gene Row - Show all variants for this gene */}
+                        {/* Expanded Gene Row - Show all variants */}
                         {expandedGenes.has(geneResult.gene_symbol) && (
                           <TableRow key={`${geneResult.gene_symbol}-expanded`}>
                             <TableCell colSpan={6} className="bg-muted/30 p-4">
