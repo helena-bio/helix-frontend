@@ -60,7 +60,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   // Get variants with HPO data for matching
   const { data: variantsData, isLoading: variantsLoading, error: variantsError } = useVariants(sessionId, {
     page: 1,
-    page_size: 5000,
+    page_size: 1000,
   })
 
   // DEBUG LOGGING
