@@ -1,19 +1,17 @@
 "use client"
 
 /**
- * PhenotypeMatchingView Component - OPTIMIZED
+ * PhenotypeMatchingView Component - CLINICAL GRADE
  *
- * Displays phenotype matching results AGGREGATED BY GENE.
- * - One row per gene (not per variant)
- * - Expandable to show all variants for each gene
- * - Shows full variant details (position, consequence, ACMG, etc.)
- * - Click variant to open VariantDetailPanel
- * - Compact button design
- * - Auto-loads results when phenotypes already selected
+ * Displays clinical-grade phenotype matching results:
+ * - Aggregated by gene
+ * - Sorted by Clinical Priority Score (not just phenotype match)
+ * - Tier visualization (Tier 1-4)
+ * - Full variant quality data display
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
-import { Search, Plus, X, Play, Dna, Loader2, Sparkles, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, ArrowUpDown, ExternalLink } from 'lucide-react'
+import { Search, Plus, X, Play, Dna, Loader2, Sparkles, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, ArrowUpDown, Shield, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +21,7 @@ import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
 import { useHPOSearch, useDebounce } from '@/hooks'
 import { usePhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
 import { useVariants } from '@/hooks/queries/use-variant-analysis-queries'
-import { VariantMatchResult } from '@/lib/api/hpo'
+import { VariantMatchResult, MatchVariantPhenotypesResponse } from '@/lib/api/hpo'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import { toast } from 'sonner'
 
@@ -31,39 +29,33 @@ interface PhenotypeMatchingViewProps {
   sessionId: string
 }
 
-interface VariantData {
-  variant_idx: number
-  chromosome: string
-  position: number
-  reference_allele: string
-  alternate_allele: string
-  gene_symbol: string
-  consequence: string
-  impact: string
-  hgvs_protein: string | null
-  acmg_class: string
-  acmg_criteria: string
-  genotype: string
-  global_af: number | null
-  priority_tier: number | null
-  depth: number
-  quality: number
-}
-
 interface GeneAggregatedResult {
   gene_symbol: string
   rank: number
+  best_clinical_score: number
   best_phenotype_score: number
+  best_tier: string
   variant_count: number
-  total_variant_terms: number
-  matched_terms: number
-  total_patient_terms: number
   matched_hpo_terms: string[]
-  match_percentage: number
   variants: VariantMatchResult[]
 }
 
 const PAGE_SIZE = 10
+
+// Tier colors and styling
+const getTierColor = (tier: string) => {
+  if (tier.includes('Tier 1')) return 'bg-red-100 text-red-900 border-red-300'
+  if (tier.includes('Tier 2')) return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (tier.includes('Tier 3')) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  return 'bg-gray-100 text-gray-600 border-gray-300'
+}
+
+const getTierShortName = (tier: string) => {
+  if (tier.includes('Tier 1')) return 'T1'
+  if (tier.includes('Tier 2')) return 'T2'
+  if (tier.includes('Tier 3')) return 'T3'
+  return 'T4'
+}
 
 const getScoreColor = (score: number) => {
   if (score >= 70) return 'bg-green-100 text-green-900 border-green-300'
@@ -72,51 +64,33 @@ const getScoreColor = (score: number) => {
   return 'bg-red-100 text-red-900 border-red-300'
 }
 
-const getScoreLabel = (score: number) => {
-  if (score >= 70) return 'Strong'
-  if (score >= 50) return 'Moderate'
-  if (score >= 30) return 'Weak'
-  return 'Poor'
+const getACMGColor = (acmg: string | null | undefined) => {
+  if (!acmg) return 'bg-gray-100 text-gray-600'
+  if (acmg === 'Pathogenic') return 'bg-red-100 text-red-900'
+  if (acmg === 'Likely Pathogenic') return 'bg-orange-100 text-orange-900'
+  if (acmg === 'Uncertain Significance' || acmg === 'VUS') return 'bg-yellow-100 text-yellow-900'
+  if (acmg === 'Likely Benign') return 'bg-blue-100 text-blue-900'
+  if (acmg === 'Benign') return 'bg-green-100 text-green-900'
+  return 'bg-gray-100 text-gray-600'
 }
 
-const getACMGColor = (classification: string | null) => {
-  switch (classification) {
-    case 'Pathogenic':
-      return 'bg-red-100 text-red-900 border-red-300'
-    case 'Likely Pathogenic':
-      return 'bg-orange-100 text-orange-900 border-orange-300'
-    case 'Uncertain Significance':
-    case 'VUS':
-      return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-    case 'Likely Benign':
-      return 'bg-blue-100 text-blue-900 border-blue-300'
-    case 'Benign':
-      return 'bg-green-100 text-green-900 border-green-300'
-    default:
-      return 'bg-gray-100 text-gray-900'
-  }
-}
-
-const getACMGShortName = (classification: string | null) => {
-  if (classification === 'Uncertain Significance') return 'VUS'
-  return classification
-}
-
-const getZygosityLabel = (genotype: string | null) => {
-  if (!genotype) return '-'
-  if (genotype === '0/1' || genotype === '1/0' || genotype === '0|1' || genotype === '1|0' || genotype === 'het') return 'Het'
-  if (genotype === '1/1' || genotype === '1|1' || genotype === 'hom') return 'Hom'
-  if (genotype === '1' || genotype === 'hemi') return 'Hemi'
-  return genotype
+const getImpactColor = (impact: string | null | undefined) => {
+  if (!impact) return 'bg-gray-100 text-gray-600'
+  if (impact === 'HIGH') return 'bg-red-100 text-red-900'
+  if (impact === 'MODERATE') return 'bg-orange-100 text-orange-900'
+  if (impact === 'LOW') return 'bg-yellow-100 text-yellow-900'
+  return 'bg-gray-100 text-gray-600'
 }
 
 /**
- * Aggregate variant results by gene
+ * Aggregate results by gene, using best clinical score
  */
 function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedResult[] {
   const geneMap = new Map<string, {
     variants: VariantMatchResult[]
-    bestScore: number
+    bestClinicalScore: number
+    bestPhenotypeScore: number
+    bestTier: string
     matchedTerms: Set<string>
   }>()
 
@@ -124,17 +98,27 @@ function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedRe
     if (!geneMap.has(result.gene_symbol)) {
       geneMap.set(result.gene_symbol, {
         variants: [],
-        bestScore: result.phenotype_match_score,
+        bestClinicalScore: result.clinical_priority_score,
+        bestPhenotypeScore: result.phenotype_match_score,
+        bestTier: result.clinical_tier,
         matchedTerms: new Set(),
       })
     }
 
     const geneData = geneMap.get(result.gene_symbol)!
     geneData.variants.push(result)
-    geneData.bestScore = Math.max(geneData.bestScore, result.phenotype_match_score)
+    
+    // Track best scores
+    if (result.clinical_priority_score > geneData.bestClinicalScore) {
+      geneData.bestClinicalScore = result.clinical_priority_score
+      geneData.bestTier = result.clinical_tier
+    }
+    geneData.bestPhenotypeScore = Math.max(geneData.bestPhenotypeScore, result.phenotype_match_score)
 
     result.individual_matches.forEach(match => {
-      geneData.matchedTerms.add(match.patient_hpo_name)
+      if (match.similarity_score > 0.5) {
+        geneData.matchedTerms.add(match.patient_hpo_name)
+      }
     })
   })
 
@@ -142,140 +126,20 @@ function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedRe
     .map(([gene_symbol, data]) => ({
       gene_symbol,
       rank: 0,
-      best_phenotype_score: data.bestScore,
+      best_clinical_score: data.bestClinicalScore,
+      best_phenotype_score: data.bestPhenotypeScore,
+      best_tier: data.bestTier,
       variant_count: data.variants.length,
-      total_variant_terms: data.variants[0]?.total_variant_terms || 0,
-      matched_terms: Math.max(...data.variants.map(v => v.matched_terms)),
-      total_patient_terms: data.variants[0]?.total_patient_terms || 0,
       matched_hpo_terms: Array.from(data.matchedTerms),
-      match_percentage: Math.max(...data.variants.map(v =>
-        Math.round((v.matched_terms / v.total_patient_terms) * 100)
-      )),
-      variants: data.variants.sort((a, b) => b.phenotype_match_score - a.phenotype_match_score),
+      variants: data.variants.sort((a, b) => b.clinical_priority_score - a.clinical_priority_score),
     }))
-    .sort((a, b) => b.best_phenotype_score - a.best_phenotype_score)
+    .sort((a, b) => b.best_clinical_score - a.best_clinical_score)
     .map((item, idx) => ({ ...item, rank: idx + 1 }))
-}
-
-/**
- * Variant row component - shows full variant details
- */
-function VariantDetailRow({
-  variant,
-  variantData,
-  onViewDetails
-}: {
-  variant: VariantMatchResult
-  variantData?: VariantData
-  onViewDetails: (variantIdx: number) => void
-}) {
-  return (
-    <div
-      className="p-3 border rounded bg-background/50 hover:bg-background transition-colors cursor-pointer"
-      onClick={() => onViewDetails(variant.variant_idx)}
-    >
-      <div className="flex items-start justify-between gap-4">
-        {/* Left side - Variant Info */}
-        <div className="flex-1 space-y-2">
-          {/* Position and Change */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-mono text-sm">
-              {variantData?.chromosome || 'chr?'}:{variantData?.position?.toLocaleString() || '?'}
-            </span>
-            <span className="font-mono text-sm text-muted-foreground">
-              {variantData?.reference_allele || '?'}/{variantData?.alternate_allele || '?'}
-            </span>
-            <Badge variant="outline" className="text-xs">
-              {variantData?.consequence || 'unknown'}
-            </Badge>
-          </div>
-
-          {/* Zygosity, ACMG, gnomAD */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-              {getZygosityLabel(variantData?.genotype || null)}
-            </Badge>
-            {variantData?.acmg_class && (
-              <Badge variant="outline" className={`text-xs ${getACMGColor(variantData.acmg_class)}`}>
-                {getACMGShortName(variantData.acmg_class)}
-              </Badge>
-            )}
-            {variantData?.global_af && (
-              <span className="text-xs text-muted-foreground font-mono">
-                gnomAD: {variantData.global_af.toExponential(2)}
-              </span>
-            )}
-            {variantData?.priority_tier && (
-              <Badge variant="outline" className="text-xs">
-                Tier {variantData.priority_tier}
-              </Badge>
-            )}
-          </div>
-
-          {/* HGVS Protein if available */}
-          {variantData?.hgvs_protein && (
-            <p className="text-xs font-mono text-muted-foreground">
-              {variantData.hgvs_protein}
-            </p>
-          )}
-        </div>
-
-        {/* Right side - Phenotype Score + View button */}
-        <div className="flex items-center gap-3">
-          <div className="text-center">
-            <Badge variant="outline" className={getScoreColor(variant.phenotype_match_score)}>
-              {variant.phenotype_match_score.toFixed(1)}
-            </Badge>
-            <p className="text-xs text-muted-foreground mt-1">
-              {getScoreLabel(variant.phenotype_match_score)}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={(e) => {
-              e.stopPropagation()
-              onViewDetails(variant.variant_idx)
-            }}
-          >
-            <ExternalLink className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Matched HPO terms */}
-      {variant.individual_matches.length > 0 && (
-        <div className="mt-2 pt-2 border-t">
-          <p className="text-xs font-medium text-muted-foreground mb-1">HPO Matches:</p>
-          <div className="flex flex-wrap gap-1">
-            {variant.individual_matches
-              .filter(m => m.similarity_score > 0.5)
-              .slice(0, 6)
-              .map((match, idx) => (
-                <Badge
-                  key={idx}
-                  variant="secondary"
-                  className="text-xs bg-green-50 text-green-700"
-                >
-                  {match.patient_hpo_name} ({(match.similarity_score * 100).toFixed(0)}%)
-                </Badge>
-              ))}
-            {variant.individual_matches.filter(m => m.similarity_score > 0.5).length > 6 && (
-              <Badge variant="outline" className="text-xs">
-                +{variant.individual_matches.filter(m => m.similarity_score > 0.5).length - 6} more
-              </Badge>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
 }
 
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [matchResults, setMatchResults] = useState<VariantMatchResult[] | null>(null)
+  const [matchResponse, setMatchResponse] = useState<MatchVariantPhenotypesResponse | null>(null)
   const [aggregatedResults, setAggregatedResults] = useState<GeneAggregatedResult[] | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [expandedGenes, setExpandedGenes] = useState<Set<string>>(new Set())
@@ -295,50 +159,53 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     page_size: 1000,
   })
 
-  // Create lookup map for variant data
-  const variantDataMap = useMemo(() => {
-    const map = new Map<number, VariantData>()
-    if (variantsData?.variants) {
-      variantsData.variants.forEach((v: any) => {
-        map.set(v.variant_idx, v as VariantData)
-      })
-    }
-    return map
-  }, [variantsData])
-
   const selectedTerms = phenotype?.hpo_terms || []
 
+  // Aggregate when results change
   useEffect(() => {
-    if (matchResults && matchResults.length > 0) {
-      const aggregated = aggregateResultsByGene(matchResults)
+    if (matchResponse?.results && matchResponse.results.length > 0) {
+      const aggregated = aggregateResultsByGene(matchResponse.results)
       setAggregatedResults(aggregated)
     }
-  }, [matchResults])
+  }, [matchResponse])
 
+  // Auto-run matching if phenotypes exist
   useEffect(() => {
-    if (selectedTerms.length > 0 && !matchResults && variantsData?.variants?.length && !matchingMutation.isPending) {
-      const runAutoMatching = async () => {
-        const variantsWithHPO = variantsData.variants
-          .filter((v: any) => v.hpo_phenotypes)
-          .map((v: any, idx: number) => ({
-            variant_idx: v.variant_idx || idx,
-            gene_symbol: v.gene_symbol || 'Unknown',
-            hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
-          }))
-
-        if (variantsWithHPO.length > 0) {
-          try {
-            const result = await matchingMutation.mutateAsync({
-              patient_hpo_ids: selectedTerms.map(t => t.hpo_id),
-              variants: variantsWithHPO,
-            })
-            setMatchResults(result.results)
-          } catch (error) {}
-        }
-      }
-      runAutoMatching()
+    if (selectedTerms.length > 0 && !matchResponse && variantsData?.variants?.length && !matchingMutation.isPending) {
+      runMatching()
     }
-  }, [selectedTerms, variantsData, matchResults, matchingMutation])
+  }, [selectedTerms, variantsData])
+
+  const runMatching = async () => {
+    if (!selectedTerms.length || !variantsData?.variants?.length) return
+
+    const variantsWithData = variantsData.variants
+      .filter((v: any) => v.hpo_phenotypes)
+      .map((v: any) => ({
+        variant_idx: v.variant_idx,
+        gene_symbol: v.gene_symbol || 'Unknown',
+        hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
+        // Include variant quality data for clinical prioritization
+        acmg_class: v.acmg_class || null,
+        impact: v.impact || null,
+        gnomad_af: v.global_af || null,
+        consequence: v.consequence || null,
+      }))
+
+    if (!variantsWithData.length) return
+
+    try {
+      const result = await matchingMutation.mutateAsync({
+        patient_hpo_ids: selectedTerms.map(t => t.hpo_id),
+        variants: variantsWithData,
+      })
+      setMatchResponse(result)
+      setCurrentPage(1)
+      setExpandedGenes(new Set())
+    } catch (error) {
+      console.error('Matching failed:', error)
+    }
+  }
 
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !selectedTerms.find((t) => t.hpo_id === term.hpo_id)
@@ -355,11 +222,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const toggleGene = useCallback((geneSymbol: string) => {
     setExpandedGenes(prev => {
       const next = new Set(prev)
-      if (next.has(geneSymbol)) {
-        next.delete(geneSymbol)
-      } else {
-        next.add(geneSymbol)
-      }
+      if (next.has(geneSymbol)) next.delete(geneSymbol)
+      else next.add(geneSymbol)
       return next
     })
   }, [])
@@ -368,6 +232,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     try {
       await addHPOTerm(term)
       setSearchQuery('')
+      setMatchResponse(null) // Clear results to trigger re-run
       toast.success('Added: ' + term.name)
     } catch (error) {
       toast.error('Failed to add term')
@@ -377,6 +242,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const handleRemoveTerm = useCallback(async (hpoId: string) => {
     try {
       await removeHPOTerm(hpoId)
+      setMatchResponse(null) // Clear results to trigger re-run
     } catch (error) {
       toast.error('Failed to remove term')
     }
@@ -384,43 +250,18 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   const handleRunMatching = useCallback(async () => {
     if (!selectedTerms.length) {
-      toast.error('No phenotypes selected', { description: 'Add at least one HPO term to run matching' })
+      toast.error('No phenotypes selected')
       return
     }
-
     if (!variantsData?.variants?.length) {
-      toast.error('No variants available', { description: 'Upload and process a VCF file first' })
+      toast.error('No variants available')
       return
     }
+    await runMatching()
+    toast.success('Matching complete')
+  }, [selectedTerms, variantsData])
 
-    const variantsWithHPO = variantsData.variants
-      .filter((v: any) => v.hpo_phenotypes)
-      .map((v: any, idx: number) => ({
-        variant_idx: v.variant_idx || idx,
-        gene_symbol: v.gene_symbol || 'Unknown',
-        hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
-      }))
-
-    if (!variantsWithHPO.length) {
-      toast.error('No variants with HPO annotations', { description: 'Variants need gene-phenotype associations for matching' })
-      return
-    }
-
-    try {
-      const result = await matchingMutation.mutateAsync({
-        patient_hpo_ids: selectedTerms.map(t => t.hpo_id),
-        variants: variantsWithHPO,
-      })
-      setMatchResults(result.results)
-      setCurrentPage(1)
-      setExpandedGenes(new Set())
-      toast.success('Matching complete', { description: `Analyzed ${result.variants_analyzed} variants` })
-    } catch (error) {
-      toast.error('Matching failed', { description: 'Please try again' })
-    }
-  }, [selectedTerms, variantsData, matchingMutation])
-
-  // If viewing variant detail, show the panel
+  // View variant detail
   if (selectedVariantIdx !== null) {
     return (
       <VariantDetailPanel
@@ -439,14 +280,44 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
           <Dna className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Phenotype Matching</h1>
+          <h1 className="text-3xl font-bold">Clinical Phenotype Matching</h1>
           <p className="text-base text-muted-foreground mt-1">
-            Match variants to patient phenotypes using HPO terms and semantic similarity.
+            Prioritize variants by combined clinical evidence: pathogenicity, impact, phenotype match, and frequency.
           </p>
         </div>
       </div>
 
-      {/* Patient Phenotypes Card */}
+      {/* Tier Summary */}
+      {matchResponse && (
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-red-900">{matchResponse.tier_1_count}</p>
+              <p className="text-sm text-red-700">Tier 1 - Actionable</p>
+            </CardContent>
+          </Card>
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-orange-900">{matchResponse.tier_2_count}</p>
+              <p className="text-sm text-orange-700">Tier 2 - Potentially</p>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-yellow-900">{matchResponse.tier_3_count}</p>
+              <p className="text-sm text-yellow-700">Tier 3 - Uncertain</p>
+            </CardContent>
+          </Card>
+          <Card className="border-gray-200 bg-gray-50">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold text-gray-700">{matchResponse.tier_4_count}</p>
+              <p className="text-sm text-gray-600">Tier 4 - Unlikely</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Patient Phenotypes */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -463,9 +334,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
               placeholder="Search HPO terms..."
               className="pl-9"
             />
-            {isSearching && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />
-            )}
+            {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
           </div>
 
           {searchQuery.length >= 2 && filteredSuggestions.length > 0 && (
@@ -489,9 +358,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
           <div className="space-y-2">
             <p className="text-sm font-medium">Selected Terms ({selectedTerms.length})</p>
             {selectedTerms.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No phenotypes selected. Search and add HPO terms above.
-              </p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No phenotypes selected.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {selectedTerms.map((term) => (
@@ -514,15 +381,15 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             {matchingMutation.isPending ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Matching...</>
             ) : (
-              <><Play className="h-4 w-4 mr-2" />Run Phenotype Matching</>
+              <><Play className="h-4 w-4 mr-2" />Run Clinical Matching</>
             )}
           </Button>
 
           <div className="flex gap-3 pt-2">
             <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">
-              Phenotype matching uses semantic similarity (Lin score) to compare patient HPO terms
-              against gene-phenotype associations from OMIM/HPO databases.
+              Clinical Priority Score = ACMG (35%) + Impact (25%) + Phenotype (25%) + Frequency (15%).
+              Sorted by clinical relevance, not just phenotype match.
             </p>
           </div>
         </CardContent>
@@ -533,12 +400,12 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4" />
-              Match Results (Aggregated by Gene)
+              <Shield className="h-4 w-4" />
+              Clinical Results (by Gene)
             </CardTitle>
             {aggregatedResults && (
               <span className="text-sm text-muted-foreground">
-                {totalResults} genes, {matchResults?.length || 0} variants
+                {totalResults} genes, {matchResponse?.variants_analyzed || 0} variants
               </span>
             )}
           </div>
@@ -548,13 +415,12 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             <div className="text-center py-16 text-muted-foreground">
               <Dna className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p className="text-base">No results yet</p>
-              <p className="text-sm mt-1">Add phenotypes and run matching to see results</p>
+              <p className="text-sm mt-1">Add phenotypes and run matching</p>
             </div>
           ) : aggregatedResults.length === 0 ? (
             <div className="text-center py-16">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-base font-medium mb-2">No variants with HPO annotations</p>
-              <p className="text-sm text-muted-foreground">Variants need gene-phenotype associations for matching</p>
             </div>
           ) : (
             <>
@@ -563,11 +429,12 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]"></TableHead>
-                      <TableHead className="text-base w-[60px]">Rank</TableHead>
-                      <TableHead className="text-base">Gene</TableHead>
-                      <TableHead className="text-base">Best Score</TableHead>
-                      <TableHead className="text-base text-center">Variants</TableHead>
-                      <TableHead className="text-base text-center">HPO Match %</TableHead>
+                      <TableHead className="w-[60px]">Rank</TableHead>
+                      <TableHead>Gene</TableHead>
+                      <TableHead>Clinical Score</TableHead>
+                      <TableHead>Tier</TableHead>
+                      <TableHead className="text-center">Variants</TableHead>
+                      <TableHead>HPO Match</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -575,54 +442,92 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                       <>
                         <TableRow
                           key={geneResult.gene_symbol}
-                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          className="cursor-pointer hover:bg-muted/50"
                           onClick={() => toggleGene(geneResult.gene_symbol)}
                         >
                           <TableCell>
-                            {expandedGenes.has(geneResult.gene_symbol) ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
+                            {expandedGenes.has(geneResult.gene_symbol) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </TableCell>
                           <TableCell className="font-mono text-sm font-medium">#{geneResult.rank}</TableCell>
-                          <TableCell className="text-base font-semibold">{geneResult.gene_symbol}</TableCell>
+                          <TableCell className="font-semibold">{geneResult.gene_symbol}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={getScoreColor(geneResult.best_phenotype_score)}>
-                              {geneResult.best_phenotype_score.toFixed(1)} - {getScoreLabel(geneResult.best_phenotype_score)}
+                            <Badge variant="outline" className={getScoreColor(geneResult.best_clinical_score)}>
+                              {geneResult.best_clinical_score.toFixed(1)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-center text-sm font-medium">{geneResult.variant_count}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="secondary" className="text-xs">{geneResult.match_percentage}%</Badge>
+                          <TableCell>
+                            <Badge variant="outline" className={getTierColor(geneResult.best_tier)}>
+                              {getTierShortName(geneResult.best_tier)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">{geneResult.variant_count}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="text-xs">
+                              {geneResult.best_phenotype_score.toFixed(0)}%
+                            </Badge>
                           </TableCell>
                         </TableRow>
 
                         {expandedGenes.has(geneResult.gene_symbol) && (
                           <TableRow key={`${geneResult.gene_symbol}-expanded`}>
-                            <TableCell colSpan={6} className="bg-muted/30 p-4">
+                            <TableCell colSpan={7} className="bg-muted/30 p-4">
                               <div className="space-y-4">
-                                <div>
-                                  <p className="text-sm font-medium mb-2">Matched HPO Terms</p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {geneResult.matched_hpo_terms.map((term, idx) => (
-                                      <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary">
-                                        {term}
-                                      </Badge>
-                                    ))}
+                                {geneResult.matched_hpo_terms.length > 0 && (
+                                  <div>
+                                    <p className="text-sm font-medium mb-2">Matched HPO Terms</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {geneResult.matched_hpo_terms.map((term, idx) => (
+                                        <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary">{term}</Badge>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
 
                                 <div>
                                   <p className="text-sm font-medium mb-3">Variants ({geneResult.variant_count})</p>
-                                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                                    {geneResult.variants.map((variant, vIdx) => (
-                                      <VariantDetailRow
-                                        key={`${geneResult.gene_symbol}-${vIdx}`}
-                                        variant={variant}
-                                        variantData={variantDataMap.get(variant.variant_idx)}
-                                        onViewDetails={setSelectedVariantIdx}
-                                      />
+                                  <div className="space-y-2">
+                                    {geneResult.variants.map((variant) => (
+                                      <div
+                                        key={variant.variant_idx}
+                                        className="p-3 border rounded bg-background hover:bg-accent/50 cursor-pointer transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setSelectedVariantIdx(variant.variant_idx)
+                                        }}
+                                      >
+                                        <div className="flex items-center justify-between gap-4">
+                                          <div className="flex items-center gap-3 flex-wrap">
+                                            <Badge variant="outline" className={getTierColor(variant.clinical_tier)}>
+                                              {getTierShortName(variant.clinical_tier)}
+                                            </Badge>
+                                            <Badge variant="outline" className={getACMGColor(variant.acmg_class)}>
+                                              {variant.acmg_class === 'Uncertain Significance' ? 'VUS' : variant.acmg_class || 'Unknown'}
+                                            </Badge>
+                                            <Badge variant="outline" className={getImpactColor(variant.impact)}>
+                                              {variant.impact || 'Unknown'}
+                                            </Badge>
+                                            <span className="text-sm text-muted-foreground">
+                                              {variant.consequence || 'unknown'}
+                                            </span>
+                                            {variant.gnomad_af && (
+                                              <span className="text-xs font-mono text-muted-foreground">
+                                                AF: {variant.gnomad_af.toExponential(2)}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-3">
+                                            <div className="text-right">
+                                              <p className="text-sm font-medium">{variant.clinical_priority_score.toFixed(1)}</p>
+                                              <p className="text-xs text-muted-foreground">Clinical</p>
+                                            </div>
+                                            <div className="text-right">
+                                              <p className="text-sm">{variant.phenotype_match_score.toFixed(0)}%</p>
+                                              <p className="text-xs text-muted-foreground">HPO</p>
+                                            </div>
+                                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                                          </div>
+                                        </div>
+                                      </div>
                                     ))}
                                   </div>
                                 </div>

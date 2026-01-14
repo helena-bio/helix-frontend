@@ -2,6 +2,7 @@
  * HPO API Client
  *
  * Functions for searching and fetching HPO terms from Phenotype Matching Service.
+ * Includes clinical-grade phenotype matching with variant quality integration.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
@@ -33,9 +34,6 @@ export interface ExtractHPOResponse {
   total: number
 }
 
-/**
- * Patient phenotype data structure
- */
 export interface PatientPhenotype {
   id: string
   session_id: string
@@ -61,10 +59,6 @@ export interface SavePhenotypeResponse extends PatientPhenotype {
   message: string
 }
 
-/**
- * Search HPO terms by query string.
- * Used for autocomplete functionality.
- */
 export async function searchHPOTerms(
   query: string,
   limit: number = 10
@@ -88,9 +82,6 @@ export async function searchHPOTerms(
   return response.json()
 }
 
-/**
- * Get HPO term by ID.
- */
 export async function getHPOTerm(termId: string): Promise<HPOTerm> {
   const url = API_URL + '/phenotype/api/hpo/term/' + termId
   const response = await fetch(url)
@@ -102,9 +93,6 @@ export async function getHPOTerm(termId: string): Promise<HPOTerm> {
   return response.json()
 }
 
-/**
- * Extract HPO terms from clinical free text using NLP.
- */
 export async function extractHPOFromText(text: string): Promise<ExtractHPOResponse> {
   if (!text || text.length < 3) {
     return { terms: [], original_text: text, total: 0 }
@@ -126,9 +114,6 @@ export async function extractHPOFromText(text: string): Promise<ExtractHPORespon
   return response.json()
 }
 
-/**
- * Save patient phenotype data for a session.
- */
 export async function savePhenotype(
   sessionId: string,
   data: SavePhenotypeRequest
@@ -149,9 +134,6 @@ export async function savePhenotype(
   return response.json()
 }
 
-/**
- * Get patient phenotype data for a session.
- */
 export async function getPhenotype(sessionId: string): Promise<PatientPhenotype | null> {
   const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
   const response = await fetch(url)
@@ -167,9 +149,6 @@ export async function getPhenotype(sessionId: string): Promise<PatientPhenotype 
   return response.json()
 }
 
-/**
- * Delete patient phenotype data for a session.
- */
 export async function deletePhenotype(sessionId: string): Promise<{ deleted: boolean; message: string }> {
   const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
   const response = await fetch(url, {
@@ -184,13 +163,17 @@ export async function deletePhenotype(sessionId: string): Promise<{ deleted: boo
 }
 
 // ============================================
-// PHENOTYPE MATCHING API
+// CLINICAL-GRADE PHENOTYPE MATCHING API
 // ============================================
 
 export interface VariantPhenotypeInput {
   variant_idx: number
   gene_symbol: string
   hpo_ids: string[]
+  acmg_class?: string | null
+  impact?: string | null
+  gnomad_af?: number | null
+  consequence?: string | null
 }
 
 export interface SimilarityMatch {
@@ -209,6 +192,14 @@ export interface VariantMatchResult {
   total_patient_terms: number
   total_variant_terms: number
   individual_matches: SimilarityMatch[]
+  // Clinical prioritization fields
+  clinical_priority_score: number
+  clinical_tier: string
+  // Variant quality echo
+  acmg_class?: string | null
+  impact?: string | null
+  gnomad_af?: number | null
+  consequence?: string | null
 }
 
 export interface MatchVariantPhenotypesRequest {
@@ -220,12 +211,12 @@ export interface MatchVariantPhenotypesResponse {
   patient_hpo_count: number
   variants_analyzed: number
   results: VariantMatchResult[]
+  tier_1_count: number
+  tier_2_count: number
+  tier_3_count: number
+  tier_4_count: number
 }
 
-/**
- * Match patient phenotype against variant phenotypes using semantic similarity.
- * Returns variants ranked by phenotype match score.
- */
 export async function matchVariantPhenotypes(
   request: MatchVariantPhenotypesRequest
 ): Promise<MatchVariantPhenotypesResponse> {
