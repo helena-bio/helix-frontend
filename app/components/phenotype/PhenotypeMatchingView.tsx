@@ -1,10 +1,13 @@
 "use client"
 
 /**
- * PhenotypeMatchingView Component
+ * PhenotypeMatchingView Component - OPTIMIZED
  *
- * Displays phenotype matching results between patient HPO terms and variant HPO annotations.
- * Reuses VariantsList component for consistent variant display.
+ * Displays phenotype matching results AGGREGATED BY GENE.
+ * - One row per gene (not per variant)
+ * - Expandable to show all variants for each gene
+ * - Shows variant details: HGVS, consequence, ACMG class
+ * - Compact button design
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
@@ -25,7 +28,20 @@ interface PhenotypeMatchingViewProps {
   sessionId: string
 }
 
-const PAGE_SIZE = 25
+interface GeneAggregatedResult {
+  gene_symbol: string
+  rank: number
+  best_phenotype_score: number
+  variant_count: number
+  total_variant_terms: number
+  matched_terms: number
+  total_patient_terms: number
+  matched_hpo_terms: string[]
+  match_percentage: number
+  variants: VariantMatchResult[]
+}
+
+const PAGE_SIZE = 10
 
 const getScoreColor = (score: number) => {
   if (score >= 70) return 'bg-green-100 text-green-900 border-green-300'
@@ -41,11 +57,152 @@ const getScoreLabel = (score: number) => {
   return 'Poor'
 }
 
+/**
+ * Aggregate variant results by gene
+ * Groups all variants for same gene, keeps best score
+ */
+function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedResult[] {
+  const geneMap = new Map<string, {
+    variants: VariantMatchResult[]
+    bestScore: number
+    matchedTerms: Set<string>
+  }>()
+
+  // Group variants by gene
+  results.forEach((result) => {
+    if (!geneMap.has(result.gene_symbol)) {
+      geneMap.set(result.gene_symbol, {
+        variants: [],
+        bestScore: result.phenotype_match_score,
+        matchedTerms: new Set(),
+      })
+    }
+
+    const geneData = geneMap.get(result.gene_symbol)!
+    geneData.variants.push(result)
+    geneData.bestScore = Math.max(geneData.bestScore, result.phenotype_match_score)
+
+    // Collect unique matched terms
+    result.individual_matches.forEach(match => {
+      geneData.matchedTerms.add(match.patient_hpo_name)
+    })
+  })
+
+  // Convert to sorted array
+  let rank = 1
+  return Array.from(geneMap.entries())
+    .map(([gene_symbol, data]) => ({
+      gene_symbol,
+      rank: rank++,
+      best_phenotype_score: data.bestScore,
+      variant_count: data.variants.length,
+      total_variant_terms: data.variants[0]?.total_variant_terms || 0,
+      matched_terms: Math.max(...data.variants.map(v => v.matched_terms)),
+      total_patient_terms: data.variants[0]?.total_patient_terms || 0,
+      matched_hpo_terms: Array.from(data.matchedTerms),
+      match_percentage: Math.max(...data.variants.map(v => 
+        Math.round((v.matched_terms / v.total_patient_terms) * 100)
+      )),
+      variants: data.variants.sort((a, b) => b.phenotype_match_score - a.phenotype_match_score),
+    }))
+    .sort((a, b) => b.best_phenotype_score - a.best_phenotype_score)
+    .map((item, idx) => ({ ...item, rank: idx + 1 }))
+}
+
+/**
+ * Variant row component - shows detailed info for each variant under a gene
+ */
+function VariantDetailRow({ variant }: { variant: VariantMatchResult }) {
+  return (
+    <div className="p-3 border rounded bg-background/50 hover:bg-background transition-colors">
+      <div className="flex items-start justify-between gap-4">
+        {/* Left side - Identity */}
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            {variant.hgvs_protein && (
+              <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                {variant.hgvs_protein}
+              </code>
+            )}
+            {variant.consequence && (
+              <Badge variant="outline" className="text-xs">
+                {variant.consequence.split('_').join(' ')}
+              </Badge>
+            )}
+          </div>
+
+          {/* HGVS notations */}
+          {(variant.hgvs_genomic || variant.hgvs_cdna) && (
+            <div className="text-xs text-muted-foreground space-y-1">
+              {variant.hgvs_genomic && (
+                <div className="font-mono">
+                  <span className="font-medium">Genomic:</span> {variant.hgvs_genomic}
+                </div>
+              )}
+              {variant.hgvs_cdna && (
+                <div className="font-mono">
+                  <span className="font-medium">cDNA:</span> {variant.hgvs_cdna}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right side - Scores & Classification */}
+        <div className="flex items-center gap-4">
+          {/* Phenotype Score */}
+          <div className="text-center">
+            <Badge variant="outline" className={`${getScoreColor(variant.phenotype_match_score)}`}>
+              {variant.phenotype_match_score.toFixed(1)}
+            </Badge>
+            <p className="text-xs text-muted-foreground mt-1">
+              {variant.matched_terms}/{variant.total_patient_terms}
+            </p>
+          </div>
+
+          {/* ACMG (if available in future) */}
+          {variant.acmg_class && (
+            <div className="text-center">
+              <Badge variant="outline" className="text-xs">
+                {variant.acmg_class}
+              </Badge>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Matched phenotypes */}
+      {variant.individual_matches.length > 0 && (
+        <div className="mt-2 pt-2 border-t">
+          <p className="text-xs font-medium text-muted-foreground mb-1">Matched HPO Terms:</p>
+          <div className="flex flex-wrap gap-1">
+            {variant.individual_matches
+              .filter(m => m.similarity_score > 0.5)
+              .map((match, idx) => (
+                <Badge
+                  key={idx}
+                  variant="secondary"
+                  className="text-xs bg-green-50 text-green-700"
+                >
+                  {match.patient_hpo_name}
+                  {match.best_match_hpo_name && match.best_match_hpo_name !== match.patient_hpo_name && (
+                    <span className="ml-1 opacity-70">→ {match.best_match_hpo_name}</span>
+                  )}
+                </Badge>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [matchResults, setMatchResults] = useState<VariantMatchResult[] | null>(null)
+  const [aggregatedResults, setAggregatedResults] = useState<GeneAggregatedResult[] | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
+  const [expandedGenes, setExpandedGenes] = useState<Set<string>>(new Set())
 
   const { phenotype, addHPOTerm, removeHPOTerm } = usePhenotypeContext()
   const matchingMutation = usePhenotypeMatching()
@@ -63,21 +220,15 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     page_size: 1000,
   })
 
-  // DEBUG LOGGING
-  useEffect(() => {
-    console.log('=== PHENOTYPE MATCHING DEBUG ===')
-    console.log('sessionId:', sessionId)
-    console.log('variantsLoading:', variantsLoading)
-    console.log('variantsError:', variantsError)
-    console.log('variantsData:', variantsData)
-    console.log('variants count:', variantsData?.variants?.length)
-    if (variantsData?.variants?.length) {
-      const withHPO = variantsData.variants.filter((v: any) => v.hpo_phenotypes).length
-      console.log('variants with HPO:', withHPO)
-    }
-  }, [sessionId, variantsData, variantsLoading, variantsError])
-
   const selectedTerms = phenotype?.hpo_terms || []
+
+  // Aggregate results when they change
+  useEffect(() => {
+    if (matchResults && matchResults.length > 0) {
+      const aggregated = aggregateResultsByGene(matchResults)
+      setAggregatedResults(aggregated)
+    }
+  }, [matchResults])
 
   // Filter suggestions
   const filteredSuggestions = searchResults?.terms.filter(
@@ -85,22 +236,22 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   ) || []
 
   // Pagination
-  const totalResults = matchResults?.length || 0
+  const totalResults = aggregatedResults?.length || 0
   const totalPages = Math.ceil(totalResults / PAGE_SIZE)
   const paginatedResults = useMemo(() => {
-    if (!matchResults) return []
+    if (!aggregatedResults) return []
     const start = (currentPage - 1) * PAGE_SIZE
-    return matchResults.slice(start, start + PAGE_SIZE)
-  }, [matchResults, currentPage])
+    return aggregatedResults.slice(start, start + PAGE_SIZE)
+  }, [aggregatedResults, currentPage])
 
   // Toggle row expansion
-  const toggleRow = useCallback((variantIdx: number) => {
-    setExpandedRows(prev => {
+  const toggleGene = useCallback((geneSymbol: string) => {
+    setExpandedGenes(prev => {
       const next = new Set(prev)
-      if (next.has(variantIdx)) {
-        next.delete(variantIdx)
+      if (next.has(geneSymbol)) {
+        next.delete(geneSymbol)
       } else {
-        next.add(variantIdx)
+        next.add(geneSymbol)
       }
       return next
     })
@@ -128,11 +279,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   // Run matching
   const handleRunMatching = useCallback(async () => {
-    console.log('=== RUN MATCHING DEBUG ===')
-    console.log('selectedTerms:', selectedTerms)
-    console.log('variantsData:', variantsData)
-    console.log('variantsData?.variants?.length:', variantsData?.variants?.length)
-
     if (!selectedTerms.length) {
       toast.error('No phenotypes selected', {
         description: 'Add at least one HPO term to run matching',
@@ -141,7 +287,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     }
 
     if (!variantsData?.variants?.length) {
-      console.log('ERROR: No variants available')
       toast.error('No variants available', {
         description: 'Upload and process a VCF file first',
       })
@@ -156,8 +301,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         gene_symbol: v.gene_symbol || 'Unknown',
         hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
       }))
-
-    console.log('variantsWithHPO count:', variantsWithHPO.length)
 
     if (!variantsWithHPO.length) {
       toast.error('No variants with HPO annotations', {
@@ -174,7 +317,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
       setMatchResults(result.results)
       setCurrentPage(1)
-      setExpandedRows(new Set())
+      setExpandedGenes(new Set())
       toast.success('Matching complete', {
         description: `Analyzed ${result.variants_analyzed} variants`,
       })
@@ -273,11 +416,11 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             )}
           </div>
 
-          {/* Run Matching Button */}
+          {/* Run Matching Button - COMPACT (w-auto instead of w-full) */}
           <Button
             onClick={handleRunMatching}
             disabled={selectedTerms.length === 0 || matchingMutation.isPending || variantsLoading}
-            className="w-full"
+            className="w-auto"
           >
             {matchingMutation.isPending ? (
               <>
@@ -309,23 +452,23 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <ArrowUpDown className="h-4 w-4" />
-              Match Results
+              Match Results (Aggregated by Gene)
             </CardTitle>
-            {matchResults && (
+            {aggregatedResults && (
               <span className="text-sm text-muted-foreground">
-                {totalResults} variants with phenotype data
+                {totalResults} genes, {matchResults?.length || 0} variants
               </span>
             )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {!matchResults ? (
+          {!aggregatedResults ? (
             <div className="text-center py-16 text-muted-foreground">
               <Dna className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p className="text-base">No results yet</p>
               <p className="text-sm mt-1">Add phenotypes and run matching to see results</p>
             </div>
-          ) : matchResults.length === 0 ? (
+          ) : aggregatedResults.length === 0 ? (
             <div className="text-center py-16">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-base font-medium mb-2">No variants with HPO annotations</p>
@@ -338,84 +481,94 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]"></TableHead>
-                      <TableHead className="text-base">Rank</TableHead>
+                      <TableHead className="text-base w-[60px]">Rank</TableHead>
                       <TableHead className="text-base">Gene</TableHead>
-                      <TableHead className="text-base">Phenotype Score</TableHead>
-                      <TableHead className="text-base">Matched Terms</TableHead>
-                      <TableHead className="text-base">Gene HPOs</TableHead>
+                      <TableHead className="text-base">Best Score</TableHead>
+                      <TableHead className="text-base text-center">Variants</TableHead>
+                      <TableHead className="text-base text-center">HPO Match %</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedResults.map((result, idx) => {
-                      const globalIdx = (currentPage - 1) * PAGE_SIZE + idx + 1
-                      return (
-                        <>
-                          <TableRow
-                            key={result.variant_idx}
-                            className="cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => toggleRow(result.variant_idx)}
-                          >
-                            <TableCell>
-                              {expandedRows.has(result.variant_idx) ? (
-                                <ChevronUp className="h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4" />
-                              )}
-                            </TableCell>
-                            <TableCell className="font-mono text-sm">
-                              #{globalIdx}
-                            </TableCell>
-                            <TableCell className="text-base font-medium">
-                              {result.gene_symbol}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={getScoreColor(result.phenotype_match_score)}>
-                                {result.phenotype_match_score.toFixed(1)} - {getScoreLabel(result.phenotype_match_score)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {result.matched_terms}/{result.total_patient_terms}
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {result.total_variant_terms}
-                            </TableCell>
-                          </TableRow>
+                    {paginatedResults.map((geneResult) => (
+                      <>
+                        {/* Gene Row - AGGREGATED (one per gene) */}
+                        <TableRow
+                          key={geneResult.gene_symbol}
+                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => toggleGene(geneResult.gene_symbol)}
+                        >
+                          <TableCell>
+                            {expandedGenes.has(geneResult.gene_symbol) ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm font-medium">
+                            #{geneResult.rank}
+                          </TableCell>
+                          <TableCell className="text-base font-semibold">
+                            {geneResult.gene_symbol}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={getScoreColor(geneResult.best_phenotype_score)}
+                            >
+                              {geneResult.best_phenotype_score.toFixed(1)} - {getScoreLabel(geneResult.best_phenotype_score)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center text-sm font-medium">
+                            {geneResult.variant_count}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary" className="text-xs">
+                              {geneResult.match_percentage}%
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
 
-                          {/* Expanded Row */}
-                          {expandedRows.has(result.variant_idx) && (
-                            <TableRow key={`${result.variant_idx}-expanded`}>
-                              <TableCell colSpan={6} className="bg-muted/30">
-                                <div className="p-4">
-                                  <p className="text-sm font-medium mb-3">Individual Term Matches</p>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {result.individual_matches.map((match, mIdx) => (
-                                      <div
-                                        key={mIdx}
-                                        className="flex items-center justify-between p-2 bg-background rounded border"
+                        {/* Expanded Gene Row - Show all variants for this gene */}
+                        {expandedGenes.has(geneResult.gene_symbol) && (
+                          <TableRow key={`${geneResult.gene_symbol}-expanded`}>
+                            <TableCell colSpan={6} className="bg-muted/30 p-4">
+                              <div className="space-y-4">
+                                {/* Matched HPO terms for this gene */}
+                                <div>
+                                  <p className="text-sm font-medium mb-2">Matched HPO Terms</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {geneResult.matched_hpo_terms.map((term, idx) => (
+                                      <Badge
+                                        key={idx}
+                                        variant="secondary"
+                                        className="bg-primary/10 text-primary"
                                       >
-                                        <div className="flex items-center gap-2 text-sm">
-                                          <span className="font-medium">{match.patient_hpo_name}</span>
-                                          <span className="text-muted-foreground">-</span>
-                                          <span className={match.similarity_score > 0.5 ? 'text-green-600' : 'text-muted-foreground'}>
-                                            {match.best_match_hpo_name || 'No match'}
-                                          </span>
-                                        </div>
-                                        <Badge
-                                          variant="outline"
-                                          className={match.similarity_score > 0.5 ? 'bg-green-50 text-green-700' : ''}
-                                        >
-                                          {(match.similarity_score * 100).toFixed(0)}%
-                                        </Badge>
-                                      </div>
+                                        {term}
+                                      </Badge>
                                     ))}
                                   </div>
                                 </div>
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </>
-                      )
-                    })}
+
+                                {/* List of variants for this gene */}
+                                <div>
+                                  <p className="text-sm font-medium mb-3">
+                                    Variants ({geneResult.variant_count})
+                                  </p>
+                                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                                    {geneResult.variants.map((variant, vIdx) => (
+                                      <VariantDetailRow
+                                        key={`${geneResult.gene_symbol}-${vIdx}`}
+                                        variant={variant}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
