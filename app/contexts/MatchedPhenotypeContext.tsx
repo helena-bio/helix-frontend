@@ -6,6 +6,7 @@
  * 1. Session has variants (analysis complete)
  * 2. Patient has HPO terms defined
  *
+ * Fetches ALL variants using pagination (backend limit is 1000 per page).
  * Results are immediately available when user opens Phenotype Matching module.
  */
 'use client'
@@ -17,10 +18,11 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   type ReactNode
 } from 'react'
-import { useVariants } from '@/hooks/queries/use-variant-analysis-queries'
 import { usePhenotypeContext } from './PhenotypeContext'
+import { getVariants } from '@/lib/api/variant-analysis'
 import {
   matchVariantPhenotypes,
   type MatchVariantPhenotypesResponse,
@@ -31,7 +33,7 @@ import {
 // TYPES
 // ============================================================================
 
-export type MatchingStatus = 'idle' | 'pending' | 'success' | 'error' | 'no_phenotypes'
+export type MatchingStatus = 'idle' | 'loading_variants' | 'pending' | 'success' | 'error' | 'no_phenotypes'
 
 export interface GeneAggregatedResult {
   gene_symbol: string
@@ -72,6 +74,36 @@ interface MatchedPhenotypeContextValue {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Fetch ALL variants using pagination
+ * Backend limit is 1000 per page
+ */
+async function fetchAllVariants(sessionId: string): Promise<any[]> {
+  const PAGE_SIZE = 1000
+  const allVariants: any[] = []
+  let page = 1
+  let hasMore = true
+
+  while (hasMore) {
+    const response = await getVariants(sessionId, { page, page_size: PAGE_SIZE })
+    
+    if (response.variants && response.variants.length > 0) {
+      allVariants.push(...response.variants)
+    }
+
+    hasMore = response.has_next_page
+    page++
+
+    // Safety limit - max 50 pages (50,000 variants)
+    if (page > 50) {
+      console.warn('[MatchedPhenotypeContext] Reached max page limit')
+      break
+    }
+  }
+
+  return allVariants
+}
 
 /**
  * Aggregate results by gene, using best clinical score
@@ -146,26 +178,48 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   const [error, setError] = useState<Error | null>(null)
   const [matchResponse, setMatchResponse] = useState<MatchVariantPhenotypesResponse | null>(null)
   const [aggregatedResults, setAggregatedResults] = useState<GeneAggregatedResult[] | null>(null)
-  const [hasAutoRun, setHasAutoRun] = useState(false)
+  const [allVariants, setAllVariants] = useState<any[] | null>(null)
+  
+  // Refs for tracking
+  const hasAutoRun = useRef(false)
+  const currentSessionId = useRef<string | null>(null)
 
   // Dependencies
   const { phenotype } = usePhenotypeContext()
-
-  // Fetch variants (only those with HPO data for matching)
-  const { data: variantsData, isLoading: variantsLoading } = useVariants(
-    sessionId || '',
-    { page: 1, page_size: 2000 },
-    { enabled: !!sessionId }
-  )
 
   // Get HPO terms from phenotype context
   const patientHpoIds = useMemo(() => {
     return phenotype?.hpo_terms.map(t => t.hpo_id) || []
   }, [phenotype])
 
+  // Load all variants when session changes
+  useEffect(() => {
+    if (!sessionId || sessionId === currentSessionId.current) return
+
+    currentSessionId.current = sessionId
+    hasAutoRun.current = false
+    setAllVariants(null)
+    setMatchResponse(null)
+    setAggregatedResults(null)
+    setStatus('loading_variants')
+    setError(null)
+
+    // Fetch all variants
+    fetchAllVariants(sessionId)
+      .then((variants) => {
+        setAllVariants(variants)
+        setStatus('idle')
+      })
+      .catch((err) => {
+        console.error('[MatchedPhenotypeContext] Failed to load variants:', err)
+        setError(err)
+        setStatus('error')
+      })
+  }, [sessionId])
+
   // Run matching
   const runMatching = useCallback(async () => {
-    if (!sessionId || !variantsData?.variants?.length || patientHpoIds.length === 0) {
+    if (!sessionId || !allVariants?.length || patientHpoIds.length === 0) {
       if (patientHpoIds.length === 0) {
         setStatus('no_phenotypes')
       }
@@ -177,7 +231,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
 
     try {
       // Prepare variants with HPO data
-      const variantsWithData = variantsData.variants
+      const variantsWithData = allVariants
         .filter((v: any) => v.hpo_phenotypes)
         .map((v: any) => ({
           variant_idx: v.variant_idx,
@@ -219,7 +273,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
       setError(err as Error)
       setStatus('error')
     }
-  }, [sessionId, variantsData, patientHpoIds])
+  }, [sessionId, allVariants, patientHpoIds])
 
   // Clear results
   const clearResults = useCallback(() => {
@@ -227,45 +281,38 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
     setAggregatedResults(null)
     setStatus('idle')
     setError(null)
-    setHasAutoRun(false)
+    hasAutoRun.current = false
   }, [])
 
-  // Auto-run matching when conditions are met
+  // Auto-run matching when variants loaded and phenotypes exist
   useEffect(() => {
-    // Skip if already ran, loading, or no data
-    if (hasAutoRun || variantsLoading || !sessionId) return
-
-    // Skip if no phenotypes
+    if (hasAutoRun.current) return
+    if (status === 'loading_variants') return
+    if (!allVariants?.length) return
     if (patientHpoIds.length === 0) {
       setStatus('no_phenotypes')
       return
     }
 
-    // Skip if no variants yet
-    if (!variantsData?.variants?.length) return
-
-    // Run matching automatically
-    setHasAutoRun(true)
+    hasAutoRun.current = true
     runMatching()
-  }, [hasAutoRun, variantsLoading, sessionId, patientHpoIds, variantsData, runMatching])
+  }, [status, allVariants, patientHpoIds, runMatching])
 
-  // Reset when session changes
+  // Re-run when phenotypes change (after initial auto-run)
+  const prevHpoCount = useRef(patientHpoIds.length)
   useEffect(() => {
-    clearResults()
-  }, [sessionId, clearResults])
-
-  // Re-run when phenotypes change
-  useEffect(() => {
-    if (hasAutoRun && patientHpoIds.length > 0) {
-      // Phenotypes changed, re-run matching
-      runMatching()
+    if (prevHpoCount.current !== patientHpoIds.length) {
+      prevHpoCount.current = patientHpoIds.length
+      if (hasAutoRun.current && allVariants?.length) {
+        runMatching()
+      }
     }
-  }, [patientHpoIds.length])
+  }, [patientHpoIds.length, allVariants, runMatching])
 
   // Computed values
   const value = useMemo<MatchedPhenotypeContextValue>(() => ({
     status,
-    isLoading: status === 'pending' || variantsLoading,
+    isLoading: status === 'pending' || status === 'loading_variants',
     error,
     matchResponse,
     aggregatedResults,
@@ -279,7 +326,6 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
     variantsAnalyzed: matchResponse?.variants_analyzed || 0,
   }), [
     status,
-    variantsLoading,
     error,
     matchResponse,
     aggregatedResults,
