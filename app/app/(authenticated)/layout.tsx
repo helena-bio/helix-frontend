@@ -5,13 +5,17 @@
  * Two modes:
  * 1. Pre-analysis: Full width workflow (upload, validation, phenotype, processing)
  * 2. Post-analysis: Split view (45% Chat/Sidebar + 55% View Panel)
+ *
+ * Providers hierarchy (post-analysis):
+ * - PhenotypeProvider: Patient HPO terms
+ * - MatchedPhenotypeProvider: Cached phenotype matching results
  */
 
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
-import { PhenotypeProvider } from '@/contexts/PhenotypeContext'
+import { PhenotypeProvider, MatchedPhenotypeProvider } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 
@@ -52,11 +56,13 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <div className="flex-1 overflow-hidden">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          // Wrap with PhenotypeProvider for AI chat context
+          // Provider hierarchy: Phenotype -> MatchedPhenotype
           <PhenotypeProvider sessionId={currentSessionId}>
-            <SplitView>
-              {children}
-            </SplitView>
+            <MatchedPhenotypeProvider sessionId={currentSessionId}>
+              <SplitView>
+                {children}
+              </SplitView>
+            </MatchedPhenotypeProvider>
           </PhenotypeProvider>
         ) : (
           // Full Width: Pre-analysis workflow

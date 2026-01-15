@@ -3,25 +3,44 @@
 /**
  * PhenotypeMatchingView Component - CLINICAL GRADE
  *
- * Displays clinical-grade phenotype matching results:
+ * Uses MatchedPhenotypeContext for cached results.
+ * Results are pre-computed after analysis completes.
+ *
+ * Features:
+ * - Instant load (data already cached)
  * - Aggregated by gene
- * - Sorted by Clinical Priority Score (not just phenotype match)
+ * - Sorted by Clinical Priority Score
  * - Tier visualization (Tier 1-4)
- * - Full variant quality data display
+ * - Manual re-run option
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
-import { Search, Plus, X, Play, Dna, Loader2, Sparkles, Info, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, ArrowUpDown, Shield, ExternalLink } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import {
+  Search,
+  Plus,
+  X,
+  Play,
+  Dna,
+  Loader2,
+  Sparkles,
+  Info,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  Shield,
+  ExternalLink,
+  RefreshCw
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
+import { useMatchedPhenotype, type GeneAggregatedResult } from '@/contexts/MatchedPhenotypeContext'
 import { useHPOSearch, useDebounce } from '@/hooks'
-import { usePhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
-import { useVariants } from '@/hooks/queries/use-variant-analysis-queries'
-import { VariantMatchResult, MatchVariantPhenotypesResponse } from '@/lib/api/hpo'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import { toast } from 'sonner'
 
@@ -29,20 +48,12 @@ interface PhenotypeMatchingViewProps {
   sessionId: string
 }
 
-interface GeneAggregatedResult {
-  gene_symbol: string
-  rank: number
-  best_clinical_score: number
-  best_phenotype_score: number
-  best_tier: string
-  variant_count: number
-  matched_hpo_terms: string[]
-  variants: VariantMatchResult[]
-}
-
 const PAGE_SIZE = 10
 
-// Tier colors and styling
+// ============================================================================
+// STYLING HELPERS
+// ============================================================================
+
 const getTierColor = (tier: string) => {
   if (tier.includes('Tier 1')) return 'bg-red-100 text-red-900 border-red-300'
   if (tier.includes('Tier 2')) return 'bg-orange-100 text-orange-900 border-orange-300'
@@ -82,143 +93,56 @@ const getImpactColor = (impact: string | null | undefined) => {
   return 'bg-gray-100 text-gray-600'
 }
 
-/**
- * Aggregate results by gene, using best clinical score
- */
-function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedResult[] {
-  const geneMap = new Map<string, {
-    variants: VariantMatchResult[]
-    bestClinicalScore: number
-    bestPhenotypeScore: number
-    bestTier: string
-    matchedTerms: Set<string>
-  }>()
-
-  results.forEach((result) => {
-    if (!geneMap.has(result.gene_symbol)) {
-      geneMap.set(result.gene_symbol, {
-        variants: [],
-        bestClinicalScore: result.clinical_priority_score,
-        bestPhenotypeScore: result.phenotype_match_score,
-        bestTier: result.clinical_tier,
-        matchedTerms: new Set(),
-      })
-    }
-
-    const geneData = geneMap.get(result.gene_symbol)!
-    geneData.variants.push(result)
-    
-    // Track best scores
-    if (result.clinical_priority_score > geneData.bestClinicalScore) {
-      geneData.bestClinicalScore = result.clinical_priority_score
-      geneData.bestTier = result.clinical_tier
-    }
-    geneData.bestPhenotypeScore = Math.max(geneData.bestPhenotypeScore, result.phenotype_match_score)
-
-    result.individual_matches.forEach(match => {
-      if (match.similarity_score > 0.5) {
-        geneData.matchedTerms.add(match.patient_hpo_name)
-      }
-    })
-  })
-
-  return Array.from(geneMap.entries())
-    .map(([gene_symbol, data]) => ({
-      gene_symbol,
-      rank: 0,
-      best_clinical_score: data.bestClinicalScore,
-      best_phenotype_score: data.bestPhenotypeScore,
-      best_tier: data.bestTier,
-      variant_count: data.variants.length,
-      matched_hpo_terms: Array.from(data.matchedTerms),
-      variants: data.variants.sort((a, b) => b.clinical_priority_score - a.clinical_priority_score),
-    }))
-    .sort((a, b) => b.best_clinical_score - a.best_clinical_score)
-    .map((item, idx) => ({ ...item, rank: idx + 1 }))
-}
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
+  // Local state
   const [searchQuery, setSearchQuery] = useState('')
-  const [matchResponse, setMatchResponse] = useState<MatchVariantPhenotypesResponse | null>(null)
-  const [aggregatedResults, setAggregatedResults] = useState<GeneAggregatedResult[] | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [expandedGenes, setExpandedGenes] = useState<Set<string>>(new Set())
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
 
+  // Contexts
   const { phenotype, addHPOTerm, removeHPOTerm } = usePhenotypeContext()
-  const matchingMutation = usePhenotypeMatching()
+  const {
+    status,
+    isLoading,
+    matchResponse,
+    aggregatedResults,
+    runMatching,
+    tier1Count,
+    tier2Count,
+    tier3Count,
+    tier4Count,
+    variantsAnalyzed,
+    totalGenes,
+  } = useMatchedPhenotype()
 
+  // HPO search
   const debouncedQuery = useDebounce(searchQuery, 300)
   const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
     enabled: debouncedQuery.length >= 2,
     limit: 8,
   })
 
-  const { data: variantsData, isLoading: variantsLoading } = useVariants(sessionId, {
-    page: 1,
-    page_size: 1000,
-  })
-
   const selectedTerms = phenotype?.hpo_terms || []
 
-  // Aggregate when results change
-  useEffect(() => {
-    if (matchResponse?.results && matchResponse.results.length > 0) {
-      const aggregated = aggregateResultsByGene(matchResponse.results)
-      setAggregatedResults(aggregated)
-    }
-  }, [matchResponse])
-
-  // Auto-run matching if phenotypes exist
-  useEffect(() => {
-    if (selectedTerms.length > 0 && !matchResponse && variantsData?.variants?.length && !matchingMutation.isPending) {
-      runMatching()
-    }
-  }, [selectedTerms, variantsData])
-
-  const runMatching = async () => {
-    if (!selectedTerms.length || !variantsData?.variants?.length) return
-
-    const variantsWithData = variantsData.variants
-      .filter((v: any) => v.hpo_phenotypes)
-      .map((v: any) => ({
-        variant_idx: v.variant_idx,
-        gene_symbol: v.gene_symbol || 'Unknown',
-        hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
-        // Include variant quality data for clinical prioritization
-        acmg_class: v.acmg_class || null,
-        impact: v.impact || null,
-        gnomad_af: v.global_af || null,
-        consequence: v.consequence || null,
-      }))
-
-    if (!variantsWithData.length) return
-
-    try {
-      const result = await matchingMutation.mutateAsync({
-        patient_hpo_ids: selectedTerms.map(t => t.hpo_id),
-        variants: variantsWithData,
-      })
-      setMatchResponse(result)
-      setCurrentPage(1)
-      setExpandedGenes(new Set())
-    } catch (error) {
-      console.error('Matching failed:', error)
-    }
-  }
-
+  // Filter suggestions
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !selectedTerms.find((t) => t.hpo_id === term.hpo_id)
   ) || []
 
-  const totalResults = aggregatedResults?.length || 0
-  const totalPages = Math.ceil(totalResults / PAGE_SIZE)
+  // Pagination
+  const totalPages = Math.ceil(totalGenes / PAGE_SIZE)
   const paginatedResults = useMemo(() => {
     if (!aggregatedResults) return []
     const start = (currentPage - 1) * PAGE_SIZE
     return aggregatedResults.slice(start, start + PAGE_SIZE)
   }, [aggregatedResults, currentPage])
 
+  // Handlers
   const toggleGene = useCallback((geneSymbol: string) => {
     setExpandedGenes(prev => {
       const next = new Set(prev)
@@ -232,7 +156,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     try {
       await addHPOTerm(term)
       setSearchQuery('')
-      setMatchResponse(null) // Clear results to trigger re-run
       toast.success('Added: ' + term.name)
     } catch (error) {
       toast.error('Failed to add term')
@@ -242,7 +165,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const handleRemoveTerm = useCallback(async (hpoId: string) => {
     try {
       await removeHPOTerm(hpoId)
-      setMatchResponse(null) // Clear results to trigger re-run
     } catch (error) {
       toast.error('Failed to remove term')
     }
@@ -253,13 +175,9 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
       toast.error('No phenotypes selected')
       return
     }
-    if (!variantsData?.variants?.length) {
-      toast.error('No variants available')
-      return
-    }
     await runMatching()
     toast.success('Matching complete')
-  }, [selectedTerms, variantsData])
+  }, [selectedTerms, runMatching])
 
   // View variant detail
   if (selectedVariantIdx !== null) {
@@ -285,32 +203,45 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             Prioritize variants by combined clinical evidence: pathogenicity, impact, phenotype match, and frequency.
           </p>
         </div>
+
+        {/* Status Badge */}
+        {status === 'success' && (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+            Results Ready
+          </Badge>
+        )}
+        {status === 'pending' && (
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            Matching...
+          </Badge>
+        )}
       </div>
 
-      {/* Tier Summary */}
+      {/* Tier Summary - show when we have results */}
       {matchResponse && (
         <div className="grid grid-cols-4 gap-4">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-red-900">{matchResponse.tier_1_count}</p>
+              <p className="text-2xl font-bold text-red-900">{tier1Count}</p>
               <p className="text-sm text-red-700">Tier 1 - Actionable</p>
             </CardContent>
           </Card>
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-orange-900">{matchResponse.tier_2_count}</p>
+              <p className="text-2xl font-bold text-orange-900">{tier2Count}</p>
               <p className="text-sm text-orange-700">Tier 2 - Potentially</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-yellow-900">{matchResponse.tier_3_count}</p>
+              <p className="text-2xl font-bold text-yellow-900">{tier3Count}</p>
               <p className="text-sm text-yellow-700">Tier 3 - Uncertain</p>
             </CardContent>
           </Card>
           <Card className="border-gray-200 bg-gray-50">
             <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-gray-700">{matchResponse.tier_4_count}</p>
+              <p className="text-2xl font-bold text-gray-700">{tier4Count}</p>
               <p className="text-sm text-gray-600">Tier 4 - Unlikely</p>
             </CardContent>
           </Card>
@@ -373,23 +304,35 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             )}
           </div>
 
-          <Button
-            onClick={handleRunMatching}
-            disabled={selectedTerms.length === 0 || matchingMutation.isPending || variantsLoading}
-            className="w-auto"
-          >
-            {matchingMutation.isPending ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Matching...</>
-            ) : (
-              <><Play className="h-4 w-4 mr-2" />Run Clinical Matching</>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRunMatching}
+              disabled={selectedTerms.length === 0 || isLoading}
+              className="flex-1"
+            >
+              {isLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Matching...</>
+              ) : (
+                <><Play className="h-4 w-4 mr-2" />Run Clinical Matching</>
+              )}
+            </Button>
+
+            {status === 'success' && (
+              <Button
+                variant="outline"
+                onClick={handleRunMatching}
+                disabled={isLoading}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             )}
-          </Button>
+          </div>
 
           <div className="flex gap-3 pt-2">
             <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">
               Clinical Priority Score = ACMG (35%) + Impact (25%) + Phenotype (25%) + Frequency (15%).
-              Sorted by clinical relevance, not just phenotype match.
+              Results are cached and update automatically when phenotypes change.
             </p>
           </div>
         </CardContent>
@@ -405,24 +348,43 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             </CardTitle>
             {aggregatedResults && (
               <span className="text-sm text-muted-foreground">
-                {totalResults} genes, {matchResponse?.variants_analyzed || 0} variants
+                {totalGenes} genes, {variantsAnalyzed} variants
               </span>
             )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {!aggregatedResults ? (
+          {/* Loading State */}
+          {isLoading && !aggregatedResults && (
+            <div className="text-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-base font-medium">Running phenotype matching...</p>
+              <p className="text-sm text-muted-foreground mt-1">This may take a few seconds</p>
+            </div>
+          )}
+
+          {/* No Phenotypes State */}
+          {status === 'no_phenotypes' && (
             <div className="text-center py-16 text-muted-foreground">
               <Dna className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p className="text-base">No results yet</p>
-              <p className="text-sm mt-1">Add phenotypes and run matching</p>
+              <p className="text-base font-medium">No phenotypes defined</p>
+              <p className="text-sm mt-1">Add patient HPO terms above to run matching</p>
             </div>
-          ) : aggregatedResults.length === 0 ? (
+          )}
+
+          {/* Empty Results */}
+          {status === 'success' && (!aggregatedResults || aggregatedResults.length === 0) && (
             <div className="text-center py-16">
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-base font-medium mb-2">No variants with HPO annotations</p>
+              <p className="text-sm text-muted-foreground">
+                Variants need HPO phenotype data for matching
+              </p>
             </div>
-          ) : (
+          )}
+
+          {/* Results Table */}
+          {aggregatedResults && aggregatedResults.length > 0 && (
             <>
               <div className="overflow-x-auto">
                 <Table>
