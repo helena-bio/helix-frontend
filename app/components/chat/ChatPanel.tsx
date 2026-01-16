@@ -5,6 +5,7 @@ import { Send, Square, Sparkles, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
+import { useMatchedPhenotype } from '@/contexts/MatchedPhenotypeContext'
 import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
@@ -129,6 +130,15 @@ export function ChatPanel() {
 
   const { currentSessionId, selectedModule } = useAnalysis()
   const { phenotype } = usePhenotypeContext()
+  const {
+    aggregatedResults,
+    tier1Count,
+    tier2Count,
+    tier3Count,
+    tier4Count,
+    variantsAnalyzed,
+    totalGenes,
+  } = useMatchedPhenotype()
 
   // Get variant statistics for analysis context
   const { data: statistics } = useVariantStatistics(currentSessionId || '', {
@@ -192,10 +202,10 @@ export function ChatPanel() {
     setMessages(prev => [...prev, streamingMessage])
 
     try {
-      // Build metadata with phenotype AND analysis context
+      // Build metadata with ALL available contexts
       const metadata: Record<string, any> = {}
 
-      // Phenotype context
+      // 1. Patient Phenotype Context (selected HPO terms)
       if (phenotype && phenotype.hpo_terms.length > 0) {
         metadata.phenotype_context = {
           hpo_terms: phenotype.hpo_terms.map(t => ({
@@ -211,7 +221,28 @@ export function ChatPanel() {
         }
       }
 
-      // Analysis summary context (variant statistics)
+      // 2. Matched Phenotype Results Context (from DuckDB)
+      if (aggregatedResults && aggregatedResults.length > 0) {
+        metadata.matched_phenotype_context = {
+          total_genes: totalGenes,
+          variants_analyzed: variantsAnalyzed,
+          tier_1_count: tier1Count,
+          tier_2_count: tier2Count,
+          tier_3_count: tier3Count,
+          tier_4_count: tier4Count,
+          top_matched_genes: aggregatedResults.slice(0, 20).map(g => ({
+            gene_symbol: g.gene_symbol,
+            rank: g.rank,
+            clinical_score: g.best_clinical_score,
+            phenotype_score: g.best_phenotype_score,
+            tier: g.best_tier,
+            variant_count: g.variant_count,
+            matched_hpo_terms: g.matched_hpo_terms,
+          })),
+        }
+      }
+
+      // 3. Analysis Summary Context (variant statistics)
       if (statistics) {
         metadata.analysis_summary = {
           total_variants: statistics.total_variants,
@@ -383,13 +414,21 @@ export function ChatPanel() {
           </div>
         </div>
 
-        {/* Phenotype Context Indicator */}
-        {phenotype && phenotype.hpo_terms.length > 0 && (
-          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="h-2 w-2 rounded-full bg-green-500" />
-            <span>{phenotype.term_count} phenotype{phenotype.term_count !== 1 ? 's' : ''} active</span>
-          </div>
-        )}
+        {/* Context Indicators */}
+        <div className="mt-3 flex flex-col gap-1">
+          {phenotype && phenotype.hpo_terms.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-2 w-2 rounded-full bg-green-500" />
+              <span>{phenotype.term_count} phenotype{phenotype.term_count !== 1 ? 's' : ''} active</span>
+            </div>
+          )}
+          {aggregatedResults && aggregatedResults.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-2 w-2 rounded-full bg-blue-500" />
+              <span>{totalGenes} matched genes (T1: {tier1Count}, T2: {tier2Count})</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
