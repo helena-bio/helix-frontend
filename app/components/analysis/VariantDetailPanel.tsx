@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  AlertCircle, 
+import {
+  ArrowLeft,
+  ExternalLink,
+  AlertCircle,
   Loader2,
   Dna,
   Shield,
@@ -34,7 +34,7 @@ interface VariantDetailPanelProps {
 
 const InfoRow = ({ label, value, mono = false }: { label: string; value: any; mono?: boolean }) => {
   if (value === null || value === undefined || value === '') return null
-  
+
   return (
     <div className="flex justify-between items-start py-1.5">
       <span className="text-base text-muted-foreground">{label}</span>
@@ -74,7 +74,7 @@ const getPredictionColor = (pred: string | null) => {
 
 export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDetailPanelProps) {
   const { data, isLoading, error } = useVariant(sessionId, variantIdx)
-  
+
   const variant = data?.variant
 
   // Check if we have prediction data
@@ -143,7 +143,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           <ArrowLeft className="h-4 w-4 mr-2" />
           <span className="text-base">Back to Analysis</span>
         </Button>
-        
+
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold">
@@ -167,7 +167,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-6 space-y-6">
-          
+
           {/* ACMG Classification - Always show, full width */}
           <Card className={variant.acmg_class ? 'border-2' : ''}>
             <CardHeader>
@@ -183,7 +183,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.acmg_class || 'Not Classified'}
                 </Badge>
               </div>
-              
+
               {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
                 <div>
                   <p className="text-base text-muted-foreground mb-2">Evidence Codes</p>
@@ -196,7 +196,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   </div>
                 </div>
               )}
-              
+
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
                   <p className="text-base text-muted-foreground">Confidence</p>
@@ -212,7 +212,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
           {/* 2-column grid for remaining cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
+
             {/* Clinical Significance (ClinVar) */}
             {(variant.clinical_significance || variant.clinvar_variation_id) && (
               <Card>
@@ -238,8 +238,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <InfoRow label="Disease" value={variant.disease_name} />
                   {variant.clinvar_variation_id && (
                     <div className="pt-2">
-                      
-                        <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
+                      <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -279,7 +278,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         </div>
                       </>
                     )}
-                    
+
                     {(variant.alphamissense_pred || variant.alphamissense_score !== null) && (
                       <>
                         <div className="flex items-center gap-2">
@@ -295,7 +294,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         </div>
                       </>
                     )}
-                    
+
                     {(variant.metasvm_pred || variant.metasvm_score !== null) && (
                       <>
                         <div className="flex items-center gap-2">
@@ -311,7 +310,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         </div>
                       </>
                     )}
-                    
+
                     {variant.dann_score !== null && (
                       <>
                         <div className="text-base text-muted-foreground">DANN</div>
@@ -415,8 +414,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         </div>
                       </div>
                     )}
-                    
-                    {(variant.pli !== null || variant.oe_lof_upper !== null || 
+
+                    {(variant.pli !== null || variant.oe_lof_upper !== null ||
                       variant.oe_lof !== null || variant.mis_z !== null) && (
                       <div>
                         <p className="text-base text-muted-foreground mb-2">Gene Constraints</p>
@@ -457,21 +456,37 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     <span className="text-base text-muted-foreground">Count</span>
                     <span className="text-md font-medium">{variant.hpo_count}</span>
                   </div>
-                  
-                  <div>
-                    <p className="text-base text-muted-foreground mb-2">Phenotypes</p>
-                    <p className="text-sm">{variant.hpo_phenotypes}</p>
-                  </div>
-                  
+
                   {variant.hpo_terms && (
-                    <div>
-                      <p className="text-base text-muted-foreground mb-2">HPO Terms</p>
-                      <div className="flex flex-wrap gap-1">
-                        {variant.hpo_terms.split(',').filter(Boolean).map((term: string) => (
-                          <Badge key={term} variant="secondary" className="text-xs">
-                            {term.trim()}
-                          </Badge>
-                        ))}
+                    <div className="space-y-2">
+                      <p className="text-base text-muted-foreground">HPO Terms</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {variant.hpo_terms.split(',').filter(Boolean).map((term: string, idx: number) => {
+                          const trimmedTerm = term.trim()
+                          const phenotypeList = variant.hpo_phenotypes ? variant.hpo_phenotypes.split(';') : []
+                          const phenotypeName = phenotypeList[idx]?.trim() || 'Unknown phenotype'
+                          
+                          return (
+                            <div key={trimmedTerm} className="border rounded-lg bg-primary/5 p-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2 flex-1">
+                                  <Badge variant="outline" className="text-xs font-mono flex-shrink-0">
+                                    {trimmedTerm}
+                                  </Badge>
+                                  <span className="text-md">{phenotypeName}</span>
+                                </div>
+                                
+                                  href={`https://hpo.jax.org/app/browse/term/${trimmedTerm}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-shrink-0 p-1 hover:bg-primary/20 rounded transition-colors"
+                                >
+                                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                                </a>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
