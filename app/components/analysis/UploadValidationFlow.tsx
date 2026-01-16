@@ -415,18 +415,20 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
           {/* Next Step CTA */}
           <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
-            <div className="flex items-start gap-3">
-              <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">Next: Start variant processing</h3>
-                <p className="text-md text-muted-foreground mb-4">
-                  Process variants with ACMG classification, annotation, and filtering to identify clinically relevant findings.
-                </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Next: Start variant processing</h3>
+                  <p className="text-md text-muted-foreground">
+                    Process variants with ACMG classification, annotation, and filtering to identify clinically relevant findings.
+                  </p>
+                </div>
               </div>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button onClick={handleProcessingClick}>
+                    <Button onClick={handleProcessingClick} className="flex-shrink-0">
                       <PlayCircle className="h-4 w-4 mr-2" />
                       <span className="text-base">Start Processing</span>
                     </Button>
