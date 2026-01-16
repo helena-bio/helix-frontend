@@ -1,37 +1,21 @@
 /**
- * Phenotype Matching Mutation Hooks
+ * Phenotype Matching Mutation Hook
  *
- * Hooks for matching patient phenotypes against variant phenotypes.
+ * Session-based phenotype matching that reads from DuckDB.
  */
 import { useMutation } from '@tanstack/react-query'
 import {
-  matchVariantPhenotypes,
   runSessionPhenotypeMatching,
-  MatchVariantPhenotypesRequest,
-  MatchVariantPhenotypesResponse,
   RunSessionMatchingRequest,
   RunSessionMatchingResponse,
 } from '@/lib/api/hpo'
 
 /**
- * Hook for matching variants (old API - transfers variants over HTTP)
- */
-export function usePhenotypeMatching() {
-  return useMutation<
-    MatchVariantPhenotypesResponse,
-    Error,
-    MatchVariantPhenotypesRequest
-  >({
-    mutationFn: matchVariantPhenotypes,
-  })
-}
-
-/**
- * Hook for session-based phenotype matching (new API - reads from DuckDB)
- * This is the preferred method - no need to transfer variants over HTTP
+ * Hook for session-based phenotype matching.
+ * Reads variants from DuckDB, computes matches, saves results back to DuckDB.
  */
 export function useRunPhenotypeMatching() {
-  return useMutation<
+  return useMutation
     RunSessionMatchingResponse,
     Error,
     RunSessionMatchingRequest

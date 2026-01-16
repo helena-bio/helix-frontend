@@ -2,7 +2,7 @@
  * HPO API Client
  *
  * Functions for searching and fetching HPO terms from Phenotype Matching Service.
- * Includes clinical-grade phenotype matching with variant quality integration.
+ * Includes session-based phenotype matching with DuckDB backing.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
@@ -163,80 +163,6 @@ export async function deletePhenotype(sessionId: string): Promise<{ deleted: boo
 }
 
 // ============================================
-// CLINICAL-GRADE PHENOTYPE MATCHING API
-// ============================================
-
-export interface VariantPhenotypeInput {
-  variant_idx: number
-  gene_symbol: string
-  hpo_ids: string[]
-  acmg_class?: string | null
-  impact?: string | null
-  gnomad_af?: number | null
-  consequence?: string | null
-}
-
-export interface SimilarityMatch {
-  patient_hpo_id: string
-  patient_hpo_name: string
-  best_match_hpo_id: string | null
-  best_match_hpo_name: string | null
-  similarity_score: number
-}
-
-export interface VariantMatchResult {
-  variant_idx: number
-  gene_symbol: string
-  phenotype_match_score: number
-  matched_terms: number
-  total_patient_terms: number
-  total_variant_terms: number
-  individual_matches: SimilarityMatch[]
-  // Clinical prioritization fields
-  clinical_priority_score: number
-  clinical_tier: string
-  // Variant quality echo
-  acmg_class?: string | null
-  impact?: string | null
-  gnomad_af?: number | null
-  consequence?: string | null
-}
-
-export interface MatchVariantPhenotypesRequest {
-  patient_hpo_ids: string[]
-  variants: VariantPhenotypeInput[]
-}
-
-export interface MatchVariantPhenotypesResponse {
-  patient_hpo_count: number
-  variants_analyzed: number
-  results: VariantMatchResult[]
-  tier_1_count: number
-  tier_2_count: number
-  tier_3_count: number
-  tier_4_count: number
-}
-
-export async function matchVariantPhenotypes(
-  request: MatchVariantPhenotypesRequest
-): Promise<MatchVariantPhenotypesResponse> {
-  const url = API_URL + '/phenotype/api/matching/variants'
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  })
-
-  if (!response.ok) {
-    throw new Error('Phenotype matching failed: ' + response.statusText)
-  }
-
-  return response.json()
-}
-
-// ============================================
 // SESSION-BASED PHENOTYPE MATCHING API
 // Reads variants from DuckDB, saves results back
 // ============================================
@@ -267,6 +193,14 @@ export interface MatchSummaryResponse {
   tier_2_count?: number
   tier_3_count?: number
   tier_4_count?: number
+}
+
+export interface SimilarityMatch {
+  patient_hpo_id: string
+  patient_hpo_name: string
+  best_match_hpo_id: string | null
+  best_match_hpo_name: string | null
+  similarity_score: number
 }
 
 export interface SessionMatchResult {
