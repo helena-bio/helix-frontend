@@ -5,7 +5,7 @@
  * Organized in cards by clinical priority for geneticists
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -89,17 +89,41 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
   const variant = data?.variant
 
+  // DEBUG: Log variant data when it changes
+  useEffect(() => {
+    if (variant) {
+      console.group('🔍 HPO Debug Info')
+      console.log('hpo_count:', variant.hpo_count)
+      console.log('hpo_terms (raw):', variant.hpo_terms)
+      console.log('hpo_phenotypes (raw):', variant.hpo_phenotypes)
+      console.groupEnd()
+    }
+  }, [variant])
+
   // Parse HPO data from variant
   const hpoTerms = useMemo<HPOTermData[]>(() => {
-    if (!variant?.hpo_terms || !variant?.hpo_phenotypes) return []
+    if (!variant?.hpo_terms || !variant?.hpo_phenotypes) {
+      console.log('❌ No HPO data: missing hpo_terms or hpo_phenotypes')
+      return []
+    }
 
     const termsList = variant.hpo_terms.split(',').map(t => t.trim()).filter(Boolean)
     const phenotypesList = variant.hpo_phenotypes.split(';').map(p => p.trim()).filter(Boolean)
 
-    return termsList.map((hpo_id, idx) => ({
+    console.group('📊 HPO Parsing')
+    console.log('Terms count:', termsList.length)
+    console.log('Phenotypes count:', phenotypesList.length)
+    console.log('Terms list:', termsList)
+    console.log('Phenotypes list:', phenotypesList)
+    console.groupEnd()
+
+    const result = termsList.map((hpo_id, idx) => ({
       hpo_id,
       name: phenotypesList[idx] || 'Unknown phenotype',
     }))
+
+    console.log('✅ Final HPO terms array:', result)
+    return result
   }, [variant?.hpo_terms, variant?.hpo_phenotypes])
 
   // Filter HPO terms by search query
