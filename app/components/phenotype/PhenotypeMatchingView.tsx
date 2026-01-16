@@ -14,7 +14,7 @@
  * - Manual re-run option
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   Search,
   Plus,
@@ -179,6 +179,16 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     toast.success('Matching complete')
   }, [selectedTerms, runMatching])
 
+  // Check if we already have results loaded
+  const hasExistingResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
+
+  // Show success toast only on initial load if results exist
+  useEffect(() => {
+    if (hasExistingResults && selectedTerms.length > 0) {
+      // Results already loaded from context - no need to show toast
+    }
+  }, []) // Run only once on mount
+
   // View variant detail
   if (selectedVariantIdx !== null) {
     return (
@@ -205,21 +215,21 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </div>
 
         {/* Status Badge */}
-        {status === 'success' && (
+        {status === 'success' && hasExistingResults && (
           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
             Results Ready
           </Badge>
         )}
-        {status === 'pending' && (
+        {(status === 'pending' || status === 'loading_variants') && (
           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            Matching...
+            {status === 'loading_variants' ? 'Loading variants...' : 'Matching...'}
           </Badge>
         )}
       </div>
 
       {/* Tier Summary - show when we have results */}
-      {matchResponse && (
+      {hasExistingResults && matchResponse && (
         <div className="grid grid-cols-4 gap-4">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-4 text-center">
@@ -304,29 +314,40 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             )}
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={handleRunMatching}
-              disabled={selectedTerms.length === 0 || isLoading}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Matching...</>
-              ) : (
-                <><Play className="h-4 w-4 mr-2" />Run Clinical Matching</>
-              )}
-            </Button>
+          {/* Only show Run button if no results yet or want to re-run */}
+          {!hasExistingResults && (
+            <div className="flex gap-2">
+              <Button
+                onClick={handleRunMatching}
+                disabled={selectedTerms.length === 0 || isLoading}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Matching...</>
+                ) : (
+                  <><Play className="h-4 w-4 mr-2" />Run Clinical Matching</>
+                )}
+              </Button>
+            </div>
+          )}
 
-            {status === 'success' && (
+          {/* Show refresh button if we have results */}
+          {hasExistingResults && (
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={handleRunMatching}
-                disabled={isLoading}
+                disabled={isLoading || selectedTerms.length === 0}
+                className="w-full"
               >
-                <RefreshCw className="h-4 w-4" />
+                {isLoading ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Re-matching...</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-2" />Re-run Matching</>
+                )}
               </Button>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
@@ -355,10 +376,12 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </CardHeader>
         <CardContent className="p-0">
           {/* Loading State */}
-          {isLoading && !aggregatedResults && (
+          {(status === 'loading_variants' || (isLoading && !aggregatedResults)) && (
             <div className="text-center py-16">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-base font-medium">Running phenotype matching...</p>
+              <p className="text-base font-medium">
+                {status === 'loading_variants' ? 'Loading variants...' : 'Running phenotype matching...'}
+              </p>
               <p className="text-sm text-muted-foreground mt-1">This may take a few seconds</p>
             </div>
           )}
@@ -369,6 +392,17 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
               <Dna className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p className="text-base font-medium">No phenotypes defined</p>
               <p className="text-sm mt-1">Add patient HPO terms above to run matching</p>
+            </div>
+          )}
+
+          {/* Idle State - waiting for user to run matching */}
+          {status === 'idle' && selectedTerms.length > 0 && (
+            <div className="text-center py-16">
+              <Play className="h-12 w-12 mx-auto mb-4 text-primary opacity-50" />
+              <p className="text-base font-medium mb-2">Ready to run matching</p>
+              <p className="text-sm text-muted-foreground">
+                Click "Run Clinical Matching" above to analyze variants
+              </p>
             </div>
           )}
 
