@@ -14,9 +14,8 @@
  * Features:
  * - Search and add HPO terms with real API
  * - AI-assisted term suggestion from free text (NLP extraction)
- * - Run phenotype matching after adding terms
+ * - Simplified action buttons: Skip or Match Phenotypes
  * - Show matching results summary with tier counts
- * - Skip option to go directly to analysis
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -207,11 +206,17 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     }
   }, [selectedTerms, clinicalNotes, sessionId, saveMutation, matchingMutation])
 
-  // Continue to analysis
-  const handleContinueToAnalysis = useCallback(() => {
+  // Handle match and continue - single action button
+  const handleMatchAndContinue = useCallback(async () => {
+    // If we have terms but haven't matched yet, run matching first
+    if (selectedTerms.length > 0 && !matchingResult) {
+      await handleRunMatching()
+    }
+    
+    // Then continue to analysis
     onComplete?.({ hpoTerms: selectedTerms, clinicalNotes })
     nextStep()
-  }, [selectedTerms, clinicalNotes, nextStep, onComplete])
+  }, [selectedTerms, clinicalNotes, matchingResult, handleRunMatching, nextStep, onComplete])
 
   // Skip phenotype entry
   const handleSkip = useCallback(() => {
@@ -418,28 +423,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 No phenotypes selected yet. Search above to add HPO terms.
               </p>
             )}
-
-            {/* Run Matching Button */}
-            {selectedTerms.length > 0 && !matchingResult && (
-              <Button
-                onClick={handleRunMatching}
-                disabled={isMatching}
-                className="w-full"
-                size="lg"
-              >
-                {isMatching ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    <span className="text-base">Running Phenotype Matching...</span>
-                  </>
-                ) : (
-                  <>
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    <span className="text-base">Run Phenotype Matching</span>
-                  </>
-                )}
-              </Button>
-            )}
           </CardContent>
         </Card>
 
@@ -531,17 +514,31 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
           </Card>
         )}
 
-        {/* Actions */}
+        {/* Actions - Simplified to 2 buttons */}
         <div className="flex justify-between">
           <Button variant="outline" onClick={handleSkip}>
             <span className="text-base">Skip to Analysis</span>
           </Button>
           <Button
-            onClick={handleContinueToAnalysis}
-            disabled={selectedTerms.length === 0 && !matchingResult}
+            onClick={handleMatchAndContinue}
+            disabled={isMatching}
           >
-            <span className="text-base">Continue to Analysis</span>
-            <ArrowRight className="h-4 w-4 ml-2" />
+            {isMatching ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <span className="text-base">Matching...</span>
+              </>
+            ) : selectedTerms.length > 0 && !matchingResult ? (
+              <>
+                <BarChart3 className="h-4 w-4 mr-2" />
+                <span className="text-base">Match Phenotypes</span>
+              </>
+            ) : (
+              <>
+                <span className="text-base">Continue to Analysis</span>
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </>
+            )}
           </Button>
         </div>
       </div>
