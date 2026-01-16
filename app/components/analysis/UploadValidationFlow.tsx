@@ -415,7 +415,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
           {/* Next Step CTA */}
           <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-end justify-between gap-6">
               <div className="flex items-start gap-3">
                 <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
