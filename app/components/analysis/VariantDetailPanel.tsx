@@ -476,7 +476,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                                   <span className="text-md">{phenotypeName}</span>
                                 </div>
                                 
-                                  href={`https://hpo.jax.org/app/browse/term/${trimmedTerm}`}
+                                  <a href={`https://hpo.jax.org/app/browse/term/${trimmedTerm}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="flex-shrink-0 p-1 hover:bg-primary/20 rounded transition-colors"
