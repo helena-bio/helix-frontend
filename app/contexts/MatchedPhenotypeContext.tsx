@@ -1,13 +1,15 @@
 /**
- * Matched Phenotype Context
+ * Matched Phenotype Context - DuckDB Backed
  *
- * Caches phenotype matching results after analysis completes.
- * Auto-runs matching when:
- * 1. Session has variants (analysis complete)
- * 2. Patient has HPO terms defined
+ * Uses session-based phenotype matching API that:
+ * 1. Reads variants directly from DuckDB (no HTTP transfer)
+ * 2. Saves results to DuckDB (persistent across sessions)
+ * 3. Auto-loads existing results on mount
  *
- * Fetches ALL variants using pagination (backend limit is 1000 per page).
- * Results are immediately available when user opens Phenotype Matching module.
+ * Flow:
+ * - Mount: Check if results exist in DuckDB, load if available
+ * - User clicks "Run": Call session matching API, saves to DuckDB
+ * - Navigate away & back: Results auto-load from DuckDB
  */
 'use client'
 
@@ -22,18 +24,17 @@ import {
   type ReactNode
 } from 'react'
 import { usePhenotypeContext } from './PhenotypeContext'
-import { getVariants } from '@/lib/api/variant-analysis'
 import {
-  matchVariantPhenotypes,
-  type MatchVariantPhenotypesResponse,
-  type VariantMatchResult,
+  runSessionPhenotypeMatching,
+  getMatchingResults,
+  type SessionMatchResult,
 } from '@/lib/api/hpo'
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type MatchingStatus = 'idle' | 'loading_variants' | 'pending' | 'success' | 'error' | 'no_phenotypes'
+export type MatchingStatus = 'idle' | 'loading' | 'pending' | 'success' | 'error' | 'no_phenotypes'
 
 export interface GeneAggregatedResult {
   gene_symbol: string
@@ -43,7 +44,7 @@ export interface GeneAggregatedResult {
   best_tier: string
   variant_count: number
   matched_hpo_terms: string[]
-  variants: VariantMatchResult[]
+  variants: SessionMatchResult[]
 }
 
 interface MatchedPhenotypeContextValue {
@@ -51,9 +52,6 @@ interface MatchedPhenotypeContextValue {
   status: MatchingStatus
   isLoading: boolean
   error: Error | null
-
-  // Raw results from API
-  matchResponse: MatchVariantPhenotypesResponse | null
 
   // Aggregated results by gene (sorted by clinical priority)
   aggregatedResults: GeneAggregatedResult[] | null
@@ -76,41 +74,11 @@ interface MatchedPhenotypeContextValue {
 // ============================================================================
 
 /**
- * Fetch ALL variants using pagination
- * Backend limit is 1000 per page
- */
-async function fetchAllVariants(sessionId: string): Promise<any[]> {
-  const PAGE_SIZE = 1000
-  const allVariants: any[] = []
-  let page = 1
-  let hasMore = true
-
-  while (hasMore) {
-    const response = await getVariants(sessionId, { page, page_size: PAGE_SIZE })
-    
-    if (response.variants && response.variants.length > 0) {
-      allVariants.push(...response.variants)
-    }
-
-    hasMore = response.has_next_page
-    page++
-
-    // Safety limit - max 50 pages (50,000 variants)
-    if (page > 50) {
-      console.warn('[MatchedPhenotypeContext] Reached max page limit')
-      break
-    }
-  }
-
-  return allVariants
-}
-
-/**
  * Aggregate results by gene, using best clinical score
  */
-function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedResult[] {
+function aggregateResultsByGene(results: SessionMatchResult[]): GeneAggregatedResult[] {
   const geneMap = new Map<string, {
-    variants: VariantMatchResult[]
+    variants: SessionMatchResult[]
     bestClinicalScore: number
     bestPhenotypeScore: number
     bestTier: string
@@ -118,8 +86,10 @@ function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedRe
   }>()
 
   results.forEach((result) => {
-    if (!geneMap.has(result.gene_symbol)) {
-      geneMap.set(result.gene_symbol, {
+    const geneSymbol = result.gene_symbol || 'Unknown'
+    
+    if (!geneMap.has(geneSymbol)) {
+      geneMap.set(geneSymbol, {
         variants: [],
         bestClinicalScore: result.clinical_priority_score,
         bestPhenotypeScore: result.phenotype_match_score,
@@ -128,7 +98,7 @@ function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedRe
       })
     }
 
-    const geneData = geneMap.get(result.gene_symbol)!
+    const geneData = geneMap.get(geneSymbol)!
     geneData.variants.push(result)
 
     // Track best scores
@@ -140,7 +110,7 @@ function aggregateResultsByGene(results: VariantMatchResult[]): GeneAggregatedRe
 
     // Collect matched HPO terms
     result.individual_matches.forEach(match => {
-      if (match.similarity_score > 0.5) {
+      if (match.similarity_score > 0.5 && match.patient_hpo_name) {
         geneData.matchedTerms.add(match.patient_hpo_name)
       }
     })
@@ -176,13 +146,16 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   // State
   const [status, setStatus] = useState<MatchingStatus>('idle')
   const [error, setError] = useState<Error | null>(null)
-  const [matchResponse, setMatchResponse] = useState<MatchVariantPhenotypesResponse | null>(null)
   const [aggregatedResults, setAggregatedResults] = useState<GeneAggregatedResult[] | null>(null)
-  const [allVariants, setAllVariants] = useState<any[] | null>(null)
-  
+  const [tier1Count, setTier1Count] = useState(0)
+  const [tier2Count, setTier2Count] = useState(0)
+  const [tier3Count, setTier3Count] = useState(0)
+  const [tier4Count, setTier4Count] = useState(0)
+  const [variantsAnalyzed, setVariantsAnalyzed] = useState(0)
+
   // Refs for tracking
-  const hasAutoRun = useRef(false)
   const currentSessionId = useRef<string | null>(null)
+  const hasLoadedResults = useRef(false)
 
   // Dependencies
   const { phenotype } = usePhenotypeContext()
@@ -192,37 +165,70 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
     return phenotype?.hpo_terms.map(t => t.hpo_id) || []
   }, [phenotype])
 
-  // Load all variants when session changes
+  // Load existing results from DuckDB when session changes
   useEffect(() => {
     if (!sessionId || sessionId === currentSessionId.current) return
 
+    console.log('[MatchedPhenotypeContext] Session changed, checking for existing results:', sessionId)
     currentSessionId.current = sessionId
-    hasAutoRun.current = false
-    setAllVariants(null)
-    setMatchResponse(null)
+    hasLoadedResults.current = false
     setAggregatedResults(null)
-    setStatus('loading_variants')
+    setStatus('loading')
     setError(null)
 
-    // Fetch all variants
-    fetchAllVariants(sessionId)
-      .then((variants) => {
-        setAllVariants(variants)
-        setStatus('idle')
+    // Try to load existing results from DuckDB
+    getMatchingResults(sessionId)
+      .then((response) => {
+        console.log('[MatchedPhenotypeContext] Loaded existing results from DuckDB:', response.results.length)
+        
+        // Store tier counts
+        setTier1Count(response.tier_1_count)
+        setTier2Count(response.tier_2_count)
+        setTier3Count(response.tier_3_count)
+        setTier4Count(response.tier_4_count)
+        setVariantsAnalyzed(response.variants_analyzed)
+
+        // Aggregate by gene
+        if (response.results.length > 0) {
+          const aggregated = aggregateResultsByGene(response.results)
+          console.log('[MatchedPhenotypeContext] Aggregated genes:', aggregated.length)
+          setAggregatedResults(aggregated)
+          setStatus('success')
+        } else {
+          setAggregatedResults(null)
+          setStatus('idle')
+        }
+
+        hasLoadedResults.current = true
       })
       .catch((err) => {
-        console.error('[MatchedPhenotypeContext] Failed to load variants:', err)
-        setError(err)
-        setStatus('error')
+        // 404 is expected if no results exist yet
+        if (err.message.includes('404') || err.message.includes('No phenotype matching results')) {
+          console.log('[MatchedPhenotypeContext] No existing results found (expected)')
+          setStatus('idle')
+        } else {
+          console.error('[MatchedPhenotypeContext] Failed to load results:', err)
+          setError(err)
+          setStatus('error')
+        }
+        hasLoadedResults.current = true
       })
   }, [sessionId])
 
-  // Run matching
+  // Run matching (manual trigger)
   const runMatching = useCallback(async () => {
-    if (!sessionId || !allVariants?.length || patientHpoIds.length === 0) {
-      if (patientHpoIds.length === 0) {
-        setStatus('no_phenotypes')
-      }
+    console.log('[MatchedPhenotypeContext] runMatching called')
+    console.log('  sessionId:', sessionId)
+    console.log('  patientHpoIds:', patientHpoIds)
+
+    if (!sessionId) {
+      console.warn('[MatchedPhenotypeContext] Cannot run matching - no session')
+      return
+    }
+
+    if (patientHpoIds.length === 0) {
+      console.warn('[MatchedPhenotypeContext] No phenotypes selected')
+      setStatus('no_phenotypes')
       return
     }
 
@@ -230,38 +236,41 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
     setError(null)
 
     try {
-      // Prepare variants with HPO data
-      const variantsWithData = allVariants
-        .filter((v: any) => v.hpo_phenotypes)
-        .map((v: any) => ({
-          variant_idx: v.variant_idx,
-          gene_symbol: v.gene_symbol || 'Unknown',
-          hpo_ids: v.hpo_phenotypes?.split('; ').filter(Boolean) || [],
-          acmg_class: v.acmg_class || null,
-          impact: v.impact || null,
-          gnomad_af: v.global_af || null,
-          consequence: v.consequence || null,
-        }))
+      // Call session-based matching API (reads from DuckDB, saves results)
+      console.log('[MatchedPhenotypeContext] Calling session matching API...')
+      const runResponse = await runSessionPhenotypeMatching({
+        sessionId,
+        patientHpoIds,
+      })
 
-      if (variantsWithData.length === 0) {
+      console.log('[MatchedPhenotypeContext] Matching complete:', runResponse)
+
+      if (runResponse.variants_with_hpo === 0) {
+        console.warn('[MatchedPhenotypeContext] No variants with HPO annotations')
         setStatus('success')
-        setMatchResponse(null)
         setAggregatedResults(null)
+        setTier1Count(0)
+        setTier2Count(0)
+        setTier3Count(0)
+        setTier4Count(0)
+        setVariantsAnalyzed(0)
         return
       }
 
-      // Call matching API
-      const result = await matchVariantPhenotypes({
-        patient_hpo_ids: patientHpoIds,
-        variants: variantsWithData,
-      })
-
-      // Store results
-      setMatchResponse(result)
+      // Fetch results from DuckDB (they were just saved by the API)
+      const resultsResponse = await getMatchingResults(sessionId)
+      
+      // Store tier counts
+      setTier1Count(resultsResponse.tier_1_count)
+      setTier2Count(resultsResponse.tier_2_count)
+      setTier3Count(resultsResponse.tier_3_count)
+      setTier4Count(resultsResponse.tier_4_count)
+      setVariantsAnalyzed(resultsResponse.variants_analyzed)
 
       // Aggregate by gene
-      if (result.results && result.results.length > 0) {
-        const aggregated = aggregateResultsByGene(result.results)
+      if (resultsResponse.results.length > 0) {
+        const aggregated = aggregateResultsByGene(resultsResponse.results)
+        console.log('[MatchedPhenotypeContext] Aggregated genes:', aggregated.length)
         setAggregatedResults(aggregated)
       } else {
         setAggregatedResults(null)
@@ -273,64 +282,59 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
       setError(err as Error)
       setStatus('error')
     }
-  }, [sessionId, allVariants, patientHpoIds])
+  }, [sessionId, patientHpoIds])
 
   // Clear results
   const clearResults = useCallback(() => {
-    setMatchResponse(null)
     setAggregatedResults(null)
     setStatus('idle')
     setError(null)
-    hasAutoRun.current = false
+    setTier1Count(0)
+    setTier2Count(0)
+    setTier3Count(0)
+    setTier4Count(0)
+    setVariantsAnalyzed(0)
   }, [])
 
-  // Auto-run matching when variants loaded and phenotypes exist
-  useEffect(() => {
-    if (hasAutoRun.current) return
-    if (status === 'loading_variants') return
-    if (!allVariants?.length) return
-    if (patientHpoIds.length === 0) {
-      setStatus('no_phenotypes')
-      return
-    }
-
-    hasAutoRun.current = true
-    runMatching()
-  }, [status, allVariants, patientHpoIds, runMatching])
-
-  // Re-run when phenotypes change (after initial auto-run)
+  // Re-run when phenotypes change (only if we already have results)
   const prevHpoCount = useRef(patientHpoIds.length)
   useEffect(() => {
-    if (prevHpoCount.current !== patientHpoIds.length) {
+    if (prevHpoCount.current !== patientHpoIds.length && prevHpoCount.current > 0) {
+      console.log('[MatchedPhenotypeContext] Phenotypes changed, re-running matching')
       prevHpoCount.current = patientHpoIds.length
-      if (hasAutoRun.current && allVariants?.length) {
+      if (aggregatedResults && hasLoadedResults.current) {
         runMatching()
       }
+    } else {
+      prevHpoCount.current = patientHpoIds.length
     }
-  }, [patientHpoIds.length, allVariants, runMatching])
+  }, [patientHpoIds.length, aggregatedResults, runMatching])
 
   // Computed values
   const value = useMemo<MatchedPhenotypeContextValue>(() => ({
     status,
-    isLoading: status === 'pending' || status === 'loading_variants',
+    isLoading: status === 'pending' || status === 'loading',
     error,
-    matchResponse,
     aggregatedResults,
     runMatching,
     clearResults,
     totalGenes: aggregatedResults?.length || 0,
-    tier1Count: matchResponse?.tier_1_count || 0,
-    tier2Count: matchResponse?.tier_2_count || 0,
-    tier3Count: matchResponse?.tier_3_count || 0,
-    tier4Count: matchResponse?.tier_4_count || 0,
-    variantsAnalyzed: matchResponse?.variants_analyzed || 0,
+    tier1Count,
+    tier2Count,
+    tier3Count,
+    tier4Count,
+    variantsAnalyzed,
   }), [
     status,
     error,
-    matchResponse,
     aggregatedResults,
     runMatching,
     clearResults,
+    tier1Count,
+    tier2Count,
+    tier3Count,
+    tier4Count,
+    variantsAnalyzed,
   ])
 
   return (
