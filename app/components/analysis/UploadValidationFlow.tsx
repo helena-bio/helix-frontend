@@ -16,11 +16,11 @@
  * 2. Upload Progress - Journey: upload
  * 3. Validation Progress - Journey: validation (auto-advance)
  * 4. QC Results display - Journey: validation
- * 5. User clicks "Enter Phenotype" -> Journey: phenotype
+ * 5. User clicks "Start Processing" -> Journey: processing
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
-import { Upload, FileCode, AlertCircle, CheckCircle2, X, Loader2, Download, Info, User, Dna } from 'lucide-react'
+import { Upload, FileCode, AlertCircle, CheckCircle2, X, Loader2, Download, Info, PlayCircle, Dna } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -290,11 +290,11 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     }
   }, [uploadMutation, startValidationMutation])
 
-  // Handle phenotype button click - advance to next step
-  const handlePhenotypeClick = useCallback(() => {
+  // Handle processing button click - advance to processing step
+  const handleProcessingClick = useCallback(() => {
     if (sessionId) {
       onComplete?.(sessionId)
-      nextStep() // validation -> phenotype
+      nextStep() // validation -> processing
     }
   }, [sessionId, nextStep, onComplete])
 
@@ -416,22 +416,22 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
           {/* Next Step CTA */}
           <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
             <div className="flex items-start gap-3">
-              <User className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+              <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">Next: Add phenotype data to improve variant prioritization</h3>
+                <h3 className="text-lg font-semibold mb-2">Next: Start variant processing</h3>
                 <p className="text-md text-muted-foreground mb-4">
-                  Providing patient phenotype information enables more accurate variant-phenotype matching and prioritization.
+                  Process variants with ACMG classification, annotation, and filtering to identify clinically relevant findings.
                 </p>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button onClick={handlePhenotypeClick}>
-                        <Dna className="h-4 w-4 mr-2" />
-                        <span className="text-base">Enter Phenotype</span>
+                      <Button onClick={handleProcessingClick}>
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        <span className="text-base">Start Processing</span>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-sm">Enter patient's clinical features using HPO terms</p>
+                      <p className="text-sm">Begin variant annotation and ACMG classification</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
