@@ -521,7 +521,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
           </Button>
           <Button
             onClick={handleMatchAndContinue}
-            disabled={isMatching}
+            disabled={isMatching || selectedTerms.length === 0}
           >
             {isMatching ? (
               <>
