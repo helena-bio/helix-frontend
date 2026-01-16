@@ -15,7 +15,7 @@ export {
 export { useStartValidation } from './mutations/use-validation-mutations'
 export { useHPOExtract } from './mutations/use-hpo-extract'
 export { useSavePhenotype, useDeletePhenotype } from './mutations/use-phenotype-mutations'
-export { usePhenotypeMatching, useRunPhenotypeMatching } from './mutations/use-phenotype-matching'
+export { useRunPhenotypeMatching } from './mutations/use-phenotype-matching'
 
 // Utilities
 export { useDebounce } from './use-debounce'

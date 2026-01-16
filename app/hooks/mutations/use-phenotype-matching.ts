@@ -15,7 +15,7 @@ import {
  * Reads variants from DuckDB, computes matches, saves results back to DuckDB.
  */
 export function useRunPhenotypeMatching() {
-  return useMutation
+  return useMutation<
     RunSessionMatchingResponse,
     Error,
     RunSessionMatchingRequest
