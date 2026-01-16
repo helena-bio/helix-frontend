@@ -4,10 +4,10 @@
  * PhenotypeMatchingView Component - CLINICAL GRADE
  *
  * Uses MatchedPhenotypeContext for cached results.
- * Results are pre-computed after analysis completes.
+ * Results are loaded from DuckDB on mount.
  *
  * Features:
- * - Instant load (data already cached)
+ * - Instant load (data from DuckDB)
  * - Aggregated by gene
  * - Sorted by Clinical Priority Score
  * - Tier visualization (Tier 1-4)
@@ -109,7 +109,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const {
     status,
     isLoading,
-    matchResponse,
     aggregatedResults,
     runMatching,
     tier1Count,
@@ -182,13 +181,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   // Check if we already have results loaded
   const hasExistingResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
 
-  // Show success toast only on initial load if results exist
-  useEffect(() => {
-    if (hasExistingResults && selectedTerms.length > 0) {
-      // Results already loaded from context - no need to show toast
-    }
-  }, []) // Run only once on mount
-
   // View variant detail
   if (selectedVariantIdx !== null) {
     return (
@@ -220,16 +212,16 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             Results Ready
           </Badge>
         )}
-        {(status === 'pending' || status === 'loading_variants') && (
+        {(status === 'pending' || status === 'loading') && (
           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            {status === 'loading_variants' ? 'Loading variants...' : 'Matching...'}
+            {status === 'loading' ? 'Loading...' : 'Matching...'}
           </Badge>
         )}
       </div>
 
       {/* Tier Summary - show when we have results */}
-      {hasExistingResults && matchResponse && (
+      {hasExistingResults && (
         <div className="grid grid-cols-4 gap-4">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-4 text-center">
@@ -353,7 +345,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">
               Clinical Priority Score = ACMG (35%) + Impact (25%) + Phenotype (25%) + Frequency (15%).
-              Results are cached and update automatically when phenotypes change.
+              Results are saved to DuckDB and loaded automatically.
             </p>
           </div>
         </CardContent>
@@ -376,11 +368,11 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </CardHeader>
         <CardContent className="p-0">
           {/* Loading State */}
-          {(status === 'loading_variants' || (isLoading && !aggregatedResults)) && (
+          {(status === 'loading' || (isLoading && !aggregatedResults)) && (
             <div className="text-center py-16">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-base font-medium">
-                {status === 'loading_variants' ? 'Loading variants...' : 'Running phenotype matching...'}
+                {status === 'loading' ? 'Loading results...' : 'Running phenotype matching...'}
               </p>
               <p className="text-sm text-muted-foreground mt-1">This may take a few seconds</p>
             </div>
