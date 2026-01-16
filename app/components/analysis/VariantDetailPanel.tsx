@@ -5,10 +5,12 @@
  * Organized in cards by clinical priority for geneticists
  */
 
+import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Input } from '@/components/ui/input'
 import {
   ArrowLeft,
   ExternalLink,
@@ -22,9 +24,12 @@ import {
   Gauge,
   Target,
   TrendingUp,
-  Star
+  Star,
+  Search,
+  X
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
+import { HPOTermCard } from './HPOTermCard'
 
 interface VariantDetailPanelProps {
   sessionId: string
@@ -72,10 +77,46 @@ const getPredictionColor = (pred: string | null) => {
   return 'bg-gray-100'
 }
 
+interface HPOTermData {
+  hpo_id: string
+  name: string
+}
+
 export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDetailPanelProps) {
   const { data, isLoading, error } = useVariant(sessionId, variantIdx)
+  const [hpoSearchQuery, setHpoSearchQuery] = useState('')
+  const [showAllHPO, setShowAllHPO] = useState(false)
 
   const variant = data?.variant
+
+  // Parse HPO data from variant
+  const hpoTerms = useMemo<HPOTermData[]>(() => {
+    if (!variant?.hpo_terms || !variant?.hpo_phenotypes) return []
+
+    const termsList = variant.hpo_terms.split(',').map(t => t.trim()).filter(Boolean)
+    const phenotypesList = variant.hpo_phenotypes.split(';').map(p => p.trim()).filter(Boolean)
+
+    return termsList.map((hpo_id, idx) => ({
+      hpo_id,
+      name: phenotypesList[idx] || 'Unknown phenotype',
+    }))
+  }, [variant?.hpo_terms, variant?.hpo_phenotypes])
+
+  // Filter HPO terms by search query
+  const filteredHPOTerms = useMemo(() => {
+    if (!hpoSearchQuery) return hpoTerms
+
+    const query = hpoSearchQuery.toLowerCase()
+    return hpoTerms.filter(term =>
+      term.name.toLowerCase().includes(query) ||
+      term.hpo_id.toLowerCase().includes(query)
+    )
+  }, [hpoTerms, hpoSearchQuery])
+
+  // Pagination for HPO terms
+  const HPO_PAGE_SIZE = 10
+  const displayedHPOTerms = showAllHPO ? filteredHPOTerms : filteredHPOTerms.slice(0, HPO_PAGE_SIZE)
+  const hasMoreHPO = filteredHPOTerms.length > HPO_PAGE_SIZE
 
   // Check if we have prediction data
   const hasPredictions = variant && (
@@ -442,8 +483,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </Card>
             )}
 
-            {/* HPO Phenotypes */}
-            {variant.hpo_phenotypes && (
+            {/* HPO Phenotypes - UPDATED WITH HPOTermCard */}
+            {hpoTerms.length > 0 && (
               <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -451,44 +492,77 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     Phenotypes (HPO)
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
+                  {/* Stats */}
                   <div className="flex items-center justify-between">
-                    <span className="text-base text-muted-foreground">Count</span>
-                    <span className="text-md font-medium">{variant.hpo_count}</span>
+                    <span className="text-base text-muted-foreground">Total HPO Terms</span>
+                    <Badge variant="outline" className="text-md font-bold">
+                      {hpoTerms.length}
+                    </Badge>
                   </div>
 
-                  {variant.hpo_terms && (
-                    <div className="space-y-2">
-                      <p className="text-base text-muted-foreground">HPO Terms</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {variant.hpo_terms.split(',').filter(Boolean).map((term: string, idx: number) => {
-                          const trimmedTerm = term.trim()
-                          const phenotypeList = variant.hpo_phenotypes ? variant.hpo_phenotypes.split(';') : []
-                          const phenotypeName = phenotypeList[idx]?.trim() || 'Unknown phenotype'
-                          
-                          return (
-                            <div key={trimmedTerm} className="border rounded-lg bg-primary/5 p-3">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2 flex-1">
-                                  <Badge variant="outline" className="text-xs font-mono flex-shrink-0">
-                                    {trimmedTerm}
-                                  </Badge>
-                                  <span className="text-md">{phenotypeName}</span>
-                                </div>
-                                
-                                  <a href={`https://hpo.jax.org/app/browse/term/${trimmedTerm}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex-shrink-0 p-1 hover:bg-primary/20 rounded transition-colors"
-                                >
-                                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                                </a>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                  {/* Search bar if more than 10 terms */}
+                  {hpoTerms.length > 10 && (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={hpoSearchQuery}
+                        onChange={(e) => setHpoSearchQuery(e.target.value)}
+                        placeholder="Search phenotypes..."
+                        className="pl-9 pr-9 text-base"
+                      />
+                      {hpoSearchQuery && (
+                        <button
+                          onClick={() => setHpoSearchQuery('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
+                  )}
+
+                  {/* Filtered count */}
+                  {hpoSearchQuery && (
+                    <p className="text-sm text-muted-foreground">
+                      Showing {filteredHPOTerms.length} of {hpoTerms.length} phenotypes
+                    </p>
+                  )}
+
+                  {/* HPO Terms using HPOTermCard */}
+                  <div className="space-y-2">
+                    {displayedHPOTerms.map((term) => (
+                      <HPOTermCard
+                        key={term.hpo_id}
+                        hpoId={term.hpo_id}
+                        name={term.name}
+                        onRemove={() => {}} // Read-only in detail view
+                      />
+                    ))}
+                  </div>
+
+                  {/* Show More/Less button */}
+                  {hasMoreHPO && !hpoSearchQuery && (
+                    <div className="flex justify-center pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAllHPO(!showAllHPO)}
+                      >
+                        {showAllHPO ? (
+                          <>Show Less</>
+                        ) : (
+                          <>Show All ({filteredHPOTerms.length - HPO_PAGE_SIZE} more)</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* No results message */}
+                  {hpoSearchQuery && filteredHPOTerms.length === 0 && (
+                    <p className="text-center text-md text-muted-foreground py-4">
+                      No matching phenotypes found
+                    </p>
                   )}
                 </CardContent>
               </Card>
