@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Progress } from '@/components/ui/progress'
+import { HPOTermCard } from './HPOTermCard'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useHPOSearch, useDebounce, useHPOExtract, useSavePhenotype } from '@/hooks'
 import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
@@ -212,7 +213,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     if (selectedTerms.length > 0 && !matchingResult) {
       await handleRunMatching()
     }
-    
+
     // Then continue to analysis
     onComplete?.({ hpoTerms: selectedTerms, clinicalNotes })
     nextStep()
@@ -398,30 +399,24 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
               Selected Phenotypes
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 space-y-4">
+          <CardContent className="pt-0 space-y-3">
             {selectedTerms.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="space-y-2">
                 {selectedTerms.map((term) => (
-                  <Badge
+                  <HPOTermCard
                     key={term.hpo_id}
-                    variant="secondary"
-                    className="px-3 py-1.5 bg-primary/10 text-primary border-primary/20"
-                  >
-                    <span className="text-sm">{term.name}</span>
-                    <span className="text-xs ml-1 opacity-70">({term.hpo_id})</span>
-                    <button
-                      onClick={() => removeTerm(term.hpo_id)}
-                      className="ml-2 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
+                    hpoId={term.hpo_id}
+                    name={term.name}
+                    definition={term.definition}
+                    onRemove={removeTerm}
+                  />
                 ))}
               </div>
             ) : (
-              <p className="text-md text-muted-foreground">
-                No phenotypes selected yet. Search above to add HPO terms.
-              </p>
+              <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                <p className="text-sm text-muted-foreground">No phenotypes selected</p>
+                <p className="text-xs text-muted-foreground mt-1">Search and add HPO terms above</p>
+              </div>
             )}
           </CardContent>
         </Card>
