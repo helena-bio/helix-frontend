@@ -226,7 +226,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const handleRemoveFile = useCallback(() => {
     setSelectedFile(null)
     setValidationError(null)
-    setUploadProgress(0)
+setUploadProgress(0)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -415,7 +415,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
           {/* Next Step CTA */}
           <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
-            <div className="flex items-end justify-between gap-6">
+            <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                 <div>
@@ -425,19 +425,21 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                   </p>
                 </div>
               </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button onClick={handleProcessingClick} className="flex-shrink-0">
-                      <PlayCircle className="h-4 w-4 mr-2" />
-                      <span className="text-base">Start Processing</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-sm">Begin variant annotation and ACMG classification</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <div className="flex justify-end">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button onClick={handleProcessingClick} className="flex-shrink-0">
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        <span className="text-base">Start Processing</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">Begin variant annotation and ACMG classification</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
         </div>
