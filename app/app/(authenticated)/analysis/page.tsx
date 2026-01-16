@@ -1,11 +1,13 @@
 "use client"
-
 /**
  * Analysis Page - Main Variant Analysis Workflow
- * Pre-analysis: Shows workflow steps (upload, validation, phenotype, processing)
- * Post-analysis: Shows ModuleRouter in View Panel (60%)
+ *
+ * Journey Order:
+ * 1. Upload/Validation - Upload VCF file and validate
+ * 2. Processing - Run ACMG classification pipeline
+ * 3. Phenotype - Enter HPO terms and run phenotype matching (optional)
+ * 4. Analysis - View and analyze variants
  */
-
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { PhenotypeProvider } from '@/contexts/PhenotypeContext'
@@ -26,7 +28,7 @@ export default function AnalysisPage() {
     setCurrentSessionId(sessionId)
   }
 
-  // Render content based on current journey step
+  // Step 1: Upload & Validation
   if (currentStep === 'upload' || currentStep === 'validation') {
     return (
       <UploadValidationFlow
@@ -35,22 +37,7 @@ export default function AnalysisPage() {
     )
   }
 
-  if (currentStep === 'phenotype') {
-    if (!currentSessionId) {
-      return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      )
-    }
-
-    return (
-      <PhenotypeProvider sessionId={currentSessionId}>
-        <PhenotypeEntry sessionId={currentSessionId} />
-      </PhenotypeProvider>
-    )
-  }
-
+  // Step 2: Processing (ACMG classification)
   if (currentStep === 'processing') {
     if (!currentSessionId) {
       return (
@@ -59,12 +46,28 @@ export default function AnalysisPage() {
         </div>
       )
     }
-
     return (
       <ProcessingFlow sessionId={currentSessionId} />
     )
   }
 
+  // Step 3: Phenotype Entry & Matching (optional)
+  if (currentStep === 'phenotype') {
+    if (!currentSessionId) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      )
+    }
+    return (
+      <PhenotypeProvider sessionId={currentSessionId}>
+        <PhenotypeEntry sessionId={currentSessionId} />
+      </PhenotypeProvider>
+    )
+  }
+
+  // Step 4: Analysis View
   if (currentStep === 'analysis') {
     if (!currentSessionId) {
       return (
@@ -73,8 +76,6 @@ export default function AnalysisPage() {
         </div>
       )
     }
-
-    // ANALYSIS VIEW - PhenotypeProvider already wrapped in layout
     return <ModuleRouter sessionId={currentSessionId} />
   }
 

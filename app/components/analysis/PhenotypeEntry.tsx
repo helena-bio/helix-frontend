@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * PhenotypeEntry Component - HPO Terms Entry Page
+ * PhenotypeEntry Component - HPO Terms Entry & Phenotype Matching
  *
  * Typography Scale:
  * - text-3xl: Page titles
@@ -14,28 +14,45 @@
  * Features:
  * - Search and add HPO terms with real API
  * - AI-assisted term suggestion from free text (NLP extraction)
- * - Additional clinical notes
- * - Summary panel with selected terms
- * - Click outside to close dropdown
- * - Save phenotype data to backend
+ * - Run phenotype matching after adding terms
+ * - Show matching results summary with tier counts
+ * - Skip option to go directly to analysis
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna, ArrowRight, Loader2 } from 'lucide-react'
+import {
+  Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
+  ArrowRight, Loader2, CheckCircle2, BarChart3, AlertCircle
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Progress } from '@/components/ui/progress'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useHPOSearch, useDebounce, useHPOExtract, useSavePhenotype } from '@/hooks'
+import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
 import { toast } from 'sonner'
 
 interface HPOTerm {
   hpo_id: string
   name: string
   definition?: string
+}
+
+interface MatchingResult {
+  session_id: string
+  patient_hpo_count: number
+  variants_analyzed: number
+  variants_with_hpo: number
+  tier_1_count: number
+  tier_2_count: number
+  tier_3_count: number
+  tier_4_count: number
+  saved_to_duckdb: boolean
+  message: string
 }
 
 interface PhenotypeEntryProps {
@@ -51,33 +68,28 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
   const [showAIAssist, setShowAIAssist] = useState(false)
   const [showClinicalNotes, setShowClinicalNotes] = useState(false)
   const [aiInput, setAiInput] = useState('')
+  const [matchingResult, setMatchingResult] = useState<MatchingResult | null>(null)
+  const [isMatching, setIsMatching] = useState(false)
 
-  // Ref for click outside detection
   const searchContainerRef = useRef<HTMLDivElement>(null)
 
-  const { nextStep } = useJourney()
+  const { nextStep, skipToAnalysis } = useJourney()
 
-  // Debounce search query for API calls
   const debouncedQuery = useDebounce(searchQuery, 300)
 
-  // Fetch HPO suggestions from API
   const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
     enabled: debouncedQuery.length >= 2,
     limit: 10,
   })
 
-  // HPO extraction mutation
   const extractMutation = useHPOExtract()
-
-  // Save phenotype mutation
   const saveMutation = useSavePhenotype()
+  const matchingMutation = useRunPhenotypeMatching()
 
-  // Filter out already selected terms
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !selectedTerms.find((t) => t.hpo_id === term.hpo_id)
   ) || []
 
-  // Click outside to clear search
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -95,20 +107,19 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     }
   }, [searchQuery])
 
-  // Add term to selection (keep search query)
   const addTerm = useCallback((term: HPOTerm) => {
     if (!selectedTerms.find((t) => t.hpo_id === term.hpo_id)) {
       setSelectedTerms(prev => [...prev, term])
+      setMatchingResult(null) // Reset matching when terms change
       toast.success('Added: ' + term.name)
     }
   }, [selectedTerms])
 
-  // Remove term from selection
   const removeTerm = useCallback((termId: string) => {
     setSelectedTerms(prev => prev.filter((t) => t.hpo_id !== termId))
+    setMatchingResult(null) // Reset matching when terms change
   }, [])
 
-  // AI-assisted term extraction using NLP
   const handleGenerateSuggestions = useCallback(async () => {
     if (!aiInput.trim()) return
 
@@ -122,7 +133,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
         return
       }
 
-      // Add extracted terms that aren't already selected
       let addedCount = 0
       for (const term of result.terms) {
         if (!selectedTerms.find((t) => t.hpo_id === term.hpo_id)) {
@@ -135,6 +145,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
       }
 
       if (addedCount > 0) {
+        setMatchingResult(null) // Reset matching when terms change
         toast.success('Added ' + addedCount + ' HPO term' + (addedCount > 1 ? 's' : ''), {
           description: result.terms.map(t => t.hpo_name).join(', '),
         })
@@ -151,17 +162,23 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     }
   }, [aiInput, extractMutation, selectedTerms])
 
-  // Save and continue
-  const handleSaveAndContinue = useCallback(async () => {
+  // Run phenotype matching
+  const handleRunMatching = useCallback(async () => {
+    if (selectedTerms.length === 0) {
+      toast.error('Please add at least one HPO term')
+      return
+    }
+
+    setIsMatching(true)
+
     try {
-      // Transform terms to API format
+      // First save phenotype data
       const hpoTermsForApi = selectedTerms.map(term => ({
         hpo_id: term.hpo_id,
         name: term.name,
         definition: term.definition,
       }))
 
-      // Save to backend
       await saveMutation.mutateAsync({
         sessionId,
         data: {
@@ -170,32 +187,49 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
         },
       })
 
-      toast.success('Phenotype data saved', {
-        description: selectedTerms.length + ' HPO term' + (selectedTerms.length !== 1 ? 's' : '') + ' added',
+      // Then run matching
+      const result = await matchingMutation.mutateAsync({
+        sessionId,
+        patientHpoIds: selectedTerms.map(t => t.hpo_id),
       })
 
-      onComplete?.({ hpoTerms: selectedTerms, clinicalNotes })
-      nextStep()
+      setMatchingResult(result)
+
+      toast.success('Phenotype matching complete', {
+        description: `${result.tier_1_count + result.tier_2_count} high-priority variants found`,
+      })
     } catch (error) {
-      toast.error('Failed to save phenotype data', {
+      toast.error('Matching failed', {
         description: 'Please try again',
       })
+    } finally {
+      setIsMatching(false)
     }
-  }, [selectedTerms, clinicalNotes, sessionId, saveMutation, nextStep, onComplete])
+  }, [selectedTerms, clinicalNotes, sessionId, saveMutation, matchingMutation])
+
+  // Continue to analysis
+  const handleContinueToAnalysis = useCallback(() => {
+    onComplete?.({ hpoTerms: selectedTerms, clinicalNotes })
+    nextStep()
+  }, [selectedTerms, clinicalNotes, nextStep, onComplete])
 
   // Skip phenotype entry
   const handleSkip = useCallback(() => {
     onSkip?.()
-    nextStep()
-  }, [nextStep, onSkip])
+    skipToAnalysis()
+  }, [skipToAnalysis, onSkip])
 
-  // Clear search
   const clearSearch = useCallback(() => {
     setSearchQuery('')
   }, [])
 
-  // Show suggestions only when there's a query and results
   const showSuggestions = searchQuery.length >= 2 && filteredSuggestions.length > 0
+
+  // Calculate tier percentages for progress bars
+  const getTierPercentage = (count: number) => {
+    if (!matchingResult || matchingResult.variants_with_hpo === 0) return 0
+    return (count / matchingResult.variants_with_hpo) * 100
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
@@ -206,12 +240,12 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
             <Dna className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Enter Phenotype Data</h1>
+            <h1 className="text-3xl font-bold">Phenotype Matching</h1>
             <p className="text-base text-muted-foreground mt-1">
-              Add patient clinical features (HPO terms)
+              Add patient phenotypes to prioritize variants
             </p>
             <p className="text-md text-muted-foreground mt-1">
-              Adding phenotype data improves variant-phenotype matching and prioritization
+              Variants will be ranked by how well they match the patient's clinical features
             </p>
           </div>
         </div>
@@ -219,7 +253,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
         {/* Search & Add */}
         <Card>
           <CardContent className="p-4 space-y-3">
-            {/* Search Input */}
             <div ref={searchContainerRef}>
               <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
               <div className="relative">
@@ -243,7 +276,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 )}
               </div>
 
-              {/* Suggestions Dropdown - only show when query exists */}
               {showSuggestions && (
                 <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
                   {filteredSuggestions.map((term) => (
@@ -269,7 +301,6 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                 </div>
               )}
 
-              {/* No results message - only show when query exists */}
               {searchQuery.length >= 2 && !isSearching && filteredSuggestions.length === 0 && searchResults && (
                 <p className="mt-2 text-md text-muted-foreground">
                   {searchResults.terms.length > 0
@@ -354,27 +385,16 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Summary Panel with Selected Terms */}
+        {/* Selected Terms Summary */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Dna className="h-4 w-4" />
-              Summary
+              Selected Phenotypes
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-4">
-            {/* Stats */}
-            <div className="flex gap-6 text-base">
-              <span>
-                <strong>{selectedTerms.length}</strong> HPO term{selectedTerms.length !== 1 ? 's' : ''} added
-              </span>
-              <span>
-                <strong>{clinicalNotes.trim() ? '1' : '0'}</strong> clinical note{clinicalNotes.trim() ? '' : 's'}
-              </span>
-            </div>
-
-            {/* Selected Terms Tags */}
-            {selectedTerms.length > 0 && (
+            {selectedTerms.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {selectedTerms.map((term) => (
                   <Badge
@@ -393,37 +413,135 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                   </Badge>
                 ))}
               </div>
-            )}
-
-            {/* Empty State */}
-            {selectedTerms.length === 0 && (
+            ) : (
               <p className="text-md text-muted-foreground">
                 No phenotypes selected yet. Search above to add HPO terms.
               </p>
             )}
+
+            {/* Run Matching Button */}
+            {selectedTerms.length > 0 && !matchingResult && (
+              <Button
+                onClick={handleRunMatching}
+                disabled={isMatching}
+                className="w-full"
+                size="lg"
+              >
+                {isMatching ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <span className="text-base">Running Phenotype Matching...</span>
+                  </>
+                ) : (
+                  <>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    <span className="text-base">Run Phenotype Matching</span>
+                  </>
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
+
+        {/* Matching Results */}
+        {matchingResult && (
+          <Card className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
+                <CheckCircle2 className="h-5 w-5" />
+                Matching Complete
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-4 text-base">
+                <div>
+                  <span className="text-muted-foreground">Variants Analyzed</span>
+                  <p className="text-xl font-semibold">{matchingResult.variants_analyzed.toLocaleString()}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">With HPO Data</span>
+                  <p className="text-xl font-semibold">{matchingResult.variants_with_hpo.toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Tier Breakdown */}
+              <div className="space-y-3">
+                <p className="text-base font-medium">Clinical Priority Tiers</p>
+
+                {/* Tier 1 */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                      Tier 1 - Actionable
+                    </span>
+                    <span className="font-medium">{matchingResult.tier_1_count}</span>
+                  </div>
+                  <Progress value={getTierPercentage(matchingResult.tier_1_count)} className="h-2 bg-red-100" />
+                </div>
+
+                {/* Tier 2 */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                      Tier 2 - Potentially Actionable
+                    </span>
+                    <span className="font-medium">{matchingResult.tier_2_count}</span>
+                  </div>
+                  <Progress value={getTierPercentage(matchingResult.tier_2_count)} className="h-2 bg-orange-100" />
+                </div>
+
+                {/* Tier 3 */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                      Tier 3 - Uncertain
+                    </span>
+                    <span className="font-medium">{matchingResult.tier_3_count}</span>
+                  </div>
+                  <Progress value={getTierPercentage(matchingResult.tier_3_count)} className="h-2 bg-yellow-100" />
+                </div>
+
+                {/* Tier 4 */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-gray-400"></span>
+                      Tier 4 - Unlikely
+                    </span>
+                    <span className="font-medium">{matchingResult.tier_4_count}</span>
+                  </div>
+                  <Progress value={getTierPercentage(matchingResult.tier_4_count)} className="h-2 bg-gray-100" />
+                </div>
+              </div>
+
+              {/* High Priority Summary */}
+              {(matchingResult.tier_1_count + matchingResult.tier_2_count) > 0 && (
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <p className="text-base font-medium text-green-800 dark:text-green-300">
+                    {matchingResult.tier_1_count + matchingResult.tier_2_count} high-priority variants
+                    match the patient's phenotype
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Actions */}
         <div className="flex justify-between">
           <Button variant="outline" onClick={handleSkip}>
-            <span className="text-base">Skip for now</span>
+            <span className="text-base">Skip to Analysis</span>
           </Button>
           <Button
-            onClick={handleSaveAndContinue}
-            disabled={saveMutation.isPending}
+            onClick={handleContinueToAnalysis}
+            disabled={selectedTerms.length === 0 && !matchingResult}
           >
-            {saveMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                <span className="text-base">Saving...</span>
-              </>
-            ) : (
-              <>
-                <span className="text-base">Save & Continue</span>
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </>
-            )}
+            <span className="text-base">Continue to Analysis</span>
+            <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
       </div>

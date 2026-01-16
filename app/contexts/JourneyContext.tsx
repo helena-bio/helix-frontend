@@ -2,7 +2,7 @@
  * Journey Context - Workflow Step Management
  *
  * Manages the current step in the analysis workflow:
- * Upload -> Validation -> Phenotype -> Processing -> Analysis
+ * Upload -> Validation -> Processing -> Phenotype -> Analysis
  *
  * Following Lumiere pattern: UI state only, no server data
  */
@@ -21,7 +21,7 @@ import {
 /**
  * Workflow steps in order
  */
-export type JourneyStep = 'upload' | 'validation' | 'phenotype' | 'processing' | 'analysis'
+export type JourneyStep = 'upload' | 'validation' | 'processing' | 'phenotype' | 'analysis'
 
 /**
  * Step status for UI rendering
@@ -40,6 +40,12 @@ export interface StepInfo {
 
 /**
  * All steps with metadata
+ * Order: Upload -> Validation -> Processing -> Phenotype -> Analysis
+ *
+ * Phenotype is AFTER Processing because:
+ * 1. We need variants in DuckDB to run phenotype matching
+ * 2. User can skip phenotype and go directly to analysis
+ * 3. Better UX - user sees match results before analysis
  */
 export const JOURNEY_STEPS: readonly StepInfo[] = [
   {
@@ -55,15 +61,15 @@ export const JOURNEY_STEPS: readonly StepInfo[] = [
     order: 1,
   },
   {
-    id: 'phenotype',
-    label: 'Phenotype',
-    description: 'Enter patient phenotype data',
-    order: 2,
-  },
-  {
     id: 'processing',
     label: 'Processing',
     description: 'Analyzing variants with ACMG classification',
+    order: 2,
+  },
+  {
+    id: 'phenotype',
+    label: 'Phenotype',
+    description: 'Match patient phenotypes to variants',
     order: 3,
   },
   {
@@ -86,6 +92,7 @@ interface JourneyContextType {
   nextStep: () => void
   previousStep: () => void
   resetJourney: () => void
+  skipToAnalysis: () => void
 
   // Step utilities
   getStepStatus: (step: JourneyStep) => StepStatus
@@ -156,6 +163,11 @@ export function JourneyProvider({
     }
   }, [currentStepIndex])
 
+  // Skip phenotype and go directly to analysis
+  const skipToAnalysis = useCallback(() => {
+    setCurrentStep('analysis')
+  }, [])
+
   // Reset to first step
   const resetJourney = useCallback(() => {
     setCurrentStep('upload')
@@ -195,6 +207,7 @@ export function JourneyProvider({
     nextStep,
     previousStep,
     resetJourney,
+    skipToAnalysis,
     getStepStatus,
     getStepInfo,
     canNavigateTo,

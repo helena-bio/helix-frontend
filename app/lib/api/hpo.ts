@@ -235,3 +235,118 @@ export async function matchVariantPhenotypes(
 
   return response.json()
 }
+
+// ============================================
+// SESSION-BASED PHENOTYPE MATCHING API
+// Reads variants from DuckDB, saves results back
+// ============================================
+
+export interface RunSessionMatchingRequest {
+  sessionId: string
+  patientHpoIds: string[]
+}
+
+export interface RunSessionMatchingResponse {
+  session_id: string
+  patient_hpo_count: number
+  variants_analyzed: number
+  variants_with_hpo: number
+  tier_1_count: number
+  tier_2_count: number
+  tier_3_count: number
+  tier_4_count: number
+  saved_to_duckdb: boolean
+  message: string
+}
+
+export interface MatchSummaryResponse {
+  session_id: string
+  has_results: boolean
+  variants_analyzed?: number
+  tier_1_count?: number
+  tier_2_count?: number
+  tier_3_count?: number
+  tier_4_count?: number
+}
+
+export interface SessionMatchResult {
+  variant_idx: number
+  gene_symbol?: string
+  phenotype_match_score: number
+  matched_terms: number
+  total_patient_terms: number
+  total_variant_terms: number
+  clinical_priority_score: number
+  clinical_tier: string
+  acmg_class?: string
+  impact?: string
+  gnomad_af?: number
+  consequence?: string
+  individual_matches: SimilarityMatch[]
+}
+
+export interface SessionMatchResultsResponse {
+  session_id: string
+  patient_hpo_count: number
+  variants_analyzed: number
+  tier_1_count: number
+  tier_2_count: number
+  tier_3_count: number
+  tier_4_count: number
+  results: SessionMatchResult[]
+}
+
+/**
+ * Run phenotype matching for a session.
+ * Reads variants directly from DuckDB and saves results back.
+ * This is the preferred method - no need to transfer variants over HTTP.
+ */
+export async function runSessionPhenotypeMatching(
+  request: RunSessionMatchingRequest
+): Promise<RunSessionMatchingResponse> {
+  const url = API_URL + '/phenotype/api/sessions/' + request.sessionId + '/matching/run'
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      patient_hpo_ids: request.patientHpoIds,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: response.statusText }))
+    throw new Error(error.detail || 'Phenotype matching failed')
+  }
+
+  return response.json()
+}
+
+/**
+ * Get phenotype matching summary for a session.
+ */
+export async function getMatchingSummary(sessionId: string): Promise<MatchSummaryResponse> {
+  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/matching/summary'
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error('Failed to get matching summary: ' + response.statusText)
+  }
+
+  return response.json()
+}
+
+/**
+ * Get phenotype matching results for a session.
+ */
+export async function getMatchingResults(sessionId: string): Promise<SessionMatchResultsResponse> {
+  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/matching/results'
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error('Failed to get matching results: ' + response.statusText)
+  }
+
+  return response.json()
+}
