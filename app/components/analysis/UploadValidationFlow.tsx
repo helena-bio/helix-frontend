@@ -422,20 +422,20 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                 <p className="text-md text-muted-foreground mb-4">
                   Process variants with ACMG classification, annotation, and filtering to identify clinically relevant findings.
                 </p>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={handleProcessingClick}>
-                        <PlayCircle className="h-4 w-4 mr-2" />
-                        <span className="text-base">Start Processing</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-sm">Begin variant annotation and ACMG classification</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
               </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={handleProcessingClick}>
+                      <PlayCircle className="h-4 w-4 mr-2" />
+                      <span className="text-base">Start Processing</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-sm">Begin variant annotation and ACMG classification</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </div>
