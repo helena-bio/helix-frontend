@@ -2,9 +2,10 @@
 
 /**
  * HPOTermCard Component
- * 
+ *
  * Displays a single selected HPO term with expandable definition.
  * Compact by default, shows full info on expand.
+ * Supports read-only mode for variant detail panels.
  */
 
 import { useState } from 'react'
@@ -16,10 +17,17 @@ interface HPOTermCardProps {
   hpoId: string
   name: string
   definition?: string
-  onRemove: (hpoId: string) => void
+  onRemove?: (hpoId: string) => void
+  readOnly?: boolean
 }
 
-export function HPOTermCard({ hpoId, name, definition, onRemove }: HPOTermCardProps) {
+export function HPOTermCard({ 
+  hpoId, 
+  name, 
+  definition, 
+  onRemove,
+  readOnly = false 
+}: HPOTermCardProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -43,16 +51,18 @@ export function HPOTermCard({ hpoId, name, definition, onRemove }: HPOTermCardPr
                 </div>
               )}
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onRemove(hpoId)
-              }}
-              className="flex-shrink-0 p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-colors"
-              aria-label={`Remove ${name}`}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {!readOnly && onRemove && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onRemove(hpoId)
+                }}
+                className="flex-shrink-0 p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-colors"
+                aria-label={`Remove ${name}`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </CollapsibleTrigger>
 
