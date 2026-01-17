@@ -6,12 +6,14 @@
  * Displays a single selected HPO term with expandable definition.
  * Compact by default, shows full info on expand.
  * Supports read-only mode for variant detail panels.
+ * Lazy loads definition from HPO API when expanded.
  */
 
-import { useState } from 'react'
-import { X, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { useHPOTerm } from '@/hooks/queries'
 
 interface HPOTermCardProps {
   hpoId: string
@@ -21,14 +23,34 @@ interface HPOTermCardProps {
   readOnly?: boolean
 }
 
-export function HPOTermCard({ 
-  hpoId, 
-  name, 
-  definition, 
+export function HPOTermCard({
+  hpoId,
+  name,
+  definition: providedDefinition,
   onRemove,
-  readOnly = false 
+  readOnly = false
 }: HPOTermCardProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [shouldFetch, setShouldFetch] = useState(false)
+
+  // Only fetch definition if not provided and card is expanded
+  const { data: fetchedTerm, isLoading } = useHPOTerm(
+    hpoId,
+    shouldFetch && !providedDefinition
+  )
+
+  // Enable fetching when card is opened for the first time
+  useEffect(() => {
+    if (isOpen && !providedDefinition && !shouldFetch) {
+      setShouldFetch(true)
+    }
+  }, [isOpen, providedDefinition, shouldFetch])
+
+  // Get the definition from either provided prop or fetched data
+  const definition = providedDefinition || fetchedTerm?.definition
+
+  // Show loading state if we're fetching and don't have definition yet
+  const showLoading = isOpen && !definition && isLoading
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
@@ -41,15 +63,15 @@ export function HPOTermCard({
                 {hpoId}
               </Badge>
               <span className="text-md font-medium truncate">{name}</span>
-              {definition && (
-                <div className="flex-shrink-0">
-                  {isOpen ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-              )}
+              <div className="flex-shrink-0">
+                {showLoading ? (
+                  <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+                ) : isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
             </div>
             {!readOnly && onRemove && (
               <button
@@ -67,17 +89,25 @@ export function HPOTermCard({
         </CollapsibleTrigger>
 
         {/* Definition - Expandable */}
-        {definition && (
-          <CollapsibleContent>
-            <div className="px-3 pb-3 pt-0">
-              <div className="pl-3 border-l-2 border-primary/30">
+        <CollapsibleContent>
+          <div className="px-3 pb-3 pt-0">
+            <div className="pl-3 border-l-2 border-primary/30">
+              {showLoading ? (
+                <p className="text-sm text-muted-foreground italic">
+                  Loading definition...
+                </p>
+              ) : definition ? (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {definition}
                 </p>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  No definition available
+                </p>
+              )}
             </div>
-          </CollapsibleContent>
-        )}
+          </div>
+        </CollapsibleContent>
       </div>
     </Collapsible>
   )
