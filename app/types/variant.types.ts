@@ -55,8 +55,8 @@ export interface Variant {
   oe_lof_upper: number | null
   oe_lof: number | null
   mis_z: number | null
-  hpo_phenotypes: string | null
-  hpo_terms: string | null
+  hpo_ids: string | null
+  hpo_names: string | null
   hpo_count: number | null
   hpo_frequency_data: string | null
   hpo_disease_ids: string | null

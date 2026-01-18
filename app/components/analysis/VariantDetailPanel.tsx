@@ -89,21 +89,19 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
   const variant = data?.variant
 
-  // Parse HPO data from variant - FIXED: hpo_terms and hpo_phenotypes are swapped in DuckDB
+  // Parse HPO data from variant - CORRECT column names: hpo_ids and hpo_names
   const hpoTerms = useMemo<HPOTermData[]>(() => {
-    if (!variant?.hpo_terms || !variant?.hpo_phenotypes) {
+    if (!variant?.hpo_ids || !variant?.hpo_names) {
       return []
     }
 
-    // IMPORTANT: DuckDB columns are swapped!
-    // hpo_phenotypes contains HPO IDs (HP:XXXXXXX)
-    // hpo_terms contains phenotype names (text descriptions)
-    const idsList = variant.hpo_phenotypes
+    // Parse semicolon-separated HPO IDs and names
+    const idsList = variant.hpo_ids
       .split(';')
       .map(t => t.trim())
       .filter(Boolean)
-    
-    const namesList = variant.hpo_terms
+
+    const namesList = variant.hpo_names
       .split(';')
       .map(p => p.trim())
       .filter(Boolean)
@@ -113,7 +111,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
       hpo_id,
       name: namesList[idx] || 'Unknown phenotype',
     }))
-  }, [variant?.hpo_terms, variant?.hpo_phenotypes])
+  }, [variant?.hpo_ids, variant?.hpo_names])
 
   // Filter HPO terms by search query
   const filteredHPOTerms = useMemo(() => {
