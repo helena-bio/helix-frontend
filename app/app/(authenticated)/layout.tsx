@@ -46,14 +46,14 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col">
       {/* Header - Journey Panel with Logo */}
       <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">
         <JourneyPanel />
       </header>
 
       {/* Main area */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
           // Provider hierarchy: Phenotype -> MatchedPhenotype
