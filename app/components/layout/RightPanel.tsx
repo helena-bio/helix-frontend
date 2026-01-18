@@ -21,7 +21,7 @@ export function RightPanel({ children }: RightPanelProps) {
   // Show VariantDetailPanel if variant is selected and details panel is open
   if (isDetailsOpen && selectedVariantId && currentSessionId) {
     return (
-      <div className="w-[55%] h-full overflow-hidden bg-background">
+      <div className="w-[55%] h-full flex flex-col bg-background">
         <VariantDetailPanel
           sessionId={currentSessionId}
           variantIdx={parseInt(selectedVariantId)}
