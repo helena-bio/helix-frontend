@@ -89,13 +89,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
   const variant = data?.variant
 
-  // Parse HPO data from variant - CORRECT column names: hpo_ids and hpo_names
+  // Parse HPO data from variant
   const hpoTerms = useMemo<HPOTermData[]>(() => {
     if (!variant?.hpo_ids || !variant?.hpo_names) {
       return []
     }
 
-    // Parse semicolon-separated HPO IDs and names
     const idsList = variant.hpo_ids
       .split(';')
       .map(t => t.trim())
@@ -106,14 +105,13 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
       .map(p => p.trim())
       .filter(Boolean)
 
-    // Map IDs to names
     return idsList.map((hpo_id, idx) => ({
       hpo_id,
       name: namesList[idx] || 'Unknown phenotype',
     }))
   }, [variant?.hpo_ids, variant?.hpo_names])
 
-  // Filter HPO terms by search query
+  // Filter HPO terms
   const filteredHPOTerms = useMemo(() => {
     if (!hpoSearchQuery) return hpoTerms
 
@@ -124,12 +122,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     )
   }, [hpoTerms, hpoSearchQuery])
 
-  // Pagination for HPO terms
+  // Pagination
   const HPO_PAGE_SIZE = 10
   const displayedHPOTerms = showAllHPO ? filteredHPOTerms : filteredHPOTerms.slice(0, HPO_PAGE_SIZE)
   const hasMoreHPO = filteredHPOTerms.length > HPO_PAGE_SIZE
 
-  // Check if we have prediction data
+  // Check data availability
   const hasPredictions = variant && (
     variant.sift_pred || variant.sift_score !== null ||
     variant.alphamissense_pred || variant.alphamissense_score !== null ||
@@ -137,13 +135,11 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     variant.dann_score !== null
   )
 
-  // Check if we have gnomAD data
   const hasGnomAD = variant && (
     variant.global_af !== null || variant.global_ac !== null ||
     variant.global_an !== null || variant.global_hom !== null
   )
 
-  // Check if we have conservation data
   const hasConservation = variant && (
     variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null ||
     variant.pli !== null || variant.oe_lof_upper !== null ||
@@ -153,7 +149,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="h-full flex flex-col bg-background">
         <div className="p-4 border-b">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -169,7 +165,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
   if (error || !variant) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="h-full flex flex-col bg-background">
         <div className="p-4 border-b">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -188,9 +184,9 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b space-y-3">
+    <div className="h-full flex flex-col bg-background">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0 p-4 border-b space-y-3">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           <span className="text-base">Back to Analysis</span>
@@ -216,11 +212,11 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         </div>
       </div>
 
-      {/* Content */}
-      <ScrollArea className="flex-1">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
 
-          {/* ACMG Classification - Always show, full width */}
+          {/* ACMG Classification */}
           <Card className={variant.acmg_class ? 'border-2' : ''}>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -262,10 +258,10 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </CardContent>
           </Card>
 
-          {/* 2-column grid for remaining cards */}
+          {/* 2-column grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* Clinical Significance (ClinVar) */}
+            {/* ClinVar */}
             {(variant.clinical_significance || variant.clinvar_variation_id) && (
               <Card>
                 <CardHeader>
@@ -304,7 +300,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </Card>
             )}
 
-            {/* Pathogenicity Predictions */}
+            {/* Predictions */}
             {hasPredictions && (
               <Card>
                 <CardHeader>
@@ -376,7 +372,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </Card>
             )}
 
-            {/* Population Frequencies */}
+            {/* gnomAD */}
             {hasGnomAD && (
               <Card>
                 <CardHeader>
@@ -396,7 +392,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </Card>
             )}
 
-            {/* Quality Metrics */}
+            {/* Quality */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -426,7 +422,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </CardContent>
             </Card>
 
-            {/* Variant Details */}
+            {/* Details */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -446,7 +442,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </CardContent>
             </Card>
 
-            {/* Conservation & Constraint */}
+            {/* Conservation */}
             {hasConservation && (
               <Card>
                 <CardHeader>
@@ -494,7 +490,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </Card>
             )}
 
-            {/* HPO Phenotypes - Using HPOTermCard component */}
+            {/* HPO Phenotypes */}
             {hpoTerms.length > 0 && (
               <Card className="md:col-span-2">
                 <CardHeader>
@@ -504,7 +500,6 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Stats */}
                   <div className="flex items-center justify-between">
                     <span className="text-base text-muted-foreground">Total HPO Terms</span>
                     <Badge variant="outline" className="text-md font-bold">
@@ -512,7 +507,6 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     </Badge>
                   </div>
 
-                  {/* Search bar if more than 10 terms */}
                   {hpoTerms.length > 10 && (
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -533,14 +527,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     </div>
                   )}
 
-                  {/* Filtered count */}
                   {hpoSearchQuery && (
                     <p className="text-sm text-muted-foreground">
                       Showing {filteredHPOTerms.length} of {hpoTerms.length} phenotypes
                     </p>
                   )}
 
-                  {/* HPO Terms using HPOTermCard */}
                   <div className="space-y-2">
                     {displayedHPOTerms.map((term) => (
                       <HPOTermCard
@@ -552,7 +544,6 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     ))}
                   </div>
 
-                  {/* Show More/Less button */}
                   {hasMoreHPO && !hpoSearchQuery && (
                     <div className="flex justify-center pt-2">
                       <Button
@@ -569,7 +560,6 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     </div>
                   )}
 
-                  {/* No results message */}
                   {hpoSearchQuery && filteredHPOTerms.length === 0 && (
                     <p className="text-center text-md text-muted-foreground py-4">
                       No matching phenotypes found
@@ -581,7 +571,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
           </div>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }
