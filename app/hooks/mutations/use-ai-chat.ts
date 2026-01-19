@@ -2,12 +2,13 @@
  * AI Chat Mutations
  * Handles streaming chat with AI service and query visualizations
  */
+
 import { useMutation } from '@tanstack/react-query'
-import { 
-  sendChatMessage, 
-  streamChatMessage, 
-  type ChatRequest, 
-  type QueryResultEvent, 
+import {
+  sendChatMessage,
+  streamChatMessage,
+  type ChatRequest,
+  type QueryResultEvent,
   type ConversationStartedEvent,
   type QueryingStartedEvent,
   type RoundCompleteEvent,
@@ -83,6 +84,8 @@ export function useAIChatStream() {
     onComplete: () => void
     onError: (error: Error) => void
   }) => {
+    let accumulatedContent = ''
+    
     try {
       const stream = streamChatMessage({
         message,
@@ -93,33 +96,51 @@ export function useAIChatStream() {
 
       for await (const event of stream) {
         if (event.type === 'conversation_started') {
-          // Conversation started - capture conversation_id
+          console.log('[STREAM] Conversation started:', event.data.conversation_id)
           if (onConversationStarted) {
             onConversationStarted(event.data.conversation_id)
           }
         } else if (event.type === 'token') {
-          // Text token
-          onToken(event.data)
+          // Debug token
+          const token = event.data
+          accumulatedContent += token
+          
+          console.log('[STREAM TOKEN]', {
+            token: token,
+            tokenEscaped: token.replace(/\n/g, '\\n').replace(/\r/g, '\\r'),
+            tokenLength: token.length,
+            isNewline: token === '\n',
+            isDoubleNewline: token === '\n\n',
+            accumulatedLength: accumulatedContent.length,
+            lastChars: accumulatedContent.slice(-20).replace(/\n/g, '\\n')
+          })
+          
+          onToken(token)
         } else if (event.type === 'querying_started') {
-          // AI is querying database - show indicator
+          console.log('[STREAM] Querying started')
+          console.log('[STREAM] Content before query:', accumulatedContent.replace(/\n/g, '\\n'))
           if (onQueryingStarted) {
             onQueryingStarted()
           }
         } else if (event.type === 'query_result') {
-          // Query result with visualization
+          console.log('[STREAM] Query result received')
           if (onQueryResult) {
             onQueryResult(event.data)
           }
         } else if (event.type === 'round_complete') {
-          // Round complete - create new message bubble for next round
+          console.log('[STREAM] Round complete')
+          console.log('[STREAM] Final content:', accumulatedContent.replace(/\n/g, '\\n'))
           if (onRoundComplete) {
             onRoundComplete()
           }
+          accumulatedContent = '' // Reset for next round
         }
       }
-
+      
+      console.log('[STREAM] Complete - Final accumulated:', accumulatedContent.replace(/\n/g, '\\n'))
       onComplete()
     } catch (error) {
+      console.error('[STREAM ERROR]', error)
       onError(error as Error)
     }
   }
