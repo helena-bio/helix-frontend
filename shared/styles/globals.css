@@ -290,12 +290,17 @@
 
 /* Markdown content styling */
 .markdown-content {
-  color: var(--foreground);
   line-height: 1.75;
 }
 
+/* Paragraphs - proper spacing between paragraphs */
 .markdown-content p {
-  margin: 0.5em 0;
+  margin-top: 0;
+  margin-bottom: 1em;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
 }
 
 .markdown-content strong {
@@ -304,7 +309,6 @@
 
 .markdown-content em {
   font-style: italic;
-  color: var(--muted-foreground);
 }
 
 .markdown-content code {
@@ -358,6 +362,35 @@
   border-left: 4px solid var(--primary);
   padding-left: 1rem;
   font-style: italic;
-  color: var(--muted-foreground);
   margin: 0.75em 0;
+}
+
+/* Assistant messages - normal colors */
+.markdown-assistant {
+  color: var(--foreground);
+}
+
+.markdown-assistant em {
+  color: var(--muted-foreground);
+}
+
+.markdown-assistant blockquote {
+  color: var(--muted-foreground);
+}
+
+/* User messages - white text on dark background */
+.markdown-user {
+  color: var(--primary-foreground);
+}
+
+.markdown-user strong,
+.markdown-user em,
+.markdown-user code,
+.markdown-user a {
+  color: var(--primary-foreground);
+}
+
+.markdown-user code {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }

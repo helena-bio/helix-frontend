@@ -28,8 +28,8 @@ export function MarkdownMessage({ content, isUser = false }: MarkdownMessageProp
 
   return (
     <div
-      className={`prose prose-sm max-w-none select-text markdown-content ${
-        isUser ? 'prose-invert' : ''
+      className={`text-base leading-relaxed select-text markdown-content ${
+        isUser ? 'markdown-user' : 'markdown-assistant'
       }`}
       dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
