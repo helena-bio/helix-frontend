@@ -12,9 +12,11 @@ export function MarkdownMessage({ content, isUser = false }: MarkdownMessageProp
 
   return (
     <div className={`text-base leading-relaxed select-text ${textColor}`}>
-      <Streamdown parseIncompleteMarkdown={true} className="prose prose-sm max-w-none">
-        {content}
-      </Streamdown>
+      <div className="markdown-content">
+        <Streamdown parseIncompleteMarkdown={true}>
+          {content}
+        </Streamdown>
+      </div>
     </div>
   )
 }

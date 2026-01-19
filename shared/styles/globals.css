@@ -341,6 +341,14 @@
   padding-left: 1.5em;
 }
 
+.markdown-content ul {
+  list-style-type: disc;
+}
+
+.markdown-content ol {
+  list-style-type: decimal;
+}
+
 .markdown-content li {
   margin: 0.25em 0;
 }
