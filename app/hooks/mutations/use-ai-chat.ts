@@ -39,24 +39,6 @@ export function useAIChat() {
  * - onRoundComplete: Called after query, before next round (create new bubble)
  * - onComplete: Called when stream ends
  * - onError: Called on error
- *
- * Usage:
- *
- * const { streamMessage } = useAIChatStream()
- *
- * await streamMessage({
- *   message: 'Show me ACMG distribution',
- *   conversation_id: 'uuid-here',
- *   session_id: 'abc123',
- *   metadata: { phenotype_context: { ... } },
- *   onConversationStarted: (conversationId) => setConversationId(conversationId),
- *   onToken: (token) => appendToMessage(token),
- *   onQueryingStarted: () => setIsQuerying(true),
- *   onQueryResult: (result) => addQueryResult(result),
- *   onRoundComplete: () => createNewMessageBubble(),
- *   onComplete: () => setIsSending(false),
- *   onError: (error) => console.error(error)
- * })
  */
 export function useAIChatStream() {
   const streamMessage = async ({
@@ -84,8 +66,6 @@ export function useAIChatStream() {
     onComplete: () => void
     onError: (error: Error) => void
   }) => {
-    let accumulatedContent = ''
-    
     try {
       const stream = streamChatMessage({
         message,
@@ -96,48 +76,26 @@ export function useAIChatStream() {
 
       for await (const event of stream) {
         if (event.type === 'conversation_started') {
-          console.log('[STREAM] Conversation started:', event.data.conversation_id)
           if (onConversationStarted) {
             onConversationStarted(event.data.conversation_id)
           }
         } else if (event.type === 'token') {
-          // Debug token
-          const token = event.data
-          accumulatedContent += token
-          
-          console.log('[STREAM TOKEN]', {
-            token: token,
-            tokenEscaped: token.replace(/\n/g, '\\n').replace(/\r/g, '\\r'),
-            tokenLength: token.length,
-            isNewline: token === '\n',
-            isDoubleNewline: token === '\n\n',
-            accumulatedLength: accumulatedContent.length,
-            lastChars: accumulatedContent.slice(-20).replace(/\n/g, '\\n')
-          })
-          
-          onToken(token)
+          onToken(event.data)
         } else if (event.type === 'querying_started') {
-          console.log('[STREAM] Querying started')
-          console.log('[STREAM] Content before query:', accumulatedContent.replace(/\n/g, '\\n'))
           if (onQueryingStarted) {
             onQueryingStarted()
           }
         } else if (event.type === 'query_result') {
-          console.log('[STREAM] Query result received')
           if (onQueryResult) {
             onQueryResult(event.data)
           }
         } else if (event.type === 'round_complete') {
-          console.log('[STREAM] Round complete')
-          console.log('[STREAM] Final content:', accumulatedContent.replace(/\n/g, '\\n'))
           if (onRoundComplete) {
             onRoundComplete()
           }
-          accumulatedContent = '' // Reset for next round
         }
       }
-      
-      console.log('[STREAM] Complete - Final accumulated:', accumulatedContent.replace(/\n/g, '\\n'))
+
       onComplete()
     } catch (error) {
       console.error('[STREAM ERROR]', error)
