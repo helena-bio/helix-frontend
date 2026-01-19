@@ -77,7 +77,7 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
  * - querying_started: AI is querying the database (show indicator)
  * - query_result: Query completed with results
  * - round_complete: Round finished, next round starting (create new bubble)
- * - token: Regular text token
+ * - token: Regular text token (JSON-encoded to preserve newlines)
  */
 export async function* streamChatMessage(
   request: ChatRequest
@@ -106,7 +106,7 @@ export async function* streamChatMessage(
   try {
     while (true) {
       const { done, value } = await reader.read()
-      
+
       if (done) {
         // Process any remaining buffer
         if (buffer.trim()) {
@@ -130,13 +130,13 @@ export async function* streamChatMessage(
 
       // Decode chunk and add to buffer
       buffer += decoder.decode(value, { stream: true })
-      
+
       // Process complete lines only
       let newlineIndex: number
       while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
         const line = buffer.slice(0, newlineIndex)
         buffer = buffer.slice(newlineIndex + 1)
-        
+
         const event = parseLine(line, currentEvent)
         if (event) {
           if (event.newEventType) {
@@ -219,11 +219,17 @@ function parseLine(
         }
 
       default:
-        // Regular text token - return as-is (preserve whitespace)
-        if (data) {
+        // Regular text token - JSON-encoded by backend to preserve newlines
+        // Parse to get actual string with preserved special characters
+        try {
+          const token = JSON.parse(data) as string
+          // Return token even if empty (empty string = newline was sent)
+          return { streamEvent: { type: 'token', data: token } }
+        } catch {
+          // Fallback for backwards compatibility with non-JSON tokens
+          console.warn('[SSE] Failed to parse token as JSON, using raw data')
           return { streamEvent: { type: 'token', data } }
         }
-        return null
     }
   }
 
