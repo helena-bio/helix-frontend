@@ -78,7 +78,7 @@ export function MarkdownMessage({ content, isUser = false }: MarkdownMessageProp
           ),
           a: ({ href, children }) => (
             
-              href={href}
+              <a href={href}
               className="text-primary hover:text-primary/80 underline"
               target="_blank"
               rel="noopener noreferrer"
