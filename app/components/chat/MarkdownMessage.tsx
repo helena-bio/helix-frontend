@@ -18,7 +18,15 @@ export function MarkdownMessage({ content, isUser = false }: MarkdownMessageProp
   const [sanitizedHtml, setSanitizedHtml] = useState('')
 
   useEffect(() => {
-    const rawHtml = marked.parse(content, { async: false }) as string
+    // Normalize newlines: treat single newlines as paragraph breaks
+    // This ensures proper paragraph spacing during streaming
+    const normalizedContent = content
+      .split('\n\n')
+      .map(block => block.trim())
+      .filter(Boolean)
+      .join('\n\n')
+    
+    const rawHtml = marked.parse(normalizedContent, { async: false }) as string
     const clean = DOMPurify.sanitize(rawHtml, {
       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'code', 'pre', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'blockquote', 'hr'],
       ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
