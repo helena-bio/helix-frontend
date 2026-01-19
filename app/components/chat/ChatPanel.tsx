@@ -32,9 +32,9 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
             : 'bg-card border border-primary/20'
         }`}
       >
-        <MarkdownMessage 
-          content={message.content} 
-          isUser={message.role === 'user'} 
+        <MarkdownMessage
+          content={message.content}
+          isUser={message.role === 'user'}
         />
       </div>
     )
@@ -396,28 +396,9 @@ export function ChatPanel() {
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold">AI Assistant</h2>
             <p className="text-sm text-muted-foreground truncate">
-              {selectedModule === 'vus'
-                ? 'VUS Prioritization Assistant'
-                : 'Variant Analysis Assistant'
-              }
+              Variant Analysis Assistant
             </p>
           </div>
-        </div>
-
-        {/* Context Indicators */}
-        <div className="mt-3 flex flex-col gap-1">
-          {phenotype && phenotype.hpo_terms.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="h-2 w-2 rounded-full bg-green-500" />
-              <span>{phenotype.term_count} phenotype{phenotype.term_count !== 1 ? 's' : ''} active</span>
-            </div>
-          )}
-          {aggregatedResults && aggregatedResults.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="h-2 w-2 rounded-full bg-blue-500" />
-              <span>{totalGenes} matched genes (T1: {tier1Count}, T2: {tier2Count})</span>
-            </div>
-          )}
         </div>
       </div>
 
