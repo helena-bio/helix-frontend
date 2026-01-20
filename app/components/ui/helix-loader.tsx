@@ -9,12 +9,12 @@ interface HelixLoaderProps {
 }
 
 const sizeMap = {
-  sm: { container: 'w-20 h-28', helix: 'w-10 h-20' },
-  md: { container: 'w-32 h-44', helix: 'w-16 h-32' },
-  lg: { container: 'w-48 h-64', helix: 'w-24 h-48' }
+  sm: { container: 'w-16 h-20', helix: 'w-11 h-22' },
+  md: { container: 'w-24 h-32', helix: 'w-17 h-34' },
+  lg: { container: 'w-36 h-48', helix: 'w-26 h-52' }
 };
 
-export const HelixLoader: React.FC<HelixLoaderProps> = ({ 
+export const HelixLoader: React.FC<HelixLoaderProps> = ({
   size = 'md',
   speed = 3,
   className = ''
@@ -24,7 +24,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   return (
     <div className={`relative inline-flex items-center justify-center ${sizes.container} ${className}`}>
       {/* Helix - rotating in background */}
-      <div 
+      <div
         className="absolute inset-0 flex items-center justify-center"
         style={{ perspective: '1000px' }}
       >
