@@ -57,17 +57,14 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         ctx.clearRect(0, 0, width, height);
         ctx.save();
         
-        // Define clipping area (red lines area from your image)
-        // This is the visible area inside the bulb
-        const clipTop = height * 0.15;    // Top red line
-        const clipBottom = height * 0.85; // Bottom red line
+        const clipTop = height * 0.15;
+        const clipBottom = height * 0.85;
         const clipHeight = clipBottom - clipTop;
         
         ctx.beginPath();
         ctx.rect(0, clipTop, width, clipHeight);
         ctx.clip();
         
-        // Apply 3D rotation
         const centerX = width / 2;
         const centerY = height / 2;
         
@@ -80,25 +77,23 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         
         ctx.translate(-centerX, -centerY);
         
-        // Calculate positions for seamless loop
-        const normalizedOffset = offsetY % imgHeight;
+        // Fixed seamless loop calculation
         const x = centerX - imgWidth / 2;
+        const loopOffset = offsetY % imgHeight;
         
-        // Start position - align to clipping area
-        const startY = clipTop - normalizedOffset;
+        // Start drawing BEFORE the visible area to ensure seamless loop
+        const firstY = clipTop - loopOffset;
         
-        // Calculate how many copies we need to fill the visible area
-        const numCopies = Math.ceil((clipHeight + imgHeight) / imgHeight) + 1;
+        // Draw enough copies to cover visible area + buffer
+        const numCopies = Math.ceil((clipHeight + imgHeight * 2) / imgHeight);
         
-        // Draw copies to create seamless vertical loop
         for (let i = 0; i < numCopies; i++) {
-          const y = startY + (i * imgHeight);
+          const y = firstY + (i * imgHeight);
           ctx.drawImage(helixImg, x, y, imgWidth, imgHeight);
         }
         
         ctx.restore();
         
-        // Update animation
         offsetY += scrollSpeed;
         rotation += rotationSpeed;
         
