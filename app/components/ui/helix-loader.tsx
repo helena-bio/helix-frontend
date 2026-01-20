@@ -46,7 +46,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
     let offsetY = 0;
     let rotation = 0;
     
-    const scrollSpeed = 0.5;
+    const scrollSpeed = 0.8;
     const rotationSpeed = (2 * Math.PI) / (speed * 60);
     
     helixImg.onload = () => {
@@ -69,20 +69,33 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         
         ctx.translate(-centerX, -centerY);
         
-        const loopOffset = offsetY % imgHeight;
-        const startY = -imgHeight + loopOffset;
+        // Seamless loop calculation
+        const normalizedOffset = offsetY % imgHeight;
+        const startY = -normalizedOffset;
+        
+        // Draw enough copies to fill screen + buffer
         const numCopies = Math.ceil(height / imgHeight) + 2;
         
         for (let i = 0; i < numCopies; i++) {
           const y = startY + (i * imgHeight);
           const x = centerX - imgWidth / 2;
-          ctx.drawImage(helixImg, x, y, imgWidth, imgHeight);
+          
+          // Only draw if visible
+          if (y + imgHeight >= 0 && y <= height) {
+            ctx.drawImage(helixImg, x, y, imgWidth, imgHeight);
+          }
         }
         
         ctx.restore();
         
+        // Update offsets
         offsetY += scrollSpeed;
         rotation += rotationSpeed;
+        
+        // Reset offset when it completes one full cycle
+        if (offsetY >= imgHeight) {
+          offsetY = 0;
+        }
         
         animationId = requestAnimationFrame(animate);
       };
