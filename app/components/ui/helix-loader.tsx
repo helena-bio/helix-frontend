@@ -55,15 +55,10 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         const centerY = height / 2;
         ctx.translate(centerX, centerY);
         
-        const scaleX = Math.cos(rotation);
-        const minScale = 0.3;
-        
-        let actualScaleX;
-        if (scaleX >= 0) {
-          actualScaleX = minScale + (1 - minScale) * scaleX;
-        } else {
-          actualScaleX = -(minScale + (1 - minScale) * Math.abs(scaleX));
-        }
+        const normalizedRotation = rotation % (2 * Math.PI);
+        const scaleValue = Math.abs(Math.sin(normalizedRotation));
+        const minScale = 0.1;
+        const actualScaleX = minScale + (1 - minScale) * (1 - scaleValue);
         
         const scaleY = 1.0;
         ctx.scale(actualScaleX, scaleY);
@@ -80,9 +75,6 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         ctx.restore();
         offsetY += scrollSpeed;
         rotation += rotationSpeed;
-        if (offsetY >= imgHeight) {
-          offsetY = offsetY % imgHeight;
-        }
         animationId = requestAnimationFrame(animate);
       };
       animate();
