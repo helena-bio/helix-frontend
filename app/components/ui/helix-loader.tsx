@@ -34,9 +34,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
     helixImg.src = '/images/bulb_helix.png';
     let animationId: number;
     let offsetY = 0;
-    let rotation = 0;
     const scrollSpeed = 0.8;
-    const rotationSpeed = (2 * Math.PI) / (speed * 90);
     helixImg.onload = () => {
       const helixAspect = 205 / 475;
       const helixWidthRatio = 205 / 598;
@@ -52,17 +50,6 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         ctx.rect(0, clipTop, width, clipHeight);
         ctx.clip();
         const centerX = width / 2;
-        const centerY = height / 2;
-        ctx.translate(centerX, centerY);
-        
-        const normalizedRotation = rotation % (2 * Math.PI);
-        const scaleValue = Math.abs(Math.sin(normalizedRotation));
-        const minScale = 0.1;
-        const actualScaleX = minScale + (1 - minScale) * (1 - scaleValue);
-        
-        const scaleY = 1.0;
-        ctx.scale(actualScaleX, scaleY);
-        ctx.translate(-centerX, -centerY);
         const x = centerX - imgWidth / 2;
         const loopCycle = offsetY % imgHeight;
         const startY = clipTop - loopCycle;
@@ -74,7 +61,9 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         }
         ctx.restore();
         offsetY += scrollSpeed;
-        rotation += rotationSpeed;
+        if (offsetY >= imgHeight) {
+          offsetY = offsetY % imgHeight;
+        }
         animationId = requestAnimationFrame(animate);
       };
       animate();
