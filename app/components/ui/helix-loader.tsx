@@ -50,20 +50,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
     const rotationSpeed = (2 * Math.PI) / (speed * 90);
 
     helixImg.onload = () => {
-      // Bulb original: 598x872
-      // Helix original: 205x475
-      // Aspect ratio bulb: 598/872 = 0.686
-      // Aspect ratio helix: 205/475 = 0.432
-      
-      // Calculate helix dimensions to match container proportions
-      const bulbAspect = 598 / 872;
       const helixAspect = 205 / 475;
-      
-      // If container matches bulb aspect ratio
-      const containerAspect = width / height;
-      
-      // Scale helix relative to container width
-      const helixWidthRatio = 205 / 598; // helix is ~34% of bulb width
+      const helixWidthRatio = 205 / 598;
       const imgWidth = width * helixWidthRatio;
       const imgHeight = imgWidth / helixAspect;
 
@@ -71,8 +59,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         ctx.clearRect(0, 0, width, height);
         ctx.save();
 
-        // Clipping area based on bulb proportions
-        const clipTop = height * 0.18;
+        // Вдигнато по-нагоре - от 0.10 до 0.82 (беше 0.18-0.82)
+        const clipTop = height * 0.10;  // Беше 0.18, сега 0.10
         const clipBottom = height * 0.82;
         const clipHeight = clipBottom - clipTop;
 
@@ -89,7 +77,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         const minScale = 0.3;
         const actualScaleX = minScale + (1 - minScale) * scaleX;
         
-        const scaleY = 1.0; // Keep original proportions
+        const scaleY = 1.0;
         
         ctx.scale(actualScaleX, scaleY);
         ctx.translate(-centerX, -centerY);
