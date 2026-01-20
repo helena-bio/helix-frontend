@@ -46,22 +46,35 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
     let offsetY = 0;
     let rotation = 0;
     
-    const scrollSpeed = 0.8;
+    const scrollSpeed = 1.2;
     const rotationSpeed = (2 * Math.PI) / (speed * 60);
     
     helixImg.onload = () => {
-      const imgWidth = width * 0.7;
+      const imgWidth = width * 0.65;
       const imgHeight = (helixImg.height / helixImg.width) * imgWidth;
       
       const animate = () => {
         ctx.clearRect(0, 0, width, height);
-        ctx.save();
         
+        // Create clipping region (bulb interior)
+        ctx.save();
+        ctx.beginPath();
+        
+        // Ellipse for bulb area (adjust these values to match your bulb shape)
+        const clipX = width * 0.5;
+        const clipY = height * 0.45;
+        const clipRadiusX = width * 0.35;
+        const clipRadiusY = height * 0.35;
+        ctx.ellipse(clipX, clipY, clipRadiusX, clipRadiusY, 0, 0, Math.PI * 2);
+        ctx.clip();
+        
+        // Apply transformations
         const centerX = width / 2;
         const centerY = height / 2;
         
         ctx.translate(centerX, centerY);
         
+        // 3D rotation effect
         const scaleX = Math.abs(Math.cos(rotation));
         const minScale = 0.3;
         const actualScaleX = minScale + (1 - minScale) * scaleX;
@@ -69,33 +82,29 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         
         ctx.translate(-centerX, -centerY);
         
-        // Seamless loop calculation
+        // Calculate seamless loop position
         const normalizedOffset = offsetY % imgHeight;
-        const startY = -normalizedOffset;
         
-        // Draw enough copies to fill screen + buffer
-        const numCopies = Math.ceil(height / imgHeight) + 2;
+        // Draw current image
+        const y1 = -normalizedOffset;
+        const x = centerX - imgWidth / 2;
+        ctx.drawImage(helixImg, x, y1, imgWidth, imgHeight);
         
-        for (let i = 0; i < numCopies; i++) {
-          const y = startY + (i * imgHeight);
-          const x = centerX - imgWidth / 2;
-          
-          // Only draw if visible
-          if (y + imgHeight >= 0 && y <= height) {
-            ctx.drawImage(helixImg, x, y, imgWidth, imgHeight);
-          }
+        // Draw next image (seamlessly below)
+        const y2 = y1 + imgHeight;
+        ctx.drawImage(helixImg, x, y2, imgWidth, imgHeight);
+        
+        // Draw previous image (in case we need it above)
+        if (y1 > -imgHeight) {
+          const y0 = y1 - imgHeight;
+          ctx.drawImage(helixImg, x, y0, imgWidth, imgHeight);
         }
         
         ctx.restore();
         
-        // Update offsets
+        // Update animation
         offsetY += scrollSpeed;
         rotation += rotationSpeed;
-        
-        // Reset offset when it completes one full cycle
-        if (offsetY >= imgHeight) {
-          offsetY = 0;
-        }
         
         animationId = requestAnimationFrame(animate);
       };
@@ -114,7 +123,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   
   return (
     <div className={`relative inline-flex items-center justify-center ${sizes.container} ${className}`}>
-      <div ref={containerRef} className="absolute inset-0 overflow-hidden">
+      <div ref={containerRef} className="absolute inset-0">
         <canvas
           ref={canvasRef}
           className="w-full h-full"
