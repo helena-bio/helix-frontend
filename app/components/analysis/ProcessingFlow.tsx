@@ -27,6 +27,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { HelixLoader } from '@/components/ui/helix-loader'
 import {
   Loader2,
   AlertCircle,
@@ -178,9 +179,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
     }
-    
+
     const stage = taskStatus.info.stage as string
-    
+
     // Format stage name for display
     const stageNames: Record<string, string> = {
       'initializing': 'Initializing pipeline',
@@ -192,7 +193,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       'export': 'Exporting results',
       'completed': 'Processing complete'
     }
-    
+
     return stageNames[stage] || stage
   }, [taskStatus, hasStarted])
 
@@ -314,9 +315,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
                 </div>
               )}
 
-              <div className="flex items-center justify-center gap-2 text-md text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading results...</span>
+              <div className="flex items-center justify-center gap-3">
+                <HelixLoader size="sm" speed={2} />
+                <span className="text-md text-muted-foreground">Loading results...</span>
               </div>
             </div>
           </CardContent>
@@ -329,10 +330,10 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
-        {/* Header */}
+        {/* Header with Helix Loader */}
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-primary/10">
-            <Dna className="h-6 w-6 text-primary" />
+          <div className="flex items-center justify-center">
+            <HelixLoader size="md" speed={3} />
           </div>
           <div>
             <h1 className="text-3xl font-bold">Analyzing Variants</h1>
@@ -348,9 +349,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
             <div className="space-y-6">
               {/* Current Stage */}
               <div className="text-center">
-                <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary/10 mb-4">
-                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                </div>
                 <p className="text-lg font-medium capitalize">{currentStage}</p>
               </div>
 
