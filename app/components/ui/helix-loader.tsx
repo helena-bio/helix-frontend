@@ -61,7 +61,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
 
         // Клипинг зоната е където е червената линия
         const clipTop = height * 0.10;  // Червената линия
-        const clipBottom = height * 0.82;
+        const clipBottom = height * 0.76;
         const clipHeight = clipBottom - clipTop;
 
         ctx.beginPath();
