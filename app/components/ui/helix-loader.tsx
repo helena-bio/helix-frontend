@@ -46,8 +46,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
     let offsetY = 0;
     let rotation = 0;
 
-    const scrollSpeed = 1.5;
-    const rotationSpeed = (2 * Math.PI) / (speed * 60);
+    const scrollSpeed = 0.8;
+    const rotationSpeed = (2 * Math.PI) / (speed * 90);
 
     helixImg.onload = () => {
       const imgWidth = width * 0.65;
@@ -57,9 +57,9 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         ctx.clearRect(0, 0, width, height);
         ctx.save();
 
-        // Променени клипинг границите - започва по-високо (25%) и свършва по-рано (75%)
-        const clipTop = height * 0.25;  // Беше 0.15, сега 0.25 - по-високо
-        const clipBottom = height * 0.75;  // Беше 0.85, сега 0.75 - по-ниско
+        // Разширена клипинг зона - от 18% до 82% (като на втората снимка)
+        const clipTop = height * 0.18;  // Беше 0.25, сега 0.18
+        const clipBottom = height * 0.82;  // Беше 0.75, сега 0.82
         const clipHeight = clipBottom - clipTop;
 
         ctx.beginPath();
@@ -75,8 +75,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         const minScale = 0.3;
         const actualScaleX = minScale + (1 - minScale) * scaleX;
         
-        // Добавям вертикално сплескване (scaleY)
-        const scaleY = 0.8;  // Сплесква я на 80% от оригиналната височина
+        // Разтягане вертикално - беше 0.8, сега 1.1
+        const scaleY = 1.1;
         
         ctx.scale(actualScaleX, scaleY);
         ctx.translate(-centerX, -centerY);
