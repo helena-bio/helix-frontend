@@ -6,9 +6,9 @@ interface HelixLoaderProps {
   className?: string;
 }
 const sizeMap = {
-  sm: { container: 'w-16 h-20' },
-  md: { container: 'w-24 h-32' },
-  lg: { container: 'w-36 h-48' }
+  sm: { container: 'w-16 h-16' },
+  md: { container: 'w-24 h-24' },
+  lg: { container: 'w-32 h-32' }
 };
 export const HelixLoader: React.FC<HelixLoaderProps> = ({
   size = 'md',
@@ -77,6 +77,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   }, [speed]);
   return (
     <div className={`relative inline-flex items-center justify-center ${sizes.container} ${className}`}>
+      <div className="absolute inset-0 bg-gray-200 rounded-full" />
       <div ref={containerRef} className="absolute inset-0">
         <canvas
           ref={canvasRef}
