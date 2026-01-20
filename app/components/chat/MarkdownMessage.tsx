@@ -8,11 +8,11 @@ interface MarkdownMessageProps {
 }
 
 export function MarkdownMessage({ content, isUser = false }: MarkdownMessageProps) {
-  const textColor = isUser ? 'text-gray-900' : 'text-gray-800'
-
+  const textColor = isUser ? 'text-white' : 'text-gray-800'
+  
   return (
     <div className={`text-base leading-relaxed select-text ${textColor}`}>
-      <div className="markdown-content">
+      <div className="markdown-content prose prose-sm max-w-none prose-invert">
         <Streamdown parseIncompleteMarkdown={true}>
           {content}
         </Streamdown>
