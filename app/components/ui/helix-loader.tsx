@@ -59,8 +59,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         ctx.clearRect(0, 0, width, height);
         ctx.save();
 
-        // Вдигнато по-нагоре - от 0.10 до 0.82 (беше 0.18-0.82)
-        const clipTop = height * 0.10;  // Беше 0.18, сега 0.10
+        // Клипинг зоната е където е червената линия
+        const clipTop = height * 0.10;  // Червената линия
         const clipBottom = height * 0.82;
         const clipHeight = clipBottom - clipTop;
 
@@ -84,7 +84,10 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
 
         const x = centerX - imgWidth / 2;
         const loopCycle = offsetY % imgHeight;
+        
+        // Спиралата започва точно на clipTop (червената линия)
         const startY = clipTop - loopCycle;
+        
         const numCopies = Math.ceil((clipHeight + imgHeight) / imgHeight) + 1;
         
         for (let i = 0; i < numCopies; i++) {
