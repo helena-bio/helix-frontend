@@ -25,6 +25,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { HelixLoader } from '@/components/ui/helix-loader'
 import {
   Loader2,
   AlertCircle,
@@ -228,10 +229,10 @@ export function ProcessingStatus({
       <Card className="w-full max-w-2xl">
         <CardContent className="pt-6">
           <div className="space-y-6">
-            {/* Header */}
+            {/* Header with Helix Loader */}
             <div className="text-center">
-              <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary/10 mb-4">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <div className="flex justify-center mb-4">
+                <HelixLoader size="md" speed={3} />
               </div>
               <h3 className="text-lg font-semibold mb-2">Processing VCF File</h3>
               <p className="text-md text-muted-foreground">{currentStage}</p>
