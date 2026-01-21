@@ -340,7 +340,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       default:
         return {
           title: 'Upload VCF File',
-          description: 'Start your analysis by uploading a genetic variant file',
+          description: 'Upload a genetic variant file',
         }
     }
   }
