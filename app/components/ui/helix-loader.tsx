@@ -52,8 +52,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
           left: '50%',
           transform: 'translateX(-50%)',
           // Fade in/out mask - transparent at edges, visible in middle
-          maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 100%)',
         }}
       >
         <div
