@@ -33,7 +33,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   const helixAspect = 205 / 475;
   const helixWidth = width * helixWidthRatio;
   const helixHeight = helixWidth / helixAspect;
-  
+
   // Animation duration based on speed
   const duration = 8 / speed;
 
@@ -54,9 +54,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         }}
       >
         <div
-          className="animate-scroll-helix"
           style={{
-            animationDuration: `${duration}s`,
+            animation: `scrollHelix ${duration}s linear infinite`,
           }}
         >
           {/* Multiple copies for seamless loop */}
