@@ -316,7 +316,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
               )}
 
               <div className="flex items-center justify-center gap-3">
-                <HelixLoader size="sm" speed={2} />
+                <HelixLoader size="xs" speed={2} />
                 <span className="text-md text-muted-foreground">Loading results...</span>
               </div>
             </div>
@@ -331,10 +331,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header with Helix Loader */}
-        <div className="flex items-start gap-4">
-          <div className="flex items-center justify-center">
-            <HelixLoader size="md" speed={3} />
-          </div>
+        <div className="text-center space-y-4">
+          <HelixLoader size="sm" speed={3} centered />
           <div>
             <h1 className="text-3xl font-bold">Analyzing Variants</h1>
             <p className="text-base text-muted-foreground mt-1">
