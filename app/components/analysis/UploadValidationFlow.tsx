@@ -342,7 +342,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Render - QC Results State
   if (phase === 'qc_results' && qcResults) {
     return (
-      <div className="flex flex-col min-h-[600px] p-8 pt-16">
+      <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           {/* Header - HelixLoader + Title (same as upload screen, not animated) */}
           <div className="flex items-center justify-center gap-4">
@@ -456,7 +456,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Render - Error State
   if (phase === 'error') {
     return (
-      <div className="flex flex-col min-h-[600px] p-8 pt-16">
+      <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           {/* Header - HelixLoader + Title (same as upload screen, not animated) */}
           <div className="flex items-center justify-center gap-4">
@@ -501,7 +501,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
   // Render - Unified Selection/Upload/Validation State
   return (
-    <div className="flex flex-col min-h-[600px] p-8 pt-16">
+    <div className="flex flex-col min-h-[600px] p-8">
       <div className="w-full max-w-2xl mx-auto space-y-6">
         {/* Header - HelixLoader + Title (fixed position from top) */}
         <div className="flex items-center justify-center gap-4">
