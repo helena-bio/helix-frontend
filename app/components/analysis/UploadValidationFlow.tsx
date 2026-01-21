@@ -489,9 +489,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
   // Render - Unified Selection/Upload/Validation State
   return (
-    <div className="flex items-center justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-2xl space-y-6">
-        {/* Header - HelixLoader + Title */}
+    <div className="flex flex-col min-h-[600px] p-8 pt-16">
+      <div className="w-full max-w-2xl mx-auto space-y-6">
+        {/* Header - HelixLoader + Title (fixed position from top) */}
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} animated={isProcessing} />
           <div className="text-center">
@@ -502,7 +502,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
           </div>
         </div>
 
-        {/* Dotted Upload Zone - consistent across states */}
+        {/* Dotted Upload Zone - expands downward, not upward */}
         <div
           onDragEnter={!isProcessing ? handleDragEnter : undefined}
           onDragLeave={!isProcessing ? handleDragLeave : undefined}
