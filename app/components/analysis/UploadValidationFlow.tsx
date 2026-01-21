@@ -450,7 +450,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   if (phase === 'uploading' || phase === 'validating') {
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
-        <div className="w-full max-w-2xl space-y-4">
+        <div className="w-full max-w-md space-y-4">
           {/* Header - HelixLoader + Title side by side, centered */}
           <div className="flex items-center justify-center gap-4">
             <HelixLoader size="xs" speed={3} animated={true} />
@@ -461,14 +461,13 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
               </p>
             </div>
           </div>
-
           {/* Progress Card */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
+            <CardContent className="p-4">
+              <div className="space-y-2">
                 <Progress value={phaseInfo?.progress || 0} className="h-2" />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{selectedFile?.name}</span>
+                  <span className="truncate mr-4">{selectedFile?.name}</span>
                   <span>{phaseInfo?.progress}%</span>
                 </div>
               </div>
