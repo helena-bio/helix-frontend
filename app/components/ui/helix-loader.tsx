@@ -41,7 +41,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
     ctx.scale(dpr, dpr);
 
     const helixImg = new Image();
-    helixImg.src = '/images/bulb_helix.png';
+    helixImg.src = '/images/bulb_helix.svg';
 
     let animationId: number;
     let offsetY = 0;
@@ -110,7 +110,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         />
       </div>
       <img
-        src="/images/bulb.png"
+        src="/images/bulb.svg"
         alt="Loading"
         className="absolute inset-0 w-full h-full pointer-events-none z-10"
       />
