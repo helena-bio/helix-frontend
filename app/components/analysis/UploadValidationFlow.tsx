@@ -20,7 +20,7 @@
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
-import { Upload, FileCode, AlertCircle, CheckCircle2, X, Loader2, Download, Info, PlayCircle, Dna } from 'lucide-react'
+import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -133,6 +133,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const canSubmit = useMemo(() => {
     return !!(selectedFile && phase === 'selection' && !validationError)
   }, [selectedFile, phase, validationError])
+
+  // Is processing (uploading or validating)
+  const isProcessing = phase === 'uploading' || phase === 'validating'
 
   // File validation
   const validateFile = useCallback((file: File): string | null => {
@@ -321,27 +324,31 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     URL.revokeObjectURL(url)
   }, [qcResults, selectedFile])
 
-  // Get current phase info for display
-  const getPhaseInfo = () => {
+  // Get header info based on phase
+  const getHeaderInfo = () => {
     switch (phase) {
       case 'uploading':
         return {
           title: 'Uploading File',
           description: 'Please wait while we upload your VCF file...',
-          progress: uploadProgress,
         }
       case 'validating':
         return {
-          title: 'Validating VCF File',
+          title: 'Validating File',
           description: 'Checking file format, headers, and structure...',
-          progress: validationProgress || 10,
         }
       default:
-        return null
+        return {
+          title: 'Upload VCF File',
+          description: 'Start your analysis by uploading a genetic variant file',
+        }
     }
   }
 
-  const phaseInfo = getPhaseInfo()
+  // Get current progress
+  const currentProgress = phase === 'uploading' ? uploadProgress : validationProgress || 10
+
+  const headerInfo = getHeaderInfo()
 
   // Render - QC Results State
   if (phase === 'qc_results' && qcResults) {
@@ -446,38 +453,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     )
   }
 
-  // Render - Processing State (Upload or Validation)
-  if (phase === 'uploading' || phase === 'validating') {
-    return (
-      <div className="flex items-center justify-center min-h-[600px] p-8">
-        <div className="w-full max-w-md space-y-4">
-          {/* Header - HelixLoader + Title side by side, centered */}
-          <div className="flex items-center justify-center gap-4">
-            <HelixLoader size="xs" speed={3} animated={true} />
-            <div>
-              <h1 className="text-3xl font-bold">{phaseInfo?.title}</h1>
-              <p className="text-base text-muted-foreground">
-                {phaseInfo?.description}
-              </p>
-            </div>
-          </div>
-          {/* Progress Card */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                <Progress value={phaseInfo?.progress || 0} className="h-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span className="truncate mr-4">{selectedFile?.name}</span>
-                  <span>{phaseInfo?.progress}%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
   // Render - Error State
   if (phase === 'error') {
     return (
@@ -511,40 +486,45 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     )
   }
 
-  // Render - File Selection State
+  // Render - Unified Selection/Upload/Validation State
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Upload VCF File</h1>
-          <p className="text-base text-muted-foreground">
-            Start your analysis by uploading a genetic variant file
-          </p>
+        {/* Header - HelixLoader + Title */}
+        <div className="flex items-center justify-center gap-4">
+          <HelixLoader size="xs" speed={3} animated={isProcessing} />
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight">{headerInfo.title}</h1>
+            <p className="text-base text-muted-foreground">
+              {headerInfo.description}
+            </p>
+          </div>
         </div>
 
-        {/* File Upload Zone - Keep same layout with or without file */}
+        {/* Dotted Upload Zone - consistent across states */}
         <div
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
+          onDragEnter={!isProcessing ? handleDragEnter : undefined}
+          onDragLeave={!isProcessing ? handleDragLeave : undefined}
+          onDragOver={!isProcessing ? handleDragOver : undefined}
+          onDrop={!isProcessing ? handleDrop : undefined}
           className={`
             relative border-2 border-dashed rounded-lg p-12 transition-all
             ${isDragging
               ? 'border-primary bg-primary/5 scale-[1.02]'
-              : 'border-border hover:border-primary/50 hover:bg-accent/5'
+              : 'border-border'
             }
+            ${!isProcessing ? 'hover:border-primary/50 hover:bg-accent/5 cursor-pointer' : ''}
           `}
-          role="button"
-          tabIndex={0}
+          role={!isProcessing ? 'button' : undefined}
+          tabIndex={!isProcessing ? 0 : undefined}
           aria-label="File upload area"
-          onKeyDown={(e) => {
+          onClick={!isProcessing && !selectedFile ? handleBrowseClick : undefined}
+          onKeyDown={!isProcessing ? (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
               handleBrowseClick()
             }
-          }}
+          } : undefined}
         >
           <input
             ref={fileInputRef}
@@ -552,66 +532,76 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
             accept={ALLOWED_EXTENSIONS.join(',')}
             onChange={handleFileSelect}
             className="sr-only"
-            disabled={phase !== 'selection'}
+            disabled={isProcessing}
             aria-label="File input"
           />
 
           <div className="flex flex-col items-center gap-6 text-center">
-            {/* Icon */}
+            {/* Icon - always show */}
             <div className="p-6 rounded-full bg-primary/10">
               <FileCode className="h-12 w-12 text-primary" />
             </div>
 
-            {/* Text */}
-            {selectedFile ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-medium">{selectedFile.name}</p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleRemoveFile()
-                    }}
-                    className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
-                    aria-label="Remove file"
-                  >
-                    <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                  </button>
+            {/* Content varies by state */}
+            {isProcessing ? (
+              /* Processing state - show progress */
+              <div className="w-full max-w-sm space-y-4">
+                <Progress value={currentProgress} className="h-2" />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span className="truncate mr-4">{selectedFile?.name}</span>
+                  <span>{currentProgress}%</span>
                 </div>
-                <p className="text-base text-muted-foreground">{fileSize}</p>
               </div>
+            ) : selectedFile ? (
+              /* File selected state */
+              <>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-medium">{selectedFile.name}</p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRemoveFile()
+                      }}
+                      className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
+                      aria-label="Remove file"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </div>
+                  <p className="text-base text-muted-foreground">{fileSize}</p>
+                </div>
+                <Button
+                  size="lg"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleSubmit()
+                  }}
+                  disabled={!canSubmit}
+                >
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                  <span className="text-base">Upload & Analyze</span>
+                </Button>
+              </>
             ) : (
-              <div>
-                <p className="text-lg font-medium mb-2">
-                  Drag and drop your VCF file here
-                </p>
-                <p className="text-base text-muted-foreground mb-1">
-                  or click to browse
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Supports .vcf and .vcf.gz files (max 2GB)
-                </p>
-              </div>
-            )}
-
-            {/* Button */}
-            {selectedFile ? (
-              <Button
-                size="lg"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleSubmit()
-                }}
-                disabled={!canSubmit}
-              >
-                <CheckCircle2 className="h-5 w-5 mr-2" />
-                <span className="text-base">Upload & Analyze</span>
-              </Button>
-            ) : (
-              <Button size="lg" onClick={handleBrowseClick}>
-                <Upload className="h-5 w-5 mr-2" />
-                <span className="text-base">Select File</span>
-              </Button>
+              /* No file state */
+              <>
+                <div>
+                  <p className="text-lg font-medium mb-2">
+                    Drag and drop your VCF file here
+                  </p>
+                  <p className="text-base text-muted-foreground mb-1">
+                    or click to browse
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Supports .vcf and .vcf.gz files (max 2GB)
+                  </p>
+                </div>
+                <Button size="lg" onClick={handleBrowseClick}>
+                  <Upload className="h-5 w-5 mr-2" />
+                  <span className="text-base">Select File</span>
+                </Button>
+              </>
             )}
           </div>
         </div>
