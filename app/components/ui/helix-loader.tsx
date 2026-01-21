@@ -45,7 +45,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
 
     let animationId: number;
     let offsetY = 0;
-    const scrollSpeed = 0.35; // По-бавно (беше 0.8)
+    const scrollSpeed = 0.4; // По-бавно (беше 0.8)
 
     helixImg.onload = () => {
       const helixAspect = 205 / 475;
@@ -60,7 +60,6 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         const clipTop = height * 0.20;
         const clipBottom = height * 0.76;
         const clipHeight = clipBottom - clipTop;
-        const fadeSize = clipHeight * 0.25; // Fade зона
 
         ctx.beginPath();
         ctx.rect(0, clipTop, width, clipHeight);
@@ -76,25 +75,6 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
           const y = startY + (i * imgHeight);
           ctx.drawImage(helixImg, x, y, imgWidth, imgHeight);
         }
-
-        ctx.restore();
-
-        // Fade in/out ефект с градиенти
-        ctx.save();
-        
-        // Горен fade (от непрозрачно към прозрачно)
-        const gradientTop = ctx.createLinearGradient(0, clipTop, 0, clipTop + fadeSize);
-        gradientTop.addColorStop(0, 'rgba(255, 255, 255, 1)');
-        gradientTop.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = gradientTop;
-        ctx.fillRect(0, clipTop, width, fadeSize);
-
-        // Долен fade (от прозрачно към непрозрачно)
-        const gradientBottom = ctx.createLinearGradient(0, clipBottom - fadeSize, 0, clipBottom);
-        gradientBottom.addColorStop(0, 'rgba(255, 255, 255, 0)');
-        gradientBottom.addColorStop(1, 'rgba(255, 255, 255, 1)');
-        ctx.fillStyle = gradientBottom;
-        ctx.fillRect(0, clipBottom - fadeSize, width, fadeSize);
 
         ctx.restore();
 
