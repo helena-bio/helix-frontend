@@ -6,6 +6,7 @@ interface HelixLoaderProps {
   speed?: number;
   className?: string;
   centered?: boolean;
+  animated?: boolean;  // NEW: controls if helix is moving
 }
 
 const sizeMap = {
@@ -19,7 +20,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   size = 'sm',
   speed = 3,
   className = '',
-  centered = false
+  centered = false,
+  animated = true  // Default to animated for backwards compatibility
 }) => {
   const { width, height } = sizeMap[size];
   
@@ -51,14 +53,14 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
           width: `${helixWidth}px`,
           left: '50%',
           transform: 'translateX(-50%)',
-          // Fade in/out mask - transparent at edges, visible in middle
+          // Fade in/out mask - transparent at top edge, visible below
           maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 100%)',
         }}
       >
         <div
           style={{
-            animation: `scrollHelix ${duration}s linear infinite`,
+            animation: animated ? `scrollHelix ${duration}s linear infinite` : 'none',
           }}
         >
           {/* Multiple copies for seamless loop */}
