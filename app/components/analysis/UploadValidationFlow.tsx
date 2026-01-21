@@ -342,8 +342,19 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Render - QC Results State
   if (phase === 'qc_results' && qcResults) {
     return (
-      <div className="flex items-center justify-center min-h-[600px] p-8">
-        <div className="max-w-2xl w-full space-y-6">
+      <div className="flex flex-col min-h-[600px] p-8 pt-16">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
+          {/* Header - HelixLoader + Title (same as upload screen, not animated) */}
+          <div className="flex items-center justify-center gap-4">
+            <HelixLoader size="xs" speed={3} animated={false} />
+            <div className="text-center">
+              <h1 className="text-3xl font-bold tracking-tight">Upload VCF File</h1>
+              <p className="text-base text-muted-foreground">
+                Upload a genetic variant file
+              </p>
+            </div>
+          </div>
+
           {/* File Info & QC Results Card */}
           <Card>
             <CardContent className="p-6">
@@ -445,32 +456,45 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Render - Error State
   if (phase === 'error') {
     return (
-      <div className="flex items-center justify-center min-h-[600px] p-8">
-        <Card className="w-full max-w-md border-destructive">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
-                <AlertCircle className="h-8 w-8 text-destructive" />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Process Failed</h3>
-                <p className="text-md text-muted-foreground">
-                  {errorMessage || 'An unexpected error occurred'}
-                </p>
-              </div>
-
-              <div className="flex gap-2 justify-center">
-                <Button onClick={handleSubmit}>
-                  <span className="text-base">Try Again</span>
-                </Button>
-                <Button variant="outline" onClick={handleReset}>
-                  <span className="text-base">Start Over</span>
-                </Button>
-              </div>
+      <div className="flex flex-col min-h-[600px] p-8 pt-16">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
+          {/* Header - HelixLoader + Title (same as upload screen, not animated) */}
+          <div className="flex items-center justify-center gap-4">
+            <HelixLoader size="xs" speed={3} animated={false} />
+            <div className="text-center">
+              <h1 className="text-3xl font-bold tracking-tight">Upload VCF File</h1>
+              <p className="text-base text-muted-foreground">
+                Upload a genetic variant file
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-6">
+                <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Process Failed</h3>
+                  <p className="text-md text-muted-foreground">
+                    {errorMessage || 'An unexpected error occurred'}
+                  </p>
+                </div>
+
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={handleSubmit}>
+                    <span className="text-base">Try Again</span>
+                  </Button>
+                  <Button variant="outline" onClick={handleReset}>
+                    <span className="text-base">Start Over</span>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
