@@ -331,21 +331,21 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-4">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Analyzing Variants</h1>
-          <p className="text-base text-muted-foreground mt-1">
-            Running ACMG classification pipeline
-          </p>
+        {/* Header - Loader + Title side by side, centered */}
+        <div className="flex items-center justify-center gap-4">
+          <HelixLoader size="sm" speed={3} />
+          <div>
+            <h1 className="text-3xl font-bold">Analyzing Variants</h1>
+            <p className="text-base text-muted-foreground">
+              Running ACMG classification pipeline
+            </p>
+          </div>
         </div>
 
         {/* Main Progress Card */}
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-6">
-              {/* Helix Loader */}
-              <HelixLoader size="xs" speed={3} centered />
-
               {/* Current Stage */}
               <div className="text-center">
                 <p className="text-lg font-medium capitalize">{currentStage}</p>
