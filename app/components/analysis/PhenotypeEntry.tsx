@@ -242,7 +242,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header - HelixLoader + Title side by side */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} animated={isMatching} />
           <div>
             <h1 className="text-3xl font-bold">Phenotype Matching</h1>
