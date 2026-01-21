@@ -30,7 +30,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   
   // Helix sizing (same ratios as before)
   const helixWidthRatio = 205 / 598;
-  const helixAspect = 205 / 475;
+  const helixAspect = 205 / 473;
   const helixWidth = width * helixWidthRatio;
   const helixHeight = helixWidth / helixAspect;
 
