@@ -597,7 +597,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                     Supports .vcf and .vcf.gz files (max 2GB)
                   </p>
                 </div>
-                <Button size="lg" onClick={handleBrowseClick}>
+                <Button size="lg" onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}>
                   <Upload className="h-5 w-5 mr-2" />
                   <span className="text-base">Select File</span>
                 </Button>
