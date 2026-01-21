@@ -30,7 +30,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   
   // Helix sizing (same ratios as before)
   const helixWidthRatio = 205 / 598;
-  const helixAspect = 205 / 473;
+  const helixAspect = 205 / 475;
   const helixWidth = width * helixWidthRatio;
   const helixHeight = helixWidth / helixAspect;
 
@@ -50,7 +50,10 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
           height: `${clipHeight}px`,
           width: `${helixWidth}px`,
           left: '50%',
-          transform: 'translateX(-50%)'
+          transform: 'translateX(-50%)',
+          // Fade in/out mask - transparent at edges, visible in middle
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
         }}
       >
         <div
