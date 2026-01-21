@@ -20,7 +20,7 @@
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
-import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna } from 'lucide-react'
+import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -136,6 +136,18 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
   // Is processing (uploading or validating)
   const isProcessing = phase === 'uploading' || phase === 'validating'
+
+  // Get button text based on phase
+  const getButtonText = () => {
+    switch (phase) {
+      case 'uploading':
+        return 'Uploading...'
+      case 'validating':
+        return 'Validating...'
+      default:
+        return 'Upload & Analyze'
+    }
+  }
 
   // File validation
   const validateFile = useCallback((file: File): string | null => {
@@ -543,44 +555,56 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
             </div>
 
             {/* Content varies by state */}
-            {isProcessing ? (
-              /* Processing state - show progress */
-              <div className="w-full max-w-sm space-y-4">
-                <Progress value={currentProgress} className="h-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span className="truncate mr-4">{selectedFile?.name}</span>
-                  <span>{currentProgress}%</span>
-                </div>
-              </div>
-            ) : selectedFile ? (
-              /* File selected state */
+            {selectedFile ? (
+              /* File selected or processing state */
               <>
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-medium">{selectedFile.name}</p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleRemoveFile()
-                      }}
-                      className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
-                      aria-label="Remove file"
-                    >
-                      <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                    </button>
+                    {!isProcessing && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveFile()
+                        }}
+                        className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
+                        aria-label="Remove file"
+                      >
+                        <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    )}
                   </div>
                   <p className="text-base text-muted-foreground">{fileSize}</p>
                 </div>
+
+                {/* Progress bar - only during processing */}
+                {isProcessing && (
+                  <div className="w-full max-w-sm space-y-2">
+                    <Progress value={currentProgress} className="h-2" />
+                    <p className="text-sm text-muted-foreground text-center">{currentProgress}%</p>
+                  </div>
+                )}
+
+                {/* Button - always visible, disabled during processing */}
                 <Button
                   size="lg"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleSubmit()
                   }}
-                  disabled={!canSubmit}
+                  disabled={isProcessing || !canSubmit}
                 >
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  <span className="text-base">Upload & Analyze</span>
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      <span className="text-base">{getButtonText()}</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      <span className="text-base">Upload & Analyze</span>
+                    </>
+                  )}
                 </Button>
               </>
             ) : (
