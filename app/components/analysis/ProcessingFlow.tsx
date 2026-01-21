@@ -332,15 +332,12 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     <>
       <div className="flex items-center justify-center min-h-[600px] p-8">
         <div className="w-full max-w-2xl space-y-6">
-          {/* Header with Helix Loader */}
-          <div className="text-center space-y-4">
-            <div>
-              <h1 className="text-3xl font-bold">Analyzing Variants</h1>
-              <p className="text-base text-muted-foreground mt-1">
-                Running ACMG classification pipeline
-              </p>
-            </div>
-            <HelixLoader size="xs" speed={3} centered />
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="text-3xl font-bold">Analyzing Variants</h1>
+            <p className="text-base text-muted-foreground mt-1">
+              Running ACMG classification pipeline
+            </p>
           </div>
 
           {/* Main Progress Card */}
@@ -413,9 +410,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
         </div>
       </div>
 
-      {/* Fixed Loader in Bottom Right Corner */}
+      {/* Fixed Loader in Bottom Left Corner */}
       {isProcessing && (
-        <div className="fixed bottom-8 right-8 z-50">
+        <div className="fixed bottom-8 left-8 z-50">
           <HelixLoader size="sm" speed={3} />
         </div>
       )}
