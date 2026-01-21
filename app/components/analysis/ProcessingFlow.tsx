@@ -330,14 +330,14 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   // Processing State
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-2xl space-y-6">
+      <div className="w-full max-w-2xl space-y-4">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-3xl font-bold">Analyzing Variants</h1>
           <p className="text-base text-muted-foreground mt-1">
             Running ACMG classification pipeline
           </p>
-          <div className="mt-4">
+          <div className="mt-2">
             <HelixLoader size="xs" speed={3} centered />
           </div>
         </div>
