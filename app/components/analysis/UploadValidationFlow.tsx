@@ -26,6 +26,7 @@ import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { HelixLoader } from '@/components/ui/helix-loader'
 import { useUploadVCF, useStartValidation } from '@/hooks/mutations'
 import { useTaskStatus } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -226,7 +227,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const handleRemoveFile = useCallback(() => {
     setSelectedFile(null)
     setValidationError(null)
-setUploadProgress(0)
+    setUploadProgress(0)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -328,14 +329,12 @@ setUploadProgress(0)
           title: 'Uploading File',
           description: 'Please wait while we upload your VCF file...',
           progress: uploadProgress,
-          showSpinner: false,
         }
       case 'validating':
         return {
           title: 'Validating VCF File',
           description: 'Checking file format, headers, and structure...',
           progress: validationProgress || 10,
-          showSpinner: true,
         }
       default:
         return null
@@ -451,37 +450,31 @@ setUploadProgress(0)
   if (phase === 'uploading' || phase === 'validating') {
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center p-4 rounded-full bg-primary/10">
-                <FileCode className="h-8 w-8 text-primary animate-pulse" />
-              </div>
+        <div className="w-full max-w-2xl space-y-4">
+          {/* Header - HelixLoader + Title side by side, centered */}
+          <div className="flex items-center justify-center gap-4">
+            <HelixLoader size="xs" speed={3} animated={true} />
+            <div>
+              <h1 className="text-3xl font-bold">{phaseInfo?.title}</h1>
+              <p className="text-base text-muted-foreground">
+                {phaseInfo?.description}
+              </p>
+            </div>
+          </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-2">{phaseInfo?.title}</h3>
-                <p className="text-md text-muted-foreground">
-                  {phaseInfo?.description}
-                </p>
-              </div>
-
-              <div className="space-y-2">
+          {/* Progress Card */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
                 <Progress value={phaseInfo?.progress || 0} className="h-2" />
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>{selectedFile?.name}</span>
                   <span>{phaseInfo?.progress}%</span>
                 </div>
               </div>
-
-              {phaseInfo?.showSpinner && (
-                <div className="flex items-center justify-center gap-2 text-md text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>This usually takes a few seconds...</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
