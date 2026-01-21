@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Progress } from '@/components/ui/progress'
 import { HPOTermCard } from './HPOTermCard'
+import { HelixLoader } from '@/components/ui/helix-loader'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useHPOSearch, useDebounce, useHPOExtract, useSavePhenotype } from '@/hooks'
 import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
@@ -240,18 +241,13 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
-        {/* Header */}
-        <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-primary/10">
-            <Dna className="h-6 w-6 text-primary" />
-          </div>
+        {/* Header - HelixLoader + Title side by side */}
+        <div className="flex items-center gap-4">
+          <HelixLoader size="xs" speed={3} animated={isMatching} />
           <div>
             <h1 className="text-3xl font-bold">Phenotype Matching</h1>
-            <p className="text-base text-muted-foreground mt-1">
+            <p className="text-base text-muted-foreground">
               Add patient phenotypes to prioritize variants
-            </p>
-            <p className="text-md text-muted-foreground mt-1">
-              Variants will be ranked by how well they match the patient's clinical features
             </p>
           </div>
         </div>
