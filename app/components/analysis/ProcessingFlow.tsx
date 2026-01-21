@@ -233,6 +233,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   const progress = getProgress()
   const currentStage = getCurrentStage()
+  const isProcessing = !errorMessage && !taskStatus?.successful
 
   // Error State
   if (errorMessage) {
@@ -328,87 +329,96 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Processing State
   return (
-    <div className="flex items-center justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-2xl space-y-6">
-        {/* Header with Helix Loader */}
-        <div className="text-center space-y-4">
-          <div>
-            <h1 className="text-3xl font-bold">Analyzing Variants</h1>
-            <p className="text-base text-muted-foreground mt-1">
-              Running ACMG classification pipeline
-            </p>
+    <>
+      <div className="flex items-center justify-center min-h-[600px] p-8">
+        <div className="w-full max-w-2xl space-y-6">
+          {/* Header with Helix Loader */}
+          <div className="text-center space-y-4">
+            <div>
+              <h1 className="text-3xl font-bold">Analyzing Variants</h1>
+              <p className="text-base text-muted-foreground mt-1">
+                Running ACMG classification pipeline
+              </p>
+            </div>
+            <HelixLoader size="xs" speed={3} centered />
           </div>
-          <HelixLoader size="xs" speed={3} centered />
-        </div>
 
-        {/* Main Progress Card */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-6">
-              {/* Current Stage */}
-              <div className="text-center">
-                <p className="text-lg font-medium capitalize">{currentStage}</p>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <Progress value={progress} className="h-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Progress</span>
-                  <span>{Math.round(progress)}%</span>
+          {/* Main Progress Card */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                {/* Current Stage */}
+                <div className="text-center">
+                  <p className="text-lg font-medium capitalize">{currentStage}</p>
                 </div>
-              </div>
 
-              {/* Pipeline Stages */}
-              <div className="space-y-3">
-                {PIPELINE_STAGES.map((stage) => {
-                  const isComplete = isStageComplete(stage.id)
-                  const isCurrent = isStageActive(stage.id)
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <Progress value={progress} className="h-2" />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Progress</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                </div>
 
-                  return (
-                    <div
-                      key={stage.id}
-                      className={`
-                        flex items-start gap-3 p-3 rounded-lg border transition-all
-                        ${isCurrent ? 'bg-primary/5 border-primary/50' : 'bg-background'}
-                      `}
-                    >
-                      <div className={`
-                        flex-shrink-0 p-2 rounded-full
-                        ${isComplete ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-muted'}
-                        ${isCurrent ? 'bg-primary/10 text-primary' : ''}
-                      `}>
-                        {isComplete && !isCurrent ? (
-                          <CheckCircle2 className="h-4 w-4" />
-                        ) : (
-                          stage.icon
+                {/* Pipeline Stages */}
+                <div className="space-y-3">
+                  {PIPELINE_STAGES.map((stage) => {
+                    const isComplete = isStageComplete(stage.id)
+                    const isCurrent = isStageActive(stage.id)
+
+                    return (
+                      <div
+                        key={stage.id}
+                        className={`
+                          flex items-start gap-3 p-3 rounded-lg border transition-all
+                          ${isCurrent ? 'bg-primary/5 border-primary/50' : 'bg-background'}
+                        `}
+                      >
+                        <div className={`
+                          flex-shrink-0 p-2 rounded-full
+                          ${isComplete ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-muted'}
+                          ${isCurrent ? 'bg-primary/10 text-primary' : ''}
+                        `}>
+                          {isComplete && !isCurrent ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : (
+                            stage.icon
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-medium">{stage.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {stage.description}
+                          </p>
+                        </div>
+                        {isCurrent && (
+                          <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-medium">{stage.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {stage.description}
-                        </p>
-                      </div>
-                      {isCurrent && (
-                        <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
-                      )}
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Info Alert */}
-        <Alert>
-          <AlertDescription className="text-base">
-            This process typically takes 10-15 minutes for a whole genome.
-            You can safely close this window - processing will continue in the background.
-          </AlertDescription>
-        </Alert>
+          {/* Info Alert */}
+          <Alert>
+            <AlertDescription className="text-base">
+              This process typically takes 10-15 minutes for a whole genome.
+              You can safely close this window - processing will continue in the background.
+            </AlertDescription>
+          </Alert>
+        </div>
       </div>
-    </div>
+
+      {/* Fixed Loader in Bottom Right Corner */}
+      {isProcessing && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <HelixLoader size="sm" speed={3} />
+        </div>
+      )}
+    </>
   )
 }
