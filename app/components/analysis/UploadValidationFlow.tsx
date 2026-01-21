@@ -336,31 +336,20 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     URL.revokeObjectURL(url)
   }, [qcResults, selectedFile])
 
-  // Get header info based on phase
-  const getHeaderInfo = () => {
+  // Get header title based on phase (description stays constant)
+  const getHeaderTitle = () => {
     switch (phase) {
       case 'uploading':
-        return {
-          title: 'Uploading File',
-          description: 'Please wait while we upload your VCF file...',
-        }
+        return 'Uploading File'
       case 'validating':
-        return {
-          title: 'Validating File',
-          description: 'Checking file format, headers, and structure...',
-        }
+        return 'Validating File'
       default:
-        return {
-          title: 'Upload VCF File',
-          description: 'Upload a genetic variant file',
-        }
+        return 'Upload VCF File'
     }
   }
 
   // Get current progress
   const currentProgress = phase === 'uploading' ? uploadProgress : validationProgress || 10
-
-  const headerInfo = getHeaderInfo()
 
   // Render - QC Results State
   if (phase === 'qc_results' && qcResults) {
@@ -506,9 +495,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} animated={isProcessing} />
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">{headerInfo.title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{getHeaderTitle()}</h1>
             <p className="text-base text-muted-foreground">
-              {headerInfo.description}
+              Upload a genetic variant file
             </p>
           </div>
         </div>
