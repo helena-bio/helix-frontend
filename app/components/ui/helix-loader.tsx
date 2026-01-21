@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 
 interface HelixLoaderProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
@@ -21,94 +21,61 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   className = '',
   centered = false
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const { width, height } = sizeMap[size];
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.scale(dpr, dpr);
-
-    const helixImg = new Image();
-    helixImg.src = '/images/bulb_helix.svg';
-
-    let animationId: number;
-    let offsetY = 0;
-    const scrollSpeed = 0.4; // По-бавно (беше 0.8)
-
-    helixImg.onload = () => {
-      const helixAspect = 205 / 475;
-      const helixWidthRatio = 205 / 598;
-      const imgWidth = width * helixWidthRatio;
-      const imgHeight = imgWidth / helixAspect;
-
-      const animate = () => {
-        ctx.clearRect(0, 0, width, height);
-        ctx.save();
-
-        const clipTop = height * 0.20;
-        const clipBottom = height * 0.76;
-        const clipHeight = clipBottom - clipTop;
-
-        ctx.beginPath();
-        ctx.rect(0, clipTop, width, clipHeight);
-        ctx.clip();
-
-        const centerX = width / 2;
-        const x = centerX - imgWidth / 2;
-        const loopCycle = offsetY % imgHeight;
-        const startY = clipTop - loopCycle;
-        const numCopies = Math.ceil((clipHeight + imgHeight) / imgHeight) + 1;
-
-        for (let i = 0; i < numCopies; i++) {
-          const y = startY + (i * imgHeight);
-          ctx.drawImage(helixImg, x, y, imgWidth, imgHeight);
-        }
-
-        ctx.restore();
-
-        offsetY += scrollSpeed;
-        if (offsetY >= imgHeight) {
-          offsetY = offsetY % imgHeight;
-        }
-
-        animationId = requestAnimationFrame(animate);
-      };
-
-      animate();
-    };
-
-    helixImg.onerror = () => {
-      console.error('Failed to load helix image');
-    };
-
-    return () => {
-      if (animationId) cancelAnimationFrame(animationId);
-    };
-  }, [speed, width, height]);
+  
+  const clipTop = 0.20;
+  const clipBottom = 0.76;
+  const clipHeight = (clipBottom - clipTop) * height;
+  const clipTopPx = clipTop * height;
+  
+  // Helix sizing (same ratios as before)
+  const helixWidthRatio = 205 / 598;
+  const helixAspect = 205 / 475;
+  const helixWidth = width * helixWidthRatio;
+  const helixHeight = helixWidth / helixAspect;
+  
+  // Animation duration based on speed
+  const duration = 8 / speed;
 
   const content = (
     <div
       className={`relative inline-flex items-center justify-center ${className}`}
       style={{ width: `${width}px`, height: `${height}px` }}
     >
-      <div ref={containerRef} className="absolute inset-0">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full"
-        />
+      {/* Helix animation container */}
+      <div 
+        className="absolute overflow-hidden"
+        style={{ 
+          top: `${clipTopPx}px`,
+          height: `${clipHeight}px`,
+          width: `${helixWidth}px`,
+          left: '50%',
+          transform: 'translateX(-50%)'
+        }}
+      >
+        <div
+          className="animate-scroll-helix"
+          style={{
+            animationDuration: `${duration}s`,
+          }}
+        >
+          {/* Multiple copies for seamless loop */}
+          {[0, 1, 2, 3].map((i) => (
+            <img
+              key={i}
+              src="/images/bulb_helix.svg"
+              alt=""
+              style={{
+                width: `${helixWidth}px`,
+                height: `${helixHeight}px`,
+                display: 'block'
+              }}
+            />
+          ))}
+        </div>
       </div>
+      
+      {/* Bulb overlay */}
       <img
         src="/images/bulb.svg"
         alt="Loading"
