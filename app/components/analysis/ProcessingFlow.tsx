@@ -333,7 +333,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       <div className="w-full max-w-2xl space-y-4">
         {/* Header - Loader + Title side by side, centered */}
         <div className="flex items-center justify-center gap-4">
-          <HelixLoader size="sm" speed={3} />
+          <HelixLoader size="xs" speed={3} />
           <div>
             <h1 className="text-3xl font-bold">Analyzing Variants</h1>
             <p className="text-base text-muted-foreground">
