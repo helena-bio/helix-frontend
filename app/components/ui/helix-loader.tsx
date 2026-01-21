@@ -9,7 +9,7 @@ interface HelixLoaderProps {
 }
 
 const sizeMap = {
-  xs: { width: 48, height: 70 },   // 598:872 aspect ratio preserved
+  xs: { width: 48, height: 70 },
   sm: { width: 64, height: 93 },
   md: { width: 96, height: 140 },
   lg: { width: 144, height: 210 }
@@ -45,7 +45,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
 
     let animationId: number;
     let offsetY = 0;
-    const scrollSpeed = 0.8;
+    const scrollSpeed = 0.35; // По-бавно (беше 0.8)
 
     helixImg.onload = () => {
       const helixAspect = 205 / 475;
@@ -60,6 +60,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         const clipTop = height * 0.20;
         const clipBottom = height * 0.76;
         const clipHeight = clipBottom - clipTop;
+        const fadeSize = clipHeight * 0.25; // Fade зона
 
         ctx.beginPath();
         ctx.rect(0, clipTop, width, clipHeight);
@@ -70,11 +71,30 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
         const loopCycle = offsetY % imgHeight;
         const startY = clipTop - loopCycle;
         const numCopies = Math.ceil((clipHeight + imgHeight) / imgHeight) + 1;
-        
+
         for (let i = 0; i < numCopies; i++) {
           const y = startY + (i * imgHeight);
           ctx.drawImage(helixImg, x, y, imgWidth, imgHeight);
         }
+
+        ctx.restore();
+
+        // Fade in/out ефект с градиенти
+        ctx.save();
+        
+        // Горен fade (от непрозрачно към прозрачно)
+        const gradientTop = ctx.createLinearGradient(0, clipTop, 0, clipTop + fadeSize);
+        gradientTop.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradientTop.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradientTop;
+        ctx.fillRect(0, clipTop, width, fadeSize);
+
+        // Долен fade (от прозрачно към непрозрачно)
+        const gradientBottom = ctx.createLinearGradient(0, clipBottom - fadeSize, 0, clipBottom);
+        gradientBottom.addColorStop(0, 'rgba(255, 255, 255, 0)');
+        gradientBottom.addColorStop(1, 'rgba(255, 255, 255, 1)');
+        ctx.fillStyle = gradientBottom;
+        ctx.fillRect(0, clipBottom - fadeSize, width, fadeSize);
 
         ctx.restore();
 
@@ -99,7 +119,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   }, [speed, width, height]);
 
   const content = (
-    <div 
+    <div
       className={`relative inline-flex items-center justify-center ${className}`}
       style={{ width: `${width}px`, height: `${height}px` }}
     >
