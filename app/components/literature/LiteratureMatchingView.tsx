@@ -408,31 +408,31 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold">{totalResults}</p>
-              <p className="text-lg font-semibold text-muted-foreground">Total</p>
+              <p className="text-base font-semibold text-muted-foreground">Total</p>
             </CardContent>
           </Card>
           <Card className="border-green-200 bg-green-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-green-900">{strongCount}</p>
-              <p className="text-lg font-semibold text-green-700">Strong</p>
+              <p className="text-base font-semibold text-green-700">Strong</p>
             </CardContent>
           </Card>
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-blue-900">{moderateCount}</p>
-              <p className="text-lg font-semibold text-blue-700">Moderate</p>
+              <p className="text-base font-semibold text-blue-700">Moderate</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-yellow-900">{supportingCount}</p>
-              <p className="text-lg font-semibold text-yellow-700">Supporting</p>
+              <p className="text-base font-semibold text-yellow-700">Supporting</p>
             </CardContent>
           </Card>
           <Card className="border-gray-200 bg-gray-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-gray-700">{weakCount}</p>
-              <p className="text-lg font-semibold text-gray-600">Weak</p>
+              <p className="text-base font-semibold text-gray-600">Weak</p>
             </CardContent>
           </Card>
         </div>
