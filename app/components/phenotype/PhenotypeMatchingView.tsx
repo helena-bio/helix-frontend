@@ -3,86 +3,349 @@
 /**
  * PhenotypeMatchingView Component - CLINICAL GRADE
  *
- * Uses MatchedPhenotypeContext for cached results.
- * Results are loaded from DuckDB on mount.
+ * Card-based layout matching LiteratureMatchingView design.
+ * Uses lazy loading with Intersection Observer for smooth scrolling.
  *
  * Features:
- * - Instant load (data from DuckDB)
- * - Aggregated by gene
- * - Sorted by Clinical Priority Score
- * - Tier visualization (Tier 1-4)
- * - Read-only phenotype display (set during upload)
+ * - Card per gene (not table rows)
+ * - Lazy loading (no pagination)
+ * - Consistent typography with LiteratureMatchingView
+ * - Auto-expand top 3 genes
+ * - Filter by gene name
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import {
   Dna,
   Loader2,
   Sparkles,
   Info,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
   AlertCircle,
   Shield,
   ExternalLink,
+  Filter,
+  TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
-import { useMatchedPhenotype } from '@/contexts/MatchedPhenotypeContext'
+import { useMatchedPhenotype, type GeneAggregatedResult } from '@/contexts/MatchedPhenotypeContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
+import type { SessionMatchResult } from '@/lib/api/hpo'
 
 interface PhenotypeMatchingViewProps {
   sessionId: string
 }
 
-const PAGE_SIZE = 10
+const INITIAL_LOAD = 10
+const LOAD_MORE_COUNT = 10
 
 // ============================================================================
-// STYLING HELPERS
+// STYLING HELPERS (matching LiteratureMatchingView exactly)
 // ============================================================================
 
 const getTierColor = (tier: string) => {
-  if (tier.includes('Tier 1')) return 'bg-red-100 text-red-900 border-red-300'
-  if (tier.includes('Tier 2')) return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (tier.includes('Tier 3')) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  const tierLower = tier.toLowerCase()
+  if (tierLower.includes('1') || tierLower.includes('actionable')) {
+    return 'bg-red-100 text-red-900 border-red-300'
+  }
+  if (tierLower.includes('2') || tierLower.includes('potentially')) {
+    return 'bg-orange-100 text-orange-900 border-orange-300'
+  }
+  if (tierLower.includes('3') || tierLower.includes('uncertain')) {
+    return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  }
+  if (tierLower.includes('4') || tierLower.includes('unlikely')) {
+    return 'bg-gray-100 text-gray-600 border-gray-300'
+  }
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
-const getTierShortName = (tier: string) => {
-  if (tier.includes('Tier 1')) return 'T1'
-  if (tier.includes('Tier 2')) return 'T2'
-  if (tier.includes('Tier 3')) return 'T3'
+const getTierShortName = (tier: string): string => {
+  if (tier.includes('1')) return 'T1'
+  if (tier.includes('2')) return 'T2'
+  if (tier.includes('3')) return 'T3'
   return 'T4'
+}
+
+const formatTierDisplay = (tier: string): string => {
+  if (tier.includes('Tier') || tier.includes('-')) {
+    return tier
+  }
+  if (tier.includes('1')) return 'Tier 1 - Actionable'
+  if (tier.includes('2')) return 'Tier 2 - Potentially Actionable'
+  if (tier.includes('3')) return 'Tier 3 - Uncertain'
+  if (tier.includes('4')) return 'Tier 4 - Unlikely'
+  return tier
 }
 
 const getScoreColor = (score: number) => {
   if (score >= 70) return 'bg-green-100 text-green-900 border-green-300'
-  if (score >= 50) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  if (score >= 30) return 'bg-orange-100 text-orange-900 border-orange-300'
-  return 'bg-red-100 text-red-900 border-red-300'
+  if (score >= 50) return 'bg-blue-100 text-blue-900 border-blue-300'
+  if (score >= 30) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
 const getACMGColor = (acmg: string | null | undefined) => {
-  if (!acmg) return 'bg-gray-100 text-gray-600'
-  if (acmg === 'Pathogenic') return 'bg-red-100 text-red-900'
-  if (acmg === 'Likely Pathogenic') return 'bg-orange-100 text-orange-900'
-  if (acmg === 'Uncertain Significance' || acmg === 'VUS') return 'bg-yellow-100 text-yellow-900'
-  if (acmg === 'Likely Benign') return 'bg-blue-100 text-blue-900'
-  if (acmg === 'Benign') return 'bg-green-100 text-green-900'
-  return 'bg-gray-100 text-gray-600'
+  if (!acmg) return 'bg-gray-100 text-gray-600 border-gray-300'
+  const acmgLower = acmg.toLowerCase()
+  if (acmgLower === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
+  if (acmgLower === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (acmgLower === 'likely benign') return 'bg-blue-100 text-blue-900 border-blue-300'
+  if (acmgLower === 'benign') return 'bg-green-100 text-green-900 border-green-300'
+  return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
 const getImpactColor = (impact: string | null | undefined) => {
-  if (!impact) return 'bg-gray-100 text-gray-600'
-  if (impact === 'HIGH') return 'bg-red-100 text-red-900'
-  if (impact === 'MODERATE') return 'bg-orange-100 text-orange-900'
-  if (impact === 'LOW') return 'bg-yellow-100 text-yellow-900'
-  return 'bg-gray-100 text-gray-600'
+  if (!impact) return 'bg-gray-100 text-gray-600 border-gray-300'
+  const impactUpper = impact.toUpperCase()
+  if (impactUpper === 'HIGH') return 'bg-red-100 text-red-900 border-red-300'
+  if (impactUpper === 'MODERATE') return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (impactUpper === 'LOW') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  return 'bg-gray-100 text-gray-600 border-gray-300'
+}
+
+const formatACMGDisplay = (acmg: string | null | undefined): string => {
+  if (!acmg) return 'Unknown'
+  if (acmg.toLowerCase().includes('uncertain')) return 'VUS'
+  return acmg
+}
+
+// ============================================================================
+// SUBCOMPONENTS
+// ============================================================================
+
+interface VariantCardProps {
+  variant: SessionMatchResult
+  onViewDetails: (variantIdx: number) => void
+}
+
+function VariantCard({ variant, onViewDetails }: VariantCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  return (
+    <div
+      className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+      onClick={() => setIsExpanded(!isExpanded)}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <Badge variant="outline" className={`text-sm ${getTierColor(variant.clinical_tier)}`}>
+              {getTierShortName(variant.clinical_tier)}
+            </Badge>
+            <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
+              {formatACMGDisplay(variant.acmg_class)}
+            </Badge>
+            <Badge variant="outline" className={`text-sm ${getImpactColor(variant.impact)}`}>
+              {variant.impact || 'Unknown'}
+            </Badge>
+            <Badge variant="outline" className={`text-sm ${getScoreColor(variant.clinical_priority_score)}`}>
+              {variant.clinical_priority_score.toFixed(1)}
+            </Badge>
+          </div>
+          <p className="text-base text-muted-foreground">
+            {variant.consequence || 'unknown consequence'}
+            {variant.gnomad_af && (
+              <span className="ml-2 font-mono text-sm">
+                AF: {variant.gnomad_af.toExponential(2)}
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="text-base font-medium">{variant.phenotype_match_score.toFixed(0)}%</p>
+            <p className="text-sm text-muted-foreground">HPO Match</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsExpanded(!isExpanded)
+            }}
+          >
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Expanded Content */}
+      {isExpanded && (
+        <div className="mt-4 space-y-4">
+          {/* Score Breakdown */}
+          <div>
+            <p className="text-base font-semibold mb-2">Score Breakdown</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">ACMG Weight</span>
+                <span>35%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Impact Weight</span>
+                <span>25%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Phenotype Weight</span>
+                <span>25%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Frequency Weight</span>
+                <span>15%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Individual HPO Matches */}
+          {variant.individual_matches && variant.individual_matches.length > 0 && (
+            <div>
+              <p className="text-base font-semibold mb-2">HPO Term Matches</p>
+              <div className="space-y-1">
+                {variant.individual_matches
+                  .filter(m => m.similarity_score > 0)
+                  .slice(0, 5)
+                  .map((match, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground truncate flex-1">
+                        {match.patient_hpo_name}
+                      </span>
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        {(match.similarity_score * 100).toFixed(0)}%
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* View Details Button */}
+          <div className="pt-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                onViewDetails(variant.variant_idx)
+              }}
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              View Full Details
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface GeneSectionProps {
+  geneResult: GeneAggregatedResult
+  rank: number
+  onViewVariantDetails: (variantIdx: number) => void
+}
+
+function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(rank <= 3) // Auto-expand top 3
+
+  return (
+    <Card>
+      <CardHeader
+        className="cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Rank indicator */}
+            <span className="text-lg font-bold text-muted-foreground w-6">#{rank}</span>
+
+            <CardTitle className="text-lg">{geneResult.gene_symbol}</CardTitle>
+
+            {/* Clinical Tier Badge */}
+            <Badge variant="outline" className={`text-sm ${getTierColor(geneResult.best_tier)}`}>
+              {formatTierDisplay(geneResult.best_tier)}
+            </Badge>
+
+            <Badge variant="secondary" className="text-sm">
+              {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Clinical Score */}
+            <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
+              <TrendingUp className="h-3 w-3 mr-1" />
+              {geneResult.best_clinical_score.toFixed(1)}
+            </Badge>
+
+            {/* HPO Match */}
+            <span className="text-sm text-muted-foreground">
+              HPO: {geneResult.best_phenotype_score.toFixed(0)}%
+            </span>
+
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+
+        {/* Matched HPO Terms Preview */}
+        {geneResult.matched_hpo_terms.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2 ml-9">
+            {geneResult.matched_hpo_terms.slice(0, 3).map((term, idx) => (
+              <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
+                {term}
+              </Badge>
+            ))}
+            {geneResult.matched_hpo_terms.length > 3 && (
+              <Badge variant="secondary" className="text-xs">
+                +{geneResult.matched_hpo_terms.length - 3} more
+              </Badge>
+            )}
+          </div>
+        )}
+      </CardHeader>
+
+      {isExpanded && (
+        <CardContent className="space-y-3">
+          {/* All Matched HPO Terms */}
+          {geneResult.matched_hpo_terms.length > 0 && (
+            <div className="mb-4">
+              <p className="text-base font-semibold mb-2">Matched HPO Terms</p>
+              <div className="flex flex-wrap gap-2">
+                {geneResult.matched_hpo_terms.map((term, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-sm bg-primary/10 text-primary">
+                    {term}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Variants */}
+          <div>
+            <p className="text-base font-semibold mb-3">
+              Variants ({geneResult.variant_count})
+            </p>
+            <div className="space-y-3">
+              {geneResult.variants.map((variant) => (
+                <VariantCard
+                  key={variant.variant_idx}
+                  variant={variant}
+                  onViewDetails={onViewVariantDetails}
+                />
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  )
 }
 
 // ============================================================================
@@ -91,9 +354,10 @@ const getImpactColor = (impact: string | null | undefined) => {
 
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
   // Local state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [expandedGenes, setExpandedGenes] = useState<Set<string>>(new Set())
+  const [geneFilter, setGeneFilter] = useState('')
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   // Contexts
   const { phenotype } = usePhenotypeContext()
@@ -111,23 +375,42 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   const selectedTerms = phenotype?.hpo_terms || []
 
-  // Pagination
-  const totalPages = Math.ceil(totalGenes / PAGE_SIZE)
-  const paginatedResults = useMemo(() => {
+  // Filter and slice results
+  const filteredResults = useMemo(() => {
     if (!aggregatedResults) return []
-    const start = (currentPage - 1) * PAGE_SIZE
-    return aggregatedResults.slice(start, start + PAGE_SIZE)
-  }, [aggregatedResults, currentPage])
+    if (!geneFilter) return aggregatedResults
+    const filter = geneFilter.toLowerCase()
+    return aggregatedResults.filter(g => g.gene_symbol.toLowerCase().includes(filter))
+  }, [aggregatedResults, geneFilter])
 
-  // Handlers
-  const toggleGene = useCallback((geneSymbol: string) => {
-    setExpandedGenes(prev => {
-      const next = new Set(prev)
-      if (next.has(geneSymbol)) next.delete(geneSymbol)
-      else next.add(geneSymbol)
-      return next
-    })
-  }, [])
+  const visibleResults = useMemo(() => {
+    return filteredResults.slice(0, visibleCount)
+  }, [filteredResults, visibleCount])
+
+  const hasMore = visibleCount < filteredResults.length
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, filteredResults.length))
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    )
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [hasMore, filteredResults.length])
+
+  // Reset visible count when filter changes
+  useEffect(() => {
+    setVisibleCount(INITIAL_LOAD)
+  }, [geneFilter])
 
   // Check if we have results
   const hasResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
@@ -160,42 +443,48 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         {/* Status Badge */}
         {status === 'success' && hasResults && (
           <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-300">
-            Results Ready
+            {totalGenes} Genes Analyzed
           </Badge>
         )}
         {(status === 'pending' || status === 'loading') && (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+          <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-300">
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             {status === 'loading' ? 'Loading...' : 'Matching...'}
           </Badge>
         )}
       </div>
 
-      {/* Tier Summary */}
+      {/* Tier Summary Cards */}
       {hasResults && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="py-1.5 px-3 text-center">
+              <p className="text-xl font-bold">{variantsAnalyzed}</p>
+              <p className="text-sm font-semibold text-muted-foreground">Variants</p>
+            </CardContent>
+          </Card>
           <Card className="border-red-200 bg-red-50">
             <CardContent className="py-1.5 px-3 text-center">
               <p className="text-xl font-bold text-red-900">{tier1Count}</p>
-              <p className="text-ml font-semibold text-red-700">Tier 1 - Actionable</p>
+              <p className="text-sm font-semibold text-red-700">Tier 1</p>
             </CardContent>
           </Card>
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="py-1.5 px-3 text-center">
               <p className="text-xl font-bold text-orange-900">{tier2Count}</p>
-              <p className="text-ml font-semibold text-orange-700">Tier 2 - Potentially</p>
+              <p className="text-sm font-semibold text-orange-700">Tier 2</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="py-1.5 px-3 text-center">
               <p className="text-xl font-bold text-yellow-900">{tier3Count}</p>
-              <p className="text-ml font-semibold text-yellow-700">Tier 3 - Uncertain</p>
+              <p className="text-sm font-semibold text-yellow-700">Tier 3</p>
             </CardContent>
           </Card>
           <Card className="border-gray-200 bg-gray-50">
             <CardContent className="py-1.5 px-3 text-center">
               <p className="text-xl font-bold text-gray-700">{tier4Count}</p>
-              <p className="text-ml font-semibold text-gray-600">Tier 4 - Unlikely</p>
+              <p className="text-sm font-semibold text-gray-600">Tier 4</p>
             </CardContent>
           </Card>
         </div>
@@ -211,14 +500,20 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <p className="text-sm font-medium">Selected Terms ({selectedTerms.length})</p>
+            <p className="text-base font-medium">Selected Terms ({selectedTerms.length})</p>
             {selectedTerms.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No phenotypes defined for this case.</p>
+              <p className="text-base text-muted-foreground py-4 text-center">
+                No phenotypes defined for this case.
+              </p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {selectedTerms.map((term) => (
-                  <Badge key={term.hpo_id} variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
-                    <span className="text-sm">{term.name}</span>
+                  <Badge
+                    key={term.hpo_id}
+                    variant="secondary"
+                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
+                  >
+                    {term.name}
                   </Badge>
                 ))}
               </div>
@@ -235,190 +530,104 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </CardContent>
       </Card>
 
-      {/* Results Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Clinical Results (by Gene)
-            </CardTitle>
-            {aggregatedResults && (
-              <span className="text-sm text-muted-foreground">
-                {totalGenes} genes, {variantsAnalyzed} variants
-              </span>
-            )}
+      {/* Loading State */}
+      {(status === 'loading' || (isLoading && !aggregatedResults)) && (
+        <div className="text-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-base font-medium">
+            {status === 'loading' ? 'Loading results...' : 'Running phenotype matching...'}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">This may take a few seconds</p>
+        </div>
+      )}
+
+      {/* No Phenotypes State */}
+      {status === 'no_phenotypes' && (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Dna className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-base font-medium mb-2">No Phenotypes Defined</p>
+            <p className="text-sm text-muted-foreground">
+              Phenotypes are set during case upload.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty Results */}
+      {status === 'success' && (!aggregatedResults || aggregatedResults.length === 0) && (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-base font-medium mb-2">No Variants with HPO Annotations</p>
+            <p className="text-sm text-muted-foreground">
+              Variants need HPO phenotype data for matching.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Results */}
+      {hasResults && (
+        <div className="space-y-4">
+          {/* Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Filter by gene..."
+              value={geneFilter}
+              onChange={(e) => setGeneFilter(e.target.value)}
+              className="max-w-xs text-base"
+            />
+            <span className="text-sm text-muted-foreground">
+              Showing {visibleResults.length} of {filteredResults.length} genes
+            </span>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {/* Loading State */}
-          {(status === 'loading' || (isLoading && !aggregatedResults)) && (
-            <div className="text-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-base font-medium">
-                {status === 'loading' ? 'Loading results...' : 'Running phenotype matching...'}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">This may take a few seconds</p>
+
+          {/* Scoring explanation */}
+          <p className="text-sm text-muted-foreground">
+            Sorted by Clinical Priority Score. Higher scores indicate stronger clinical relevance.
+          </p>
+
+          {/* Gene Cards */}
+          {visibleResults.map((geneResult) => (
+            <GeneSection
+              key={geneResult.gene_symbol}
+              geneResult={geneResult}
+              rank={geneResult.rank}
+              onViewVariantDetails={setSelectedVariantIdx}
+            />
+          ))}
+
+          {/* Load More Trigger */}
+          {hasMore && (
+            <div ref={loadMoreRef} className="py-8 text-center">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mt-2">Loading more genes...</p>
             </div>
           )}
 
-          {/* No Phenotypes State */}
-          {status === 'no_phenotypes' && (
-            <div className="text-center py-16 text-muted-foreground">
-              <Dna className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p className="text-base font-medium">No phenotypes defined</p>
-              <p className="text-sm mt-1">Phenotypes are set during case upload</p>
-            </div>
+          {/* End of List */}
+          {!hasMore && filteredResults.length > INITIAL_LOAD && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              All {filteredResults.length} genes loaded
+            </p>
           )}
+        </div>
+      )}
 
-          {/* Empty Results */}
-          {status === 'success' && (!aggregatedResults || aggregatedResults.length === 0) && (
-            <div className="text-center py-16">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-base font-medium mb-2">No variants with HPO annotations</p>
-              <p className="text-sm text-muted-foreground">
-                Variants need HPO phenotype data for matching
-              </p>
-            </div>
-          )}
-
-          {/* Results Table */}
-          {aggregatedResults && aggregatedResults.length > 0 && (
-            <>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]"></TableHead>
-                      <TableHead className="w-[60px]">Rank</TableHead>
-                      <TableHead>Gene</TableHead>
-                      <TableHead>Clinical Score</TableHead>
-                      <TableHead>Tier</TableHead>
-                      <TableHead className="text-center">Variants</TableHead>
-                      <TableHead>HPO Match</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedResults.map((geneResult) => (
-                      <>
-                        <TableRow
-                          key={geneResult.gene_symbol}
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => toggleGene(geneResult.gene_symbol)}
-                        >
-                          <TableCell>
-                            {expandedGenes.has(geneResult.gene_symbol) ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                          </TableCell>
-                          <TableCell className="font-mono text-sm font-medium">#{geneResult.rank}</TableCell>
-                          <TableCell className="font-semibold">{geneResult.gene_symbol}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={getScoreColor(geneResult.best_clinical_score)}>
-                              {geneResult.best_clinical_score.toFixed(1)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={getTierColor(geneResult.best_tier)}>
-                              {getTierShortName(geneResult.best_tier)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">{geneResult.variant_count}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs">
-                              {geneResult.best_phenotype_score.toFixed(0)}%
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-
-                        {expandedGenes.has(geneResult.gene_symbol) && (
-                          <TableRow key={`${geneResult.gene_symbol}-expanded`}>
-                            <TableCell colSpan={7} className="bg-muted/30 p-4">
-                              <div className="space-y-4">
-                                {geneResult.matched_hpo_terms.length > 0 && (
-                                  <div>
-                                    <p className="text-sm font-medium mb-2">Matched HPO Terms</p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {geneResult.matched_hpo_terms.map((term, idx) => (
-                                        <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary">{term}</Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                <div>
-                                  <p className="text-sm font-medium mb-3">Variants ({geneResult.variant_count})</p>
-                                  <div className="space-y-2">
-                                    {geneResult.variants.map((variant) => (
-                                      <div
-                                        key={variant.variant_idx}
-                                        className="p-3 border rounded bg-background hover:bg-accent/50 cursor-pointer transition-colors"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setSelectedVariantIdx(variant.variant_idx)
-                                        }}
-                                      >
-                                        <div className="flex items-center justify-between gap-4">
-                                          <div className="flex items-center gap-3 flex-wrap">
-                                            <Badge variant="outline" className={getTierColor(variant.clinical_tier)}>
-                                              {getTierShortName(variant.clinical_tier)}
-                                            </Badge>
-                                            <Badge variant="outline" className={getACMGColor(variant.acmg_class)}>
-                                              {variant.acmg_class === 'Uncertain Significance' ? 'VUS' : variant.acmg_class || 'Unknown'}
-                                            </Badge>
-                                            <Badge variant="outline" className={getImpactColor(variant.impact)}>
-                                              {variant.impact || 'Unknown'}
-                                            </Badge>
-                                            <span className="text-sm text-muted-foreground">
-                                              {variant.consequence || 'unknown'}
-                                            </span>
-                                            {variant.gnomad_af && (
-                                              <span className="text-xs font-mono text-muted-foreground">
-                                                AF: {variant.gnomad_af.toExponential(2)}
-                                              </span>
-                                            )}
-                                          </div>
-                                          <div className="flex items-center gap-3">
-                                            <div className="text-right">
-                                              <p className="text-sm font-medium">{variant.clinical_priority_score.toFixed(1)}</p>
-                                              <p className="text-xs text-muted-foreground">Clinical</p>
-                                            </div>
-                                            <div className="text-right">
-                                              <p className="text-sm">{variant.phenotype_match_score.toFixed(0)}%</p>
-                                              <p className="text-xs text-muted-foreground">HPO</p>
-                                            </div>
-                                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t">
-                  <p className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
-                      <ChevronLeft className="h-4 w-4 mr-1" />Previous
-                    </Button>
-                    <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
-                      Next<ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {/* Idle State */}
+      {status === 'idle' && (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-base font-medium mb-2">Ready for Analysis</p>
+            <p className="text-sm text-muted-foreground">
+              Phenotype matching results will appear here after processing.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
