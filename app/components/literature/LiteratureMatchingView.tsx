@@ -152,7 +152,7 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
               </Badge>
             )}
           </div>
-          <h4 className="font-medium text-lg line-clamp-2">{publication.title}</h4>
+          <h4 className="font-medium text-base line-clamp-2">{publication.title}</h4>
           <p className="text-md text-muted-foreground mt-1">
             {formatAuthors(publication.authors)} - {publication.journal || 'Unknown Journal'}
             {publication.publication_date && ` (${publication.publication_date.slice(0, 4)})`}
