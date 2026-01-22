@@ -461,7 +461,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
         <div className="space-y-4">
           {/* Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Filter className="h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Filter by gene..."
               value={geneFilter}
