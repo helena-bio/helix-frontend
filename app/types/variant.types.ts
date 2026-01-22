@@ -121,3 +121,4 @@ export interface VariantsResponse {
   has_next_page: boolean
   has_previous_page: boolean
 }
+export * from "./literature.types"

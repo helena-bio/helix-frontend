@@ -1,5 +1,4 @@
 "use client"
-
 /**
  * Authenticated Layout
  * Two modes:
@@ -9,13 +8,13 @@
  * Providers hierarchy (post-analysis):
  * - PhenotypeProvider: Patient HPO terms
  * - MatchedPhenotypeProvider: Cached phenotype matching results
+ * - LiteratureProvider: Clinical literature search results
  */
-
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
-import { PhenotypeProvider, MatchedPhenotypeProvider } from '@/contexts'
+import { PhenotypeProvider, MatchedPhenotypeProvider, LiteratureProvider } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 
@@ -56,12 +55,14 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <div className="flex-1 min-h-0">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          // Provider hierarchy: Phenotype -> MatchedPhenotype
+          // Provider hierarchy: Phenotype -> MatchedPhenotype -> Literature
           <PhenotypeProvider sessionId={currentSessionId}>
             <MatchedPhenotypeProvider sessionId={currentSessionId}>
-              <SplitView>
-                {children}
-              </SplitView>
+              <LiteratureProvider>
+                <SplitView>
+                  {children}
+                </SplitView>
+              </LiteratureProvider>
             </MatchedPhenotypeProvider>
           </PhenotypeProvider>
         ) : (

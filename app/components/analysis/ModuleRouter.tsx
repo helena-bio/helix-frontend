@@ -8,6 +8,7 @@
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { AnalysisJourneyView } from './AnalysisJourneyView'
 import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
+import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
 
 interface ModuleRouterProps {
   sessionId: string
@@ -41,29 +42,14 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
     )
   }
 
-  // Phenotype Matching - Now functional!
+  // Phenotype Matching
   if (selectedModule === 'phenotype') {
     return <PhenotypeMatchingView sessionId={sessionId} />
   }
 
   // Literature Analysis
   if (selectedModule === 'literature') {
-    return (
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Literature Analysis</h1>
-          <p className="text-base text-muted-foreground">
-            Automated literature mining and evidence extraction for variant interpretation.
-          </p>
-          <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-md font-medium">Coming soon...</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This feature is under development.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+    return <LiteratureMatchingView sessionId={sessionId} />
   }
 
   // False Positive Filter
