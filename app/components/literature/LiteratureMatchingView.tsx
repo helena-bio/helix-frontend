@@ -431,7 +431,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
           </Card>
           <Card className="border-gray-200 bg-gray-50">
             <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-2xl font-bold text-gray-700">{weakCount}</p>
+              <p className="text-xl font-bold text-gray-700">{weakCount}</p>
               <p className="text-ml font-semibold text-gray-600">Weak</p>
             </CardContent>
           </Card>
@@ -466,7 +466,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
               placeholder="Filter by gene..."
               value={geneFilter}
               onChange={(e) => setGeneFilter(e.target.value)}
-              className="max-w-xs text-md"
+              className="max-w-xs text-base"
             />
             <span className="text-md text-muted-foreground">
               Showing {filteredGroups.length} of {groupedByGene.length} genes
