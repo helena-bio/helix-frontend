@@ -123,9 +123,13 @@
   --font-sans: 'Geist', 'Geist Fallback', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback', ui-monospace, monospace;
 
-  /* Custom font size - text-md (15px base, between text-sm and text-base) */
+  /* Custom font size - text-md (15px, between text-sm and text-base) */
   --text-md: 0.9375rem;
   --text-md--line-height: 1.375rem;
+
+  /* Custom font size - text-ml (17px, between text-base and text-lg) */
+  --text-ml: 1.0625rem;
+  --text-ml--line-height: 1.625rem;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
