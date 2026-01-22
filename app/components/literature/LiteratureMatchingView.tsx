@@ -68,6 +68,17 @@ const getScoreColor = (score: number) => {
 }
 
 /**
+ * Get color for combined score badge based on score value
+ * Higher score = green, medium = blue, lower = gray
+ */
+const getCombinedScoreColor = (score: number) => {
+  if (score >= 0.7) return 'bg-green-600 text-white'
+  if (score >= 0.5) return 'bg-blue-600 text-white'
+  if (score >= 0.3) return 'bg-blue-400 text-white'
+  return 'bg-gray-400 text-white'
+}
+
+/**
  * Format evidence strength for display (Title Case instead of ALL CAPS)
  */
 const formatEvidenceStrength = (strength: string): string => {
@@ -291,8 +302,8 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Combined Score - Primary */}
-            <Badge variant="default" className="text-sm bg-primary">
+            {/* Combined Score - Color based on score value */}
+            <Badge className={`text-sm ${getCombinedScoreColor(group.combinedScore)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />
               {(group.combinedScore * 100).toFixed(0)}%
             </Badge>
@@ -303,12 +314,16 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
               {group.clinicalScore !== undefined && ` / Clin: ${group.clinicalScore.toFixed(0)}`}
             </span>
 
-            {/* Evidence counts */}
+            {/* Evidence counts - matching evidence badge colors */}
             {group.strongCount > 0 && (
-              <Badge className="text-sm bg-green-600">{group.strongCount} Strong</Badge>
+              <Badge variant="outline" className="text-sm bg-green-100 text-green-900 border-green-300">
+                {group.strongCount} Strong
+              </Badge>
             )}
             {group.moderateCount > 0 && (
-              <Badge className="text-sm bg-blue-600">{group.moderateCount} Moderate</Badge>
+              <Badge variant="outline" className="text-sm bg-blue-100 text-blue-900 border-blue-300">
+                {group.moderateCount} Moderate
+              </Badge>
             )}
 
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
