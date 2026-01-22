@@ -72,10 +72,10 @@ const getScoreColor = (score: number) => {
  * Higher score = green, medium = blue, lower = gray
  */
 const getCombinedScoreColor = (score: number) => {
-  if (score >= 0.7) return 'bg-green-600 text-white'
-  if (score >= 0.5) return 'bg-blue-600 text-white'
-  if (score >= 0.3) return 'bg-blue-400 text-white'
-  return 'bg-gray-400 text-white'
+  if (score >= 0.7) return 'bg-green-100 text-green-900 border-green-300'
+  if (score >= 0.5) return 'bg-blue-100 text-blue-900 border-blue-300'
+  if (score >= 0.3) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
 /**
