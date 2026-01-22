@@ -139,7 +139,7 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
-    <div className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+    <div className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
