@@ -68,6 +68,13 @@ const getScoreColor = (score: number) => {
 }
 
 /**
+ * Format evidence strength for display (Title Case instead of ALL CAPS)
+ */
+const formatEvidenceStrength = (strength: string): string => {
+  return strength.charAt(0) + strength.slice(1).toLowerCase()
+}
+
+/**
  * Get color for clinical tier badge
  * Handles both short format (T1, T2) and full format (Tier 1 - Actionable)
  */
@@ -127,7 +134,7 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant="outline" className={`text-sm ${getEvidenceColor(publication.evidence.evidence_strength)}`}>
-              {publication.evidence.evidence_strength}
+              {formatEvidenceStrength(publication.evidence.evidence_strength)}
             </Badge>
             <Badge variant="outline" className={`text-sm ${getScoreColor(publication.relevance_score)}`}>
               {(publication.relevance_score * 100).toFixed(0)}%
