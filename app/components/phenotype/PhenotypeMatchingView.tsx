@@ -264,7 +264,7 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Rank indicator */}
-            <span className="text-lg font-bold text-muted-foreground w-6">#{rank}</span>
+            <span className="text-lg font-bold text-muted-foreground min-w-[45px]">#{rank}</span>
 
             <CardTitle className="text-lg">{geneResult.gene_symbol}</CardTitle>
 
@@ -459,32 +459,32 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         <div className="grid grid-cols-5 gap-4">
           <Card>
             <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-xl font-bold">{variantsAnalyzed}</p>
-              <p className="text-sm font-semibold text-muted-foreground">Variants</p>
+              <p className="text-ml font-bold">{variantsAnalyzed}</p>
+              <p className="text-base font-semibold text-muted-foreground">Variants</p>
             </CardContent>
           </Card>
           <Card className="border-red-200 bg-red-50">
             <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-xl font-bold text-red-900">{tier1Count}</p>
-              <p className="text-sm font-semibold text-red-700">Tier 1</p>
+              <p className="text-ml font-bold text-red-900">{tier1Count}</p>
+              <p className="text-base font-semibold text-red-700">Tier 1</p>
             </CardContent>
           </Card>
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-xl font-bold text-orange-900">{tier2Count}</p>
-              <p className="text-sm font-semibold text-orange-700">Tier 2</p>
+              <p className="text-ml font-bold text-orange-900">{tier2Count}</p>
+              <p className="text-base font-semibold text-orange-700">Tier 2</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-xl font-bold text-yellow-900">{tier3Count}</p>
-              <p className="text-sm font-semibold text-yellow-700">Tier 3</p>
+              <p className="text-ml font-bold text-yellow-900">{tier3Count}</p>
+              <p className="text-base font-semibold text-yellow-700">Tier 3</p>
             </CardContent>
           </Card>
           <Card className="border-gray-200 bg-gray-50">
             <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-xl font-bold text-gray-700">{tier4Count}</p>
-              <p className="text-sm font-semibold text-gray-600">Tier 4</p>
+              <p className="text-ml font-bold text-gray-700">{tier4Count}</p>
+              <p className="text-base font-semibold text-gray-600">Tier 4</p>
             </CardContent>
           </Card>
         </div>
