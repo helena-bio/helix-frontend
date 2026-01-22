@@ -12,6 +12,7 @@
  * - Consistent typography with LiteratureMatchingView
  * - Auto-expand top 3 genes
  * - Filter by gene name
+ * - Aligned columns across all gene cards
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
@@ -41,8 +42,8 @@ interface PhenotypeMatchingViewProps {
   sessionId: string
 }
 
-const INITIAL_LOAD = 10
-const LOAD_MORE_COUNT = 10
+const INITIAL_LOAD = 15
+const LOAD_MORE_COUNT = 15
 
 // ============================================================================
 // STYLING HELPERS (matching LiteratureMatchingView exactly)
@@ -258,45 +259,63 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
   return (
     <Card>
       <CardHeader
-        className="cursor-pointer hover:bg-accent/50 transition-colors"
+        className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Rank indicator */}
-            <span className="text-lg font-bold text-muted-foreground min-w-[45px]">#{rank}</span>
+        {/* Main row with grid for alignment */}
+        <div className="flex items-center">
+          {/* Left section: Rank + Gene + Tier + Variants */}
+          <div className="flex items-center flex-1 min-w-0">
+            {/* Rank - fixed width */}
+            <span className="text-lg font-bold text-muted-foreground w-12 flex-shrink-0">
+              #{rank}
+            </span>
 
-            <CardTitle className="text-lg">{geneResult.gene_symbol}</CardTitle>
+            {/* Gene symbol - fixed width */}
+            <span className="text-lg font-semibold w-28 flex-shrink-0 truncate">
+              {geneResult.gene_symbol}
+            </span>
 
-            {/* Clinical Tier Badge */}
-            <Badge variant="outline" className={`text-sm ${getTierColor(geneResult.best_tier)}`}>
-              {formatTierDisplay(geneResult.best_tier)}
-            </Badge>
+            {/* Tier badge - fixed width container */}
+            <div className="w-52 flex-shrink-0">
+              <Badge variant="outline" className={`text-sm ${getTierColor(geneResult.best_tier)}`}>
+                {formatTierDisplay(geneResult.best_tier)}
+              </Badge>
+            </div>
 
-            <Badge variant="secondary" className="text-sm">
-              {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
-            </Badge>
+            {/* Variants count - fixed width */}
+            <div className="w-28 flex-shrink-0">
+              <Badge variant="secondary" className="text-sm">
+                {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
+              </Badge>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Clinical Score */}
-            <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {geneResult.best_clinical_score.toFixed(1)}
-            </Badge>
+          {/* Right section: Score + HPO + Chevron */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Clinical Score - fixed width */}
+            <div className="w-20 flex justify-end">
+              <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
+                <TrendingUp className="h-3 w-3 mr-1" />
+                {geneResult.best_clinical_score.toFixed(1)}
+              </Badge>
+            </div>
 
-            {/* HPO Match */}
-            <span className="text-sm text-muted-foreground">
+            {/* HPO Match - fixed width */}
+            <span className="text-sm text-muted-foreground w-24 text-right">
               HPO: {geneResult.best_phenotype_score.toFixed(0)}%
             </span>
 
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {/* Chevron */}
+            <div className="w-6 flex justify-center">
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
           </div>
         </div>
 
         {/* Matched HPO Terms Preview */}
         {geneResult.matched_hpo_terms.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2 ml-9">
+          <div className="flex flex-wrap gap-1 mt-2 ml-12">
             {geneResult.matched_hpo_terms.slice(0, 3).map((term, idx) => (
               <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
                 {term}
@@ -357,7 +376,21 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const [geneFilter, setGeneFilter] = useState('')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
-  const loadMoreRef = useRef<HTMLDivElement>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
+    if (observerRef.current) observerRef.current.disconnect()
+    
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount(prev => prev + LOAD_MORE_COUNT)
+        }
+      },
+      { threshold: 0, rootMargin: '200px' }
+    )
+    
+    if (node) observerRef.current.observe(node)
+  }, [])
 
   // Contexts
   const { phenotype } = usePhenotypeContext()
@@ -388,24 +421,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   }, [filteredResults, visibleCount])
 
   const hasMore = visibleCount < filteredResults.length
-
-  // Intersection Observer for lazy loading
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore) {
-          setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, filteredResults.length))
-        }
-      },
-      { threshold: 0.1, rootMargin: '100px' }
-    )
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current)
-    }
-
-    return () => observer.disconnect()
-  }, [hasMore, filteredResults.length])
 
   // Reset visible count when filter changes
   useEffect(() => {
