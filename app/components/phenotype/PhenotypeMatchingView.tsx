@@ -159,7 +159,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
         {/* Status Badge */}
         {status === 'success' && hasResults && (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+          <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-300">
             Results Ready
           </Badge>
         )}
@@ -175,26 +175,26 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
       {hasResults && (
         <div className="grid grid-cols-4 gap-4">
           <Card className="border-red-200 bg-red-50">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-red-900">{tier1Count}</p>
+            <CardContent className="py-1.5 px-3 text-center">
+              <p className="text-xl font-bold text-red-900">{tier1Count}</p>
               <p className="text-ml font-semibold text-red-700">Tier 1 - Actionable</p>
             </CardContent>
           </Card>
           <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-orange-900">{tier2Count}</p>
+            <CardContent className="py-1.5 px-3 text-center">
+              <p className="text-xl font-bold text-orange-900">{tier2Count}</p>
               <p className="text-ml font-semibold text-orange-700">Tier 2 - Potentially</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-yellow-900">{tier3Count}</p>
+            <CardContent className="py-1.5 px-3 text-center">
+              <p className="text-xl font-bold text-yellow-900">{tier3Count}</p>
               <p className="text-ml font-semibold text-yellow-700">Tier 3 - Uncertain</p>
             </CardContent>
           </Card>
           <Card className="border-gray-200 bg-gray-50">
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-gray-700">{tier4Count}</p>
+            <CardContent className="py-1.5 px-3 text-center">
+              <p className="text-xl font-bold text-gray-700">{tier4Count}</p>
               <p className="text-ml font-semibold text-gray-600">Tier 4 - Unlikely</p>
             </CardContent>
           </Card>
