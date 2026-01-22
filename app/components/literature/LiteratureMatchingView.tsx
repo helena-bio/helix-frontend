@@ -67,31 +67,47 @@ const getScoreColor = (score: number) => {
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
+/**
+ * Get color for clinical tier badge
+ * Handles both short format (T1, T2) and full format (Tier 1 - Actionable)
+ */
 const getTierColor = (tier: string) => {
-  switch (tier) {
-    case 'T1':
-      return 'bg-red-100 text-red-900 border-red-300'
-    case 'T2':
-      return 'bg-orange-100 text-orange-900 border-orange-300'
-    case 'T3':
-      return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-    case 'T4':
-      return 'bg-gray-100 text-gray-600 border-gray-300'
-    default:
-      return 'bg-gray-100 text-gray-600 border-gray-300'
+  const tierLower = tier.toLowerCase()
+  if (tierLower.includes('1') || tierLower.includes('actionable')) {
+    return 'bg-red-100 text-red-900 border-red-300'
   }
+  if (tierLower.includes('2') || tierLower.includes('potentially')) {
+    return 'bg-orange-100 text-orange-900 border-orange-300'
+  }
+  if (tierLower.includes('3') || tierLower.includes('uncertain')) {
+    return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  }
+  if (tierLower.includes('4') || tierLower.includes('unlikely')) {
+    return 'bg-gray-100 text-gray-600 border-gray-300'
+  }
+  return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
-const getTierLabel = (tier: string) => {
+/**
+ * Format tier for display - handles both formats
+ * If tier already contains full text like "Tier 2 - Potentially Actionable", use it directly
+ * If tier is short like "T2", expand it
+ */
+const formatTierDisplay = (tier: string): string => {
+  // If already contains "Tier" or "-", it's the full format - use as is
+  if (tier.includes('Tier') || tier.includes('-')) {
+    return tier
+  }
+  // Otherwise expand short format
   switch (tier) {
     case 'T1':
-      return 'Actionable'
+      return 'Tier 1 - Actionable'
     case 'T2':
-      return 'Potentially'
+      return 'Tier 2 - Potentially Actionable'
     case 'T3':
-      return 'Uncertain'
+      return 'Tier 3 - Uncertain'
     case 'T4':
-      return 'Unlikely'
+      return 'Tier 4 - Unlikely'
     default:
       return tier
   }
@@ -110,26 +126,26 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <Badge variant="outline" className={getEvidenceColor(publication.evidence.evidence_strength)}>
+            <Badge variant="outline" className={`text-md ${getEvidenceColor(publication.evidence.evidence_strength)}`}>
               {publication.evidence.evidence_strength}
             </Badge>
-            <Badge variant="outline" className={getScoreColor(publication.relevance_score)}>
+            <Badge variant="outline" className={`text-md ${getScoreColor(publication.relevance_score)}`}>
               {(publication.relevance_score * 100).toFixed(0)}%
             </Badge>
             {publication.evidence.has_functional_data && (
-              <Badge variant="secondary" className="bg-purple-100 text-purple-900">
+              <Badge variant="secondary" className="text-md bg-purple-100 text-purple-900">
                 <FlaskConical className="h-3 w-3 mr-1" />
                 Functional
               </Badge>
             )}
             {publication.evidence.has_exact_variant && (
-              <Badge variant="secondary" className="bg-red-100 text-red-900">
+              <Badge variant="secondary" className="text-md bg-red-100 text-red-900">
                 <Sparkles className="h-3 w-3 mr-1" />
                 Exact Match
               </Badge>
             )}
           </div>
-          <h4 className="font-medium text-base line-clamp-2">{publication.title}</h4>
+          <h4 className="font-medium text-xl line-clamp-2">{publication.title}</h4>
           <p className="text-md text-muted-foreground mt-1">
             {formatAuthors(publication.authors)} - {publication.journal || 'Unknown Journal'}
             {publication.publication_date && ` (${publication.publication_date.slice(0, 4)})`}
@@ -257,40 +273,35 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
 
             <CardTitle className="text-lg">{group.gene}</CardTitle>
 
-            {/* Clinical Tier Badge */}
+            {/* Clinical Tier Badge - fixed to avoid duplication */}
             {group.clinicalTier && (
-              <Badge variant="outline" className={getTierColor(group.clinicalTier)}>
-                {group.clinicalTier} - {getTierLabel(group.clinicalTier)}
+              <Badge variant="outline" className={`text-sm ${getTierColor(group.clinicalTier)}`}>
+                {formatTierDisplay(group.clinicalTier)}
               </Badge>
             )}
 
-            <Badge variant="secondary">{group.publications.length} publications</Badge>
+            <Badge variant="secondary" className="text-sm">{group.publications.length} publications</Badge>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Combined Score - Primary */}
-            <Badge variant="default" className="bg-primary">
+            <Badge variant="default" className="text-sm bg-primary">
               <TrendingUp className="h-3 w-3 mr-1" />
               {(group.combinedScore * 100).toFixed(0)}%
             </Badge>
 
-            {/* Score breakdown tooltip-style */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>Lit: {(group.bestScore * 100).toFixed(0)}%</span>
-              {group.clinicalScore !== undefined && (
-                <>
-                  <span>/</span>
-                  <span>Clin: {group.clinicalScore.toFixed(0)}</span>
-                </>
-              )}
-            </div>
+            {/* Score breakdown */}
+            <span className="text-sm text-muted-foreground">
+              Lit: {(group.bestScore * 100).toFixed(0)}%
+              {group.clinicalScore !== undefined && ` / Clin: ${group.clinicalScore.toFixed(0)}`}
+            </span>
 
             {/* Evidence counts */}
             {group.strongCount > 0 && (
-              <Badge className="bg-green-600">{group.strongCount} Strong</Badge>
+              <Badge className="text-sm bg-green-600">{group.strongCount} Strong</Badge>
             )}
             {group.moderateCount > 0 && (
-              <Badge className="bg-blue-600">{group.moderateCount} Moderate</Badge>
+              <Badge className="text-sm bg-blue-600">{group.moderateCount} Moderate</Badge>
             )}
 
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -299,7 +310,7 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
 
         {/* Phenotype rank info */}
         {group.phenotypeRank && (
-          <p className="text-xs text-muted-foreground mt-1 ml-9">
+          <p className="text-sm text-muted-foreground mt-1 ml-9">
             Phenotype Matching Rank: #{group.phenotypeRank}
           </p>
         )}
@@ -357,12 +368,12 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
 
         {/* Status Badge */}
         {status === 'success' && (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+          <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-300">
             {totalResults} Publications Found
           </Badge>
         )}
         {status === 'loading' && (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+          <Badge variant="outline" className="text-sm bg-blue-50 text-blue-700 border-blue-300">
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             Searching...
           </Badge>
@@ -375,31 +386,31 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold">{totalResults}</p>
-              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-base font-semibold text-muted-foreground">Total</p>
             </CardContent>
           </Card>
           <Card className="border-green-200 bg-green-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-green-900">{strongCount}</p>
-              <p className="text-sm text-green-700">Strong</p>
+              <p className="text-base font-semibold text-green-700">Strong</p>
             </CardContent>
           </Card>
           <Card className="border-blue-200 bg-blue-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-blue-900">{moderateCount}</p>
-              <p className="text-sm text-blue-700">Moderate</p>
+              <p className="text-base font-semibold text-blue-700">Moderate</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-yellow-900">{supportingCount}</p>
-              <p className="text-sm text-yellow-700">Supporting</p>
+              <p className="text-base font-semibold text-yellow-700">Supporting</p>
             </CardContent>
           </Card>
           <Card className="border-gray-200 bg-gray-50">
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-gray-700">{weakCount}</p>
-              <p className="text-sm text-gray-600">Weak</p>
+              <p className="text-base font-semibold text-gray-600">Weak</p>
             </CardContent>
           </Card>
         </div>
@@ -433,15 +444,15 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
               placeholder="Filter by gene..."
               value={geneFilter}
               onChange={(e) => setGeneFilter(e.target.value)}
-              className="max-w-xs"
+              className="max-w-xs text-base"
             />
-            <span className="text-base text-muted-foreground">
+            <span className="text-md text-muted-foreground">
               Showing {filteredGroups.length} of {groupedByGene.length} genes
             </span>
           </div>
 
           {/* Scoring explanation */}
-          <p className="text-sm text-muted-foreground">
+          <p className="text-md text-muted-foreground">
             Sorted by Combined Score = 60% Clinical Priority (from Phenotype Matching) + 40% Literature Relevance
           </p>
 
