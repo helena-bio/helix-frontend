@@ -406,31 +406,31 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
       {status === 'success' && (
         <div className="grid grid-cols-5 gap-4">
           <Card>
-            <CardContent className="py-2 px-4 text-center">
+            <CardContent className="py-1.5 px-3 text-center">
               <p className="text-2xl font-bold">{totalResults}</p>
               <p className="text-ml font-semibold text-muted-foreground">Total</p>
             </CardContent>
           </Card>
           <Card className="border-green-200 bg-green-50">
-            <CardContent className="py-2 px-4 text-center">
+            <CardContent className="py-1.5 px-3 text-center">
               <p className="text-2xl font-bold text-green-900">{strongCount}</p>
               <p className="text-ml font-semibold text-green-700">Strong</p>
             </CardContent>
           </Card>
           <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="py-2 px-4 text-center">
+            <CardContent className="py-1.5 px-3 text-center">
               <p className="text-2xl font-bold text-blue-900">{moderateCount}</p>
               <p className="text-ml font-semibold text-blue-700">Moderate</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="py-2 px-4 text-center">
+            <CardContent className="py-1.5 px-3 text-center">
               <p className="text-2xl font-bold text-yellow-900">{supportingCount}</p>
               <p className="text-ml font-semibold text-yellow-700">Supporting</p>
             </CardContent>
           </Card>
           <Card className="border-gray-200 bg-gray-50">
-            <CardContent className="py-2 px-4 text-center">
+            <CardContent className="py-1.5 px-3 text-center">
               <p className="text-2xl font-bold text-gray-700">{weakCount}</p>
               <p className="text-ml font-semibold text-gray-600">Weak</p>
             </CardContent>
