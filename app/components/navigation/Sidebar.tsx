@@ -14,6 +14,7 @@ import {
   Home,
   Microscope,
   TrendingUp,
+  Dna,
   FlaskConical,
   BookOpen,
   Filter,
@@ -53,7 +54,7 @@ const MODULES: Module[] = [
   {
     id: 'phenotype',
     name: 'Phenotype Matching',
-    icon: FlaskConical,
+    icon: Dna,
     requiresSession: true,
   },
   {
@@ -143,7 +144,7 @@ export function Sidebar() {
         {/* Modules Section Header - only when expanded */}
         {isSidebarOpen && (
           <div className="pt-2 pb-2">
-            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <p className="px-3 text-ml font-semibold text-muted-foreground uppercase tracking-wider">
               Modules
             </p>
           </div>
