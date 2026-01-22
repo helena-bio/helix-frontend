@@ -130,7 +130,7 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
             )}
           </div>
           <h4 className="font-medium text-base line-clamp-2">{publication.title}</h4>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-md text-muted-foreground mt-1">
             {formatAuthors(publication.authors)} - {publication.journal || 'Unknown Journal'}
             {publication.publication_date && ` (${publication.publication_date.slice(0, 4)})`}
           </p>
@@ -149,31 +149,31 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
         <div className="mt-4 space-y-4">
           {/* Abstract */}
           <div>
-            <p className="text-sm font-medium mb-1">Abstract</p>
-            <p className="text-sm text-muted-foreground line-clamp-6">{publication.abstract}</p>
+            <p className="text-base font-semibold mb-1">Abstract</p>
+            <p className="text-base text-muted-foreground line-clamp-6">{publication.abstract}</p>
           </div>
 
           {/* Evidence Details */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm font-medium mb-1">Matched Phenotypes</p>
+              <p className="text-base font-semibold mb-1">Matched Phenotypes</p>
               <div className="flex flex-wrap gap-1">
                 {publication.evidence.phenotype_matches.length > 0 ? (
                   publication.evidence.phenotype_matches.map((phenotype, idx) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
+                    <Badge key={idx} variant="secondary" className="text-sm">
                       {phenotype}
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-sm text-muted-foreground">None</span>
+                  <span className="text-md text-muted-foreground">None</span>
                 )}
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium mb-1">Genes Mentioned</p>
+              <p className="text-base font-semibold mb-1">Genes Mentioned</p>
               <div className="flex flex-wrap gap-1">
                 {publication.evidence.gene_mentions.map((gene, idx) => (
-                  <Badge key={idx} variant="outline" className="text-xs">
+                  <Badge key={idx} variant="outline" className="text-sm">
                     {gene}
                   </Badge>
                 ))}
@@ -183,8 +183,8 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
 
           {/* Score Breakdown */}
           <div>
-            <p className="text-sm font-medium mb-2">Score Breakdown</p>
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <p className="text-base font-semibold mb-2">Score Breakdown</p>
+            <div className="grid grid-cols-3 gap-2 text-md">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Phenotype</span>
                 <span>{(publication.phenotype_score * 100).toFixed(0)}%</span>
@@ -217,6 +217,7 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
             <Button
               variant="outline"
               size="sm"
+              className="text-md"
               onClick={() => window.open(getPubMedUrl(publication.pmid), '_blank')}
             >
               <ExternalLink className="h-3 w-3 mr-1" />
@@ -226,6 +227,7 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
               <Button
                 variant="outline"
                 size="sm"
+                className="text-md"
                 onClick={() => { const url = getPMCUrl(publication.pmc_id); if (url) window.open(url, '_blank') }}
               >
                 <FileText className="h-3 w-3 mr-1" />
@@ -325,7 +327,6 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
     status,
     error,
     totalResults,
-    querySummary,
     groupedByGene,
     strongCount,
     moderateCount,
@@ -404,13 +405,6 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
         </div>
       )}
 
-      {/* Query info - compact */}
-      {querySummary && status === 'success' && (
-        <p className="text-sm text-muted-foreground">
-          Scanned {querySummary.publications_scanned.toLocaleString()} publications in {querySummary.search_time_ms}ms
-        </p>
-      )}
-
       {/* Results */}
       {status === 'loading' && (
         <div className="text-center py-16">
@@ -441,13 +435,13 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
               onChange={(e) => setGeneFilter(e.target.value)}
               className="max-w-xs"
             />
-            <span className="text-sm text-muted-foreground">
+            <span className="text-base text-muted-foreground">
               Showing {filteredGroups.length} of {groupedByGene.length} genes
             </span>
           </div>
 
           {/* Scoring explanation */}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Sorted by Combined Score = 60% Clinical Priority (from Phenotype Matching) + 40% Literature Relevance
           </p>
 
