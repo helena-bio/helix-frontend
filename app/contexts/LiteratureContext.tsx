@@ -2,12 +2,19 @@
  * Literature Context - Clinical Literature Search Results
  *
  * Automatically triggers literature search after phenotype matching completes.
+ * Implements combined scoring that integrates clinical priority from phenotype matching.
+ *
+ * Combined Score Formula:
+ * combined = (literature_relevance * 0.4) + (clinical_priority_normalized * 0.6)
+ *
+ * This ensures T1/T2 genes rank higher than T4 genes even with lower literature scores.
  *
  * Flow:
  * 1. MatchedPhenotypeContext completes matching (status='success')
  * 2. LiteratureContext detects change and extracts genes from results
  * 3. Auto-triggers literature search with genes + patient HPO terms
- * 4. Results available for display and AI context
+ * 4. Results grouped by gene with combined scoring applied
+ * 5. Results available for display and AI context
  */
 'use client'
 
@@ -33,7 +40,23 @@ import type {
   LiteratureStatus,
   GenePublicationGroup,
   LiteratureHPOTerm,
+  GeneClinicalData,
 } from '@/types/literature.types'
+
+// ============================================================================
+// SCORING WEIGHTS
+// ============================================================================
+
+/**
+ * Weight for clinical priority score in combined calculation.
+ * Higher weight = clinical relevance dominates ranking.
+ */
+const CLINICAL_WEIGHT = 0.6
+
+/**
+ * Weight for literature relevance score in combined calculation.
+ */
+const LITERATURE_WEIGHT = 0.4
 
 // ============================================================================
 // CONTEXT TYPE
@@ -54,7 +77,7 @@ interface LiteratureContextValue {
   totalResults: number
   querySummary: ClinicalSearchResponse['query_summary'] | null
 
-  // Grouped by gene
+  // Grouped by gene (sorted by combined score)
   groupedByGene: GenePublicationGroup[]
 
   // Counts by evidence strength
@@ -80,9 +103,21 @@ interface LiteratureContextValue {
 // HELPERS
 // ============================================================================
 
-function groupPublicationsByGene(results: PublicationResult[]): GenePublicationGroup[] {
+/**
+ * Group publications by gene and apply combined scoring.
+ *
+ * Combined Score = (literature * 0.4) + (clinical * 0.6)
+ *
+ * This ensures clinically relevant genes (T1/T2 from phenotype matching)
+ * rank higher than unlikely genes (T4) even if literature scores are similar.
+ */
+function groupPublicationsByGene(
+  results: PublicationResult[],
+  clinicalDataMap: Map<string, GeneClinicalData>
+): GenePublicationGroup[] {
   const geneMap = new Map<string, PublicationResult[]>()
 
+  // Group publications by gene
   results.forEach(pub => {
     pub.evidence.gene_mentions.forEach(gene => {
       if (!geneMap.has(gene)) {
@@ -92,25 +127,45 @@ function groupPublicationsByGene(results: PublicationResult[]): GenePublicationG
     })
   })
 
-  return Array.from(geneMap.entries())
-    .map(([gene, publications]) => {
-      const strongCount = publications.filter(p => p.evidence.evidence_strength === 'STRONG').length
-      const moderateCount = publications.filter(p => p.evidence.evidence_strength === 'MODERATE').length
-      const supportingCount = publications.filter(p => p.evidence.evidence_strength === 'SUPPORTING').length
-      const weakCount = publications.filter(p => p.evidence.evidence_strength === 'WEAK').length
-      const bestScore = Math.max(...publications.map(p => p.relevance_score))
+  // Build groups with combined scoring
+  const groups = Array.from(geneMap.entries()).map(([gene, publications]) => {
+    const strongCount = publications.filter(p => p.evidence.evidence_strength === 'STRONG').length
+    const moderateCount = publications.filter(p => p.evidence.evidence_strength === 'MODERATE').length
+    const supportingCount = publications.filter(p => p.evidence.evidence_strength === 'SUPPORTING').length
+    const weakCount = publications.filter(p => p.evidence.evidence_strength === 'WEAK').length
+    const bestScore = Math.max(...publications.map(p => p.relevance_score))
 
-      return {
-        gene,
-        publications: publications.sort((a, b) => b.relevance_score - a.relevance_score),
-        strongCount,
-        moderateCount,
-        supportingCount,
-        weakCount,
-        bestScore,
-      }
-    })
-    .sort((a, b) => b.bestScore - a.bestScore)
+    // Get clinical data for this gene
+    const clinicalData = clinicalDataMap.get(gene)
+
+    // Calculate combined score
+    // Literature score is already 0-1, clinical score needs normalization (0-100 -> 0-1)
+    const literatureNormalized = bestScore
+    const clinicalNormalized = clinicalData ? clinicalData.clinicalScore / 100 : 0
+
+    // Combined score: 60% clinical, 40% literature
+    // If no clinical data, use only literature score
+    const combinedScore = clinicalData
+      ? (literatureNormalized * LITERATURE_WEIGHT) + (clinicalNormalized * CLINICAL_WEIGHT)
+      : literatureNormalized
+
+    return {
+      gene,
+      publications: publications.sort((a, b) => b.relevance_score - a.relevance_score),
+      strongCount,
+      moderateCount,
+      supportingCount,
+      weakCount,
+      bestScore,
+      clinicalScore: clinicalData?.clinicalScore,
+      clinicalTier: clinicalData?.clinicalTier,
+      phenotypeRank: clinicalData?.phenotypeRank,
+      combinedScore,
+    }
+  })
+
+  // Sort by combined score (descending)
+  return groups.sort((a, b) => b.combinedScore - a.combinedScore)
 }
 
 function countByStrength(results: PublicationResult[]): {
@@ -153,6 +208,21 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
   // Get phenotype matching results and patient HPO terms
   const { status: matchingStatus, aggregatedResults } = useMatchedPhenotype()
   const { phenotype } = usePhenotypeContext()
+
+  // Build clinical data map from phenotype matching results
+  const clinicalDataMap = useMemo(() => {
+    const map = new Map<string, GeneClinicalData>()
+    if (aggregatedResults) {
+      aggregatedResults.forEach(result => {
+        map.set(result.gene_symbol, {
+          clinicalScore: result.best_clinical_score,
+          clinicalTier: result.best_tier,
+          phenotypeRank: result.rank,
+        })
+      })
+    }
+    return map
+  }, [aggregatedResults])
 
   // Run literature search
   const runSearch = useCallback(async (
@@ -269,8 +339,11 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
     runSearch(topGenes, hpoTermsForSearch, undefined, 50)
   }, [matchingStatus, aggregatedResults, phenotype, runSearch])
 
-  // Computed values
-  const groupedByGene = useMemo(() => groupPublicationsByGene(results), [results])
+  // Computed values - apply combined scoring
+  const groupedByGene = useMemo(
+    () => groupPublicationsByGene(results, clinicalDataMap),
+    [results, clinicalDataMap]
+  )
   const counts = useMemo(() => countByStrength(results), [results])
 
   // Generate AI summary
@@ -286,32 +359,25 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
       `- Total publications found: ${results.length}`,
       `- Evidence breakdown: ${counts.strong} strong, ${counts.moderate} moderate, ${counts.supporting} supporting, ${counts.weak} weak`,
       ``,
-      `Top publications by relevance:`,
+      `Top genes by combined score (60% clinical priority + 40% literature relevance):`,
     ]
 
-    // Add top 5 publications
-    results.slice(0, 5).forEach((pub, idx) => {
-      lines.push(`${idx + 1}. "${pub.title}" (PMID: ${pub.pmid})`)
-      lines.push(`   - Relevance: ${(pub.relevance_score * 100).toFixed(0)}%, Evidence: ${pub.evidence.evidence_strength}`)
-      lines.push(`   - Genes: ${pub.evidence.gene_mentions.join(', ')}`)
-      if (pub.evidence.phenotype_matches.length > 0) {
-        lines.push(`   - Phenotype matches: ${pub.evidence.phenotype_matches.join(', ')}`)
-      }
-      if (pub.evidence.has_functional_data) {
-        lines.push(`   - Contains functional study data`)
-      }
-      if (pub.evidence.has_exact_variant) {
-        lines.push(`   - Contains exact variant match`)
-      }
+    // Add top 5 gene groups
+    groupedByGene.slice(0, 5).forEach((group, idx) => {
+      const tierInfo = group.clinicalTier ? ` [${group.clinicalTier}]` : ''
+      const clinicalInfo = group.clinicalScore ? `, Clinical: ${group.clinicalScore.toFixed(0)}` : ''
+      lines.push(`${idx + 1}. ${group.gene}${tierInfo}`)
+      lines.push(`   - Combined: ${(group.combinedScore * 100).toFixed(0)}%, Literature: ${(group.bestScore * 100).toFixed(0)}%${clinicalInfo}`)
+      lines.push(`   - Publications: ${group.publications.length} (${group.strongCount} strong, ${group.moderateCount} moderate)`)
     })
 
-    if (results.length > 5) {
+    if (groupedByGene.length > 5) {
       lines.push(``)
-      lines.push(`... and ${results.length - 5} more publications`)
+      lines.push(`... and ${groupedByGene.length - 5} more genes`)
     }
 
     return lines.join('\n')
-  }, [results, searchedGenes, searchedHpoTerms, counts])
+  }, [results, searchedGenes, searchedHpoTerms, counts, groupedByGene])
 
   // Context value
   const value = useMemo<LiteratureContextValue>(() => ({

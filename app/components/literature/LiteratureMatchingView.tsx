@@ -9,6 +9,8 @@
  * Features:
  * - Auto-search on mount if phenotypes available
  * - Grouped by gene with expandable sections
+ * - Combined scoring (60% clinical + 40% literature)
+ * - Clinical tier badges from phenotype matching
  * - Evidence strength badges
  * - Score breakdown visualization
  * - Links to PubMed/PMC/DOI
@@ -28,6 +30,7 @@ import {
   RefreshCw,
   Sparkles,
   Filter,
+  TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -67,6 +70,36 @@ const getScoreColor = (score: number) => {
   if (score >= 0.7) return 'bg-green-100 text-green-900 border-green-300'
   if (score >= 0.4) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
   return 'bg-gray-100 text-gray-600 border-gray-300'
+}
+
+const getTierColor = (tier: string) => {
+  switch (tier) {
+    case 'T1':
+      return 'bg-red-100 text-red-900 border-red-300'
+    case 'T2':
+      return 'bg-orange-100 text-orange-900 border-orange-300'
+    case 'T3':
+      return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+    case 'T4':
+      return 'bg-gray-100 text-gray-600 border-gray-300'
+    default:
+      return 'bg-gray-100 text-gray-600 border-gray-300'
+  }
+}
+
+const getTierLabel = (tier: string) => {
+  switch (tier) {
+    case 'T1':
+      return 'Actionable'
+    case 'T2':
+      return 'Potentially'
+    case 'T3':
+      return 'Uncertain'
+    case 'T4':
+      return 'Unlikely'
+    default:
+      return tier
+  }
 }
 
 // ============================================================================
@@ -211,8 +244,8 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
   )
 }
 
-function GeneSection({ group }: { group: GenePublicationGroup }) {
-  const [isExpanded, setIsExpanded] = useState(true)
+function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: number }) {
+  const [isExpanded, setIsExpanded] = useState(rank <= 3) // Auto-expand top 3
 
   return (
     <Card>
@@ -222,22 +255,57 @@ function GeneSection({ group }: { group: GenePublicationGroup }) {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            {/* Rank indicator */}
+            <span className="text-lg font-bold text-muted-foreground w-6">#{rank}</span>
+
             <CardTitle className="text-lg">{group.gene}</CardTitle>
+
+            {/* Clinical Tier Badge */}
+            {group.clinicalTier && (
+              <Badge variant="outline" className={getTierColor(group.clinicalTier)}>
+                {group.clinicalTier} - {getTierLabel(group.clinicalTier)}
+              </Badge>
+            )}
+
             <Badge variant="secondary">{group.publications.length} publications</Badge>
-            <Badge variant="outline" className={getScoreColor(group.bestScore)}>
-              Best: {(group.bestScore * 100).toFixed(0)}%
-            </Badge>
           </div>
+
           <div className="flex items-center gap-2">
+            {/* Combined Score - Primary */}
+            <Badge variant="default" className="bg-primary">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              {(group.combinedScore * 100).toFixed(0)}%
+            </Badge>
+
+            {/* Score breakdown tooltip-style */}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span>Lit: {(group.bestScore * 100).toFixed(0)}%</span>
+              {group.clinicalScore !== undefined && (
+                <>
+                  <span>/</span>
+                  <span>Clin: {group.clinicalScore.toFixed(0)}</span>
+                </>
+              )}
+            </div>
+
+            {/* Evidence counts */}
             {group.strongCount > 0 && (
               <Badge className="bg-green-600">{group.strongCount} Strong</Badge>
             )}
             {group.moderateCount > 0 && (
               <Badge className="bg-blue-600">{group.moderateCount} Moderate</Badge>
             )}
+
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
+
+        {/* Phenotype rank info */}
+        {group.phenotypeRank && (
+          <p className="text-xs text-muted-foreground mt-1 ml-9">
+            Phenotype Matching Rank: #{group.phenotypeRank}
+          </p>
+        )}
       </CardHeader>
       {isExpanded && (
         <CardContent className="space-y-3">
@@ -327,7 +395,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
         <div className="flex-1">
           <h1 className="text-3xl font-bold">Literature Analysis</h1>
           <p className="text-base text-muted-foreground mt-1">
-            Automated clinical literature search for variant evidence
+            Automated clinical literature search with combined scoring (60% clinical + 40% literature)
           </p>
         </div>
 
@@ -488,9 +556,14 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
             </span>
           </div>
 
+          {/* Scoring explanation */}
+          <p className="text-xs text-muted-foreground">
+            Sorted by Combined Score = 60% Clinical Priority (from Phenotype Matching) + 40% Literature Relevance
+          </p>
+
           {/* Gene Groups */}
-          {filteredGroups.map(group => (
-            <GeneSection key={group.gene} group={group} />
+          {filteredGroups.map((group, idx) => (
+            <GeneSection key={group.gene} group={group} rank={idx + 1} />
           ))}
         </div>
       )}

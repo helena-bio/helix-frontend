@@ -88,6 +88,24 @@ export interface LiteratureSearchParams {
   minYear?: number
 }
 
+/**
+ * Clinical priority data from Phenotype Matching
+ */
+export interface GeneClinicalData {
+  clinicalScore: number      // 0-100 from phenotype matching
+  clinicalTier: string       // T1, T2, T3, T4
+  phenotypeRank: number      // Rank in phenotype matching results
+}
+
+/**
+ * Gene publication group with combined scoring
+ * 
+ * Combined Score Formula:
+ * combined = (literature_relevance * 0.4) + (clinical_priority * 0.6)
+ * 
+ * This ensures clinically relevant genes (T1/T2) rank higher even if
+ * they have slightly lower literature scores.
+ */
 export interface GenePublicationGroup {
   gene: string
   publications: PublicationResult[]
@@ -95,5 +113,12 @@ export interface GenePublicationGroup {
   moderateCount: number
   supportingCount: number
   weakCount: number
+  // Literature score (best publication relevance, 0-1)
   bestScore: number
+  // Clinical data from phenotype matching (optional - may not exist for all genes)
+  clinicalScore?: number     // 0-100
+  clinicalTier?: string      // T1, T2, T3, T4
+  phenotypeRank?: number     // Rank in phenotype matching
+  // Combined score (0-1) - used for sorting
+  combinedScore: number
 }
