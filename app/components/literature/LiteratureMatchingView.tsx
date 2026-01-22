@@ -126,26 +126,26 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <Badge variant="outline" className={`text-md ${getEvidenceColor(publication.evidence.evidence_strength)}`}>
+            <Badge variant="outline" className={`text-sm ${getEvidenceColor(publication.evidence.evidence_strength)}`}>
               {publication.evidence.evidence_strength}
             </Badge>
-            <Badge variant="outline" className={`text-md ${getScoreColor(publication.relevance_score)}`}>
+            <Badge variant="outline" className={`text-sm ${getScoreColor(publication.relevance_score)}`}>
               {(publication.relevance_score * 100).toFixed(0)}%
             </Badge>
             {publication.evidence.has_functional_data && (
-              <Badge variant="secondary" className="text-md bg-purple-100 text-purple-900">
+              <Badge variant="secondary" className="text-sm bg-purple-100 text-purple-900">
                 <FlaskConical className="h-3 w-3 mr-1" />
                 Functional
               </Badge>
             )}
             {publication.evidence.has_exact_variant && (
-              <Badge variant="secondary" className="text-md bg-red-100 text-red-900">
+              <Badge variant="secondary" className="text-sm bg-red-100 text-red-900">
                 <Sparkles className="h-3 w-3 mr-1" />
                 Exact Match
               </Badge>
             )}
           </div>
-          <h4 className="font-medium text-xl line-clamp-2">{publication.title}</h4>
+          <h4 className="font-medium text-lg line-clamp-2">{publication.title}</h4>
           <p className="text-md text-muted-foreground mt-1">
             {formatAuthors(publication.authors)} - {publication.journal || 'Unknown Journal'}
             {publication.publication_date && ` (${publication.publication_date.slice(0, 4)})`}
@@ -444,7 +444,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
               placeholder="Filter by gene..."
               value={geneFilter}
               onChange={(e) => setGeneFilter(e.target.value)}
-              className="max-w-xs text-base"
+              className="max-w-xs text-md"
             />
             <span className="text-md text-muted-foreground">
               Showing {filteredGroups.length} of {groupedByGene.length} genes
