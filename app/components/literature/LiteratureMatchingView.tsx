@@ -4,10 +4,10 @@
  * LiteratureMatchingView Component
  *
  * Displays clinical literature search results from Literature Mining Service.
- * Integrates with PhenotypeContext and MatchedPhenotypeContext to get search parameters.
+ * Auto-searches when phenotype matching completes - no manual controls needed.
  *
  * Features:
- * - Auto-search on mount if phenotypes available
+ * - Auto-search triggered by phenotype matching
  * - Grouped by gene with expandable sections
  * - Combined scoring (60% clinical + 40% literature)
  * - Clinical tier badges from phenotype matching
@@ -16,9 +16,8 @@
  * - Links to PubMed/PMC/DOI
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
-  Search,
   BookOpen,
   Loader2,
   ChevronDown,
@@ -27,7 +26,6 @@ import {
   FileText,
   FlaskConical,
   AlertCircle,
-  RefreshCw,
   Sparkles,
   Filter,
   TrendingUp,
@@ -37,11 +35,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useLiterature } from '@/contexts/LiteratureContext'
-import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
-import { useMatchedPhenotype } from '@/contexts/MatchedPhenotypeContext'
 import { getPubMedUrl, getPMCUrl, formatAuthors } from '@/lib/api/literature'
 import type { PublicationResult, GenePublicationGroup } from '@/types/literature.types'
-import { toast } from 'sonner'
 
 interface LiteratureMatchingViewProps {
   sessionId: string
@@ -325,14 +320,10 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
 export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProps) {
   const [geneFilter, setGeneFilter] = useState('')
 
-  // Contexts
-  const { phenotype } = usePhenotypeContext()
-  const { aggregatedResults } = useMatchedPhenotype()
+  // Context
   const {
     status,
-    isLoading,
     error,
-    results,
     totalResults,
     querySummary,
     groupedByGene,
@@ -340,43 +331,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
     moderateCount,
     supportingCount,
     weakCount,
-    searchedGenes,
-    searchedHpoTerms,
-    runSearch,
   } = useLiterature()
-
-  // Extract genes from phenotype matching results
-  const availableGenes = useMemo(() => {
-    if (!aggregatedResults) return []
-    return aggregatedResults.map(r => r.gene_symbol)
-  }, [aggregatedResults])
-
-  // Get HPO terms
-  const hpoTerms = useMemo(() => {
-    return phenotype?.hpo_terms || []
-  }, [phenotype])
-
-  // Auto-search on mount if we have data
-  useEffect(() => {
-    if (status === 'idle' && availableGenes.length > 0 && hpoTerms.length > 0) {
-      console.log('[LiteratureMatchingView] Auto-searching with', availableGenes.length, 'genes')
-      runSearch(availableGenes.slice(0, 10), hpoTerms) // Limit to top 10 genes
-    }
-  }, [status, availableGenes, hpoTerms, runSearch])
-
-  // Manual search handler
-  const handleSearch = useCallback(async () => {
-    if (availableGenes.length === 0) {
-      toast.error('No genes available', { description: 'Run phenotype matching first' })
-      return
-    }
-    if (hpoTerms.length === 0) {
-      toast.error('No phenotypes', { description: 'Add HPO terms first' })
-      return
-    }
-    await runSearch(availableGenes.slice(0, 10), hpoTerms)
-    toast.success('Literature search complete')
-  }, [availableGenes, hpoTerms, runSearch])
 
   // Filter groups by gene name
   const filteredGroups = useMemo(() => {
@@ -449,74 +404,12 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
         </div>
       )}
 
-      {/* Search Info & Controls */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Search className="h-4 w-4" />
-            Search Parameters
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Searched Terms Display */}
-          {searchedGenes.length > 0 && (
-            <div>
-              <p className="text-sm font-medium mb-2">Genes ({searchedGenes.length})</p>
-              <div className="flex flex-wrap gap-1">
-                {searchedGenes.map(gene => (
-                  <Badge key={gene} variant="outline">{gene}</Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {searchedHpoTerms.length > 0 && (
-            <div>
-              <p className="text-sm font-medium mb-2">Phenotypes ({searchedHpoTerms.length})</p>
-              <div className="flex flex-wrap gap-1">
-                {searchedHpoTerms.map(term => (
-                  <Badge key={term.id} variant="secondary" className="bg-primary/10 text-primary">
-                    {term.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Query Summary */}
-          {querySummary && (
-            <div className="text-sm text-muted-foreground pt-2 border-t">
-              Scanned {querySummary.publications_scanned.toLocaleString()} publications in {querySummary.search_time_ms}ms
-            </div>
-          )}
-
-          {/* Search Button */}
-          <Button
-            onClick={handleSearch}
-            disabled={isLoading || availableGenes.length === 0 || hpoTerms.length === 0}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Searching Literature...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                {status === 'success' ? 'Re-run Search' : 'Search Literature'}
-              </>
-            )}
-          </Button>
-
-          {/* No Data Warning */}
-          {availableGenes.length === 0 && (
-            <p className="text-sm text-amber-600">
-              Run Phenotype Matching first to get genes for literature search.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Query info - compact */}
+      {querySummary && status === 'success' && (
+        <p className="text-sm text-muted-foreground">
+          Scanned {querySummary.publications_scanned.toLocaleString()} publications in {querySummary.search_time_ms}ms
+        </p>
+      )}
 
       {/* Results */}
       {status === 'loading' && (
@@ -533,9 +426,6 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
             <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
             <p className="text-base font-medium mb-2">Search Failed</p>
             <p className="text-sm text-muted-foreground">{error?.message}</p>
-            <Button onClick={handleSearch} className="mt-4">
-              Retry Search
-            </Button>
           </CardContent>
         </Card>
       )}
@@ -580,13 +470,13 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
         </Card>
       )}
 
-      {status === 'idle' && (
+      {(status === 'idle' || status === 'no_data') && (
         <Card>
           <CardContent className="p-6 text-center">
-            <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <p className="text-base font-medium mb-2">Ready to Search</p>
+            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-base font-medium mb-2">Waiting for Phenotype Matching</p>
             <p className="text-sm text-muted-foreground">
-              Click "Search Literature" to find relevant publications.
+              Literature search will run automatically after phenotype matching completes.
             </p>
           </CardContent>
         </Card>

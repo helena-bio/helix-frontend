@@ -11,15 +11,11 @@
  * - Aggregated by gene
  * - Sorted by Clinical Priority Score
  * - Tier visualization (Tier 1-4)
- * - Manual re-run option
+ * - Read-only phenotype display (set during upload)
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
-  Search,
-  Plus,
-  X,
-  Play,
   Dna,
   Loader2,
   Sparkles,
@@ -31,18 +27,14 @@ import {
   AlertCircle,
   Shield,
   ExternalLink,
-  RefreshCw
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
-import { useMatchedPhenotype, type GeneAggregatedResult } from '@/contexts/MatchedPhenotypeContext'
-import { useHPOSearch, useDebounce } from '@/hooks'
+import { useMatchedPhenotype } from '@/contexts/MatchedPhenotypeContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
-import { toast } from 'sonner'
 
 interface PhenotypeMatchingViewProps {
   sessionId: string
@@ -99,18 +91,16 @@ const getImpactColor = (impact: string | null | undefined) => {
 
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
   // Local state
-  const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [expandedGenes, setExpandedGenes] = useState<Set<string>>(new Set())
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
 
   // Contexts
-  const { phenotype, addHPOTerm, removeHPOTerm } = usePhenotypeContext()
+  const { phenotype } = usePhenotypeContext()
   const {
     status,
     isLoading,
     aggregatedResults,
-    runMatching,
     tier1Count,
     tier2Count,
     tier3Count,
@@ -119,19 +109,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     totalGenes,
   } = useMatchedPhenotype()
 
-  // HPO search
-  const debouncedQuery = useDebounce(searchQuery, 300)
-  const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
-    enabled: debouncedQuery.length >= 2,
-    limit: 8,
-  })
-
   const selectedTerms = phenotype?.hpo_terms || []
-
-  // Filter suggestions
-  const filteredSuggestions = searchResults?.terms.filter(
-    (term) => !selectedTerms.find((t) => t.hpo_id === term.hpo_id)
-  ) || []
 
   // Pagination
   const totalPages = Math.ceil(totalGenes / PAGE_SIZE)
@@ -151,35 +129,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     })
   }, [])
 
-  const handleAddTerm = useCallback(async (term: { hpo_id: string; name: string; definition?: string }) => {
-    try {
-      await addHPOTerm(term)
-      setSearchQuery('')
-      toast.success('Added: ' + term.name)
-    } catch (error) {
-      toast.error('Failed to add term')
-    }
-  }, [addHPOTerm])
-
-  const handleRemoveTerm = useCallback(async (hpoId: string) => {
-    try {
-      await removeHPOTerm(hpoId)
-    } catch (error) {
-      toast.error('Failed to remove term')
-    }
-  }, [removeHPOTerm])
-
-  const handleRunMatching = useCallback(async () => {
-    if (!selectedTerms.length) {
-      toast.error('No phenotypes selected')
-      return
-    }
-    await runMatching()
-    toast.success('Matching complete')
-  }, [selectedTerms, runMatching])
-
-  // Check if we already have results loaded
-  const hasExistingResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
+  // Check if we have results
+  const hasResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
 
   // View variant detail
   if (selectedVariantIdx !== null) {
@@ -207,7 +158,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </div>
 
         {/* Status Badge */}
-        {status === 'success' && hasExistingResults && (
+        {status === 'success' && hasResults && (
           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
             Results Ready
           </Badge>
@@ -220,8 +171,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         )}
       </div>
 
-      {/* Tier Summary - show when we have results */}
-      {hasExistingResults && (
+      {/* Tier Summary */}
+      {hasResults && (
         <div className="grid grid-cols-4 gap-4">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="p-4 text-center">
@@ -250,7 +201,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </div>
       )}
 
-      {/* Patient Phenotypes */}
+      {/* Patient Phenotypes - Read Only */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -259,87 +210,20 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search HPO terms..."
-              className="pl-9"
-            />
-            {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
-          </div>
-
-          {searchQuery.length >= 2 && filteredSuggestions.length > 0 && (
-            <div className="border rounded-lg max-h-48 overflow-y-auto">
-              {filteredSuggestions.map((term) => (
-                <button
-                  key={term.hpo_id}
-                  onClick={() => handleAddTerm(term)}
-                  className="w-full text-left p-3 hover:bg-accent flex items-center justify-between group border-b last:border-b-0"
-                >
-                  <div>
-                    <span className="text-sm font-medium">{term.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">({term.hpo_id})</span>
-                  </div>
-                  <Plus className="h-4 w-4 opacity-0 group-hover:opacity-100" />
-                </button>
-              ))}
-            </div>
-          )}
-
           <div className="space-y-2">
             <p className="text-sm font-medium">Selected Terms ({selectedTerms.length})</p>
             {selectedTerms.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No phenotypes selected.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No phenotypes defined for this case.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {selectedTerms.map((term) => (
                   <Badge key={term.hpo_id} variant="secondary" className="px-3 py-1.5 bg-primary/10 text-primary">
                     <span className="text-sm">{term.name}</span>
-                    <button onClick={() => handleRemoveTerm(term.hpo_id)} className="ml-2 hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
                   </Badge>
                 ))}
               </div>
             )}
           </div>
-
-          {/* Only show Run button if no results yet or want to re-run */}
-          {!hasExistingResults && (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleRunMatching}
-                disabled={selectedTerms.length === 0 || isLoading}
-                className="flex-1"
-              >
-                {isLoading ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Matching...</>
-                ) : (
-                  <><Play className="h-4 w-4 mr-2" />Run Clinical Matching</>
-                )}
-              </Button>
-            </div>
-          )}
-
-          {/* Show refresh button if we have results */}
-          {hasExistingResults && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleRunMatching}
-                disabled={isLoading || selectedTerms.length === 0}
-                className="w-full"
-              >
-                {isLoading ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Re-matching...</>
-                ) : (
-                  <><RefreshCw className="h-4 w-4 mr-2" />Re-run Matching</>
-                )}
-              </Button>
-            </div>
-          )}
 
           <div className="flex gap-3 pt-2">
             <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
@@ -383,18 +267,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             <div className="text-center py-16 text-muted-foreground">
               <Dna className="h-12 w-12 mx-auto mb-4 opacity-20" />
               <p className="text-base font-medium">No phenotypes defined</p>
-              <p className="text-sm mt-1">Add patient HPO terms above to run matching</p>
-            </div>
-          )}
-
-          {/* Idle State - waiting for user to run matching */}
-          {status === 'idle' && selectedTerms.length > 0 && (
-            <div className="text-center py-16">
-              <Play className="h-12 w-12 mx-auto mb-4 text-primary opacity-50" />
-              <p className="text-base font-medium mb-2">Ready to run matching</p>
-              <p className="text-sm text-muted-foreground">
-                Click "Run Clinical Matching" above to analyze variants
-              </p>
+              <p className="text-sm mt-1">Phenotypes are set during case upload</p>
             </div>
           )}
 
