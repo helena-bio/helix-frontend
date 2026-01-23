@@ -107,28 +107,15 @@ const getTierColor = (tier: string) => {
 }
 
 /**
- * Format tier for display - handles both formats
- * If tier already contains full text like "Tier 2 - Potentially Actionable", use it directly
- * If tier is short like "T2", expand it
+ * Format tier for display - always use short format T1, T2, T3, T4
  */
 const formatTierDisplay = (tier: string): string => {
-  // If already contains "Tier" or "-", it's the full format - use as is
-  if (tier.includes('Tier') || tier.includes('-')) {
-    return tier
-  }
-  // Otherwise expand short format
-  switch (tier) {
-    case 'T1':
-      return 'Tier 1 - Actionable'
-    case 'T2':
-      return 'Tier 2 - Potentially Actionable'
-    case 'T3':
-      return 'Tier 3 - Uncertain'
-    case 'T4':
-      return 'Tier 4 - Unlikely'
-    default:
-      return tier
-  }
+  const tierLower = tier.toLowerCase()
+  if (tierLower.includes('1') || tierLower.includes('actionable')) return 'T1'
+  if (tierLower.includes('2') || tierLower.includes('potentially')) return 'T2'
+  if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
+  if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
+  return tier
 }
 
 // ============================================================================
@@ -276,45 +263,49 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
 }
 
 function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: number }) {
-  const [isExpanded, setIsExpanded] = useState(rank <= 3) // Auto-expand top 3
+  const [isExpanded, setIsExpanded] = useState(false)
 
   return (
     <Card>
       <CardHeader
-        className="cursor-pointer hover:bg-accent/50 transition-colors"
+        className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center justify-between">
+        {/* Grid layout for consistent alignment */}
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
+          {/* Left: Rank + Gene + Tier + Publications */}
           <div className="flex items-center gap-3">
-            {/* Rank indicator */}
-            <span className="text-lg font-bold text-muted-foreground w-6">#{rank}</span>
-
-            <CardTitle className="text-lg">{group.gene}</CardTitle>
-
-            {/* Clinical Tier Badge - fixed to avoid duplication */}
+            <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
+            <span className="text-lg font-semibold w-20">{group.gene}</span>
             {group.clinicalTier && (
-              <Badge variant="outline" className={`text-sm ${getTierColor(group.clinicalTier)}`}>
+              <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(group.clinicalTier)}`}>
                 {formatTierDisplay(group.clinicalTier)}
               </Badge>
             )}
-
-            <Badge variant="secondary" className="text-sm">{group.publications.length} publications</Badge>
+            <Badge variant="secondary" className="text-sm">
+              {group.publications.length} publications
+            </Badge>
           </div>
 
+          {/* Center: Phenotype rank */}
+          <div>
+            {group.phenotypeRank && (
+              <p className="text-sm text-muted-foreground">
+                Phenotype Matching Rank: #{group.phenotypeRank}
+              </p>
+            )}
+          </div>
+
+          {/* Right: Scores + Evidence counts + Chevron */}
           <div className="flex items-center gap-2">
-            {/* Combined Score - Color based on score value */}
             <Badge className={`text-sm ${getCombinedScoreColor(group.combinedScore)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />
               {(group.combinedScore * 100).toFixed(0)}%
             </Badge>
-
-            {/* Score breakdown */}
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
               Lit: {(group.bestScore * 100).toFixed(0)}%
               {group.clinicalScore !== undefined && ` / Clin: ${group.clinicalScore.toFixed(0)}`}
             </span>
-
-            {/* Evidence counts - matching evidence badge colors */}
             {group.strongCount > 0 && (
               <Badge variant="outline" className="text-sm bg-green-100 text-green-900 border-green-300">
                 {group.strongCount} Strong
@@ -325,17 +316,9 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
                 {group.moderateCount} Moderate
               </Badge>
             )}
-
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
-
-        {/* Phenotype rank info */}
-        {group.phenotypeRank && (
-          <p className="text-sm text-muted-foreground mt-1 ml-9">
-            Phenotype Matching Rank: #{group.phenotypeRank}
-          </p>
-        )}
       </CardHeader>
       {isExpanded && (
         <CardContent className="space-y-3">
@@ -466,7 +449,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
               placeholder="Filter by gene..."
               value={geneFilter}
               onChange={(e) => setGeneFilter(e.target.value)}
-              className="max-w-xs text-base"
+              className="max-w-xs text-md"
             />
             <span className="text-md text-muted-foreground">
               Showing {filteredGroups.length} of {groupedByGene.length} genes
