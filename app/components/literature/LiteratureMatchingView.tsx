@@ -271,9 +271,9 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {/* Grid layout for consistent alignment */}
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
-          {/* Left: Rank + Gene + Tier + Publications */}
+        {/* Flex layout with justify-between */}
+        <div className="flex items-center justify-between">
+          {/* Left: Rank + Gene + Tier + Publications + Phenotype Rank */}
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
             <span className="text-lg font-semibold w-16">{group.gene}</span>
@@ -285,46 +285,33 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
             <Badge variant="secondary" className="text-sm">
               {group.publications.length} publications
             </Badge>
-          </div>
-
-          {/* Center: Phenotype rank */}
-          <div>
             {group.phenotypeRank && (
-              <p className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 Phenotype Matching Rank: #{group.phenotypeRank}
-              </p>
+              </span>
             )}
           </div>
 
-          {/* Right: Scores + Evidence counts + Chevron - Grid aligned */}
-          <div className="grid grid-cols-[60px_130px_auto_auto_20px] items-center gap-1">
-            {/* Combined score - fixed width */}
-            <Badge className={`text-sm justify-center ${getCombinedScoreColor(group.combinedScore)}`}>
+          {/* Right: Scores + Evidence counts + Chevron - compact */}
+          <div className="flex items-center gap-2">
+            <Badge className={`text-sm ${getCombinedScoreColor(group.combinedScore)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />
               {(group.combinedScore * 100).toFixed(0)}%
             </Badge>
-            {/* Lit/Clin breakdown - fixed width */}
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
+            <span className="text-sm text-muted-foreground">
               Lit: {(group.bestScore * 100).toFixed(0)}%
               {group.clinicalScore !== undefined && ` / Clin: ${group.clinicalScore.toFixed(0)}`}
             </span>
-            {/* Strong count - fixed width */}
-            <div className="w-20">
-              {group.strongCount > 0 && (
-                <Badge variant="outline" className="text-sm bg-green-100 text-green-900 border-green-300 w-full justify-center">
-                  {group.strongCount} Strong
-                </Badge>
-              )}
-            </div>
-            {/* Moderate count - fixed width */}
-            <div className="w-24">
-              {group.moderateCount > 0 && (
-                <Badge variant="outline" className="text-sm bg-blue-100 text-blue-900 border-blue-300 w-full justify-center">
-                  {group.moderateCount} Moderate
-                </Badge>
-              )}
-            </div>
-            {/* Chevron */}
+            {group.strongCount > 0 && (
+              <Badge variant="outline" className="text-sm bg-green-100 text-green-900 border-green-300">
+                {group.strongCount} Strong
+              </Badge>
+            )}
+            {group.moderateCount > 0 && (
+              <Badge variant="outline" className="text-sm bg-blue-100 text-blue-900 border-blue-300">
+                {group.moderateCount} Moderate
+              </Badge>
+            )}
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
