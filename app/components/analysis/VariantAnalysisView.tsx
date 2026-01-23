@@ -11,12 +11,12 @@
  * - Infinite scroll with server-side pagination
  * - Consistent typography with PhenotypeMatchingView
  * - Clickable ACMG cards with filtering
- * - Clickable Impact cards with filtering (counts update based on ACMG filter)
+ * - Clickable Impact cards with filtering (counts update based on ACMG filter only)
  * - Filter by gene name
  * - Sorted by ACMG classification priority (backend)
  */
 
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import {
   Microscope,
   Loader2,
@@ -320,6 +320,14 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const [acmgFilter, setAcmgFilter] = useState<ACMGFilter>('all')
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
+  
+  // Cached impact counts - updated only when ACMG filter changes
+  const [cachedImpactCounts, setCachedImpactCounts] = useState<{
+    high: number
+    moderate: number
+    low: number
+    modifier: number
+  } | null>(null)
 
   // Build filters for backend (without page - handled by infinite query)
   const backendFilters = useMemo(() => {
@@ -346,8 +354,24 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     return filters
   }, [acmgFilter, impactFilter, geneFilter])
 
+  // Separate query for ACMG-only filter (to calculate impact counts)
+  const acmgOnlyFilters = useMemo(() => {
+    const filters: Omit<GeneAggregatedFilters, 'page'> = {
+      page_size: PAGE_SIZE,
+    }
+
+    const acmgBackend = acmgFilterToBackend(acmgFilter)
+    if (acmgBackend) {
+      filters.acmg_class = [acmgBackend]
+    }
+
+    return filters
+  }, [acmgFilter])
+
   // Data fetching with infinite query
   const { data: stats, isLoading: statsLoading } = useVariantStatistics(sessionId)
+  
+  // Main query with all filters
   const {
     data: genesData,
     isLoading: genesLoading,
@@ -355,6 +379,16 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     hasNextPage,
     fetchNextPage,
   } = useInfiniteVariantsByGene(sessionId, backendFilters)
+
+  // Query for ACMG-only data (to calculate impact counts) - only when impact filter is active
+  const {
+    data: acmgOnlyData,
+    isLoading: acmgOnlyLoading,
+  } = useInfiniteVariantsByGene(
+    sessionId,
+    acmgOnlyFilters,
+    { enabled: impactFilter !== 'all' && acmgFilter !== 'all' }
+  )
 
   const isLoading = statsLoading || genesLoading
 
@@ -384,6 +418,12 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     return genesData.pages.flatMap((page) => page.genes)
   }, [genesData?.pages])
 
+  // Flatten ACMG-only data for impact counting
+  const acmgOnlyGenes = useMemo(() => {
+    if (!acmgOnlyData?.pages) return []
+    return acmgOnlyData.pages.flatMap((page) => page.genes)
+  }, [acmgOnlyData?.pages])
+
   // Get total count from first page
   const totalGenes = genesData?.pages?.[0]?.total_genes ?? 0
 
@@ -400,15 +440,11 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
   }, [stats])
 
-  // Calculate Impact counts - dynamic based on ACMG filter
-  const impactCounts = useMemo(() => {
+  // Calculate Impact counts from appropriate data source
+  const calculatedImpactCounts = useMemo(() => {
     // If no ACMG filter, use global stats
-    if (acmgFilter === 'all' && !stats) {
-      return { high: 0, moderate: 0, low: 0, modifier: 0 }
-    }
-
-    // If no ACMG filter, use global stats
-    if (acmgFilter === 'all' && stats) {
+    if (acmgFilter === 'all') {
+      if (!stats) return { high: 0, moderate: 0, low: 0, modifier: 0 }
       return {
         high: stats.impact_breakdown['HIGH'] || stats.impact_breakdown['high'] || 0,
         moderate: stats.impact_breakdown['MODERATE'] || stats.impact_breakdown['moderate'] || 0,
@@ -417,10 +453,12 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       }
     }
 
-    // When ACMG filter is active, calculate from loaded variants
+    // When ACMG filter is active, use ACMG-only data if impact filter is active
+    // Otherwise use main data
+    const sourceGenes = impactFilter !== 'all' ? acmgOnlyGenes : allGenes
+    
     const counts = { high: 0, moderate: 0, low: 0, modifier: 0 }
-
-    allGenes.forEach(gene => {
+    sourceGenes.forEach(gene => {
       gene.variants.forEach(variant => {
         const impact = variant.impact?.toUpperCase()
         if (impact === 'HIGH') counts.high++
@@ -431,13 +469,28 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     })
 
     return counts
-  }, [stats, acmgFilter, allGenes])
+  }, [stats, acmgFilter, impactFilter, allGenes, acmgOnlyGenes])
+
+  // Update cached impact counts when ACMG filter changes or when data loads
+  useEffect(() => {
+    // Only update cache when we have valid data and impact filter is 'all'
+    if (impactFilter === 'all' && !genesLoading) {
+      setCachedImpactCounts(calculatedImpactCounts)
+    }
+  }, [calculatedImpactCounts, impactFilter, genesLoading])
+
+  // Use cached counts if available and impact filter is active, otherwise use calculated
+  const impactCounts = (impactFilter !== 'all' && cachedImpactCounts) 
+    ? cachedImpactCounts 
+    : calculatedImpactCounts
 
   // Handle filter clicks
   const handleAcmgClick = (filter: ACMGFilter) => {
     setAcmgFilter(prev => prev === filter ? 'all' : filter)
     // Reset impact filter when ACMG changes
     setImpactFilter('all')
+    // Clear cached impact counts so they get recalculated
+    setCachedImpactCounts(null)
   }
 
   const handleImpactClick = (filter: ImpactFilter) => {
