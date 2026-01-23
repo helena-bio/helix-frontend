@@ -297,7 +297,7 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
           </div>
 
           {/* Right: Scores + Evidence counts + Chevron - Grid aligned */}
-          <div className="grid grid-cols-[60px_130px_auto_auto_20px] items-center gap-2">
+          <div className="grid grid-cols-[60px_130px_auto_auto_20px] items-center gap-1">
             {/* Combined score - fixed width */}
             <Badge className={`text-sm justify-center ${getCombinedScoreColor(group.combinedScore)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />

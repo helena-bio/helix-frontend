@@ -285,7 +285,7 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
           </div>
 
           {/* Right: Score + HPO + Chevron - Grid aligned */}
-          <div className="grid grid-cols-[60px_80px_20px] items-center gap-2">
+          <div className="grid grid-cols-[60px_80px_20px] items-center gap-1">
             {/* Clinical Score - fixed width */}
             <Badge className={`text-sm justify-center ${getScoreColor(geneResult.best_clinical_score)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />
