@@ -276,7 +276,7 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
           {/* Left: Rank + Gene + Tier + Publications */}
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
-            <span className="text-lg font-semibold w-20">{group.gene}</span>
+            <span className="text-lg font-semibold w-16">{group.gene}</span>
             {group.clinicalTier && (
               <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(group.clinicalTier)}`}>
                 {formatTierDisplay(group.clinicalTier)}
@@ -296,26 +296,35 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
             )}
           </div>
 
-          {/* Right: Scores + Evidence counts + Chevron */}
-          <div className="flex items-center gap-2">
-            <Badge className={`text-sm ${getCombinedScoreColor(group.combinedScore)}`}>
+          {/* Right: Scores + Evidence counts + Chevron - Grid aligned */}
+          <div className="grid grid-cols-[60px_130px_auto_auto_20px] items-center gap-2">
+            {/* Combined score - fixed width */}
+            <Badge className={`text-sm justify-center ${getCombinedScoreColor(group.combinedScore)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />
               {(group.combinedScore * 100).toFixed(0)}%
             </Badge>
+            {/* Lit/Clin breakdown - fixed width */}
             <span className="text-sm text-muted-foreground whitespace-nowrap">
               Lit: {(group.bestScore * 100).toFixed(0)}%
               {group.clinicalScore !== undefined && ` / Clin: ${group.clinicalScore.toFixed(0)}`}
             </span>
-            {group.strongCount > 0 && (
-              <Badge variant="outline" className="text-sm bg-green-100 text-green-900 border-green-300">
-                {group.strongCount} Strong
-              </Badge>
-            )}
-            {group.moderateCount > 0 && (
-              <Badge variant="outline" className="text-sm bg-blue-100 text-blue-900 border-blue-300">
-                {group.moderateCount} Moderate
-              </Badge>
-            )}
+            {/* Strong count - fixed width */}
+            <div className="w-20">
+              {group.strongCount > 0 && (
+                <Badge variant="outline" className="text-sm bg-green-100 text-green-900 border-green-300 w-full justify-center">
+                  {group.strongCount} Strong
+                </Badge>
+              )}
+            </div>
+            {/* Moderate count - fixed width */}
+            <div className="w-24">
+              {group.moderateCount > 0 && (
+                <Badge variant="outline" className="text-sm bg-blue-100 text-blue-900 border-blue-300 w-full justify-center">
+                  {group.moderateCount} Moderate
+                </Badge>
+              )}
+            </div>
+            {/* Chevron */}
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
