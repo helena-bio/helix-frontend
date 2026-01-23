@@ -11,12 +11,12 @@
  * - Infinite scroll with server-side pagination
  * - Consistent typography with PhenotypeMatchingView
  * - Clickable ACMG cards with filtering
- * - Clickable Impact cards with filtering
+ * - Clickable Impact cards with filtering (counts update based on ACMG filter)
  * - Filter by gene name
  * - Sorted by ACMG classification priority (backend)
  */
 
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import {
   Microscope,
   Loader2,
@@ -436,8 +436,9 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
 
   // Get total count from first page
   const totalGenes = genesData?.pages?.[0]?.total_genes ?? 0
+  const totalVariantsFiltered = genesData?.pages?.[0]?.total_variants ?? 0
 
-  // Calculate counts from stats
+  // Calculate ACMG counts from stats (always show total counts)
   const acmgCounts = useMemo(() => {
     if (!stats) return { total: 0, pathogenic: 0, likely_pathogenic: 0, vus: 0, likely_benign: 0, benign: 0 }
     return {
@@ -450,19 +451,46 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
   }, [stats])
 
+  // Calculate Impact counts - dynamic based on ACMG filter
+  // When ACMG filter is active, count impacts from filtered variants
   const impactCounts = useMemo(() => {
-    if (!stats) return { high: 0, moderate: 0, low: 0, modifier: 0 }
-    return {
-      high: stats.impact_breakdown['HIGH'] || stats.impact_breakdown['high'] || 0,
-      moderate: stats.impact_breakdown['MODERATE'] || stats.impact_breakdown['moderate'] || 0,
-      low: stats.impact_breakdown['LOW'] || stats.impact_breakdown['low'] || 0,
-      modifier: stats.impact_breakdown['MODIFIER'] || stats.impact_breakdown['modifier'] || 0,
+    // If no ACMG filter, use global stats
+    if (acmgFilter === 'all' && !stats) {
+      return { high: 0, moderate: 0, low: 0, modifier: 0 }
     }
-  }, [stats])
+
+    // If no ACMG filter, use global stats
+    if (acmgFilter === 'all' && stats) {
+      return {
+        high: stats.impact_breakdown['HIGH'] || stats.impact_breakdown['high'] || 0,
+        moderate: stats.impact_breakdown['MODERATE'] || stats.impact_breakdown['moderate'] || 0,
+        low: stats.impact_breakdown['LOW'] || stats.impact_breakdown['low'] || 0,
+        modifier: stats.impact_breakdown['MODIFIER'] || stats.impact_breakdown['modifier'] || 0,
+      }
+    }
+
+    // When ACMG filter is active, calculate from loaded variants
+    // This will be accurate once all pages are loaded
+    const counts = { high: 0, moderate: 0, low: 0, modifier: 0 }
+
+    allGenes.forEach(gene => {
+      gene.variants.forEach(variant => {
+        const impact = variant.impact?.toUpperCase()
+        if (impact === 'HIGH') counts.high++
+        else if (impact === 'MODERATE') counts.moderate++
+        else if (impact === 'LOW') counts.low++
+        else if (impact === 'MODIFIER') counts.modifier++
+      })
+    })
+
+    return counts
+  }, [stats, acmgFilter, allGenes])
 
   // Handle filter clicks
   const handleAcmgClick = (filter: ACMGFilter) => {
     setAcmgFilter(prev => prev === filter ? 'all' : filter)
+    // Reset impact filter when ACMG changes
+    setImpactFilter('all')
   }
 
   const handleImpactClick = (filter: ImpactFilter) => {
@@ -564,7 +592,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
         </div>
       )}
 
-      {/* Impact Cards */}
+      {/* Impact Cards - counts update based on ACMG filter */}
       {stats && (
         <div className="grid grid-cols-4 gap-3">
           <FilterCard
