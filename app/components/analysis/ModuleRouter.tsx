@@ -6,7 +6,7 @@
  */
 
 import { useAnalysis } from '@/contexts/AnalysisContext'
-import { AnalysisJourneyView } from './AnalysisJourneyView'
+import { VariantAnalysisView } from './VariantAnalysisView'
 import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
 import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
 
@@ -19,7 +19,7 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
 
   // Default view: Variant Analysis
   if (!selectedModule || selectedModule === 'analysis') {
-    return <AnalysisJourneyView sessionId={sessionId} />
+    return <VariantAnalysisView sessionId={sessionId} />
   }
 
   // VUS Prioritization
@@ -32,7 +32,7 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
             This module will help prioritize Variants of Unknown Significance using AI-powered analysis.
           </p>
           <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-md font-medium">Coming soon...</p>
+            <p className="text-base font-medium">Coming soon...</p>
             <p className="text-sm text-muted-foreground mt-2">
               This feature is under development.
             </p>
@@ -62,7 +62,7 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
             ML-powered filtering to identify and remove sequencing artifacts.
           </p>
           <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-md font-medium">Coming soon...</p>
+            <p className="text-base font-medium">Coming soon...</p>
             <p className="text-sm text-muted-foreground mt-2">
               This feature is under development.
             </p>
@@ -82,7 +82,7 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
             Track guideline changes and receive notifications for variant reclassifications.
           </p>
           <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-md font-medium">Coming soon...</p>
+            <p className="text-base font-medium">Coming soon...</p>
             <p className="text-sm text-muted-foreground mt-2">
               This feature is under development.
             </p>
@@ -93,5 +93,5 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
   }
 
   // Fallback
-  return <AnalysisJourneyView sessionId={sessionId} />
+  return <VariantAnalysisView sessionId={sessionId} />
 }
