@@ -66,21 +66,15 @@ const getTierColor = (tier: string) => {
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
-const getTierShortName = (tier: string): string => {
-  if (tier.includes('1')) return 'T1'
-  if (tier.includes('2')) return 'T2'
-  if (tier.includes('3')) return 'T3'
-  return 'T4'
-}
-
+/**
+ * Format tier for display - always use short format T1, T2, T3, T4
+ */
 const formatTierDisplay = (tier: string): string => {
-  if (tier.includes('Tier') || tier.includes('-')) {
-    return tier
-  }
-  if (tier.includes('1')) return 'Tier 1 - Actionable'
-  if (tier.includes('2')) return 'Tier 2 - Potentially Actionable'
-  if (tier.includes('3')) return 'Tier 3 - Uncertain'
-  if (tier.includes('4')) return 'Tier 4 - Unlikely'
+  const tierLower = tier.toLowerCase()
+  if (tierLower.includes('1') || tierLower.includes('actionable')) return 'T1'
+  if (tierLower.includes('2') || tierLower.includes('potentially')) return 'T2'
+  if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
+  if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
   return tier
 }
 
@@ -139,7 +133,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant="outline" className={`text-sm ${getTierColor(variant.clinical_tier)}`}>
-              {getTierShortName(variant.clinical_tier)}
+              {formatTierDisplay(variant.clinical_tier)}
             </Badge>
             <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
               {formatACMGDisplay(variant.acmg_class)}
@@ -254,7 +248,7 @@ interface GeneSectionProps {
 }
 
 function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(rank <= 3) // Auto-expand top 3
+  const [isExpanded, setIsExpanded] = useState(false)
 
   return (
     <Card>
@@ -262,72 +256,49 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {/* Main row with grid for alignment */}
-        <div className="flex items-center">
-          {/* Left section: Rank + Gene + Tier + Variants */}
-          <div className="flex items-center flex-1 min-w-0">
-            {/* Rank - fixed width */}
-            <span className="text-lg font-bold text-muted-foreground w-12 flex-shrink-0">
-              #{rank}
-            </span>
-
-            {/* Gene symbol - fixed width */}
-            <span className="text-lg font-semibold w-28 flex-shrink-0 truncate">
-              {geneResult.gene_symbol}
-            </span>
-
-            {/* Tier badge - fixed width container */}
-            <div className="w-52 flex-shrink-0">
-              <Badge variant="outline" className={`text-sm ${getTierColor(geneResult.best_tier)}`}>
-                {formatTierDisplay(geneResult.best_tier)}
-              </Badge>
-            </div>
-
-            {/* Variants count - fixed width */}
-            <div className="w-28 flex-shrink-0">
-              <Badge variant="secondary" className="text-sm">
-                {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
-              </Badge>
-            </div>
+        {/* Grid layout for consistent alignment */}
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
+          {/* Left: Rank + Gene + Tier + Variants */}
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
+            <span className="text-lg font-semibold w-16">{geneResult.gene_symbol}</span>
+            <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(geneResult.best_tier)}`}>
+              {formatTierDisplay(geneResult.best_tier)}
+            </Badge>
+            <Badge variant="secondary" className="text-sm">
+              {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
+            </Badge>
           </div>
 
-          {/* Right section: Score + HPO + Chevron */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Clinical Score - fixed width */}
-            <div className="w-20 flex justify-end">
-              <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
-                <TrendingUp className="h-3 w-3 mr-1" />
-                {geneResult.best_clinical_score.toFixed(1)}
-              </Badge>
-            </div>
-
-            {/* HPO Match - fixed width */}
-            <span className="text-sm text-muted-foreground w-24 text-right">
-              HPO: {geneResult.best_phenotype_score.toFixed(0)}%
-            </span>
-
-            {/* Chevron */}
-            <div className="w-6 flex justify-center">
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </div>
-          </div>
-        </div>
-
-        {/* Matched HPO Terms Preview */}
-        {geneResult.matched_hpo_terms.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2 ml-12">
-            {geneResult.matched_hpo_terms.slice(0, 3).map((term, idx) => (
+          {/* Center: Matched HPO Terms Preview */}
+          <div className="flex flex-wrap gap-1">
+            {geneResult.matched_hpo_terms.slice(0, 2).map((term, idx) => (
               <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
                 {term}
               </Badge>
             ))}
-            {geneResult.matched_hpo_terms.length > 3 && (
+            {geneResult.matched_hpo_terms.length > 2 && (
               <Badge variant="secondary" className="text-xs">
-                +{geneResult.matched_hpo_terms.length - 3} more
+                +{geneResult.matched_hpo_terms.length - 2} more
               </Badge>
             )}
           </div>
-        )}
+
+          {/* Right: Score + HPO + Chevron - Grid aligned */}
+          <div className="grid grid-cols-[60px_80px_20px] items-center gap-2">
+            {/* Clinical Score - fixed width */}
+            <Badge className={`text-sm justify-center ${getScoreColor(geneResult.best_clinical_score)}`}>
+              <TrendingUp className="h-3 w-3 mr-1" />
+              {geneResult.best_clinical_score.toFixed(1)}
+            </Badge>
+            {/* HPO Match - fixed width */}
+            <span className="text-sm text-muted-foreground text-right">
+              HPO: {geneResult.best_phenotype_score.toFixed(0)}%
+            </span>
+            {/* Chevron */}
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
       </CardHeader>
 
       {isExpanded && (
@@ -379,7 +350,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
     if (observerRef.current) observerRef.current.disconnect()
-    
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
@@ -388,7 +359,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
       },
       { threshold: 0, rootMargin: '200px' }
     )
-    
+
     if (node) observerRef.current.observe(node)
   }, [])
 
@@ -592,15 +563,15 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
               placeholder="Filter by gene..."
               value={geneFilter}
               onChange={(e) => setGeneFilter(e.target.value)}
-              className="max-w-xs text-base"
+              className="max-w-xs text-md"
             />
-            <span className="text-sm text-muted-foreground">
+            <span className="text-md text-muted-foreground">
               Showing {visibleResults.length} of {filteredResults.length} genes
             </span>
           </div>
 
           {/* Scoring explanation */}
-          <p className="text-sm text-muted-foreground">
+          <p className="text-md text-muted-foreground">
             Sorted by Clinical Priority Score. Higher scores indicate stronger clinical relevance.
           </p>
 
