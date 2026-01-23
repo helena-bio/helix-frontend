@@ -51,7 +51,7 @@ const LOAD_MORE_COUNT = 15
 
 const getTierColor = (tier: string) => {
   const tierLower = tier.toLowerCase()
-  if (tierLower.includes('1') || tierLower.includes('actionable')) {
+  if (tierLower.includes('1')) {
     return 'bg-red-100 text-red-900 border-red-300'
   }
   if (tierLower.includes('2') || tierLower.includes('potentially')) {
@@ -71,7 +71,7 @@ const getTierColor = (tier: string) => {
  */
 const formatTierDisplay = (tier: string): string => {
   const tierLower = tier.toLowerCase()
-  if (tierLower.includes('1') || tierLower.includes('actionable')) return 'T1'
+  if (tierLower.includes('1')) return 'T1'
   if (tierLower.includes('2') || tierLower.includes('potentially')) return 'T2'
   if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
   if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
