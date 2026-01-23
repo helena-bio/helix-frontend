@@ -10,7 +10,7 @@
  * - Card per gene (not table rows)
  * - Lazy loading (no pagination)
  * - Consistent typography with LiteratureMatchingView
- * - Auto-expand top 3 genes
+ * - Clickable tier cards with filtering
  * - Filter by gene name
  * - Aligned columns across all gene cards
  */
@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
 import { useMatchedPhenotype, type GeneAggregatedResult } from '@/contexts/MatchedPhenotypeContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
@@ -44,6 +45,9 @@ interface PhenotypeMatchingViewProps {
 
 const INITIAL_LOAD = 15
 const LOAD_MORE_COUNT = 15
+
+// Tier filter type
+type TierFilter = 'all' | 'T1' | 'T2' | 'T3' | 'T4'
 
 // ============================================================================
 // STYLING HELPERS (matching LiteratureMatchingView exactly)
@@ -76,6 +80,18 @@ const formatTierDisplay = (tier: string): string => {
   if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
   if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
   return tier
+}
+
+/**
+ * Get short tier from best_tier string
+ */
+const getShortTier = (tier: string): TierFilter => {
+  const tierLower = tier.toLowerCase()
+  if (tierLower.includes('1')) return 'T1'
+  if (tierLower.includes('2') || tierLower.includes('potentially')) return 'T2'
+  if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
+  if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
+  return 'T4'
 }
 
 const getScoreColor = (score: number) => {
@@ -256,8 +272,8 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {/* Grid layout for consistent alignment */}
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
+        {/* Flex layout with justify-between */}
+        <div className="flex items-center justify-between">
           {/* Left: Rank + Gene + Tier + Variants */}
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
@@ -268,10 +284,7 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
             <Badge variant="secondary" className="text-sm">
               {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
             </Badge>
-          </div>
-
-          {/* Center: Matched HPO Terms Preview */}
-          <div className="flex flex-wrap gap-1">
+            {/* Matched HPO Terms Preview */}
             {geneResult.matched_hpo_terms.slice(0, 2).map((term, idx) => (
               <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
                 {term}
@@ -284,18 +297,15 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
             )}
           </div>
 
-          {/* Right: Score + HPO + Chevron - Grid aligned */}
-          <div className="grid grid-cols-[60px_80px_20px] items-center gap-1">
-            {/* Clinical Score - fixed width */}
-            <Badge className={`text-sm justify-center ${getScoreColor(geneResult.best_clinical_score)}`}>
+          {/* Right: Score + HPO + Chevron - compact */}
+          <div className="flex items-center gap-2">
+            <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />
               {geneResult.best_clinical_score.toFixed(1)}
             </Badge>
-            {/* HPO Match - fixed width */}
-            <span className="text-sm text-muted-foreground text-right">
+            <span className="text-sm text-muted-foreground">
               HPO: {geneResult.best_phenotype_score.toFixed(0)}%
             </span>
-            {/* Chevron */}
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
@@ -339,12 +349,52 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
 }
 
 // ============================================================================
+// TIER CARD COMPONENT
+// ============================================================================
+
+interface TierCardProps {
+  count: number
+  tier: TierFilter
+  label: string
+  tooltip: string
+  isSelected: boolean
+  onClick: () => void
+  colorClasses: string
+}
+
+function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClasses }: TierCardProps) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Card
+            className={`cursor-pointer transition-all ${colorClasses} ${
+              isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:scale-105'
+            }`}
+            onClick={onClick}
+          >
+            <CardContent className="py-1.5 px-3 text-center">
+              <p className="text-ml font-bold">{count}</p>
+              <p className="text-base font-semibold">{label}</p>
+            </CardContent>
+          </Card>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
   // Local state
   const [geneFilter, setGeneFilter] = useState('')
+  const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -379,13 +429,31 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   const selectedTerms = phenotype?.hpo_terms || []
 
-  // Filter and slice results
+  // Handle tier card click
+  const handleTierClick = (tier: TierFilter) => {
+    setTierFilter(prev => prev === tier ? 'all' : tier)
+    setVisibleCount(INITIAL_LOAD) // Reset visible count when filter changes
+  }
+
+  // Filter results by gene name and tier
   const filteredResults = useMemo(() => {
     if (!aggregatedResults) return []
-    if (!geneFilter) return aggregatedResults
-    const filter = geneFilter.toLowerCase()
-    return aggregatedResults.filter(g => g.gene_symbol.toLowerCase().includes(filter))
-  }, [aggregatedResults, geneFilter])
+
+    let filtered = aggregatedResults
+
+    // Filter by tier
+    if (tierFilter !== 'all') {
+      filtered = filtered.filter(g => getShortTier(g.best_tier) === tierFilter)
+    }
+
+    // Filter by gene name
+    if (geneFilter) {
+      const filter = geneFilter.toLowerCase()
+      filtered = filtered.filter(g => g.gene_symbol.toLowerCase().includes(filter))
+    }
+
+    return filtered
+  }, [aggregatedResults, geneFilter, tierFilter])
 
   const visibleResults = useMemo(() => {
     return filteredResults.slice(0, visibleCount)
@@ -396,7 +464,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   // Reset visible count when filter changes
   useEffect(() => {
     setVisibleCount(INITIAL_LOAD)
-  }, [geneFilter])
+  }, [geneFilter, tierFilter])
 
   // Check if we have results
   const hasResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
@@ -440,39 +508,54 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         )}
       </div>
 
-      {/* Tier Summary Cards */}
+      {/* Tier Summary Cards - Clickable */}
       {hasResults && (
         <div className="grid grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold">{variantsAnalyzed}</p>
-              <p className="text-base font-semibold text-muted-foreground">Variants</p>
-            </CardContent>
-          </Card>
-          <Card className="border-red-200 bg-red-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-red-900">{tier1Count}</p>
-              <p className="text-base font-semibold text-red-700">Tier 1</p>
-            </CardContent>
-          </Card>
-          <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-orange-900">{tier2Count}</p>
-              <p className="text-base font-semibold text-orange-700">Tier 2</p>
-            </CardContent>
-          </Card>
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-yellow-900">{tier3Count}</p>
-              <p className="text-base font-semibold text-yellow-700">Tier 3</p>
-            </CardContent>
-          </Card>
-          <Card className="border-gray-200 bg-gray-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-gray-700">{tier4Count}</p>
-              <p className="text-base font-semibold text-gray-600">Tier 4</p>
-            </CardContent>
-          </Card>
+          <TierCard
+            count={variantsAnalyzed}
+            tier="all"
+            label="Variants"
+            tooltip="Show all variants"
+            isSelected={tierFilter === 'all'}
+            onClick={() => handleTierClick('all')}
+            colorClasses=""
+          />
+          <TierCard
+            count={tier1Count}
+            tier="T1"
+            label="Tier 1"
+            tooltip="Tier 1 - Actionable: Strong evidence of pathogenicity with clinical actionability"
+            isSelected={tierFilter === 'T1'}
+            onClick={() => handleTierClick('T1')}
+            colorClasses="border-red-200 bg-red-50 text-red-900"
+          />
+          <TierCard
+            count={tier2Count}
+            tier="T2"
+            label="Tier 2"
+            tooltip="Tier 2 - Potentially Actionable: Moderate evidence, may require additional validation"
+            isSelected={tierFilter === 'T2'}
+            onClick={() => handleTierClick('T2')}
+            colorClasses="border-orange-200 bg-orange-50 text-orange-900"
+          />
+          <TierCard
+            count={tier3Count}
+            tier="T3"
+            label="Tier 3"
+            tooltip="Tier 3 - Uncertain Significance: Limited evidence, requires further investigation"
+            isSelected={tierFilter === 'T3'}
+            onClick={() => handleTierClick('T3')}
+            colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900"
+          />
+          <TierCard
+            count={tier4Count}
+            tier="T4"
+            label="Tier 4"
+            tooltip="Tier 4 - Unlikely Pathogenic: Benign or likely benign variants"
+            isSelected={tierFilter === 'T4'}
+            onClick={() => handleTierClick('T4')}
+            colorClasses="border-gray-200 bg-gray-50 text-gray-700"
+          />
         </div>
       )}
 
@@ -567,23 +650,40 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             />
             <span className="text-md text-muted-foreground">
               Showing {visibleResults.length} of {filteredResults.length} genes
+              {tierFilter !== 'all' && ` (filtered by ${tierFilter})`}
             </span>
           </div>
 
           {/* Scoring explanation */}
           <p className="text-md text-muted-foreground">
             Sorted by Clinical Priority Score. Higher scores indicate stronger clinical relevance.
+            {tierFilter !== 'all' && ' Click the tier card again to show all.'}
           </p>
 
           {/* Gene Cards */}
-          {visibleResults.map((geneResult) => (
+          {visibleResults.map((geneResult, idx) => (
             <GeneSection
               key={geneResult.gene_symbol}
               geneResult={geneResult}
-              rank={geneResult.rank}
+              rank={idx + 1}
               onViewVariantDetails={setSelectedVariantIdx}
             />
           ))}
+
+          {/* No results for filter */}
+          {filteredResults.length === 0 && (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-base font-medium mb-2">No Genes Match Filter</p>
+                <p className="text-sm text-muted-foreground">
+                  {tierFilter !== 'all'
+                    ? `No genes with ${tierFilter} variants found.`
+                    : 'Try a different gene name filter.'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Load More Trigger */}
           {hasMore && (
