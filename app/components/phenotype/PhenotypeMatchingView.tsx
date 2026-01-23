@@ -37,6 +37,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
 import { useMatchedPhenotype, type GeneAggregatedResult } from '@/contexts/MatchedPhenotypeContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
+import {
+  getACMGColor,
+  getImpactColor,
+  getTierColor,
+  getScoreColor,
+  formatACMGDisplay,
+  formatTierDisplay,
+  ConsequenceBadges,
+} from '@/components/shared'
 import type { SessionMatchResult } from '@/lib/api/hpo'
 
 interface PhenotypeMatchingViewProps {
@@ -49,39 +58,6 @@ const LOAD_MORE_COUNT = 15
 // Tier filter type
 type TierFilter = 'all' | 'T1' | 'T2' | 'T3' | 'T4'
 
-// ============================================================================
-// STYLING HELPERS (matching LiteratureMatchingView exactly)
-// ============================================================================
-
-const getTierColor = (tier: string) => {
-  const tierLower = tier.toLowerCase()
-  if (tierLower.includes('1')) {
-    return 'bg-red-100 text-red-900 border-red-300'
-  }
-  if (tierLower.includes('2') || tierLower.includes('potentially')) {
-    return 'bg-orange-100 text-orange-900 border-orange-300'
-  }
-  if (tierLower.includes('3') || tierLower.includes('uncertain')) {
-    return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  }
-  if (tierLower.includes('4') || tierLower.includes('unlikely')) {
-    return 'bg-gray-100 text-gray-600 border-gray-300'
-  }
-  return 'bg-gray-100 text-gray-600 border-gray-300'
-}
-
-/**
- * Format tier for display - always use short format T1, T2, T3, T4
- */
-const formatTierDisplay = (tier: string): string => {
-  const tierLower = tier.toLowerCase()
-  if (tierLower.includes('1')) return 'T1'
-  if (tierLower.includes('2') || tierLower.includes('potentially')) return 'T2'
-  if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
-  if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
-  return tier
-}
-
 /**
  * Get short tier from best_tier string
  */
@@ -92,39 +68,6 @@ const getShortTier = (tier: string): TierFilter => {
   if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
   if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
   return 'T4'
-}
-
-const getScoreColor = (score: number) => {
-  if (score >= 70) return 'bg-green-100 text-green-900 border-green-300'
-  if (score >= 50) return 'bg-blue-100 text-blue-900 border-blue-300'
-  if (score >= 30) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
-}
-
-const getACMGColor = (acmg: string | null | undefined) => {
-  if (!acmg) return 'bg-gray-100 text-gray-600 border-gray-300'
-  const acmgLower = acmg.toLowerCase()
-  if (acmgLower === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
-  if (acmgLower === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  if (acmgLower === 'likely benign') return 'bg-blue-100 text-blue-900 border-blue-300'
-  if (acmgLower === 'benign') return 'bg-green-100 text-green-900 border-green-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
-}
-
-const getImpactColor = (impact: string | null | undefined) => {
-  if (!impact) return 'bg-gray-100 text-gray-600 border-gray-300'
-  const impactUpper = impact.toUpperCase()
-  if (impactUpper === 'HIGH') return 'bg-red-100 text-red-900 border-red-300'
-  if (impactUpper === 'MODERATE') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (impactUpper === 'LOW') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
-}
-
-const formatACMGDisplay = (acmg: string | null | undefined): string => {
-  if (!acmg) return 'Unknown'
-  if (acmg.toLowerCase().includes('uncertain')) return 'VUS'
-  return acmg
 }
 
 // ============================================================================
@@ -161,14 +104,12 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               {variant.clinical_priority_score.toFixed(1)}
             </Badge>
           </div>
-          <p className="text-base text-muted-foreground">
-            {variant.consequence || 'unknown consequence'}
-            {variant.gnomad_af && (
-              <span className="ml-2 font-mono text-sm">
-                AF: {variant.gnomad_af.toExponential(2)}
-              </span>
-            )}
-          </p>
+          <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
+          {variant.gnomad_af && (
+            <p className="text-sm text-muted-foreground mt-1">
+              <span className="font-mono">AF: {variant.gnomad_af.toExponential(2)}</span>
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">

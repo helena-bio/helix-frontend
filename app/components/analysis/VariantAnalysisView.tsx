@@ -32,6 +32,14 @@ import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useInfiniteVariantsByGene, useVariantStatistics } from '@/hooks/queries'
 import { VariantDetailPanel } from './VariantDetailPanel'
+import {
+  getACMGColor,
+  getImpactColor,
+  getTierColor,
+  getZygosityBadge,
+  formatACMGDisplay,
+  ConsequenceBadges,
+} from '@/components/shared'
 import type { GeneAggregated, VariantInGene, GeneAggregatedFilters } from '@/types/variant.types'
 
 interface VariantAnalysisViewProps {
@@ -46,62 +54,6 @@ type ACMGFilter = 'all' | 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely B
 
 // Impact filter type
 type ImpactFilter = 'all' | 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
-
-// ============================================================================
-// STYLING HELPERS
-// ============================================================================
-
-const getACMGColor = (acmg: string | null) => {
-  if (!acmg) return 'bg-gray-100 text-gray-600 border-gray-300'
-  const acmgLower = acmg.toLowerCase()
-  if (acmgLower === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
-  if (acmgLower === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  if (acmgLower === 'likely benign') return 'bg-blue-100 text-blue-900 border-blue-300'
-  if (acmgLower === 'benign') return 'bg-green-100 text-green-900 border-green-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
-}
-
-const getImpactColor = (impact: string | null) => {
-  if (!impact) return 'bg-gray-100 text-gray-600 border-gray-300'
-  const impactUpper = impact.toUpperCase()
-  if (impactUpper === 'HIGH') return 'bg-red-100 text-red-900 border-red-300'
-  if (impactUpper === 'MODERATE') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (impactUpper === 'LOW') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
-}
-
-const getTierColor = (tier: number | null) => {
-  if (!tier) return 'bg-gray-100 text-gray-600 border-gray-300'
-  if (tier === 1) return 'bg-red-100 text-red-900 border-red-300'
-  if (tier === 2) return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (tier === 3) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
-}
-
-const getZygosityBadge = (genotype: string | null) => {
-  if (!genotype) return { label: '-', color: 'bg-gray-100' }
-  if (genotype === '0/1' || genotype === '1/0' || genotype === '0|1' || genotype === '1|0' || genotype === 'het') {
-    return { label: 'Het', color: 'bg-blue-100 text-blue-900 border-blue-300' }
-  }
-  if (genotype === '1/1' || genotype === '1|1' || genotype === 'hom') {
-    return { label: 'Hom', color: 'bg-purple-100 text-purple-900 border-purple-300' }
-  }
-  if (genotype === '1' || genotype === '1/.' || genotype === '.|1' || genotype === 'hemi') {
-    return { label: 'Hemi', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
-  }
-  return { label: genotype, color: 'bg-gray-100' }
-}
-
-const formatACMGDisplay = (acmg: string | null): string => {
-  if (!acmg) return 'Unknown'
-  if (acmg.toLowerCase().includes('uncertain')) return 'VUS'
-  if (acmg.toLowerCase() === 'likely pathogenic') return 'LP'
-  if (acmg.toLowerCase() === 'likely benign') return 'LB'
-  if (acmg.toLowerCase() === 'pathogenic') return 'P'
-  if (acmg.toLowerCase() === 'benign') return 'B'
-  return acmg
-}
 
 // Convert filter to backend ACMG class format
 const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
@@ -155,9 +107,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             {variant.chromosome}:{variant.position?.toLocaleString()}
             <span className="ml-2">{variant.reference_allele}/{variant.alternate_allele}</span>
           </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {variant.consequence || 'unknown consequence'}
-          </p>
+          <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
         </div>
         <div className="flex items-center gap-3">
           {variant.gnomad_af !== null && variant.gnomad_af !== undefined && (
@@ -436,7 +386,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
 
   // Get total count from first page
   const totalGenes = genesData?.pages?.[0]?.total_genes ?? 0
-  const totalVariantsFiltered = genesData?.pages?.[0]?.total_variants ?? 0
 
   // Calculate ACMG counts from stats (always show total counts)
   const acmgCounts = useMemo(() => {
@@ -452,7 +401,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   }, [stats])
 
   // Calculate Impact counts - dynamic based on ACMG filter
-  // When ACMG filter is active, count impacts from filtered variants
   const impactCounts = useMemo(() => {
     // If no ACMG filter, use global stats
     if (acmgFilter === 'all' && !stats) {
@@ -470,7 +418,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
 
     // When ACMG filter is active, calculate from loaded variants
-    // This will be accurate once all pages are loaded
     const counts = { high: 0, moderate: 0, low: 0, modifier: 0 }
 
     allGenes.forEach(gene => {
@@ -592,7 +539,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
         </div>
       )}
 
-      {/* Impact Cards - counts update based on ACMG filter */}
+      {/* Impact Cards */}
       {stats && (
         <div className="grid grid-cols-4 gap-3">
           <FilterCard
