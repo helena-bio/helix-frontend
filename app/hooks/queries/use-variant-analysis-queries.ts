@@ -49,7 +49,7 @@ export const variantAnalysisKeys = {
   variantsByGene: (sessionId: string, filters?: GeneAggregatedFilters) =>
     [...variantAnalysisKeys.variants(sessionId), 'by-gene', filters] as const,
   variantsByGeneInfinite: (sessionId: string, filters?: Omit<GeneAggregatedFilters, 'page'>) =>
-    [...variantAnalysisKeys.variants(sessionId), 'by-gene-infinite', filters] as const,
+    [...variantAnalysisKeys.variants(sessionId), 'by-gene-infinite', JSON.stringify(filters)] as const,
   variant: (sessionId: string, variantIdx: number) =>
     [...variantAnalysisKeys.variants(sessionId), variantIdx] as const,
   statistics: (sessionId: string) =>
