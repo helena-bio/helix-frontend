@@ -369,7 +369,7 @@ function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClass
         <TooltipTrigger asChild>
           <Card
             className={`cursor-pointer transition-all ${colorClasses} ${
-              isSelected ? 'ring-2 ring-primary ring-offset-2' : 'hover:scale-105'
+              isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
             }`}
             onClick={onClick}
           >
@@ -379,7 +379,7 @@ function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClass
             </CardContent>
           </Card>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="text-sm max-w-xs">
           <p>{tooltip}</p>
         </TooltipContent>
       </Tooltip>
