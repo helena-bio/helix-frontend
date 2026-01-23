@@ -2,7 +2,12 @@
  * Variant Analysis Query Hooks
  * React Query hooks for GET operations
  */
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import {
+  useQuery,
+  useInfiniteQuery,
+  type UseQueryResult,
+  type InfiniteData,
+} from '@tanstack/react-query'
 import * as api from '@/lib/api/variant-analysis'
 import type {
   Variant,
@@ -43,6 +48,8 @@ export const variantAnalysisKeys = {
     [...variantAnalysisKeys.variants(sessionId), 'list', filters] as const,
   variantsByGene: (sessionId: string, filters?: GeneAggregatedFilters) =>
     [...variantAnalysisKeys.variants(sessionId), 'by-gene', filters] as const,
+  variantsByGeneInfinite: (sessionId: string, filters?: Omit<GeneAggregatedFilters, 'page'>) =>
+    [...variantAnalysisKeys.variants(sessionId), 'by-gene-infinite', filters] as const,
   variant: (sessionId: string, variantIdx: number) =>
     [...variantAnalysisKeys.variants(sessionId), variantIdx] as const,
   statistics: (sessionId: string) =>
@@ -92,7 +99,7 @@ export function useVariants(
   })
 }
 
-// Variants Grouped by Gene (NEW)
+// Variants Grouped by Gene
 export function useVariantsByGene(
   sessionId: string,
   filters?: GeneAggregatedFilters,
@@ -105,6 +112,54 @@ export function useVariantsByGene(
     staleTime: options?.staleTime ?? 5 * 60 * 1000,
     retry: options?.retry ?? 3,
   })
+}
+
+// Return type for infinite query
+export interface UseInfiniteVariantsByGeneResult {
+  data: InfiniteData<GeneAggregatedResponse> | undefined
+  isLoading: boolean
+  isFetchingNextPage: boolean
+  hasNextPage: boolean
+  fetchNextPage: () => void
+  error: Error | null
+}
+
+// Infinite Query for Variants by Gene (for lazy loading)
+export function useInfiniteVariantsByGene(
+  sessionId: string,
+  filters?: Omit<GeneAggregatedFilters, 'page'>,
+  options?: QueryHookOptions
+): UseInfiniteVariantsByGeneResult {
+  const pageSize = filters?.page_size ?? 50
+
+  const query = useInfiniteQuery({
+    queryKey: variantAnalysisKeys.variantsByGeneInfinite(sessionId, filters),
+    queryFn: ({ pageParam }) =>
+      api.getVariantsByGene(sessionId, {
+        ...filters,
+        page: pageParam,
+        page_size: pageSize,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.has_next_page) {
+        return lastPage.page + 1
+      }
+      return undefined
+    },
+    enabled: (options?.enabled ?? true) && !!sessionId,
+    staleTime: options?.staleTime ?? 5 * 60 * 1000,
+    retry: options?.retry ?? 3,
+  })
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: query.hasNextPage ?? false,
+    fetchNextPage: query.fetchNextPage,
+    error: query.error,
+  }
 }
 
 // Single Variant
