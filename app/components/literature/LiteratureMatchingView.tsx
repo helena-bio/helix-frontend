@@ -10,7 +10,7 @@
  * - Auto-search triggered by phenotype matching
  * - Grouped by gene with expandable sections
  * - Combined scoring (60% clinical + 40% literature)
- * - Clinical tier badges from phenotype matching
+ * - Clickable tier cards with filtering (matching PhenotypeMatchingView)
  * - Evidence strength badges
  * - Score breakdown visualization
  * - Links to PubMed/PMC/DOI
@@ -34,6 +34,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useLiterature } from '@/contexts/LiteratureContext'
 import { getPubMedUrl, getPMCUrl, formatAuthors } from '@/lib/api/literature'
 import type { PublicationResult, GenePublicationGroup } from '@/types/literature.types'
@@ -41,6 +42,9 @@ import type { PublicationResult, GenePublicationGroup } from '@/types/literature
 interface LiteratureMatchingViewProps {
   sessionId: string
 }
+
+// Tier filter type
+type TierFilter = 'all' | 'T1' | 'T2' | 'T3' | 'T4'
 
 // ============================================================================
 // STYLING HELPERS
@@ -87,7 +91,6 @@ const formatEvidenceStrength = (strength: string): string => {
 
 /**
  * Get color for clinical tier badge
- * Handles both short format (T1, T2) and full format (Tier 1 - Actionable)
  */
 const getTierColor = (tier: string) => {
   const tierLower = tier.toLowerCase()
@@ -116,6 +119,19 @@ const formatTierDisplay = (tier: string): string => {
   if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
   if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
   return tier
+}
+
+/**
+ * Get short tier from clinicalTier string
+ */
+const getShortTier = (tier: string | undefined): TierFilter => {
+  if (!tier) return 'T4'
+  const tierLower = tier.toLowerCase()
+  if (tierLower.includes('1')) return 'T1'
+  if (tierLower.includes('2') || tierLower.includes('potentially')) return 'T2'
+  if (tierLower.includes('3') || tierLower.includes('uncertain')) return 'T3'
+  if (tierLower.includes('4') || tierLower.includes('unlikely')) return 'T4'
+  return 'T4'
 }
 
 // ============================================================================
@@ -328,11 +344,51 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
 }
 
 // ============================================================================
+// TIER CARD COMPONENT
+// ============================================================================
+
+interface TierCardProps {
+  count: number
+  tier: TierFilter
+  label: string
+  tooltip: string
+  isSelected: boolean
+  onClick: () => void
+  colorClasses: string
+}
+
+function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClasses }: TierCardProps) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Card
+            className={`cursor-pointer transition-all ${colorClasses} ${
+              isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
+            }`}
+            onClick={onClick}
+          >
+            <CardContent className="py-1.5 px-3 text-center">
+              <p className="text-ml font-bold">{count}</p>
+              <p className="text-base font-semibold">{label}</p>
+            </CardContent>
+          </Card>
+        </TooltipTrigger>
+        <TooltipContent className="text-sm max-w-xs">
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
 export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProps) {
   const [geneFilter, setGeneFilter] = useState('')
+  const [tierFilter, setTierFilter] = useState<TierFilter>('all')
 
   // Context
   const {
@@ -340,18 +396,46 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
     error,
     totalResults,
     groupedByGene,
-    strongCount,
-    moderateCount,
-    supportingCount,
-    weakCount,
   } = useLiterature()
 
-  // Filter groups by gene name
+  // Calculate tier counts from grouped results
+  const tierCounts = useMemo(() => {
+    if (!groupedByGene) return { t1: 0, t2: 0, t3: 0, t4: 0 }
+    
+    return groupedByGene.reduce((acc, group) => {
+      const tier = getShortTier(group.clinicalTier)
+      if (tier === 'T1') acc.t1++
+      else if (tier === 'T2') acc.t2++
+      else if (tier === 'T3') acc.t3++
+      else acc.t4++
+      return acc
+    }, { t1: 0, t2: 0, t3: 0, t4: 0 })
+  }, [groupedByGene])
+
+  // Handle tier card click
+  const handleTierClick = (tier: TierFilter) => {
+    setTierFilter(prev => prev === tier ? 'all' : tier)
+  }
+
+  // Filter groups by gene name and tier
   const filteredGroups = useMemo(() => {
-    if (!geneFilter) return groupedByGene
-    const filter = geneFilter.toLowerCase()
-    return groupedByGene.filter(g => g.gene.toLowerCase().includes(filter))
-  }, [groupedByGene, geneFilter])
+    if (!groupedByGene) return []
+    
+    let filtered = groupedByGene
+
+    // Filter by tier
+    if (tierFilter !== 'all') {
+      filtered = filtered.filter(g => getShortTier(g.clinicalTier) === tierFilter)
+    }
+
+    // Filter by gene name
+    if (geneFilter) {
+      const filter = geneFilter.toLowerCase()
+      filtered = filtered.filter(g => g.gene.toLowerCase().includes(filter))
+    }
+
+    return filtered
+  }, [groupedByGene, geneFilter, tierFilter])
 
   return (
     <div className="p-6 space-y-6">
@@ -381,39 +465,54 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
         )}
       </div>
 
-      {/* Summary Cards */}
-      {status === 'success' && (
+      {/* Tier Summary Cards - Clickable */}
+      {status === 'success' && groupedByGene.length > 0 && (
         <div className="grid grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold">{totalResults}</p>
-              <p className="text-base font-semibold text-muted-foreground">Total</p>
-            </CardContent>
-          </Card>
-          <Card className="border-green-200 bg-green-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-green-900">{strongCount}</p>
-              <p className="text-base font-semibold text-green-700">Strong</p>
-            </CardContent>
-          </Card>
-          <Card className="border-blue-200 bg-blue-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-blue-900">{moderateCount}</p>
-              <p className="text-base font-semibold text-blue-700">Moderate</p>
-            </CardContent>
-          </Card>
-          <Card className="border-yellow-200 bg-yellow-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-yellow-900">{supportingCount}</p>
-              <p className="text-base font-semibold text-yellow-700">Supporting</p>
-            </CardContent>
-          </Card>
-          <Card className="border-gray-200 bg-gray-50">
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold text-gray-700">{weakCount}</p>
-              <p className="text-base font-semibold text-gray-600">Weak</p>
-            </CardContent>
-          </Card>
+          <TierCard
+            count={groupedByGene.length}
+            tier="all"
+            label="Genes"
+            tooltip="Show all genes with literature"
+            isSelected={tierFilter === 'all'}
+            onClick={() => handleTierClick('all')}
+            colorClasses=""
+          />
+          <TierCard
+            count={tierCounts.t1}
+            tier="T1"
+            label="Tier 1"
+            tooltip="Tier 1 - Actionable: Strong evidence of pathogenicity with clinical actionability"
+            isSelected={tierFilter === 'T1'}
+            onClick={() => handleTierClick('T1')}
+            colorClasses="border-red-200 bg-red-50 text-red-900"
+          />
+          <TierCard
+            count={tierCounts.t2}
+            tier="T2"
+            label="Tier 2"
+            tooltip="Tier 2 - Potentially Actionable: Moderate evidence, may require additional validation"
+            isSelected={tierFilter === 'T2'}
+            onClick={() => handleTierClick('T2')}
+            colorClasses="border-orange-200 bg-orange-50 text-orange-900"
+          />
+          <TierCard
+            count={tierCounts.t3}
+            tier="T3"
+            label="Tier 3"
+            tooltip="Tier 3 - Uncertain Significance: Limited evidence, requires further investigation"
+            isSelected={tierFilter === 'T3'}
+            onClick={() => handleTierClick('T3')}
+            colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900"
+          />
+          <TierCard
+            count={tierCounts.t4}
+            tier="T4"
+            label="Tier 4"
+            tooltip="Tier 4 - Unlikely Pathogenic: Benign or likely benign variants"
+            isSelected={tierFilter === 'T4'}
+            onClick={() => handleTierClick('T4')}
+            colorClasses="border-gray-200 bg-gray-50 text-gray-700"
+          />
         </div>
       )}
 
@@ -449,18 +548,35 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
             />
             <span className="text-md text-muted-foreground">
               Showing {filteredGroups.length} of {groupedByGene.length} genes
+              {tierFilter !== 'all' && ` (filtered by ${tierFilter})`}
             </span>
           </div>
 
           {/* Scoring explanation */}
           <p className="text-md text-muted-foreground">
             Sorted by Combined Score = 60% Clinical Priority (from Phenotype Matching) + 40% Literature Relevance
+            {tierFilter !== 'all' && '. Click the tier card again to show all.'}
           </p>
 
           {/* Gene Groups */}
           {filteredGroups.map((group, idx) => (
             <GeneSection key={group.gene} group={group} rank={idx + 1} />
           ))}
+
+          {/* No results for filter */}
+          {filteredGroups.length === 0 && (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-base font-medium mb-2">No Genes Match Filter</p>
+                <p className="text-sm text-muted-foreground">
+                  {tierFilter !== 'all'
+                    ? `No genes with ${tierFilter} classification found.`
+                    : 'Try a different gene name filter.'}
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
