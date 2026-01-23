@@ -2,14 +2,16 @@
  * Variant Analysis Query Hooks
  * React Query hooks for GET operations
  */
-import { useQuery, type UseQueryResult, type UseQueryOptions } from '@tanstack/react-query'
+import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import * as api from '@/lib/api/variant-analysis'
 import type {
   Variant,
   QCMetrics,
   AnalysisSession,
   VariantsResponse,
-  VariantFilters
+  VariantFilters,
+  GeneAggregatedResponse,
+  GeneAggregatedFilters,
 } from '@/types/variant.types'
 
 /**
@@ -39,6 +41,8 @@ export const variantAnalysisKeys = {
   variants: (sessionId: string) => [...variantAnalysisKeys.session(sessionId), 'variants'] as const,
   variantsList: (sessionId: string, filters?: VariantFilters) =>
     [...variantAnalysisKeys.variants(sessionId), 'list', filters] as const,
+  variantsByGene: (sessionId: string, filters?: GeneAggregatedFilters) =>
+    [...variantAnalysisKeys.variants(sessionId), 'by-gene', filters] as const,
   variant: (sessionId: string, variantIdx: number) =>
     [...variantAnalysisKeys.variants(sessionId), variantIdx] as const,
   statistics: (sessionId: string) =>
@@ -82,6 +86,21 @@ export function useVariants(
   return useQuery({
     queryKey: variantAnalysisKeys.variantsList(sessionId, filters),
     queryFn: () => api.getVariants(sessionId, filters),
+    enabled: (options?.enabled ?? true) && !!sessionId,
+    staleTime: options?.staleTime ?? 5 * 60 * 1000,
+    retry: options?.retry ?? 3,
+  })
+}
+
+// Variants Grouped by Gene (NEW)
+export function useVariantsByGene(
+  sessionId: string,
+  filters?: GeneAggregatedFilters,
+  options?: QueryHookOptions
+): UseQueryResult<GeneAggregatedResponse, Error> {
+  return useQuery({
+    queryKey: variantAnalysisKeys.variantsByGene(sessionId, filters),
+    queryFn: () => api.getVariantsByGene(sessionId, filters),
     enabled: (options?.enabled ?? true) && !!sessionId,
     staleTime: options?.staleTime ?? 5 * 60 * 1000,
     retry: options?.retry ?? 3,

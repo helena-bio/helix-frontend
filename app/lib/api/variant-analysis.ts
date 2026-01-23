@@ -9,7 +9,9 @@ import type {
   QCMetrics,
   Variant,
   VariantsResponse,
-  VariantFilters
+  VariantFilters,
+  GeneAggregatedResponse,
+  GeneAggregatedFilters,
 } from '@/types/variant.types'
 
 /**
@@ -147,6 +149,37 @@ export async function getVariants(
   const url = `/sessions/${sessionId}/variants${queryString ? `?${queryString}` : ''}`
 
   return get<VariantsResponse>(url)
+}
+
+/**
+ * Get variants grouped by gene with aggregated statistics
+ * Backend handles sorting by ACMG priority, tier, and variant count
+ */
+export async function getVariantsByGene(
+  sessionId: string,
+  filters?: GeneAggregatedFilters
+): Promise<GeneAggregatedResponse> {
+  const params = new URLSearchParams()
+
+  if (filters?.page) params.append('page', String(filters.page))
+  if (filters?.page_size) params.append('page_size', String(filters.page_size))
+
+  if (filters?.acmg_class?.length) {
+    filters.acmg_class.forEach(c => params.append('acmg_class', c))
+  }
+
+  if (filters?.impact?.length) {
+    filters.impact.forEach(i => params.append('impact', i))
+  }
+
+  if (filters?.gene_symbol) {
+    params.append('gene_symbol', filters.gene_symbol)
+  }
+
+  const queryString = params.toString()
+  const url = `/sessions/${sessionId}/variants/by-gene${queryString ? `?${queryString}` : ''}`
+
+  return get<GeneAggregatedResponse>(url)
 }
 
 /**

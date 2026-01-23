@@ -5,6 +5,7 @@
  * Upload -> Validation -> Processing -> Phenotype -> Analysis
  *
  * Following Lumiere pattern: UI state only, no server data
+ * IMPORTANT: currentStep is persisted to localStorage to survive page refresh
  */
 
 'use client'
@@ -15,8 +16,11 @@ import {
   useState,
   useCallback,
   useMemo,
+  useEffect,
   type ReactNode
 } from 'react'
+
+const STORAGE_KEY = 'helix_journey_step'
 
 /**
  * Workflow steps in order
@@ -120,7 +124,31 @@ export function JourneyProvider({
   children,
   initialStep = 'upload'
 }: JourneyProviderProps) {
-  const [currentStep, setCurrentStep] = useState<JourneyStep>(initialStep)
+  const [currentStep, setCurrentStepState] = useState<JourneyStep>(initialStep)
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed.step && JOURNEY_STEPS.some(s => s.id === parsed.step)) {
+          setCurrentStepState(parsed.step)
+        }
+      } catch (e) {
+        console.error('Failed to parse stored journey step:', e)
+        localStorage.removeItem(STORAGE_KEY)
+      }
+    }
+    setIsHydrated(true)
+  }, [])
+
+  // Persist step to localStorage
+  const setCurrentStep = useCallback((step: JourneyStep) => {
+    setCurrentStepState(step)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step }))
+  }, [])
 
   // Get step order index
   const getStepIndex = useCallback((step: JourneyStep): number => {
@@ -145,7 +173,7 @@ export function JourneyProvider({
     if (targetIndex <= currentStepIndex + 1) {
       setCurrentStep(step)
     }
-  }, [currentStepIndex, getStepIndex])
+  }, [currentStepIndex, getStepIndex, setCurrentStep])
 
   // Go to next step
   const nextStep = useCallback(() => {
@@ -153,7 +181,7 @@ export function JourneyProvider({
     if (nextIndex < JOURNEY_STEPS.length) {
       setCurrentStep(JOURNEY_STEPS[nextIndex].id)
     }
-  }, [currentStepIndex])
+  }, [currentStepIndex, setCurrentStep])
 
   // Go to previous step
   const previousStep = useCallback(() => {
@@ -161,16 +189,17 @@ export function JourneyProvider({
     if (prevIndex >= 0) {
       setCurrentStep(JOURNEY_STEPS[prevIndex].id)
     }
-  }, [currentStepIndex])
+  }, [currentStepIndex, setCurrentStep])
 
   // Skip phenotype and go directly to analysis
   const skipToAnalysis = useCallback(() => {
     setCurrentStep('analysis')
-  }, [])
+  }, [setCurrentStep])
 
-  // Reset to first step
+  // Reset to first step and clear storage
   const resetJourney = useCallback(() => {
-    setCurrentStep('upload')
+    setCurrentStepState('upload')
+    localStorage.removeItem(STORAGE_KEY)
   }, [])
 
   // Get status of a step relative to current
@@ -216,6 +245,11 @@ export function JourneyProvider({
     currentStepIndex,
     completedSteps,
     progressPercentage,
+  }
+
+  // Don't render children until hydrated to avoid hydration mismatch
+  if (!isHydrated) {
+    return null
   }
 
   return (

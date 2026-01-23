@@ -121,4 +121,78 @@ export interface VariantsResponse {
   has_next_page: boolean
   has_previous_page: boolean
 }
+
+// =============================================================================
+// Gene Aggregated Types (NEW - matches backend /by-gene endpoint)
+// =============================================================================
+
+/**
+ * Single variant within a gene group
+ */
+export interface VariantInGene {
+  variant_idx: number
+  chromosome: string
+  position: number
+  reference_allele: string
+  alternate_allele: string
+  consequence: string | null
+  impact: string | null
+  hgvs_protein: string | null
+  hgvs_cdna: string | null
+  acmg_class: string | null
+  acmg_criteria: string | null
+  confidence_score: number | null
+  priority_score: number | null
+  priority_tier: number | null
+  gnomad_af: number | null
+  clinvar_significance: string | null
+  genotype: string | null
+  depth: number | null
+  quality: number | null
+}
+
+/**
+ * Gene with aggregated variant data
+ */
+export interface GeneAggregated {
+  gene_symbol: string
+  variant_count: number
+  best_acmg_class: string | null
+  best_acmg_priority: number
+  best_impact: string | null
+  best_tier: number | null
+  best_priority_score: number | null
+  pathogenic_count: number
+  likely_pathogenic_count: number
+  vus_count: number
+  likely_benign_count: number
+  benign_count: number
+  variants: VariantInGene[]
+}
+
+/**
+ * Response from /by-gene endpoint
+ */
+export interface GeneAggregatedResponse {
+  genes: GeneAggregated[]
+  total_genes: number
+  total_variants: number
+  page: number
+  page_size: number
+  total_pages: number
+  has_next_page: boolean
+  has_previous_page: boolean
+}
+
+/**
+ * Filters for /by-gene endpoint
+ */
+export interface GeneAggregatedFilters {
+  acmg_class?: string[]
+  impact?: string[]
+  gene_symbol?: string
+  page?: number
+  page_size?: number
+}
+
 export * from "./literature.types"
