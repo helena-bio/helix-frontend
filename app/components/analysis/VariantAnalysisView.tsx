@@ -4,11 +4,11 @@
  * VariantAnalysisView Component - CLINICAL GRADE
  *
  * Card-based layout using backend /by-gene endpoint for efficient data fetching.
- * Backend handles grouping, sorting by ACMG priority, and pagination.
+ * Uses lazy loading with Intersection Observer for smooth scrolling.
  *
  * Features:
  * - Card per gene (not table rows)
- * - Server-side pagination and sorting
+ * - Lazy loading (no pagination)
  * - Consistent typography with PhenotypeMatchingView
  * - Clickable ACMG cards with filtering
  * - Clickable Impact cards with filtering
@@ -16,7 +16,7 @@
  * - Sorted by ACMG classification priority (backend)
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import {
   Microscope,
   Loader2,
@@ -37,6 +37,11 @@ import type { GeneAggregated, VariantInGene, GeneAggregatedFilters } from '@/typ
 interface VariantAnalysisViewProps {
   sessionId: string
 }
+
+// Lazy loading constants
+const INITIAL_LOAD = 15
+const LOAD_MORE_COUNT = 15
+const FETCH_PAGE_SIZE = 500
 
 // ACMG filter type
 type ACMGFilter = 'all' | 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely Benign' | 'Benign'
@@ -100,11 +105,16 @@ const formatACMGDisplay = (acmg: string | null): string => {
   return acmg
 }
 
-// Convert filter to backend ACMG class format
-const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
-  if (filter === 'all') return undefined
-  if (filter === 'VUS') return 'Uncertain Significance'
-  return filter
+// Convert ACMG class to short tier for filtering
+const getACMGShort = (acmg: string | null): ACMGFilter => {
+  if (!acmg) return 'all'
+  const acmgLower = acmg.toLowerCase()
+  if (acmgLower === 'pathogenic') return 'Pathogenic'
+  if (acmgLower === 'likely pathogenic') return 'Likely Pathogenic'
+  if (acmgLower.includes('uncertain')) return 'VUS'
+  if (acmgLower === 'likely benign') return 'Likely Benign'
+  if (acmgLower === 'benign') return 'Benign'
+  return 'all'
 }
 
 // ============================================================================
@@ -366,40 +376,35 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const [geneFilter, setGeneFilter] = useState('')
   const [acmgFilter, setAcmgFilter] = useState<ACMGFilter>('all')
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
-  const [page, setPage] = useState(1)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
 
-  const PAGE_SIZE = 50
+  // Intersection Observer for lazy loading
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
+    if (observerRef.current) observerRef.current.disconnect()
 
-  // Build filters for backend
-  const backendFilters: GeneAggregatedFilters = useMemo(() => {
-    const filters: GeneAggregatedFilters = {
-      page,
-      page_size: PAGE_SIZE,
-    }
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount(prev => prev + LOAD_MORE_COUNT)
+        }
+      },
+      { threshold: 0, rootMargin: '200px' }
+    )
 
-    // ACMG filter
-    const acmgBackend = acmgFilterToBackend(acmgFilter)
-    if (acmgBackend) {
-      filters.acmg_class = [acmgBackend]
-    }
+    if (node) observerRef.current.observe(node)
+  }, [])
 
-    // Impact filter
-    if (impactFilter !== 'all') {
-      filters.impact = [impactFilter]
-    }
+  // Fetch all genes with large page size (backend handles sorting)
+  const backendFilters: GeneAggregatedFilters = useMemo(() => ({
+    page: 1,
+    page_size: FETCH_PAGE_SIZE,
+  }), [])
 
-    // Gene name filter (debounced via backend)
-    if (geneFilter.trim()) {
-      filters.gene_symbol = geneFilter.trim()
-    }
-
-    return filters
-  }, [acmgFilter, impactFilter, geneFilter, page])
-
-  // Data fetching - using /by-gene endpoint
+  // Data fetching
   const { data: stats, isLoading: statsLoading } = useVariantStatistics(sessionId)
-  const { data: genesData, isLoading: genesLoading, isFetching } = useVariantsByGene(sessionId, backendFilters)
+  const { data: genesData, isLoading: genesLoading } = useVariantsByGene(sessionId, backendFilters)
 
   const isLoading = statsLoading || genesLoading
 
@@ -426,20 +431,57 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
   }, [stats])
 
-  // Handle filter clicks - reset page when filter changes
+  // Client-side filtering
+  const filteredGenes = useMemo(() => {
+    if (!genesData?.genes) return []
+
+    let filtered = genesData.genes
+
+    // Filter by ACMG class
+    if (acmgFilter !== 'all') {
+      filtered = filtered.filter(gene => {
+        const geneAcmg = getACMGShort(gene.best_acmg_class)
+        return geneAcmg === acmgFilter
+      })
+    }
+
+    // Filter by impact
+    if (impactFilter !== 'all') {
+      filtered = filtered.filter(gene =>
+        gene.best_impact?.toUpperCase() === impactFilter
+      )
+    }
+
+    // Filter by gene name
+    if (geneFilter.trim()) {
+      const filter = geneFilter.toLowerCase().trim()
+      filtered = filtered.filter(gene =>
+        gene.gene_symbol.toLowerCase().includes(filter)
+      )
+    }
+
+    return filtered
+  }, [genesData?.genes, acmgFilter, impactFilter, geneFilter])
+
+  // Visible results (lazy loading)
+  const visibleGenes = useMemo(() => {
+    return filteredGenes.slice(0, visibleCount)
+  }, [filteredGenes, visibleCount])
+
+  const hasMore = visibleCount < filteredGenes.length
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(INITIAL_LOAD)
+  }, [acmgFilter, impactFilter, geneFilter])
+
+  // Handle filter clicks
   const handleAcmgClick = (filter: ACMGFilter) => {
     setAcmgFilter(prev => prev === filter ? 'all' : filter)
-    setPage(1)
   }
 
   const handleImpactClick = (filter: ImpactFilter) => {
     setImpactFilter(prev => prev === filter ? 'all' : filter)
-    setPage(1)
-  }
-
-  const handleGeneFilterChange = (value: string) => {
-    setGeneFilter(value)
-    setPage(1)
   }
 
   // View variant detail
@@ -454,7 +496,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   }
 
   const hasResults = !isLoading && genesData && genesData.genes.length > 0
-  const genes = genesData?.genes || []
 
   return (
     <div className="p-6 space-y-6">
@@ -594,14 +635,13 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             <Input
               placeholder="Filter by gene..."
               value={geneFilter}
-              onChange={(e) => handleGeneFilterChange(e.target.value)}
+              onChange={(e) => setGeneFilter(e.target.value)}
               className="max-w-xs text-base"
             />
             <span className="text-sm text-muted-foreground">
-              Showing {genes.length} of {genesData.total_genes} genes
+              Showing {visibleGenes.length} of {filteredGenes.length} genes
               {(acmgFilter !== 'all' || impactFilter !== 'all' || geneFilter) && ` (filtered)`}
             </span>
-            {isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
 
           {/* Sorting explanation */}
@@ -611,17 +651,17 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           </p>
 
           {/* Gene Cards */}
-          {genes.map((gene, idx) => (
+          {visibleGenes.map((gene, idx) => (
             <GeneSection
               key={gene.gene_symbol}
               gene={gene}
-              rank={(page - 1) * PAGE_SIZE + idx + 1}
+              rank={idx + 1}
               onViewVariantDetails={setSelectedVariantIdx}
             />
           ))}
 
           {/* No results for filter */}
-          {genes.length === 0 && (
+          {filteredGenes.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center">
                 <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
@@ -635,29 +675,19 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             </Card>
           )}
 
-          {/* Pagination */}
-          {genesData.total_pages > 1 && (
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1 || isFetching}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {page} of {genesData.total_pages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.min(genesData.total_pages, p + 1))}
-                disabled={page === genesData.total_pages || isFetching}
-              >
-                Next
-              </Button>
+          {/* Load More Trigger */}
+          {hasMore && (
+            <div ref={loadMoreRef} className="py-8 text-center">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground mt-2">Loading more genes...</p>
             </div>
+          )}
+
+          {/* End of List */}
+          {!hasMore && filteredGenes.length > INITIAL_LOAD && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              All {filteredGenes.length} genes loaded
+            </p>
           )}
         </div>
       )}
