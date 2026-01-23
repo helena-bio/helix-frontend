@@ -3,75 +3,46 @@
 /**
  * VariantAnalysisView Component - CLINICAL GRADE
  *
- * Card-based layout matching PhenotypeMatchingView design.
- * Uses lazy loading with Intersection Observer for smooth scrolling.
+ * Card-based layout using backend /by-gene endpoint for efficient data fetching.
+ * Backend handles grouping, sorting by ACMG priority, and pagination.
  *
  * Features:
  * - Card per gene (not table rows)
- * - Lazy loading (no pagination)
+ * - Server-side pagination and sorting
  * - Consistent typography with PhenotypeMatchingView
  * - Clickable ACMG cards with filtering
  * - Clickable Impact cards with filtering
  * - Filter by gene name
- * - Sorted by ACMG classification priority
+ * - Sorted by ACMG classification priority (backend)
  */
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Microscope,
   Loader2,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
   Filter,
   ExternalLink,
-  AlertTriangle,
-  HelpCircle,
-  Shield,
-  CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useVariants, useVariantStatistics } from '@/hooks/queries'
+import { useVariantsByGene, useVariantStatistics } from '@/hooks/queries'
 import { VariantDetailPanel } from './VariantDetailPanel'
+import type { GeneAggregated, VariantInGene, GeneAggregatedFilters } from '@/types/variant.types'
 
 interface VariantAnalysisViewProps {
   sessionId: string
 }
-
-const INITIAL_LOAD = 15
-const LOAD_MORE_COUNT = 15
 
 // ACMG filter type
 type ACMGFilter = 'all' | 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely Benign' | 'Benign'
 
 // Impact filter type
 type ImpactFilter = 'all' | 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface GeneAggregatedResult {
-  gene_symbol: string
-  rank: number
-  variant_count: number
-  best_acmg: string | null
-  best_acmg_priority: number
-  best_impact: string | null
-  best_tier: number | null
-  variants: any[]
-  acmg_counts: {
-    pathogenic: number
-    likely_pathogenic: number
-    vus: number
-    likely_benign: number
-    benign: number
-  }
-}
 
 // ============================================================================
 // STYLING HELPERS
@@ -129,26 +100,11 @@ const formatACMGDisplay = (acmg: string | null): string => {
   return acmg
 }
 
-const getACMGPriority = (acmg: string | null): number => {
-  if (!acmg) return 99
-  const acmgLower = acmg.toLowerCase()
-  if (acmgLower === 'pathogenic') return 1
-  if (acmgLower === 'likely pathogenic') return 2
-  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 3
-  if (acmgLower === 'likely benign') return 4
-  if (acmgLower === 'benign') return 5
-  return 99
-}
-
-const normalizeACMG = (acmg: string | null): ACMGFilter => {
-  if (!acmg) return 'all'
-  const acmgLower = acmg.toLowerCase()
-  if (acmgLower === 'pathogenic') return 'Pathogenic'
-  if (acmgLower === 'likely pathogenic') return 'Likely Pathogenic'
-  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'VUS'
-  if (acmgLower === 'likely benign') return 'Likely Benign'
-  if (acmgLower === 'benign') return 'Benign'
-  return 'all'
+// Convert filter to backend ACMG class format
+const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
+  if (filter === 'all') return undefined
+  if (filter === 'VUS') return 'Uncertain Significance'
+  return filter
 }
 
 // ============================================================================
@@ -156,7 +112,7 @@ const normalizeACMG = (acmg: string | null): ACMGFilter => {
 // ============================================================================
 
 interface VariantCardProps {
-  variant: any
+  variant: VariantInGene
   onViewDetails: (variantIdx: number) => void
 }
 
@@ -287,12 +243,12 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 }
 
 interface GeneSectionProps {
-  geneResult: GeneAggregatedResult
+  gene: GeneAggregated
   rank: number
   onViewVariantDetails: (variantIdx: number) => void
 }
 
-function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProps) {
+function GeneSection({ gene, rank, onViewVariantDetails }: GeneSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
@@ -305,42 +261,42 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
           {/* Left: Rank + Gene + ACMG + Tier + Variants */}
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
-            <span className="text-lg font-semibold w-20">{geneResult.gene_symbol}</span>
-            {geneResult.best_acmg && (
-              <Badge variant="outline" className={`text-sm w-12 justify-center ${getACMGColor(geneResult.best_acmg)}`}>
-                {formatACMGDisplay(geneResult.best_acmg)}
+            <span className="text-lg font-semibold w-20">{gene.gene_symbol}</span>
+            {gene.best_acmg_class && (
+              <Badge variant="outline" className={`text-sm w-12 justify-center ${getACMGColor(gene.best_acmg_class)}`}>
+                {formatACMGDisplay(gene.best_acmg_class)}
               </Badge>
             )}
-            {geneResult.best_tier && (
-              <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(geneResult.best_tier)}`}>
-                T{geneResult.best_tier}
+            {gene.best_tier && (
+              <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(gene.best_tier)}`}>
+                T{gene.best_tier}
               </Badge>
             )}
             <Badge variant="secondary" className="text-sm">
-              {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
+              {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
             </Badge>
-            {geneResult.best_impact && (
-              <Badge variant="outline" className={`text-xs ${getImpactColor(geneResult.best_impact)}`}>
-                {geneResult.best_impact}
+            {gene.best_impact && (
+              <Badge variant="outline" className={`text-xs ${getImpactColor(gene.best_impact)}`}>
+                {gene.best_impact}
               </Badge>
             )}
           </div>
 
           {/* Right: ACMG breakdown + Chevron */}
           <div className="flex items-center gap-2">
-            {geneResult.acmg_counts.pathogenic > 0 && (
+            {gene.pathogenic_count > 0 && (
               <Badge variant="outline" className="text-xs bg-red-100 text-red-900 border-red-300">
-                {geneResult.acmg_counts.pathogenic} P
+                {gene.pathogenic_count} P
               </Badge>
             )}
-            {geneResult.acmg_counts.likely_pathogenic > 0 && (
+            {gene.likely_pathogenic_count > 0 && (
               <Badge variant="outline" className="text-xs bg-orange-100 text-orange-900 border-orange-300">
-                {geneResult.acmg_counts.likely_pathogenic} LP
+                {gene.likely_pathogenic_count} LP
               </Badge>
             )}
-            {geneResult.acmg_counts.vus > 0 && (
+            {gene.vus_count > 0 && (
               <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-900 border-yellow-300">
-                {geneResult.acmg_counts.vus} VUS
+                {gene.vus_count} VUS
               </Badge>
             )}
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -350,7 +306,7 @@ function GeneSection({ geneResult, rank, onViewVariantDetails }: GeneSectionProp
 
       {isExpanded && (
         <CardContent className="space-y-3">
-          {geneResult.variants.map((variant) => (
+          {gene.variants.map((variant) => (
             <VariantCard
               key={variant.variant_idx}
               variant={variant}
@@ -402,146 +358,50 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-function aggregateVariantsByGene(variants: any[]): GeneAggregatedResult[] {
-  const geneMap = new Map<string, {
-    variants: any[]
-    bestAcmgPriority: number
-    bestAcmg: string | null
-    bestImpact: string | null
-    bestTier: number | null
-    acmgCounts: {
-      pathogenic: number
-      likely_pathogenic: number
-      vus: number
-      likely_benign: number
-      benign: number
-    }
-  }>()
-
-  variants.forEach((variant) => {
-    const geneSymbol = variant.gene_symbol || 'Unknown'
-
-    if (!geneMap.has(geneSymbol)) {
-      geneMap.set(geneSymbol, {
-        variants: [],
-        bestAcmgPriority: 99,
-        bestAcmg: null,
-        bestImpact: null,
-        bestTier: null,
-        acmgCounts: {
-          pathogenic: 0,
-          likely_pathogenic: 0,
-          vus: 0,
-          likely_benign: 0,
-          benign: 0,
-        },
-      })
-    }
-
-    const geneData = geneMap.get(geneSymbol)!
-    geneData.variants.push(variant)
-
-    // Track best ACMG (lowest priority number = most significant)
-    const acmgPriority = getACMGPriority(variant.acmg_class)
-    if (acmgPriority < geneData.bestAcmgPriority) {
-      geneData.bestAcmgPriority = acmgPriority
-      geneData.bestAcmg = variant.acmg_class
-    }
-
-    // Track best impact
-    const impactOrder = ['HIGH', 'MODERATE', 'LOW', 'MODIFIER']
-    const currentImpactIdx = impactOrder.indexOf(variant.impact?.toUpperCase() || '')
-    const bestImpactIdx = impactOrder.indexOf(geneData.bestImpact?.toUpperCase() || '')
-    if (currentImpactIdx !== -1 && (bestImpactIdx === -1 || currentImpactIdx < bestImpactIdx)) {
-      geneData.bestImpact = variant.impact?.toUpperCase()
-    }
-
-    // Track best tier
-    if (variant.priority_tier && (!geneData.bestTier || variant.priority_tier < geneData.bestTier)) {
-      geneData.bestTier = variant.priority_tier
-    }
-
-    // Count ACMG classes
-    const normalizedAcmg = normalizeACMG(variant.acmg_class)
-    if (normalizedAcmg === 'Pathogenic') geneData.acmgCounts.pathogenic++
-    else if (normalizedAcmg === 'Likely Pathogenic') geneData.acmgCounts.likely_pathogenic++
-    else if (normalizedAcmg === 'VUS') geneData.acmgCounts.vus++
-    else if (normalizedAcmg === 'Likely Benign') geneData.acmgCounts.likely_benign++
-    else if (normalizedAcmg === 'Benign') geneData.acmgCounts.benign++
-  })
-
-  // Convert to array and sort
-  return Array.from(geneMap.entries())
-    .map(([gene_symbol, data]) => ({
-      gene_symbol,
-      rank: 0,
-      variant_count: data.variants.length,
-      best_acmg: data.bestAcmg,
-      best_acmg_priority: data.bestAcmgPriority,
-      best_impact: data.bestImpact,
-      best_tier: data.bestTier,
-      variants: data.variants.sort((a, b) => getACMGPriority(a.acmg_class) - getACMGPriority(b.acmg_class)),
-      acmg_counts: data.acmgCounts,
-    }))
-    .sort((a, b) => {
-      // Sort by ACMG priority first, then by tier, then by variant count
-      if (a.best_acmg_priority !== b.best_acmg_priority) {
-        return a.best_acmg_priority - b.best_acmg_priority
-      }
-      if (a.best_tier && b.best_tier && a.best_tier !== b.best_tier) {
-        return a.best_tier - b.best_tier
-      }
-      return b.variant_count - a.variant_count
-    })
-    .map((item, idx) => ({ ...item, rank: idx + 1 }))
-}
-
-// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
 export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
-  // Local state
+  // Local state for filters
   const [geneFilter, setGeneFilter] = useState('')
   const [acmgFilter, setAcmgFilter] = useState<ACMGFilter>('all')
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
-  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
+  const [page, setPage] = useState(1)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
 
-  // Intersection Observer for lazy loading
-  const observerRef = useRef<IntersectionObserver | null>(null)
-  const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
-    if (observerRef.current) observerRef.current.disconnect()
+  const PAGE_SIZE = 50
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setVisibleCount(prev => prev + LOAD_MORE_COUNT)
-        }
-      },
-      { threshold: 0, rootMargin: '200px' }
-    )
+  // Build filters for backend
+  const backendFilters: GeneAggregatedFilters = useMemo(() => {
+    const filters: GeneAggregatedFilters = {
+      page,
+      page_size: PAGE_SIZE,
+    }
 
-    if (node) observerRef.current.observe(node)
-  }, [])
+    // ACMG filter
+    const acmgBackend = acmgFilterToBackend(acmgFilter)
+    if (acmgBackend) {
+      filters.acmg_class = [acmgBackend]
+    }
 
-  // Data fetching
+    // Impact filter
+    if (impactFilter !== 'all') {
+      filters.impact = [impactFilter]
+    }
+
+    // Gene name filter (debounced via backend)
+    if (geneFilter.trim()) {
+      filters.gene_symbol = geneFilter.trim()
+    }
+
+    return filters
+  }, [acmgFilter, impactFilter, geneFilter, page])
+
+  // Data fetching - using /by-gene endpoint
   const { data: stats, isLoading: statsLoading } = useVariantStatistics(sessionId)
-  const { data: variantsData, isLoading: variantsLoading } = useVariants(sessionId, {
-    page: 1,
-    page_size: 10000, // Fetch all for client-side grouping
-  })
+  const { data: genesData, isLoading: genesLoading, isFetching } = useVariantsByGene(sessionId, backendFilters)
 
-  const isLoading = statsLoading || variantsLoading
-
-  // Aggregate variants by gene
-  const aggregatedResults = useMemo(() => {
-    if (!variantsData?.variants) return []
-    return aggregateVariantsByGene(variantsData.variants)
-  }, [variantsData])
+  const isLoading = statsLoading || genesLoading
 
   // Calculate counts from stats
   const acmgCounts = useMemo(() => {
@@ -566,53 +426,21 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
   }, [stats])
 
-  // Handle filter clicks
+  // Handle filter clicks - reset page when filter changes
   const handleAcmgClick = (filter: ACMGFilter) => {
     setAcmgFilter(prev => prev === filter ? 'all' : filter)
-    setVisibleCount(INITIAL_LOAD)
+    setPage(1)
   }
 
   const handleImpactClick = (filter: ImpactFilter) => {
     setImpactFilter(prev => prev === filter ? 'all' : filter)
-    setVisibleCount(INITIAL_LOAD)
+    setPage(1)
   }
 
-  // Filter results
-  const filteredResults = useMemo(() => {
-    let filtered = aggregatedResults
-
-    // Filter by ACMG
-    if (acmgFilter !== 'all') {
-      filtered = filtered.filter(g => {
-        const normalizedBestAcmg = normalizeACMG(g.best_acmg)
-        return normalizedBestAcmg === acmgFilter
-      })
-    }
-
-    // Filter by Impact
-    if (impactFilter !== 'all') {
-      filtered = filtered.filter(g => g.best_impact?.toUpperCase() === impactFilter)
-    }
-
-    // Filter by gene name
-    if (geneFilter) {
-      const filter = geneFilter.toLowerCase()
-      filtered = filtered.filter(g => g.gene_symbol.toLowerCase().includes(filter))
-    }
-
-    return filtered
-  }, [aggregatedResults, geneFilter, acmgFilter, impactFilter])
-
-  const visibleResults = useMemo(() => {
-    return filteredResults.slice(0, visibleCount)
-  }, [filteredResults, visibleCount])
-
-  const hasMore = visibleCount < filteredResults.length
-
-  // Reset visible count when filters change
-  useEffect(() => {
-    setVisibleCount(INITIAL_LOAD)
-  }, [geneFilter, acmgFilter, impactFilter])
+  const handleGeneFilterChange = (value: string) => {
+    setGeneFilter(value)
+    setPage(1)
+  }
 
   // View variant detail
   if (selectedVariantIdx !== null) {
@@ -625,7 +453,8 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     )
   }
 
-  const hasResults = !isLoading && aggregatedResults.length > 0
+  const hasResults = !isLoading && genesData && genesData.genes.length > 0
+  const genes = genesData?.genes || []
 
   return (
     <div className="p-6 space-y-6">
@@ -656,7 +485,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       </div>
 
       {/* ACMG Classification Cards */}
-      {hasResults && (
+      {stats && (
         <div className="grid grid-cols-6 gap-3">
           <FilterCard
             count={acmgCounts.total}
@@ -710,7 +539,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       )}
 
       {/* Impact Cards */}
-      {hasResults && (
+      {stats && (
         <div className="grid grid-cols-4 gap-3">
           <FilterCard
             count={impactCounts.high}
@@ -757,7 +586,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       )}
 
       {/* Results */}
-      {hasResults && (
+      {!isLoading && genesData && (
         <div className="space-y-4">
           {/* Filter */}
           <div className="flex items-center gap-2">
@@ -765,13 +594,14 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             <Input
               placeholder="Filter by gene..."
               value={geneFilter}
-              onChange={(e) => setGeneFilter(e.target.value)}
+              onChange={(e) => handleGeneFilterChange(e.target.value)}
               className="max-w-xs text-base"
             />
             <span className="text-sm text-muted-foreground">
-              Showing {visibleResults.length} of {filteredResults.length} genes
-              {(acmgFilter !== 'all' || impactFilter !== 'all') && ` (filtered)`}
+              Showing {genes.length} of {genesData.total_genes} genes
+              {(acmgFilter !== 'all' || impactFilter !== 'all' || geneFilter) && ` (filtered)`}
             </span>
+            {isFetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
 
           {/* Sorting explanation */}
@@ -781,49 +611,59 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           </p>
 
           {/* Gene Cards */}
-          {visibleResults.map((geneResult, idx) => (
+          {genes.map((gene, idx) => (
             <GeneSection
-              key={geneResult.gene_symbol}
-              geneResult={geneResult}
-              rank={idx + 1}
+              key={gene.gene_symbol}
+              gene={gene}
+              rank={(page - 1) * PAGE_SIZE + idx + 1}
               onViewVariantDetails={setSelectedVariantIdx}
             />
           ))}
 
           {/* No results for filter */}
-          {filteredResults.length === 0 && (
+          {genes.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center">
                 <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <p className="text-base font-medium mb-2">No Genes Match Filter</p>
                 <p className="text-sm text-muted-foreground">
-                  {acmgFilter !== 'all' || impactFilter !== 'all'
+                  {acmgFilter !== 'all' || impactFilter !== 'all' || geneFilter
                     ? 'No genes match the selected filters.'
-                    : 'Try a different gene name filter.'}
+                    : 'No variants available for analysis.'}
                 </p>
               </CardContent>
             </Card>
           )}
 
-          {/* Load More Trigger */}
-          {hasMore && (
-            <div ref={loadMoreRef} className="py-8 text-center">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mt-2">Loading more genes...</p>
+          {/* Pagination */}
+          {genesData.total_pages > 1 && (
+            <div className="flex items-center justify-center gap-4 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1 || isFetching}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {page} of {genesData.total_pages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(genesData.total_pages, p + 1))}
+                disabled={page === genesData.total_pages || isFetching}
+              >
+                Next
+              </Button>
             </div>
-          )}
-
-          {/* End of List */}
-          {!hasMore && filteredResults.length > INITIAL_LOAD && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              All {filteredResults.length} genes loaded
-            </p>
           )}
         </div>
       )}
 
-      {/* Empty State */}
-      {!isLoading && aggregatedResults.length === 0 && (
+      {/* Empty State - no data at all */}
+      {!isLoading && !genesData && (
         <Card>
           <CardContent className="p-6 text-center">
             <Microscope className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
