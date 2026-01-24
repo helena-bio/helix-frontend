@@ -193,10 +193,19 @@ export async function getVariant(
 }
 
 /**
- * Get variant statistics
+ * Statistics filter options
+ */
+export interface StatisticsFilters {
+  acmg_class?: string[]
+}
+
+/**
+ * Get variant statistics with optional ACMG filter
+ * When acmg_class is provided, impact_breakdown is filtered by that ACMG class
  */
 export async function getVariantStatistics(
-  sessionId: string
+  sessionId: string,
+  filters?: StatisticsFilters
 ): Promise<{
   total_variants: number
   classification_breakdown: Record<string, number>
@@ -204,5 +213,14 @@ export async function getVariantStatistics(
   impact_breakdown: Record<string, number>
   top_genes: Array<{ gene_symbol: string; variant_count: number }>
 }> {
-  return get(`/sessions/${sessionId}/variants/statistics/summary`)
+  const params = new URLSearchParams()
+
+  if (filters?.acmg_class?.length) {
+    filters.acmg_class.forEach(c => params.append('acmg_class', c))
+  }
+
+  const queryString = params.toString()
+  const url = `/sessions/${sessionId}/variants/statistics/summary${queryString ? `?${queryString}` : ''}`
+
+  return get(url)
 }

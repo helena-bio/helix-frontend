@@ -223,7 +223,7 @@ export function ChatPanel() {
   } = useMatchedPhenotype()
 
   // Get variant statistics for analysis context
-  const { data: statistics } = useVariantStatistics(currentSessionId || '', {
+  const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {
     enabled: !!currentSessionId,
   })
 

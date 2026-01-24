@@ -18,6 +18,7 @@ import type {
   GeneAggregatedResponse,
   GeneAggregatedFilters,
 } from '@/types/variant.types'
+import type { StatisticsFilters } from '@/lib/api/variant-analysis'
 
 /**
  * Variant statistics response type
@@ -52,8 +53,8 @@ export const variantAnalysisKeys = {
     [...variantAnalysisKeys.variants(sessionId), 'by-gene-infinite', JSON.stringify(filters)] as const,
   variant: (sessionId: string, variantIdx: number) =>
     [...variantAnalysisKeys.variants(sessionId), variantIdx] as const,
-  statistics: (sessionId: string) =>
-    [...variantAnalysisKeys.variants(sessionId), 'statistics'] as const,
+  statistics: (sessionId: string, filters?: StatisticsFilters) =>
+    [...variantAnalysisKeys.variants(sessionId), 'statistics', JSON.stringify(filters)] as const,
 }
 
 // Session
@@ -177,14 +178,15 @@ export function useVariant(
   })
 }
 
-// Variant Statistics
+// Variant Statistics with optional ACMG filter
 export function useVariantStatistics(
   sessionId: string,
+  filters?: StatisticsFilters,
   options?: QueryHookOptions
 ): UseQueryResult<VariantStatistics, Error> {
   return useQuery({
-    queryKey: variantAnalysisKeys.statistics(sessionId),
-    queryFn: () => api.getVariantStatistics(sessionId),
+    queryKey: variantAnalysisKeys.statistics(sessionId, filters),
+    queryFn: () => api.getVariantStatistics(sessionId, filters),
     enabled: (options?.enabled ?? true) && !!sessionId,
     staleTime: options?.staleTime ?? 10 * 60 * 1000,
     retry: options?.retry ?? 3,
