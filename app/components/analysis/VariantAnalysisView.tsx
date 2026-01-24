@@ -136,19 +136,19 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-md text-muted-foreground">HGVS Protein</p>
-              <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
+              <p className="text-md font-mono">{variant.hgvs_protein || '-'}</p>
             </div>
             <div>
               <p className="text-md text-muted-foreground">HGVS cDNA</p>
-              <p className="text-base font-mono">{variant.hgvs_cdna || '-'}</p>
+              <p className="text-md font-mono">{variant.hgvs_cdna || '-'}</p>
             </div>
             <div>
               <p className="text-md text-muted-foreground">Depth</p>
-              <p className="text-base">{variant.depth || '-'}</p>
+              <p className="text-md">{variant.depth || '-'}</p>
             </div>
             <div>
               <p className="text-md text-muted-foreground">Quality</p>
-              <p className="text-base">{variant.quality?.toFixed(1) || '-'}</p>
+              <p className="text-md">{variant.quality?.toFixed(1) || '-'}</p>
             </div>
           </div>
 

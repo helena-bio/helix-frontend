@@ -237,7 +237,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <p className="text-base text-muted-foreground mb-2">Evidence Codes</p>
                   <div className="flex flex-wrap gap-1.5">
                     {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => (
-                      <Badge key={c} variant="outline" className="text-xs font-mono">
+                      <Badge key={c} variant="outline" className="text-md font-mono">
                         {c.trim()}
                       </Badge>
                     ))}
