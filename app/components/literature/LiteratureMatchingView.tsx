@@ -29,6 +29,7 @@ import {
   Sparkles,
   Filter,
   TrendingUp,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +37,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useLiterature } from '@/contexts/LiteratureContext'
+import { useAnalysis } from '@/contexts/AnalysisContext'
 import { getPubMedUrl, getPMCUrl, formatAuthors } from '@/lib/api/literature'
 import type { PublicationResult, GenePublicationGroup } from '@/types/literature.types'
 
@@ -138,8 +140,18 @@ const getShortTier = (tier: string | undefined): TierFilter => {
 // SUBCOMPONENTS
 // ============================================================================
 
-function PublicationCard({ publication }: { publication: PublicationResult }) {
+interface PublicationCardProps {
+  publication: PublicationResult
+  onViewDetails: (pmid: string) => void
+}
+
+function PublicationCard({ publication, onViewDetails }: PublicationCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onViewDetails(publication.pmid)
+  }
 
   return (
     <div className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
@@ -255,7 +267,16 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
               variant="outline"
               size="sm"
               className="text-md"
-              onClick={() => window.open(getPubMedUrl(publication.pmid), '_blank')}
+              onClick={handleViewDetails}
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              View Full Details
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-md"
+              onClick={(e) => { e.stopPropagation(); window.open(getPubMedUrl(publication.pmid), '_blank') }}
             >
               <ExternalLink className="h-3 w-3 mr-1" />
               PubMed
@@ -265,7 +286,7 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
                 variant="outline"
                 size="sm"
                 className="text-md"
-                onClick={() => { const url = getPMCUrl(publication.pmc_id); if (url) window.open(url, '_blank') }}
+                onClick={(e) => { e.stopPropagation(); const url = getPMCUrl(publication.pmc_id); if (url) window.open(url, '_blank') }}
               >
                 <FileText className="h-3 w-3 mr-1" />
                 Full Text
@@ -278,7 +299,13 @@ function PublicationCard({ publication }: { publication: PublicationResult }) {
   )
 }
 
-function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: number }) {
+interface GeneSectionProps {
+  group: GenePublicationGroup
+  rank: number
+  onViewDetails: (pmid: string) => void
+}
+
+function GeneSection({ group, rank, onViewDetails }: GeneSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
@@ -335,7 +362,7 @@ function GeneSection({ group, rank }: { group: GenePublicationGroup; rank: numbe
       {isExpanded && (
         <CardContent className="space-y-3">
           {group.publications.map((pub) => (
-            <PublicationCard key={pub.pmid} publication={pub} />
+            <PublicationCard key={pub.pmid} publication={pub} onViewDetails={onViewDetails} />
           ))}
         </CardContent>
       )}
@@ -398,10 +425,18 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
     groupedByGene,
   } = useLiterature()
 
+  const { setSelectedPublicationId, openDetails } = useAnalysis()
+
+  // Handle view details click
+  const handleViewDetails = (pmid: string) => {
+    setSelectedPublicationId(pmid)
+    openDetails()
+  }
+
   // Calculate tier counts from grouped results
   const tierCounts = useMemo(() => {
     if (!groupedByGene) return { t1: 0, t2: 0, t3: 0, t4: 0 }
-    
+
     return groupedByGene.reduce((acc, group) => {
       const tier = getShortTier(group.clinicalTier)
       if (tier === 'T1') acc.t1++
@@ -420,7 +455,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
   // Filter groups by gene name and tier
   const filteredGroups = useMemo(() => {
     if (!groupedByGene) return []
-    
+
     let filtered = groupedByGene
 
     // Filter by tier
@@ -560,7 +595,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
 
           {/* Gene Groups */}
           {filteredGroups.map((group, idx) => (
-            <GeneSection key={group.gene} group={group} rank={idx + 1} />
+            <GeneSection key={group.gene} group={group} rank={idx + 1} onViewDetails={handleViewDetails} />
           ))}
 
           {/* No results for filter */}
