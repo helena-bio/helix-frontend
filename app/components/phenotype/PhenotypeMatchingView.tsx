@@ -510,7 +510,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <p className="text-base font-medium">Selected Terms ({selectedTerms.length})</p>
             {selectedTerms.length === 0 ? (
               <p className="text-base text-muted-foreground py-4 text-center">
                 No phenotypes defined for this case.
