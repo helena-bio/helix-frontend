@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
 import { HPOTermCard } from './HPOTermCard'
+import { ConsequenceBadges, getImpactColor } from '@/components/shared'
 
 interface VariantDetailPanelProps {
   sessionId: string
@@ -99,6 +100,15 @@ const formatReviewStatus = (status: string | null | undefined): string[] => {
     .split(',')
     .map(s => s.trim().replace(/_/g, ' '))
     .filter(Boolean)
+}
+
+/**
+ * Format biotype for display
+ * Replaces underscores with spaces
+ */
+const formatBiotype = (biotype: string | null | undefined): string => {
+  if (!biotype) return ''
+  return biotype.replace(/_/g, ' ')
 }
 
 interface HPOTermData {
@@ -480,11 +490,30 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <InfoRow label="HGVS Genomic" value={variant.hgvs_genomic} mono />
                 <InfoRow label="HGVS cDNA" value={variant.hgvs_cdna} mono />
                 <InfoRow label="HGVS Protein" value={variant.hgvs_protein} mono />
-                <InfoRow label="Consequence" value={variant.consequence} />
-                <InfoRow label="Impact" value={variant.impact} />
+                {variant.consequence && (
+                  <div className="py-1.5">
+                    <p className="text-base text-muted-foreground mb-2">Consequence</p>
+                    <ConsequenceBadges consequence={variant.consequence} maxBadges={10} className="text-sm" />
+                  </div>
+                )}
+                {variant.impact && (
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-base text-muted-foreground">Impact</span>
+                    <Badge variant="outline" className={`text-sm ${getImpactColor(variant.impact)}`}>
+                      {variant.impact}
+                    </Badge>
+                  </div>
+                )}
                 <InfoRow label="Transcript" value={variant.transcript_id} mono />
                 <InfoRow label="Exon" value={variant.exon_number} />
-                <InfoRow label="Biotype" value={variant.biotype} />
+                {variant.biotype && (
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-base text-muted-foreground">Biotype</span>
+                    <Badge variant="secondary" className="text-sm font-normal">
+                      {formatBiotype(variant.biotype)}
+                    </Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
