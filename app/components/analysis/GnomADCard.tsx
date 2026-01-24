@@ -168,15 +168,15 @@ export function GnomADCard({
         {(globalAC !== null || globalAN !== null || globalHom !== null) && (
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 bg-muted/50 rounded-lg text-center">
-              <p className="text-lg font-bold">{globalAC?.toLocaleString() ?? '-'}</p>
+              <p className="text-md font-medium">{globalAC?.toLocaleString() ?? '-'}</p>
               <p className="text-sm text-muted-foreground">Allele Count</p>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-center">
-              <p className="text-lg font-bold">{globalAN?.toLocaleString() ?? '-'}</p>
+              <p className="text-md font-medium">{globalAN?.toLocaleString() ?? '-'}</p>
               <p className="text-sm text-muted-foreground">Allele Number</p>
             </div>
             <div className="p-3 bg-muted/50 rounded-lg text-center">
-              <p className="text-lg font-bold">{globalHom ?? '-'}</p>
+              <p className="text-md font-medium">{globalHom ?? '-'}</p>
               <p className="text-sm text-muted-foreground">Homozygotes</p>
             </div>
           </div>
