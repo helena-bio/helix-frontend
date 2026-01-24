@@ -75,6 +75,45 @@ export interface ClinicalSearchResponse {
 }
 
 // ============================================================================
+// PUBLICATION DETAIL TYPES (from AI Service literature API)
+// ============================================================================
+
+export interface GeneMention {
+  gene_symbol: string
+  gene_id: string | null
+  mention_count: number
+  association_type: string | null
+  confidence_score: number | null
+}
+
+export interface VariantMention {
+  gene_symbol: string
+  hgvs_cdna: string | null
+  hgvs_protein: string | null
+  normalized_variant: string | null
+  clinical_significance: string | null
+  evidence_type: string | null
+  sentence_text: string | null
+  confidence_score: number | null
+}
+
+export interface Publication {
+  pmid: string
+  title: string
+  abstract: string | null
+  authors: string | null
+  journal: string | null
+  publication_date: string | null
+  publication_types: string | null
+  mesh_terms: string | null
+  doi: string | null
+  pmc_id: string | null
+  is_retracted: boolean
+  gene_mentions: GeneMention[]
+  variant_mentions: VariantMention[]
+}
+
+// ============================================================================
 // CONTEXT TYPES
 // ============================================================================
 
@@ -99,10 +138,10 @@ export interface GeneClinicalData {
 
 /**
  * Gene publication group with combined scoring
- * 
+ *
  * Combined Score Formula:
  * combined = (literature_relevance * 0.4) + (clinical_priority * 0.6)
- * 
+ *
  * This ensures clinically relevant genes (T1/T2) rank higher even if
  * they have slightly lower literature scores.
  */

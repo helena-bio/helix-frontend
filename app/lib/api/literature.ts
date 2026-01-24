@@ -4,15 +4,16 @@
  * Functions for clinical literature search from Literature Mining Service.
  * Endpoint: POST /api/v1/clinical/search
  */
-
 import type {
   ClinicalSearchRequest,
   ClinicalSearchResponse,
   LiteratureHPOTerm,
   LiteratureVariant,
+  Publication,
 } from '@/types/literature.types'
 
 const LITERATURE_API_URL = process.env.NEXT_PUBLIC_LITERATURE_API_URL || 'http://localhost:9004'
+const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 
 /**
  * Search clinical literature for genes and phenotypes
@@ -39,6 +40,27 @@ export async function searchClinicalLiterature(
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }))
     throw new Error(error.detail || `Literature search failed: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Get publication details by PMID
+ */
+export async function getPublication(pmid: string): Promise<Publication> {
+  const url = `${AI_SERVICE_URL}/api/v1/literature/publication/${pmid}`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: response.statusText }))
+    throw new Error(error.detail || `Failed to get publication: ${response.status}`)
   }
 
   return response.json()

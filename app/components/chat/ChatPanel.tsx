@@ -10,6 +10,7 @@ import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
+import { PublicationDetailPanel } from './PublicationDetailPanel'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent, LiteratureResultEvent } from '@/lib/api/ai'
 
@@ -17,7 +18,12 @@ import type { QueryResultEvent, LiteratureResultEvent } from '@/lib/api/ai'
 // MESSAGE COMPONENTS
 // ============================================================================
 
-const MessageBubble = memo(function MessageBubble({ message }: { message: Message }) {
+interface MessageBubbleProps {
+  message: Message
+  onPublicationClick?: (pmid: string) => void
+}
+
+const MessageBubble = memo(function MessageBubble({ message, onPublicationClick }: MessageBubbleProps) {
   // Skip empty text messages (continuation placeholders)
   if (message.type === 'text' && !message.content && !message.isStreaming) {
     return null
@@ -89,7 +95,7 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
 
         {/* Publications List */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <div className="flex items-center gap-2 text-base font-medium text-foreground">
             <BookOpen className="h-4 w-4 text-primary" />
             <span>Publications ({publications.length})</span>
           </div>
@@ -98,14 +104,15 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
             {publications.map((pub: any, idx: number) => (
               <div 
                 key={pub.pmid || idx} 
-                className="p-3 bg-muted/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors"
+                className="p-3 bg-muted/50 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-muted/70 transition-colors cursor-pointer"
+                onClick={() => pub.pmid && onPublicationClick?.(pub.pmid)}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-foreground line-clamp-2">
+                    <h4 className="text-base font-medium text-foreground line-clamp-2">
                       {pub.title}
                     </h4>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                       {pub.journal && <span className="truncate max-w-[200px]">{pub.journal}</span>}
                       {pub.publication_date && (
                         <>
@@ -116,15 +123,10 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
                     </div>
                   </div>
                   {pub.pmid && (
-                    
-                      <a href={`https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
-                    >
+                    <span className="flex items-center gap-1 text-sm text-primary shrink-0">
                       <span>PMID:{pub.pmid}</span>
                       <ExternalLink className="h-3 w-3" />
-                    </a>
+                    </span>
                   )}
                 </div>
               </div>
@@ -198,6 +200,7 @@ export function ChatPanel() {
   const [isQuerying, setIsQuerying] = useState(false)
   const [isSearchingLiterature, setIsSearchingLiterature] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
+  const [selectedPmid, setSelectedPmid] = useState<string | null>(null)
 
   // Track current streaming message ID for multi-round support
   const currentStreamingIdRef = useRef<string | null>(null)
@@ -510,6 +513,16 @@ export function ChatPanel() {
   // RENDER
   // ============================================================================
 
+  // Show publication detail panel
+  if (selectedPmid) {
+    return (
+      <PublicationDetailPanel
+        pmid={selectedPmid}
+        onBack={() => setSelectedPmid(null)}
+      />
+    )
+  }
+
   // Filter out empty messages for display
   const displayMessages = messages.filter(msg =>
     msg.type === 'query_result' || msg.type === 'literature_result' || msg.content || msg.isStreaming
@@ -545,7 +558,10 @@ export function ChatPanel() {
               }`}
             >
               <div className={`${message.role === 'user' ? 'max-w-[80%]' : 'w-full'}`}>
-                <MessageBubble message={message} />
+                <MessageBubble
+                  message={message}
+                  onPublicationClick={setSelectedPmid}
+                />
               </div>
             </div>
           ))}
