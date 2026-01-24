@@ -67,12 +67,6 @@ function getACMGCriteria(af: number): { code: string; description: string; type:
   return null
 }
 
-function formatPercentage(af: number): string {
-  if (af >= 0.01) return `${(af * 100).toFixed(2)}%`
-  if (af >= 0.0001) return `${(af * 100).toFixed(4)}%`
-  return `${(af * 100).toExponential(2)}%`
-}
-
 function formatOneInX(af: number): string {
   if (af === 0) return 'Not observed'
   const oneIn = Math.round(1 / af)
@@ -93,7 +87,6 @@ export function GnomADCard({
   globalHom,
   popmax,
   popmaxAF,
-  rsid,
   chromosome,
   position,
   refAllele,
@@ -119,7 +112,6 @@ export function GnomADCard({
   // Build gnomAD URL - format: chr-pos-ref-alt
   const gnomadUrl = useMemo(() => {
     if (chromosome && position && refAllele && altAllele) {
-      // Remove 'chr' prefix if present
       const chr = chromosome.replace(/^chr/i, '')
       return `https://gnomad.broadinstitute.org/variant/${chr}-${position}-${refAllele}-${altAllele}?dataset=gnomad_r4`
     }
@@ -165,11 +157,8 @@ export function GnomADCard({
                   style={{ width: `${getProgressWidth(globalAF!)}%` }}
                 />
               </div>
-              <div className="flex items-baseline justify-between">
-                <div>
-                  <span className="text-2xl font-bold">{formatPercentage(globalAF!)}</span>
-                  <span className="text-base text-muted-foreground ml-2">({formatOneInX(globalAF!)})</span>
-                </div>
+              <div>
+                <span className="text-2xl font-bold">{formatOneInX(globalAF!)}</span>
               </div>
             </>
           )}
@@ -208,9 +197,8 @@ export function GnomADCard({
                   style={{ width: `${getProgressWidth(popmaxAF)}%` }}
                 />
               </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-lg font-semibold">{formatPercentage(popmaxAF)}</span>
-                <span className="text-sm text-muted-foreground">{formatOneInX(popmaxAF)}</span>
+              <div>
+                <span className="text-lg font-semibold">{formatOneInX(popmaxAF)}</span>
               </div>
             </div>
           </div>
