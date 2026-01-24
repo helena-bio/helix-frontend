@@ -193,7 +193,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         </Button>
 
         <div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-baseline gap-3 flex-wrap">
             <h2 className="text-2xl font-bold">
               {variant.gene_symbol || 'Unknown Gene'}
             </h2>
