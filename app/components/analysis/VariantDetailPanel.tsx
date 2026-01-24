@@ -5,11 +5,10 @@
  * Organized in cards by clinical priority for geneticists
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft,
@@ -26,11 +25,14 @@ import {
   TrendingUp,
   Star,
   Search,
-  X
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
-import { HPOTermCard } from './HPOTermCard'
+import { useHPOTerm } from '@/hooks/queries'
 import { ConsequenceBadges, getImpactColor } from '@/components/shared'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 interface VariantDetailPanelProps {
   sessionId: string
@@ -78,10 +80,6 @@ const getPredictionColor = (pred: string | null) => {
   return 'bg-gray-100'
 }
 
-/**
- * Format disease name for display
- * Removes underscores, splits by | and formats nicely
- */
 const formatDiseaseName = (disease: string | null | undefined): string[] => {
   if (!disease) return []
   return disease
@@ -90,10 +88,6 @@ const formatDiseaseName = (disease: string | null | undefined): string[] => {
     .filter(Boolean)
 }
 
-/**
- * Format review status for display
- * Splits by comma, replaces underscores with spaces
- */
 const formatReviewStatus = (status: string | null | undefined): string[] => {
   if (!status) return []
   return status
@@ -102,10 +96,6 @@ const formatReviewStatus = (status: string | null | undefined): string[] => {
     .filter(Boolean)
 }
 
-/**
- * Format biotype for display
- * Replaces underscores with spaces
- */
 const formatBiotype = (biotype: string | null | undefined): string => {
   if (!biotype) return ''
   return biotype.replace(/_/g, ' ')
@@ -116,10 +106,118 @@ interface HPOTermData {
   name: string
 }
 
+// HPO Term Card Component - similar to gene cards
+interface HPOPhenotypeCardProps {
+  hpoId: string
+  name: string
+  index: number
+}
+
+function HPOPhenotypeCard({ hpoId, name, index }: HPOPhenotypeCardProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [shouldFetch, setShouldFetch] = useState(false)
+
+  const { data: hpoData, isLoading } = useHPOTerm(hpoId, shouldFetch)
+
+  useEffect(() => {
+    if (isOpen && !shouldFetch) {
+      setShouldFetch(true)
+    }
+  }, [isOpen, shouldFetch])
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="bg-card text-card-foreground">
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-lg font-bold text-muted-foreground w-8">
+                  #{index + 1}
+                </span>
+                <span className="text-lg font-semibold">{name}</span>
+                <Badge variant="outline" className="text-sm font-mono">
+                  {hpoId}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                {isOpen ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <CardContent className="pt-0 pb-4">
+            <div className="border rounded-lg p-4 bg-muted/30">
+              {isLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-md">Loading phenotype details...</span>
+                </div>
+              ) : hpoData ? (
+                <div className="space-y-3">
+                  {hpoData.definition && (
+                    <div>
+                      <p className="text-md text-muted-foreground mb-1">Definition</p>
+                      <p className="text-base leading-relaxed">{hpoData.definition}</p>
+                    </div>
+                  )}
+                  {hpoData.synonyms && hpoData.synonyms.length > 0 && (
+                    <div>
+                      <p className="text-md text-muted-foreground mb-2">Synonyms</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {hpoData.synonyms.slice(0, 5).map((syn, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-sm font-normal">
+                            {syn}
+                          </Badge>
+                        ))}
+                        {hpoData.synonyms.length > 5 && (
+                          <Badge variant="outline" className="text-sm">
+                            +{hpoData.synonyms.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="pt-2">
+                    
+                      <a href={`https://hpo.jax.org/browse/term/${hpoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-md text-primary hover:underline flex items-center gap-1"
+                    >
+                      View in HPO Browser
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-md text-muted-foreground italic">
+                  No additional details available
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  )
+}
+
+// Constants for lazy loading
+const HPO_INITIAL_COUNT = 10
+const HPO_LOAD_MORE_COUNT = 10
+
 export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDetailPanelProps) {
   const { data, isLoading, error } = useVariant(sessionId, variantIdx)
   const [hpoSearchQuery, setHpoSearchQuery] = useState('')
-  const [showAllHPO, setShowAllHPO] = useState(false)
+  const [visibleHPOCount, setVisibleHPOCount] = useState(HPO_INITIAL_COUNT)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const variant = data?.variant
 
@@ -156,10 +254,42 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     )
   }, [hpoTerms, hpoSearchQuery])
 
-  // Pagination
-  const HPO_PAGE_SIZE = 10
-  const displayedHPOTerms = showAllHPO ? filteredHPOTerms : filteredHPOTerms.slice(0, HPO_PAGE_SIZE)
-  const hasMoreHPO = filteredHPOTerms.length > HPO_PAGE_SIZE
+  // Visible HPO terms with lazy loading
+  const displayedHPOTerms = useMemo(() => {
+    return filteredHPOTerms.slice(0, visibleHPOCount)
+  }, [filteredHPOTerms, visibleHPOCount])
+
+  const hasMoreHPO = visibleHPOCount < filteredHPOTerms.length
+
+  // Reset visible count when search changes
+  useEffect(() => {
+    setVisibleHPOCount(HPO_INITIAL_COUNT)
+  }, [hpoSearchQuery])
+
+  // Load more HPO terms when scrolling
+  const loadMoreHPO = useCallback(() => {
+    if (hasMoreHPO) {
+      setVisibleHPOCount(prev => prev + HPO_LOAD_MORE_COUNT)
+    }
+  }, [hasMoreHPO])
+
+  // IntersectionObserver for lazy loading HPO terms
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMoreHPO) {
+          loadMoreHPO()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [hasMoreHPO, loadMoreHPO])
 
   // Check data availability
   const hasPredictions = variant && (
@@ -564,87 +694,67 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 </CardContent>
               </Card>
             )}
-
-            {/* HPO Phenotypes */}
-            {hpoTerms.length > 0 && (
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Phenotypes (HPO)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-base text-muted-foreground">Total HPO Terms</span>
-                    <Badge variant="outline" className="text-md font-bold">
-                      {hpoTerms.length}
-                    </Badge>
-                  </div>
-
-                  {hpoTerms.length > 10 && (
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        value={hpoSearchQuery}
-                        onChange={(e) => setHpoSearchQuery(e.target.value)}
-                        placeholder="Search phenotypes..."
-                        className="pl-9 pr-9 text-base"
-                      />
-                      {hpoSearchQuery && (
-                        <button
-                          onClick={() => setHpoSearchQuery('')}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {hpoSearchQuery && (
-                    <p className="text-sm text-muted-foreground">
-                      Showing {filteredHPOTerms.length} of {hpoTerms.length} phenotypes
-                    </p>
-                  )}
-
-                  <div className="space-y-2">
-                    {displayedHPOTerms.map((term) => (
-                      <HPOTermCard
-                        key={term.hpo_id}
-                        hpoId={term.hpo_id}
-                        name={term.name}
-                        readOnly
-                      />
-                    ))}
-                  </div>
-
-                  {hasMoreHPO && !hpoSearchQuery && (
-                    <div className="flex justify-center pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAllHPO(!showAllHPO)}
-                      >
-                        {showAllHPO ? (
-                          <>Show Less</>
-                        ) : (
-                          <>Show All ({filteredHPOTerms.length - HPO_PAGE_SIZE} more)</>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
-                  {hpoSearchQuery && filteredHPOTerms.length === 0 && (
-                    <p className="text-center text-md text-muted-foreground py-4">
-                      No matching phenotypes found
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
           </div>
+
+          {/* HPO Phenotypes - Full width section with expandable cards */}
+          {hpoTerms.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  <h3 className="text-lg font-semibold">Phenotypes (HPO)</h3>
+                </div>
+                <span className="text-base text-muted-foreground">
+                  Showing {displayedHPOTerms.length} of {filteredHPOTerms.length} phenotypes
+                </span>
+              </div>
+
+              {hpoTerms.length > 10 && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={hpoSearchQuery}
+                    onChange={(e) => setHpoSearchQuery(e.target.value)}
+                    placeholder="Search phenotypes..."
+                    className="pl-9 pr-9 text-base"
+                  />
+                  {hpoSearchQuery && (
+                    <button
+                      onClick={() => setHpoSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {displayedHPOTerms.map((term, idx) => (
+                  <HPOPhenotypeCard
+                    key={term.hpo_id}
+                    hpoId={term.hpo_id}
+                    name={term.name}
+                    index={idx}
+                  />
+                ))}
+              </div>
+
+              {/* Lazy loading trigger */}
+              {hasMoreHPO && (
+                <div ref={loadMoreRef} className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {hpoSearchQuery && filteredHPOTerms.length === 0 && (
+                <p className="text-center text-md text-muted-foreground py-4">
+                  No matching phenotypes found
+                </p>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
