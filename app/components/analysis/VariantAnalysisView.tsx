@@ -135,19 +135,19 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           {/* Variant Details */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">HGVS Protein</p>
+              <p className="text-md text-muted-foreground">HGVS Protein</p>
               <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">HGVS cDNA</p>
+              <p className="text-md text-muted-foreground">HGVS cDNA</p>
               <p className="text-base font-mono">{variant.hgvs_cdna || '-'}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Depth</p>
+              <p className="text-md text-muted-foreground">Depth</p>
               <p className="text-base">{variant.depth || '-'}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Quality</p>
+              <p className="text-md text-muted-foreground">Quality</p>
               <p className="text-base">{variant.quality?.toFixed(1) || '-'}</p>
             </div>
           </div>
@@ -155,7 +155,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           {/* ACMG Criteria */}
           {variant.acmg_criteria && (
             <div>
-              <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
+              <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
               <div className="flex flex-wrap gap-1">
                 {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => (
                   <Badge key={c} variant="outline" className="text-xs font-mono">
@@ -169,7 +169,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           {/* ClinVar */}
           {variant.clinvar_significance && (
             <div>
-              <p className="text-sm text-muted-foreground mb-1">ClinVar</p>
+              <p className="text-md text-muted-foreground mb-1">ClinVar</p>
               <p className="text-base">{variant.clinvar_significance}</p>
             </div>
           )}

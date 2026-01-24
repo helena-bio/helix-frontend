@@ -135,7 +135,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           {/* Score Breakdown */}
           <div>
             <p className="text-base font-semibold mb-2">Score Breakdown</p>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-2 gap-2 text-md">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">ACMG Weight</span>
                 <span>35%</span>
@@ -164,7 +164,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                   .filter(m => m.similarity_score > 0)
                   .slice(0, 5)
                   .map((match, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
+                    <div key={idx} className="flex items-center justify-between text-md">
                       <span className="text-muted-foreground truncate flex-1">
                         {match.patient_hpo_name}
                       </span>
