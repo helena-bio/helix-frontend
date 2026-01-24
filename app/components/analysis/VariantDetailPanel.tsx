@@ -18,7 +18,6 @@ import {
   Dna,
   Shield,
   Activity,
-  Users,
   FileText,
   Gauge,
   Target,
@@ -32,6 +31,7 @@ import {
 import { useVariant } from '@/hooks/queries'
 import { useHPOTerm } from '@/hooks/queries'
 import { ConsequenceBadges, getImpactColor } from '@/components/shared'
+import { GnomADCard } from './GnomADCard'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 interface VariantDetailPanelProps {
@@ -558,24 +558,21 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </Card>
             )}
 
-            {/* gnomAD */}
+            {/* gnomAD - Using new GnomADCard component */}
             {hasGnomAD && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    gnomAD
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <InfoRow label="Global AF" value={variant.global_af?.toExponential(4)} mono />
-                  <InfoRow label="Allele Count" value={variant.global_ac?.toLocaleString()} />
-                  <InfoRow label="Allele Number" value={variant.global_an?.toLocaleString()} />
-                  <InfoRow label="Homozygotes" value={variant.global_hom} />
-                  <InfoRow label="PopMax" value={variant.popmax} />
-                  <InfoRow label="PopMax AF" value={variant.af_grpmax?.toExponential(4)} mono />
-                </CardContent>
-              </Card>
+              <GnomADCard
+                globalAF={variant.global_af}
+                globalAC={variant.global_ac}
+                globalAN={variant.global_an}
+                globalHom={variant.global_hom}
+                popmax={variant.popmax}
+                popmaxAF={variant.af_grpmax}
+                rsid={variant.rsid}
+                chromosome={variant.chromosome}
+                position={variant.position}
+                refAllele={variant.reference_allele}
+                altAllele={variant.alternate_allele}
+              />
             )}
 
             {/* Quality */}
