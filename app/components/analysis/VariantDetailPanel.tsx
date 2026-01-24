@@ -89,6 +89,18 @@ const formatDiseaseName = (disease: string | null | undefined): string[] => {
     .filter(Boolean)
 }
 
+/**
+ * Format review status for display
+ * Splits by comma, replaces underscores with spaces
+ */
+const formatReviewStatus = (status: string | null | undefined): string[] => {
+  if (!status) return []
+  return status
+    .split(',')
+    .map(s => s.trim().replace(/_/g, ' '))
+    .filter(Boolean)
+}
+
 interface HPOTermData {
   hpo_id: string
   name: string
@@ -284,7 +296,18 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <InfoRow label="Significance" value={variant.clinical_significance} />
-                  <InfoRow label="Review Status" value={variant.review_status} />
+                  {variant.review_status && (
+                    <div className="py-1.5">
+                      <p className="text-base text-muted-foreground mb-2">Review Status</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formatReviewStatus(variant.review_status).map((status, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-sm font-normal">
+                            {status}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {variant.review_stars && (
                     <div className="flex justify-between items-start py-1.5">
                       <span className="text-base text-muted-foreground">Review Stars</span>
@@ -312,7 +335,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                        className="text-md text-primary hover:underline flex items-center gap-1"
                       >
                         View in ClinVar
                         <ExternalLink className="h-3 w-3" />
