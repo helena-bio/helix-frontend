@@ -77,6 +77,18 @@ const getPredictionColor = (pred: string | null) => {
   return 'bg-gray-100'
 }
 
+/**
+ * Format disease name for display
+ * Removes underscores, splits by | and formats nicely
+ */
+const formatDiseaseName = (disease: string | null | undefined): string[] => {
+  if (!disease) return []
+  return disease
+    .split('|')
+    .map(d => d.trim().replace(/_/g, ' '))
+    .filter(Boolean)
+}
+
 interface HPOTermData {
   hpo_id: string
   name: string
@@ -283,7 +295,18 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       </div>
                     </div>
                   )}
-                  <InfoRow label="Disease" value={variant.disease_name} />
+                  {variant.disease_name && (
+                    <div className="py-1.5">
+                      <p className="text-base text-muted-foreground mb-2">Disease</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {formatDiseaseName(variant.disease_name).map((disease, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-sm font-normal">
+                            {disease}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {variant.clinvar_variation_id && (
                     <div className="pt-2">
                       <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
