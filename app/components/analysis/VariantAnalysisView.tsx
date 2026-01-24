@@ -229,7 +229,7 @@ function GeneSection({ gene, rank, onViewVariantDetails }: GeneSectionProps) {
               {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
             </Badge>
             {gene.best_impact && (
-              <Badge variant="outline" className={`text-xs ${getImpactColor(gene.best_impact)}`}>
+              <Badge variant="outline" className={`text-sm ${getImpactColor(gene.best_impact)}`}>
                 {gene.best_impact}
               </Badge>
             )}
