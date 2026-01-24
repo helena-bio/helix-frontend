@@ -227,7 +227,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-base font-medium">Classification</span>
-                <Badge variant="outline" className={`text-base ${getACMGColor(variant.acmg_class)}`}>
+                <Badge variant="outline" className={`text-md ${getACMGColor(variant.acmg_class)}`}>
                   {variant.acmg_class || 'Not Classified'}
                 </Badge>
               </div>
