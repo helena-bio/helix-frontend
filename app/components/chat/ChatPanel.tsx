@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, memo } from 'react'
-import { Send, Square, Sparkles, Database } from 'lucide-react'
+import { Send, Square, Sparkles, Database, BookOpen, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
@@ -11,7 +11,7 @@ import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
 import type { Message } from '@/types/ai.types'
-import type { QueryResultEvent } from '@/lib/api/ai'
+import type { QueryResultEvent, LiteratureResultEvent } from '@/lib/api/ai'
 
 // ============================================================================
 // MESSAGE COMPONENTS
@@ -70,6 +70,77 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
     )
   }
 
+  // Literature search results
+  if (message.type === 'literature_result' && message.literatureData) {
+    const publications = message.literatureData.results || []
+    
+    return (
+      <div className="p-4 bg-card border border-border rounded-lg">
+        <details className="mb-4">
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+            View SQL Query
+          </summary>
+          <div className="mt-2 p-3 bg-muted rounded overflow-x-auto">
+            <pre className="text-sm font-mono whitespace-pre-wrap break-words">
+              <code>{message.literatureData.sql}</code>
+            </pre>
+          </div>
+        </details>
+
+        {/* Publications List */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <BookOpen className="h-4 w-4 text-primary" />
+            <span>Publications ({publications.length})</span>
+          </div>
+          
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {publications.map((pub: any, idx: number) => (
+              <div 
+                key={pub.pmid || idx} 
+                className="p-3 bg-muted/50 rounded-lg border border-border/50 hover:border-primary/30 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-foreground line-clamp-2">
+                      {pub.title}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      {pub.journal && <span className="truncate max-w-[200px]">{pub.journal}</span>}
+                      {pub.publication_date && (
+                        <>
+                          <span>-</span>
+                          <span>{pub.publication_date}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {pub.pmid && (
+                    
+                      <a href={`https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-primary hover:underline shrink-0"
+                    >
+                      <span>PMID:{pub.pmid}</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
+          <span>{message.literatureData.rows_returned} publications</span>
+          <span>-</span>
+          <span>{message.literatureData.execution_time_ms}ms</span>
+        </div>
+      </div>
+    )
+  }
+
   return null
 }, (prevProps, nextProps) => {
   const prev = prevProps.message
@@ -82,20 +153,35 @@ const MessageBubble = memo(function MessageBubble({ message }: { message: Messag
   )
 })
 
-const ThinkingIndicator = memo(function ThinkingIndicator({ mode = 'thinking' }: { mode?: 'thinking' | 'querying' }) {
+const ThinkingIndicator = memo(function ThinkingIndicator({ 
+  mode = 'thinking' 
+}: { 
+  mode?: 'thinking' | 'querying' | 'literature' 
+}) {
+  const config = {
+    thinking: {
+      icon: Sparkles,
+      text: 'Thinking...',
+    },
+    querying: {
+      icon: Database,
+      text: 'Querying database...',
+    },
+    literature: {
+      icon: BookOpen,
+      text: 'Searching literature...',
+    },
+  }
+
+  const { icon: Icon, text } = config[mode]
+
   return (
     <div className="flex gap-3 justify-start">
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 border border-primary/30 flex-shrink-0">
-        {mode === 'querying' ? (
-          <Database className="h-4 w-4 text-primary animate-pulse" />
-        ) : (
-          <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-        )}
+        <Icon className="h-4 w-4 text-primary animate-pulse" />
       </div>
       <div className="px-4 py-3">
-        <p className="text-base text-muted-foreground">
-          {mode === 'querying' ? 'Querying database...' : 'Thinking...'}
-        </p>
+        <p className="text-base text-muted-foreground">{text}</p>
       </div>
     </div>
   )
@@ -110,6 +196,7 @@ export function ChatPanel() {
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isQuerying, setIsQuerying] = useState(false)
+  const [isSearchingLiterature, setIsSearchingLiterature] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
 
   // Track current streaming message ID for multi-round support
@@ -307,9 +394,51 @@ export function ChatPanel() {
           setMessages(prev => [...prev, queryResultMessage])
         },
 
+        onLiteratureSearching: () => {
+          // Show literature searching indicator
+          setIsSearchingLiterature(true)
+
+          // Finalize current streaming message (text before search)
+          const currentId = currentStreamingIdRef.current
+          if (currentId) {
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === currentId && msg.isStreaming
+                  ? { ...msg, isStreaming: false }
+                  : msg
+              )
+            )
+          }
+        },
+
+        onLiteratureResult: (result: LiteratureResultEvent) => {
+          // Hide literature searching indicator
+          setIsSearchingLiterature(false)
+
+          // Add literature result message
+          const literatureResultMessageId = `literature-${Date.now()}`
+          const literatureResultMessage: Message = {
+            id: literatureResultMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            type: 'literature_result',
+            literatureData: {
+              sql: result.sql,
+              results: result.results,
+              rows_returned: result.rows_returned,
+              execution_time_ms: result.execution_time_ms,
+              visualization: result.visualization,
+            },
+          }
+
+          setMessages(prev => [...prev, literatureResultMessage])
+        },
+
         onRoundComplete: () => {
-          // Hide querying indicator (in case it's still showing)
+          // Hide all indicators
           setIsQuerying(false)
+          setIsSearchingLiterature(false)
 
           // Create new streaming message for next round
           const newStreamingId = `continuation-${Date.now()}`
@@ -334,6 +463,7 @@ export function ChatPanel() {
           )
           setIsSending(false)
           setIsQuerying(false)
+          setIsSearchingLiterature(false)
           currentStreamingIdRef.current = null
         },
 
@@ -356,6 +486,7 @@ export function ChatPanel() {
           }
           setIsSending(false)
           setIsQuerying(false)
+          setIsSearchingLiterature(false)
           currentStreamingIdRef.current = null
         },
       })
@@ -363,6 +494,7 @@ export function ChatPanel() {
       console.error('[STREAM INIT ERROR]', error)
       setIsSending(false)
       setIsQuerying(false)
+      setIsSearchingLiterature(false)
       currentStreamingIdRef.current = null
     }
   }
@@ -380,12 +512,12 @@ export function ChatPanel() {
 
   // Filter out empty messages for display
   const displayMessages = messages.filter(msg =>
-    msg.type === 'query_result' || msg.content || msg.isStreaming
+    msg.type === 'query_result' || msg.type === 'literature_result' || msg.content || msg.isStreaming
   )
 
   // Show thinking indicator only at very start (before first token)
   const lastMessage = displayMessages[displayMessages.length - 1]
-  const shouldShowThinking = isSending && !isQuerying && lastMessage?.isStreaming && lastMessage?.content === ''
+  const shouldShowThinking = isSending && !isQuerying && !isSearchingLiterature && lastMessage?.isStreaming && lastMessage?.content === ''
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
@@ -426,6 +558,11 @@ export function ChatPanel() {
           {/* Querying Indicator - shown during database query */}
           {isQuerying && (
             <ThinkingIndicator mode="querying" />
+          )}
+
+          {/* Literature Searching Indicator */}
+          {isSearchingLiterature && (
+            <ThinkingIndicator mode="literature" />
           )}
 
           <div ref={messagesEndRef} />

@@ -2,7 +2,6 @@
  * AI Chat Mutations
  * Handles streaming chat with AI service and query visualizations
  */
-
 import { useMutation } from '@tanstack/react-query'
 import {
   sendChatMessage,
@@ -11,6 +10,8 @@ import {
   type QueryResultEvent,
   type ConversationStartedEvent,
   type QueryingStartedEvent,
+  type LiteratureSearchingEvent,
+  type LiteratureResultEvent,
   type RoundCompleteEvent,
 } from '@/lib/api/ai'
 
@@ -36,6 +37,8 @@ export function useAIChat() {
  * - onToken: Called for each text token
  * - onQueryingStarted: Called when AI starts database query (show indicator)
  * - onQueryResult: Called with query results (hide indicator, show results)
+ * - onLiteratureSearching: Called when AI starts literature search
+ * - onLiteratureResult: Called with literature search results
  * - onRoundComplete: Called after query, before next round (create new bubble)
  * - onComplete: Called when stream ends
  * - onError: Called on error
@@ -50,6 +53,8 @@ export function useAIChatStream() {
     onToken,
     onQueryingStarted,
     onQueryResult,
+    onLiteratureSearching,
+    onLiteratureResult,
     onRoundComplete,
     onComplete,
     onError,
@@ -62,6 +67,8 @@ export function useAIChatStream() {
     onToken: (token: string) => void
     onQueryingStarted?: () => void
     onQueryResult?: (result: QueryResultEvent) => void
+    onLiteratureSearching?: () => void
+    onLiteratureResult?: (result: LiteratureResultEvent) => void
     onRoundComplete?: () => void
     onComplete: () => void
     onError: (error: Error) => void
@@ -88,6 +95,14 @@ export function useAIChatStream() {
         } else if (event.type === 'query_result') {
           if (onQueryResult) {
             onQueryResult(event.data)
+          }
+        } else if (event.type === 'literature_searching') {
+          if (onLiteratureSearching) {
+            onLiteratureSearching()
+          }
+        } else if (event.type === 'literature_result') {
+          if (onLiteratureResult) {
+            onLiteratureResult(event.data)
           }
         } else if (event.type === 'round_complete') {
           if (onRoundComplete) {

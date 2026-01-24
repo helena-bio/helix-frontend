@@ -1,7 +1,6 @@
 /**
  * AI Chat Types
  */
-
 import type { VisualizationConfig } from './visualization.types'
 
 export interface Message {
@@ -10,10 +9,18 @@ export interface Message {
   content: string
   timestamp: Date
   isStreaming?: boolean
-  
-  // Query result extensions
-  type?: 'text' | 'query_result'
+  // Message type extensions
+  type?: 'text' | 'query_result' | 'literature_result'
+  // Query result data (variant queries)
   queryData?: {
+    sql: string
+    results: any[]
+    rows_returned: number
+    execution_time_ms: number
+    visualization?: VisualizationConfig
+  }
+  // Literature search result data
+  literatureData?: {
     sql: string
     results: any[]
     rows_returned: number

@@ -44,6 +44,20 @@ export interface QueryResultEvent {
   visualization?: VisualizationConfig
 }
 
+// Literature search events
+export interface LiteratureSearchingEvent {
+  type: 'literature_searching'
+}
+
+export interface LiteratureResultEvent {
+  type: 'literature_result'
+  sql: string
+  results: any[]
+  rows_returned: number
+  execution_time_ms: number
+  visualization?: VisualizationConfig
+}
+
 export interface RoundCompleteEvent {
   type: 'round_complete'
   round: number
@@ -54,6 +68,8 @@ export type StreamEvent =
   | { type: 'conversation_started'; data: ConversationStartedEvent }
   | { type: 'querying_started'; data: QueryingStartedEvent }
   | { type: 'query_result'; data: QueryResultEvent }
+  | { type: 'literature_searching'; data: LiteratureSearchingEvent }
+  | { type: 'literature_result'; data: LiteratureResultEvent }
   | { type: 'round_complete'; data: RoundCompleteEvent }
 
 /**
@@ -76,6 +92,8 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
  * - conversation_started: Initial event with conversation_id
  * - querying_started: AI is querying the database (show indicator)
  * - query_result: Query completed with results
+ * - literature_searching: AI is searching literature database
+ * - literature_result: Literature search completed with publications
  * - round_complete: Round finished, next round starting (create new bubble)
  * - token: Regular text token (JSON-encoded to preserve newlines)
  */
@@ -206,6 +224,22 @@ function parseLine(
         try {
           const queryResult = JSON.parse(data) as QueryResultEvent
           return { streamEvent: { type: 'query_result', data: queryResult } }
+        } catch {
+          return null
+        }
+
+      case 'literature_searching':
+        try {
+          const literatureEvent = JSON.parse(data) as LiteratureSearchingEvent
+          return { streamEvent: { type: 'literature_searching', data: literatureEvent } }
+        } catch {
+          return null
+        }
+
+      case 'literature_result':
+        try {
+          const literatureResult = JSON.parse(data) as LiteratureResultEvent
+          return { streamEvent: { type: 'literature_result', data: literatureResult } }
         } catch {
           return null
         }

@@ -193,21 +193,21 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         </Button>
 
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-2xl font-bold">
               {variant.gene_symbol || 'Unknown Gene'}
             </h2>
+            <span className="text-base text-muted-foreground font-mono">
+              {variant.chromosome}:{variant.position.toLocaleString()} {variant.reference_allele} → {variant.alternate_allele}
+            </span>
             {variant.priority_tier && (
               <Badge variant="outline" className="text-sm">
                 Tier {variant.priority_tier}
               </Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground font-mono mt-1">
-            {variant.chromosome}:{variant.position.toLocaleString()} {variant.reference_allele} → {variant.alternate_allele}
-          </p>
           {variant.hgvs_protein && (
-            <p className="text-sm text-muted-foreground font-mono">{variant.hgvs_protein}</p>
+            <p className="text-sm text-muted-foreground font-mono mt-1">{variant.hgvs_protein}</p>
           )}
         </div>
       </div>
