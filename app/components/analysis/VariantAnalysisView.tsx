@@ -158,7 +158,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
               <div className="flex flex-wrap gap-1">
                 {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => (
-                  <Badge key={c} variant="outline" className="text-xs font-mono">
+                  <Badge key={c} variant="outline" className="text-sm font-mono">
                     {c.trim()}
                   </Badge>
                 ))}
