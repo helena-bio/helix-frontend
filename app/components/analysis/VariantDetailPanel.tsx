@@ -197,7 +197,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <h2 className="text-2xl font-bold">
               {variant.gene_symbol || 'Unknown Gene'}
             </h2>
-            <span className="text-base text-muted-foreground font-mono">
+            <span className="text-base text-muted-foreground font-mono font-semibold">
               {variant.chromosome}:{variant.position.toLocaleString()} {variant.reference_allele} → {variant.alternate_allele}
             </span>
             {variant.priority_tier && (
