@@ -10,7 +10,6 @@ import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
-import { PublicationDetailPanel } from './PublicationDetailPanel'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent, LiteratureResultEvent } from '@/lib/api/ai'
 
@@ -200,7 +199,6 @@ export function ChatPanel() {
   const [isQuerying, setIsQuerying] = useState(false)
   const [isSearchingLiterature, setIsSearchingLiterature] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
-  const [selectedPmid, setSelectedPmid] = useState<string | null>(null)
 
   // Track current streaming message ID for multi-round support
   const currentStreamingIdRef = useRef<string | null>(null)
@@ -208,7 +206,11 @@ export function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { currentSessionId, selectedModule } = useAnalysis()
+  const {
+    currentSessionId,
+    setSelectedPublicationId,
+    openDetails,
+  } = useAnalysis()
   const { phenotype } = usePhenotypeContext()
   const {
     aggregatedResults,
@@ -248,8 +250,13 @@ export function ChatPanel() {
   }, [currentSessionId])
 
   // ============================================================================
-  // MESSAGE HANDLING
+  // HANDLERS
   // ============================================================================
+
+  const handlePublicationClick = (pmid: string) => {
+    setSelectedPublicationId(pmid)
+    openDetails()
+  }
 
   const handleSend = async () => {
     if (!inputValue.trim() || isSending) return
@@ -513,16 +520,6 @@ export function ChatPanel() {
   // RENDER
   // ============================================================================
 
-  // Show publication detail panel
-  if (selectedPmid) {
-    return (
-      <PublicationDetailPanel
-        pmid={selectedPmid}
-        onBack={() => setSelectedPmid(null)}
-      />
-    )
-  }
-
   // Filter out empty messages for display
   const displayMessages = messages.filter(msg =>
     msg.type === 'query_result' || msg.type === 'literature_result' || msg.content || msg.isStreaming
@@ -560,7 +557,7 @@ export function ChatPanel() {
               <div className={`${message.role === 'user' ? 'max-w-[80%]' : 'w-full'}`}>
                 <MessageBubble
                   message={message}
-                  onPublicationClick={setSelectedPmid}
+                  onPublicationClick={handlePublicationClick}
                 />
               </div>
             </div>

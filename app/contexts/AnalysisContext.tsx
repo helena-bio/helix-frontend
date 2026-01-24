@@ -30,6 +30,10 @@ interface AnalysisContextType {
   selectedVariantId: string | null
   setSelectedVariantId: (variantId: string | null) => void
 
+  // Publication selection (from chat literature results)
+  selectedPublicationId: string | null
+  setSelectedPublicationId: (pmid: string | null) => void
+
   // Panels
   isPhenotypePanelOpen: boolean
   openPhenotypePanel: () => void
@@ -64,6 +68,9 @@ export function AnalysisProvider({ children }: AnalysisProviderProps) {
 
   // Variant selection
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+
+  // Publication selection
+  const [selectedPublicationId, setSelectedPublicationId] = useState<string | null>(null)
 
   // Panels
   const [isPhenotypePanelOpen, setIsPhenotypePanelOpen] = useState(false)
@@ -139,6 +146,8 @@ export function AnalysisProvider({ children }: AnalysisProviderProps) {
 
   const closeDetails = useCallback(() => {
     setIsDetailsOpen(false)
+    setSelectedVariantId(null)
+    setSelectedPublicationId(null)
   }, [])
 
   // Chat actions
@@ -160,6 +169,8 @@ export function AnalysisProvider({ children }: AnalysisProviderProps) {
     setCurrentSessionId,
     selectedVariantId,
     setSelectedVariantId,
+    selectedPublicationId,
+    setSelectedPublicationId,
     isPhenotypePanelOpen,
     openPhenotypePanel,
     closePhenotypePanel,
