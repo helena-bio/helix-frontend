@@ -158,7 +158,7 @@ export function GnomADCard({
                 />
               </div>
               <div>
-                <span className="text-2xl font-bold">{formatOneInX(globalAF!)}</span>
+                <span className="text-base">{formatOneInX(globalAF!)}</span>
               </div>
             </>
           )}
@@ -198,7 +198,7 @@ export function GnomADCard({
                 />
               </div>
               <div>
-                <span className="text-lg font-semibold">{formatOneInX(popmaxAF)}</span>
+                <span className="text-base">{formatOneInX(popmaxAF)}</span>
               </div>
             </div>
           </div>
