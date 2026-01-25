@@ -127,6 +127,14 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     setLocalClinicalNotes(clinicalNotes)
   }, [clinicalNotes])
 
+  // Clear pregnancy data when sex changes to male
+  useEffect(() => {
+    if (sex === 'male') {
+      setIsPregnant(false)
+      setGestationalAge('')
+    }
+  }, [sex])
+
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !hpoTerms.find((t) => t.hpo_id === term.hpo_id)
   ) || []
@@ -382,7 +390,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           <div className="text-center">
             <h1 className="text-3xl font-bold">Clinical Profile</h1>
             <p className="text-base text-muted-foreground">
-              Patient demographics and clinical data for variant analysis
+              Clinical data for variant analysis
             </p>
           </div>
         </div>
@@ -749,11 +757,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Reproductive Context</Label>
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className={`flex items-center gap-2 ${sex === 'male' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                       <input
                         type="checkbox"
                         checked={isPregnant}
                         onChange={(e) => setIsPregnant(e.target.checked)}
+                        disabled={sex === 'male'}
                         className="w-4 h-4"
                       />
                       <span className="text-base">Patient is pregnant</span>
