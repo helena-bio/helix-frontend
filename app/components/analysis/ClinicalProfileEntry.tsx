@@ -95,12 +95,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [ageDays, setAgeDays] = useState<string>(profile?.demographics?.age_days?.toString() || '')
   const [sex, setSex] = useState<Sex>(profile?.demographics?.sex || 'female')
 
-  // Ethnicity state
-  const [ethnicity, setEthnicity] = useState<Ethnicity>(profile?.ethnicity?.primary || 'european')
+  // Ethnicity state - undefined по подразбиране
+  const [ethnicity, setEthnicity] = useState<Ethnicity | undefined>(profile?.ethnicity?.primary)
   const [ethnicityNote, setEthnicityNote] = useState(profile?.ethnicity?.note || '')
 
-  // Clinical context state
-  const [indication, setIndication] = useState<Indication>(profile?.clinical_context?.indication || 'proactive_screening')
+  // Clinical context state - undefined по подразбиране
+  const [indication, setIndication] = useState<Indication | undefined>(profile?.clinical_context?.indication)
   const [indicationDetails, setIndicationDetails] = useState(profile?.clinical_context?.indication_details || '')
   const [hasFamilyHistory, setHasFamilyHistory] = useState(profile?.clinical_context?.family_history?.has_affected_relatives || false)
   const [hasConsanguinity, setHasConsanguinity] = useState(profile?.clinical_context?.family_history?.consanguinity || false)
@@ -114,8 +114,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [gestationalAge, setGestationalAge] = useState<string>(profile?.reproductive?.gestational_age_weeks?.toString() || '')
   const [familyPlanning, setFamilyPlanning] = useState(profile?.reproductive?.family_planning || false)
 
-  // Advanced - Sample info state
-  const [sampleType, setSampleType] = useState<SampleType>(profile?.sample_info?.sample_type || 'singleton')
+  // Advanced - Sample info state - undefined по подразбиране
+  const [sampleType, setSampleType] = useState<SampleType | undefined>(profile?.sample_info?.sample_type)
   const [hasParentalSamples, setHasParentalSamples] = useState(profile?.sample_info?.has_parental_samples || false)
   const [hasAffectedSibling, setHasAffectedSibling] = useState(profile?.sample_info?.has_affected_sibling || false)
 
@@ -233,10 +233,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       age_days: ageD,
     }
 
-    const ethnicityData: EthnicityData = {
+    const ethnicityData: EthnicityData | undefined = ethnicity ? {
       primary: ethnicity,
       note: ethnicityNote || undefined,
-    }
+    } : undefined
 
     const familyHistory: FamilyHistory = {
       has_affected_relatives: hasFamilyHistory,
@@ -244,11 +244,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       details: familyHistoryDetails || undefined,
     }
 
-    const clinicalContext: ClinicalContext = {
+    const clinicalContext: ClinicalContext | undefined = indication ? {
       indication,
       indication_details: indicationDetails || undefined,
       family_history: familyHistory,
-    }
+    } : undefined
 
     const reproductive: ReproductiveContext = {
       is_pregnant: isPregnant,
@@ -256,11 +256,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       family_planning: familyPlanning,
     }
 
-    const sampleInfo: SampleInfo = {
+    const sampleInfo: SampleInfo | undefined = sampleType ? {
       sample_type: sampleType,
       has_parental_samples: hasParentalSamples,
       has_affected_sibling: hasAffectedSibling,
-    }
+    } : undefined
 
     const consent: ConsentPreferences = {
       secondary_findings: consentSecondaryFindings,
@@ -350,13 +350,13 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           age_years: ageY,
           age_days: ageD,
           sex,
-          ethnicity: ethnicity !== 'european' ? ethnicity : undefined,
+          ethnicity: ethnicity || undefined,
           has_family_history: hasFamilyHistory,
-          indication,
+          indication: indication || undefined,
           consanguinity: hasConsanguinity,
           screening_mode: 'proactive_adult',
           patient_hpo_terms: selectedTerms.map(t => t.hpo_id),
-          sample_type: sampleType,
+          sample_type: sampleType || undefined,
           is_pregnant: isPregnant,
           has_parental_samples: hasParentalSamples,
           has_affected_sibling: hasAffectedSibling,
@@ -551,7 +551,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   </Label>
                   <Select value={ethnicity} onValueChange={(val) => setEthnicity(val as Ethnicity)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select ethnicity" />
+                      <SelectValue placeholder="Select ethnicity (optional)" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(ETHNICITY_LABELS).map(([key, label]) => (
@@ -577,7 +577,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   </Label>
                   <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Indication for testing" />
+                      <SelectValue placeholder="Select indication (optional)" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(INDICATION_LABELS).map(([key, label]) => (
@@ -865,7 +865,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   <Label className="text-base font-medium">Sample Information</Label>
                   <Select value={sampleType} onValueChange={(val) => setSampleType(val as SampleType)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sample type" />
+                      <SelectValue placeholder="Select sample type (optional)" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
