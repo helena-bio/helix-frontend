@@ -1,1 +1,1 @@
-export { ScreeningView } from './ScreeningView'
+export { ClinicalScreeningView } from './ClinicalScreeningView'

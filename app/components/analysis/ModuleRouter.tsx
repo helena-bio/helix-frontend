@@ -7,7 +7,7 @@
 
 import { useSession } from '@/contexts/SessionContext'
 import { VariantAnalysisView } from './VariantAnalysisView'
-import { ScreeningView } from '@/components/screening/ScreeningView'
+import { ClinicalScreeningView } from '@/components/screening'
 import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
 import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
 
@@ -25,7 +25,7 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
 
   // Clinical Screening (formerly VUS Prioritization)
   if (selectedModule === 'vus') {
-    return <ScreeningView sessionId={sessionId} />
+    return <ClinicalScreeningView sessionId={sessionId} />
   }
 
   // Phenotype Matching

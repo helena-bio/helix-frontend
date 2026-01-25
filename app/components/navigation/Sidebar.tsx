@@ -13,7 +13,7 @@ import {
   ChevronRight,
   Home,
   Microscope,
-  TrendingUp,
+  Shield,
   Dna,
   FlaskConical,
   BookOpen,
@@ -47,8 +47,8 @@ const MODULES: Module[] = [
   },
   {
     id: 'vus',
-    name: 'Screening',
-    icon: TrendingUp,
+    name: 'Clinical Screening',
+    icon: Shield,
     requiresSession: true,
   },
   {
@@ -180,7 +180,7 @@ export function Sidebar() {
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     <p className="text-sm">
-                      {isSidebarOpen 
+                      {isSidebarOpen
                         ? 'Upload a VCF file to activate this module'
                         : `${module.name} (locked)`
                       }
