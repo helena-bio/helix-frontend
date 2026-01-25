@@ -97,7 +97,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   const updateEthnicity = async (ethnicity: EthnicityData) => {
     if (!sessionId) throw new Error('No session ID')
     const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'other' },
+      demographics: profile?.demographics || { sex: 'female' },
       ethnicity,
       clinical_context: profile?.clinical_context,
       phenotype: profile?.phenotype,
@@ -112,7 +112,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   const updateClinicalContext = async (clinical_context: ClinicalContext) => {
     if (!sessionId) throw new Error('No session ID')
     const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'other' },
+      demographics: profile?.demographics || { sex: 'female' },
       ethnicity: profile?.ethnicity,
       clinical_context,
       phenotype: profile?.phenotype,
@@ -132,7 +132,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   const updateReproductive = async (reproductive: ReproductiveContext) => {
     if (!sessionId) throw new Error('No session ID')
     const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'other' },
+      demographics: profile?.demographics || { sex: 'female' },
       ethnicity: profile?.ethnicity,
       clinical_context: profile?.clinical_context,
       phenotype: profile?.phenotype,
@@ -147,7 +147,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   const updateSampleInfo = async (sample_info: SampleInfo) => {
     if (!sessionId) throw new Error('No session ID')
     const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'other' },
+      demographics: profile?.demographics || { sex: 'female' },
       ethnicity: profile?.ethnicity,
       clinical_context: profile?.clinical_context,
       phenotype: profile?.phenotype,
@@ -162,7 +162,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   const updateConsent = async (consent: ConsentPreferences) => {
     if (!sessionId) throw new Error('No session ID')
     const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'other' },
+      demographics: profile?.demographics || { sex: 'female' },
       ethnicity: profile?.ethnicity,
       clinical_context: profile?.clinical_context,
       phenotype: profile?.phenotype,

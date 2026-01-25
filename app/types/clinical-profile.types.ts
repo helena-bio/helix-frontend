@@ -5,7 +5,7 @@
  * ethnicity, family history, and phenotype data.
  */
 
-export type Sex = 'male' | 'female' | 'other'
+export type Sex = 'male' | 'female'
 
 export type AgeGroup = 'neonatal' | 'infant' | 'child' | 'adult' | 'elderly'
 
@@ -165,4 +165,35 @@ export interface SaveClinicalProfileRequest {
 
 export interface SaveClinicalProfileResponse extends ClinicalProfile {
   message: string
+}
+
+/**
+ * Human-readable labels for UI
+ */
+export const ETHNICITY_LABELS: Record<Ethnicity, string> = {
+  european: 'European (non-Finnish)',
+  ashkenazi_jewish: 'Ashkenazi Jewish',
+  east_asian: 'East Asian',
+  south_asian: 'South Asian',
+  african: 'African',
+  hispanic: 'Hispanic/Latino',
+  middle_eastern: 'Middle Eastern',
+  admixed: 'Admixed/Multiple',
+  other: 'Other',
+}
+
+export const INDICATION_LABELS: Record<Indication, string> = {
+  proactive_screening: 'Proactive Health Screening',
+  family_history: 'Family History of Genetic Condition',
+  carrier_screening: 'Carrier Screening',
+  prenatal: 'Prenatal Testing',
+  diagnostic_workup: 'Diagnostic Workup',
+  other: 'Other',
+}
+
+export const SAMPLE_TYPE_LABELS: Record<SampleType, string> = {
+  singleton: 'Singleton (patient only)',
+  duo: 'Duo (patient + 1 parent)',
+  trio: 'Trio (patient + both parents)',
+  quad: 'Quad (patient + parents + sibling)',
 }
