@@ -3,7 +3,7 @@
  *
  * Manages patient clinical profile as LOCAL STATE:
  * - Demographics (age, sex) - LOCAL ONLY
- * - Ethnicity & ancestry - LOCAL ONLY
+ * - Ethnicity & ancestry - LOCAL ONLY  
  * - Family history - LOCAL ONLY
  * - Clinical context - LOCAL ONLY
  * - Reproductive context - LOCAL ONLY

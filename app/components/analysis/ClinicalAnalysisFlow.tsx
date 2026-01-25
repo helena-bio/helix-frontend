@@ -2,11 +2,11 @@
 
 /**
  * ClinicalAnalysisFlow - Clinical Analysis Pipeline Progress
- * 
- * Runs 3 analyses sequentially:
- * 1. Phenotype Matching (if HPO terms provided)
- * 2. Screening Analysis (if clinical data provided)
- * 3. Literature Analysis (automatic)
+ *
+ * Receives clinical data from ClinicalProfileEntry and runs analyses:
+ * 1. Screening Analysis (age-aware prioritization) - REQUIRED
+ * 2. Phenotype Matching (if HPO terms provided) - OPTIONAL
+ * 3. Literature Analysis (automatic background) - AUTOMATIC
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -31,6 +31,25 @@ import { toast } from 'sonner'
 
 interface ClinicalAnalysisFlowProps {
   sessionId: string
+  demographics: {
+    sex: string
+    age_years?: number
+    age_days?: number
+  }
+  ethnicity?: string
+  ethnicityNotes?: string
+  indication?: string
+  indicationDetails?: string
+  hasFamilyHistory?: boolean
+  consanguinity?: boolean
+  isPregnant?: boolean
+  familyPlanning?: boolean
+  sampleType?: string
+  hasParentalSamples?: boolean
+  hasAffectedSibling?: boolean
+  consentSecondaryFindings?: boolean
+  consentCarrierResults?: boolean
+  consentPharmacogenomics?: boolean
   onComplete?: () => void
   onError?: (error: Error) => void
 }
@@ -45,17 +64,17 @@ interface AnalysisStage {
 
 const ANALYSIS_STAGES: AnalysisStage[] = [
   {
-    id: 'phenotype',
-    name: 'Phenotype Matching',
-    icon: <Dna className="h-4 w-4" />,
-    description: 'Matching variants to patient phenotype',
-    required: false,
-  },
-  {
     id: 'screening',
     name: 'Screening Analysis',
     icon: <Filter className="h-4 w-4" />,
     description: 'Age-aware variant prioritization',
+    required: true,
+  },
+  {
+    id: 'phenotype',
+    name: 'Phenotype Matching',
+    icon: <Dna className="h-4 w-4" />,
+    description: 'Matching variants to patient phenotype',
     required: false,
   },
   {
@@ -69,30 +88,41 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
 
 type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed'
 
-export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: ClinicalAnalysisFlowProps) {
+export function ClinicalAnalysisFlow({
+  sessionId,
+  demographics,
+  ethnicity,
+  ethnicityNotes,
+  indication,
+  indicationDetails,
+  hasFamilyHistory,
+  consanguinity,
+  isPregnant,
+  familyPlanning,
+  sampleType,
+  hasParentalSamples,
+  hasAffectedSibling,
+  consentSecondaryFindings,
+  consentCarrierResults,
+  consentPharmacogenomics,
+  onComplete,
+  onError,
+}: ClinicalAnalysisFlowProps) {
   const [stageStatuses, setStageStatuses] = useState<Record<string, StageStatus>>({
-    phenotype: 'pending',
     screening: 'pending',
+    phenotype: 'pending',
     literature: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [hasStarted, setHasStarted] = useState(false)
   const startedRef = useRef(false)
 
   const { nextStep } = useJourney()
-  const { profile } = useClinicalProfileContext()
-  
+  const { hpoTerms, clinicalNotes } = useClinicalProfileContext()
+
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
 
-  const selectedTerms = profile?.phenotype?.hpo_terms || []
-  const demographics = profile?.demographics
-  const ethnicity = profile?.ethnicity?.primary
-  const indication = profile?.clinical_context?.indication
-  const sampleType = profile?.sample_info?.sample_type
-
-  // Calculate progress
   const calculateProgress = useCallback((): number => {
     const statuses = Object.values(stageStatuses)
     const completed = statuses.filter(s => s === 'completed' || s === 'skipped').length
@@ -100,28 +130,61 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
     return Math.round((completed / total) * 100)
   }, [stageStatuses])
 
-  // Update stage status
   const updateStageStatus = useCallback((stageId: string, status: StageStatus) => {
     setStageStatuses(prev => ({ ...prev, [stageId]: status }))
   }, [])
 
-  // Run all analyses sequentially
   useEffect(() => {
     if (startedRef.current) return
     startedRef.current = true
-    setHasStarted(true)
 
     const runAnalyses = async () => {
       try {
-        // Stage 1: Phenotype Matching (if HPO terms provided)
-        if (selectedTerms.length > 0) {
+        // Stage 1: Screening Analysis (REQUIRED)
+        setCurrentStage('screening')
+        updateStageStatus('screening', 'running')
+
+        try {
+          await screeningMutation.mutateAsync({
+            session_id: sessionId,
+            age_years: demographics.age_years,
+            age_days: demographics.age_days,
+            sex: demographics.sex,
+            ethnicity: ethnicity || undefined,
+            ethnicity_notes: ethnicityNotes || undefined,
+            indication: indication || undefined,
+            indication_details: indicationDetails || undefined,
+            has_family_history: hasFamilyHistory || false,
+            consanguinity: consanguinity || false,
+            screening_mode: 'proactive_adult',
+            patient_hpo_terms: hpoTerms.map(t => t.hpo_id),
+            clinical_notes: clinicalNotes || undefined,
+            is_pregnant: isPregnant || false,
+            family_planning: familyPlanning || false,
+            sample_type: sampleType || undefined,
+            has_parental_samples: hasParentalSamples || false,
+            has_affected_sibling: hasAffectedSibling || false,
+            include_secondary_findings: consentSecondaryFindings ?? true,
+            include_carrier_results: consentCarrierResults ?? true,
+            include_pharmacogenomics: consentPharmacogenomics ?? false,
+          })
+          updateStageStatus('screening', 'completed')
+          toast.success('Screening analysis complete')
+        } catch (error) {
+          console.error('Screening failed:', error)
+          updateStageStatus('screening', 'failed')
+          throw new Error('Screening analysis failed')
+        }
+
+        // Stage 2: Phenotype Matching (OPTIONAL - only if HPO terms)
+        if (hpoTerms.length > 0) {
           setCurrentStage('phenotype')
           updateStageStatus('phenotype', 'running')
-          
+
           try {
             await phenotypeMatchingMutation.mutateAsync({
               sessionId,
-              patientHpoIds: selectedTerms.map(t => t.hpo_id),
+              patientHpoIds: hpoTerms.map(t => t.hpo_id),
             })
             updateStageStatus('phenotype', 'completed')
             toast.success('Phenotype matching complete')
@@ -134,49 +197,13 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
           updateStageStatus('phenotype', 'skipped')
         }
 
-        // Stage 2: Screening Analysis (if demographics provided)
-        if (demographics) {
-          setCurrentStage('screening')
-          updateStageStatus('screening', 'running')
-          
-          try {
-            await screeningMutation.mutateAsync({
-              session_id: sessionId,
-              age_years: demographics.age_years,
-              age_days: demographics.age_days,
-              sex: demographics.sex,
-              ethnicity: ethnicity || undefined,
-              has_family_history: profile?.clinical_context?.family_history?.has_affected_relatives || false,
-              indication: indication || undefined,
-              consanguinity: profile?.clinical_context?.family_history?.consanguinity || false,
-              screening_mode: 'proactive_adult',
-              patient_hpo_terms: selectedTerms.map(t => t.hpo_id),
-              sample_type: sampleType || undefined,
-              is_pregnant: profile?.reproductive?.is_pregnant || false,
-              has_parental_samples: profile?.sample_info?.has_parental_samples || false,
-              has_affected_sibling: profile?.sample_info?.has_affected_sibling || false,
-            })
-            updateStageStatus('screening', 'completed')
-            toast.success('Screening analysis complete')
-          } catch (error) {
-            console.error('Screening failed:', error)
-            updateStageStatus('screening', 'failed')
-            toast.warning('Screening analysis failed, continuing...')
-          }
-        } else {
-          updateStageStatus('screening', 'skipped')
-        }
-
         // Stage 3: Literature Analysis (automatic background task)
         setCurrentStage('literature')
         updateStageStatus('literature', 'running')
-        
-        // Simulate literature analysis (runs in background on backend)
         await new Promise(resolve => setTimeout(resolve, 1000))
         updateStageStatus('literature', 'completed')
         toast.success('Literature analysis started')
 
-        // All done - advance to analysis
         setCurrentStage(null)
         toast.success('Clinical analysis pipeline complete')
         onComplete?.()
@@ -193,12 +220,23 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
     runAnalyses()
   }, [
     sessionId,
-    selectedTerms,
     demographics,
     ethnicity,
+    ethnicityNotes,
     indication,
+    indicationDetails,
+    hasFamilyHistory,
+    consanguinity,
+    isPregnant,
+    familyPlanning,
     sampleType,
-    profile,
+    hasParentalSamples,
+    hasAffectedSibling,
+    consentSecondaryFindings,
+    consentCarrierResults,
+    consentPharmacogenomics,
+    hpoTerms,
+    clinicalNotes,
     phenotypeMatchingMutation,
     screeningMutation,
     updateStageStatus,
@@ -208,27 +246,23 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
   ])
 
   const progress = calculateProgress()
-  const isProcessing = !errorMessage && progress < 100
 
-  // Get stage display name
   const getStageName = useCallback((): string => {
     if (!currentStage) return 'Initializing...'
-    
+
     const stageNames: Record<string, string> = {
-      phenotype: 'Running Phenotype Matching',
       screening: 'Running Screening Analysis',
+      phenotype: 'Running Phenotype Matching',
       literature: 'Starting Literature Analysis',
     }
-    
+
     return stageNames[currentStage] || 'Processing...'
   }, [currentStage])
 
-  // Retry handler
   const handleRetry = useCallback(() => {
     window.location.reload()
   }, [])
 
-  // Error State
   if (errorMessage) {
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
@@ -238,19 +272,13 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
               <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
                 <AlertCircle className="h-8 w-8 text-destructive" />
               </div>
-
               <div>
                 <h3 className="text-lg font-semibold mb-2">Analysis Failed</h3>
-                <p className="text-md text-muted-foreground">
-                  {errorMessage}
-                </p>
+                <p className="text-md text-muted-foreground">{errorMessage}</p>
               </div>
-
-              <div className="flex gap-2 justify-center">
-                <Button onClick={handleRetry}>
-                  <span className="text-base">Retry</span>
-                </Button>
-              </div>
+              <Button onClick={handleRetry}>
+                <span className="text-base">Retry</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -258,7 +286,6 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
     )
   }
 
-  // Success State (brief, before auto-advance)
   if (progress === 100 && !currentStage) {
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
@@ -268,14 +295,12 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
               <div className="inline-flex items-center justify-center p-4 rounded-full bg-green-100 dark:bg-green-950">
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
-
               <div>
                 <h3 className="text-lg font-semibold mb-2">Analysis Complete</h3>
                 <p className="text-md text-muted-foreground">
                   Clinical analysis pipeline has finished successfully
                 </p>
               </div>
-
               <div className="flex items-center justify-center gap-3">
                 <HelixLoader size="xs" speed={2} />
                 <span className="text-md text-muted-foreground">Loading analysis view...</span>
@@ -287,31 +312,26 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
     )
   }
 
-  // Processing State
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-4">
-        {/* Header - Loader + Title side by side, centered */}
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} />
           <div>
             <h1 className="text-3xl font-bold">Clinical Analysis</h1>
             <p className="text-base text-muted-foreground">
-              Running phenotype matching, screening, and literature review
+              Running screening, phenotype matching, and literature review
             </p>
           </div>
         </div>
 
-        {/* Main Progress Card */}
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-6">
-              {/* Current Stage */}
               <div className="text-center">
                 <p className="text-lg font-medium capitalize">{getStageName()}</p>
               </div>
 
-              {/* Progress Bar */}
               <div className="space-y-2">
                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between text-sm text-muted-foreground">
@@ -320,7 +340,6 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
                 </div>
               </div>
 
-              {/* Analysis Stages */}
               <div className="space-y-3">
                 {ANALYSIS_STAGES.map((stage) => {
                   const status = stageStatuses[stage.id]
@@ -357,11 +376,9 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
                         <p className="text-base font-medium">
                           {stage.name}
                           {isSkipped && <span className="text-xs text-muted-foreground ml-2">(skipped)</span>}
-                          {isFailed && <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">(failed, continuing)</span>}
+                          {isFailed && <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">(failed)</span>}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {stage.description}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{stage.description}</p>
                       </div>
                       {isCurrent && (
                         <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
@@ -374,7 +391,6 @@ export function ClinicalAnalysisFlow({ sessionId, onComplete, onError }: Clinica
           </CardContent>
         </Card>
 
-        {/* Info Alert */}
         <Alert>
           <AlertDescription className="text-base">
             Clinical analysis enhances variant prioritization with patient-specific data.

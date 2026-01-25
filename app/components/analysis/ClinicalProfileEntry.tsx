@@ -3,17 +3,14 @@
 /**
  * ClinicalProfileEntry Component - Patient Clinical Profile
  *
- * LOCAL STATE for demographics/ethnicity/family/etc
- * BACKEND STORAGE only for HPO terms via /sessions/{id}/phenotype
- * 
- * On Continue: sends everything as parameters to screening API
+ * Collects patient data and saves to context (LOCAL STATE + HPO in backend)
+ * NO analysis here - that happens in ClinicalAnalysisFlow
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, CheckCircle2, User,
-  Globe, Settings
+  ArrowRight, Loader2, User, Globe, Settings
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +18,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { HPOTermCard } from './HPOTermCard'
@@ -29,13 +25,18 @@ import { HelixLoader } from '@/components/ui/helix-loader'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
-import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
-import { useRunScreening } from '@/hooks/mutations/use-screening'
 import type {
   Sex,
   Ethnicity,
   Indication,
   SampleType,
+  Demographics,
+  EthnicityData,
+  ClinicalContext,
+  ReproductiveContext,
+  SampleInfo,
+  ConsentPreferences,
+  FamilyHistory,
 } from '@/types/clinical-profile.types'
 import { ETHNICITY_LABELS, INDICATION_LABELS, SAMPLE_TYPE_LABELS } from '@/types/clinical-profile.types'
 import { toast } from 'sonner'
@@ -44,19 +45,6 @@ interface HPOTerm {
   hpo_id: string
   name: string
   definition?: string
-}
-
-interface MatchingResult {
-  session_id: string
-  patient_hpo_count: number
-  variants_analyzed: number
-  variants_with_hpo: number
-  tier_1_count: number
-  tier_2_count: number
-  tier_3_count: number
-  tier_4_count: number
-  saved_to_duckdb: boolean
-  message: string
 }
 
 interface ClinicalProfileEntryProps {
@@ -73,6 +61,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     removeHPOTerm,
     setClinicalNotes,
     savePhenotype,
+    setDemographics,
+    setEthnicity,
+    setClinicalContext,
+    setReproductive,
+    setSampleInfo,
+    setConsent,
   } = useClinicalProfileContext()
 
   // UI state
@@ -82,17 +76,15 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [showPhenotype, setShowPhenotype] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [aiInput, setAiInput] = useState('')
-  const [matchingResult, setMatchingResult] = useState<MatchingResult | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [processingStep, setProcessingStep] = useState<string>('')
+  const [isSaving, setIsSaving] = useState(false)
 
-  // LOCAL STATE - Demografia (NO backend)
+  // LOCAL STATE - Demografia
   const [ageYears, setAgeYears] = useState<string>('')
   const [ageDays, setAgeDays] = useState<string>('')
   const [sex, setSex] = useState<Sex>('female')
 
   // LOCAL STATE - Ethnicity
-  const [ethnicity, setEthnicity] = useState<Ethnicity | undefined>(undefined)
+  const [ethnicity, setEthnicityLocal] = useState<Ethnicity | undefined>(undefined)
   const [ethnicityNote, setEthnicityNote] = useState('')
 
   // LOCAL STATE - Clinical context
@@ -108,7 +100,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [familyPlanning, setFamilyPlanning] = useState(false)
 
   // LOCAL STATE - Sample info
-  const [sampleType, setSampleType] = useState<SampleType | undefined>(undefined)
+  const [sampleType, setSampleTypeLocal] = useState<SampleType | undefined>(undefined)
   const [hasParentalSamples, setHasParentalSamples] = useState(false)
   const [hasAffectedSibling, setHasAffectedSibling] = useState(false)
 
@@ -130,8 +122,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   })
 
   const extractMutation = useHPOExtract()
-  const matchingMutation = useRunPhenotypeMatching()
-  const screeningMutation = useRunScreening()
 
   // Sync clinical notes from context
   useEffect(() => {
@@ -165,7 +155,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     if (!hpoTerms.find((t) => t.hpo_id === term.hpo_id)) {
       try {
         await addHPOTerm(term)
-        setMatchingResult(null)
         toast.success('Added: ' + term.name)
       } catch (error) {
         console.error('Failed to add term:', error)
@@ -176,7 +165,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   const handleRemoveTerm = useCallback(async (termId: string) => {
     await removeHPOTerm(termId)
-    setMatchingResult(null)
   }, [removeHPOTerm])
 
   const handleGenerateSuggestions = useCallback(async () => {
@@ -202,7 +190,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       }
 
       if (addedCount > 0) {
-        setMatchingResult(null)
         toast.success('Added ' + addedCount + ' HPO term' + (addedCount > 1 ? 's' : ''))
       } else {
         toast.info('All extracted terms are already added')
@@ -216,99 +203,88 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   }, [aiInput, extractMutation, hpoTerms, addHPOTerm])
 
   const handleContinue = useCallback(async () => {
-    setIsProcessing(true)
+    const ageY = ageYears ? parseInt(ageYears, 10) : undefined
+    const ageD = ageDays ? parseInt(ageDays, 10) : undefined
+
+    if (!sex || (!ageY && !ageD)) {
+      toast.error('Please fill required fields')
+      return
+    }
+
+    setIsSaving(true)
 
     try {
-      const ageY = ageYears ? parseInt(ageYears, 10) : undefined
-      const ageD = ageDays ? parseInt(ageDays, 10) : undefined
-
-      if (!sex || (!ageY && !ageD)) {
-        toast.error('Please fill required fields')
-        setIsProcessing(false)
-        return
+      // Save to context
+      const demographics: Demographics = {
+        sex,
+        age_years: ageY,
+        age_days: ageD,
       }
+      setDemographics(demographics)
 
-      // Step 1: Save HPO terms to backend
-      if (hpoTerms.length > 0 || localClinicalNotes) {
-        setProcessingStep('Saving phenotype data...')
-        try {
-          setClinicalNotes(localClinicalNotes)
-          await savePhenotype()
-          toast.success('Phenotype data saved')
-        } catch (error) {
-          console.error('Failed to save phenotype:', error)
-          toast.error('Failed to save phenotype data')
+      if (ethnicity) {
+        const ethnicityData: EthnicityData = {
+          primary: ethnicity,
+          note: ethnicityNote || undefined,
         }
+        setEthnicity(ethnicityData)
       }
 
-      // Step 2: Run screening (REQUIRED - age-aware variant prioritization)
-      setProcessingStep('Running screening analysis...')
-      try {
-        await screeningMutation.mutateAsync({
-          session_id: sessionId,
-          age_years: ageY,
-          age_days: ageD,
-          sex,
-          ethnicity,
-          ethnicity_notes: ethnicityNote || undefined,
+      if (indication) {
+        const familyHistory: FamilyHistory = {
+          has_affected_relatives: hasFamilyHistory,
+          consanguinity: hasConsanguinity,
+          details: familyHistoryDetails || undefined,
+        }
+
+        const clinicalContextData: ClinicalContext = {
           indication,
           indication_details: indicationDetails || undefined,
-          has_family_history: hasFamilyHistory,
-          consanguinity: hasConsanguinity,
-          screening_mode: 'proactive_adult',
-          patient_hpo_terms: hpoTerms.map(t => t.hpo_id),
-          clinical_notes: localClinicalNotes || undefined,
-          is_pregnant: isPregnant,
-          family_planning: familyPlanning,
+          family_history: familyHistory,
+        }
+        setClinicalContext(clinicalContextData)
+      }
+
+      const reproductiveData: ReproductiveContext = {
+        is_pregnant: isPregnant,
+        gestational_age_weeks: gestationalAge ? parseInt(gestationalAge, 10) : undefined,
+        family_planning: familyPlanning,
+      }
+      setReproductive(reproductiveData)
+
+      if (sampleType) {
+        const sampleInfoData: SampleInfo = {
           sample_type: sampleType,
           has_parental_samples: hasParentalSamples,
           has_affected_sibling: hasAffectedSibling,
-          include_secondary_findings: consentSecondaryFindings,
-          include_carrier_results: consentCarrierResults,
-          include_pharmacogenomics: consentPharmacogenomics,
-        })
-
-        toast.success('Screening analysis complete')
-      } catch (error) {
-        console.error('Screening failed:', error)
-        toast.error('Screening analysis failed')
-        setIsProcessing(false)
-        setProcessingStep('')
-        return
-      }
-
-      // Step 3: Run phenotype matching (OPTIONAL - only if HPO terms provided)
-      if (hpoTerms.length > 0) {
-        setProcessingStep('Running phenotype matching...')
-        try {
-          const result = await matchingMutation.mutateAsync({
-            sessionId,
-            patientHpoIds: hpoTerms.map(t => t.hpo_id),
-          })
-
-          setMatchingResult(result)
-          toast.success('Phenotype matching complete')
-        } catch (error) {
-          console.error('Phenotype matching failed:', error)
-          toast.error('Phenotype matching failed')
         }
+        setSampleInfo(sampleInfoData)
       }
 
-      setProcessingStep('Complete!')
-      toast.success('Analysis pipeline complete')
+      const consentData: ConsentPreferences = {
+        secondary_findings: consentSecondaryFindings,
+        carrier_results: consentCarrierResults,
+        pharmacogenomics: consentPharmacogenomics,
+      }
+      setConsent(consentData)
 
+      // Save HPO terms to backend
+      if (hpoTerms.length > 0 || localClinicalNotes) {
+        setClinicalNotes(localClinicalNotes)
+        await savePhenotype()
+      }
+
+      toast.success('Clinical profile saved')
       onComplete?.()
       nextStep()
 
     } catch (error) {
-      console.error('Analysis pipeline error:', error)
-      toast.error('Analysis pipeline failed')
+      console.error('Failed to save profile:', error)
+      toast.error('Failed to save clinical profile')
     } finally {
-      setIsProcessing(false)
-      setProcessingStep('')
+      setIsSaving(false)
     }
   }, [
-    sessionId,
     ageYears,
     ageDays,
     sex,
@@ -318,7 +294,9 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     indicationDetails,
     hasFamilyHistory,
     hasConsanguinity,
+    familyHistoryDetails,
     isPregnant,
+    gestationalAge,
     familyPlanning,
     sampleType,
     hasParentalSamples,
@@ -328,10 +306,14 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     consentPharmacogenomics,
     hpoTerms,
     localClinicalNotes,
+    setDemographics,
+    setEthnicity,
+    setClinicalContext,
+    setReproductive,
+    setSampleInfo,
+    setConsent,
     setClinicalNotes,
     savePhenotype,
-    screeningMutation,
-    matchingMutation,
     nextStep,
     onComplete,
   ])
@@ -342,17 +324,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   const showSuggestions = searchQuery.length >= 2 && filteredSuggestions.length > 0
 
-  const getTierPercentage = (count: number) => {
-    if (!matchingResult || matchingResult.variants_with_hpo === 0) return 0
-    return (count / matchingResult.variants_with_hpo) * 100
-  }
-
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-center gap-4">
-          <HelixLoader size="xs" speed={3} animated={isProcessing} />
+          <HelixLoader size="xs" speed={3} animated={isSaving} />
           <div>
             <h1 className="text-3xl font-bold">Clinical Profile</h1>
             <p className="text-base text-muted-foreground">
@@ -455,7 +432,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
               <CardContent className="pt-0 space-y-6">
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Ethnicity & Ancestry</Label>
-                  <Select value={ethnicity} onValueChange={(val) => setEthnicity(val as Ethnicity)}>
+                  <Select value={ethnicity} onValueChange={(val) => setEthnicityLocal(val as Ethnicity)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select ethnicity (optional)" />
                     </SelectTrigger>
@@ -757,7 +734,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Sample Information</Label>
-                  <Select value={sampleType} onValueChange={(val) => setSampleType(val as SampleType)}>
+                  <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select sample type (optional)" />
                     </SelectTrigger>
@@ -828,88 +805,17 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           </Collapsible>
         </Card>
 
-        {/* Matching Results */}
-        {matchingResult && (
-          <Card className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
-                <CheckCircle2 className="h-5 w-5" />
-                Phenotype Matching Complete
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-base">
-                <div>
-                  <span className="text-muted-foreground">Variants Analyzed</span>
-                  <p className="text-xl font-semibold">{matchingResult.variants_analyzed.toLocaleString()}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">With HPO Data</span>
-                  <p className="text-xl font-semibold">{matchingResult.variants_with_hpo.toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-base font-medium">Clinical Priority Tiers</p>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                      Tier 1 - Actionable
-                    </span>
-                    <span className="font-medium">{matchingResult.tier_1_count}</span>
-                  </div>
-                  <Progress value={getTierPercentage(matchingResult.tier_1_count)} className="h-2 bg-red-100" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full bg-orange-500"></span>
-                      Tier 2 - Potentially Actionable
-                    </span>
-                    <span className="font-medium">{matchingResult.tier_2_count}</span>
-                  </div>
-                  <Progress value={getTierPercentage(matchingResult.tier_2_count)} className="h-2 bg-orange-100" />
-                </div>
-              </div>
-
-              {(matchingResult.tier_1_count + matchingResult.tier_2_count) > 0 && (
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <p className="text-base font-medium text-green-800 dark:text-green-300">
-                    {matchingResult.tier_1_count + matchingResult.tier_2_count} high-priority variants
-                    match the patient's phenotype
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Processing Status */}
-        {isProcessing && (
-          <Card className="border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-                <p className="text-base font-medium text-blue-900 dark:text-blue-300">
-                  {processingStep}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Actions */}
         <div className="flex justify-end">
           <Button
             onClick={handleContinue}
-            disabled={!hasRequiredFormData || isProcessing}
+            disabled={!hasRequiredFormData || isSaving}
             size="lg"
           >
-            {isProcessing ? (
+            {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                <span className="text-base">{processingStep || 'Processing...'}</span>
+                <span className="text-base">Saving...</span>
               </>
             ) : (
               <>
