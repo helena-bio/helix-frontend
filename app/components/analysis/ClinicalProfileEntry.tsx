@@ -527,7 +527,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
                     <span>Additional Information</span>
-                    <Badge variant="secondary" className="ml-2 text-xs">Recommended</Badge>
+                    <Badge variant="outline" className="ml-2 text-xs">Recommended</Badge>
                   </div>
                   {showRecommended ? (
                     <ChevronUp className="h-4 w-4" />
@@ -645,7 +645,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   <div className="flex items-center gap-2">
                     <Dna className="h-4 w-4" />
                     <span>Phenotype Information</span>
-                    <Badge variant="secondary" className="ml-2 text-xs">Optional</Badge>
+                    <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
                   </div>
                   {showPhenotype ? (
                     <ChevronUp className="h-4 w-4" />
