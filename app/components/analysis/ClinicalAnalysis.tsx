@@ -289,9 +289,9 @@ export function ClinicalAnalysis({
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} />
           <div>
-            <h1 className="text-3xl font-bold">Clinical Analysis</h1>
+            <h1 className="text-3xl font-bold">Clinical Profile</h1>
             <p className="text-base text-muted-foreground">
-              Running screening, phenotype matching, and literature review
+              Clinical data for variant analysis
             </p>
           </div>
         </div>
