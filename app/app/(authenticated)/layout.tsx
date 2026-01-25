@@ -1,4 +1,5 @@
 "use client"
+
 /**
  * Authenticated Layout
  * Two modes:
@@ -7,14 +8,21 @@
  *
  * Providers hierarchy (post-analysis):
  * - ClinicalProfileProvider: Complete patient clinical profile (demographics, phenotype, etc)
+ * - ScreeningResultsProvider: Clinical screening analysis results
  * - PhenotypeResultsProvider: Cached phenotype matching results
  * - LiteratureResultsProvider: Clinical literature search results
  */
+
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
-import { ClinicalProfileProvider, PhenotypeResultsProvider, LiteratureResultsProvider } from '@/contexts'
+import { 
+  ClinicalProfileProvider, 
+  ScreeningResultsProvider,
+  PhenotypeResultsProvider, 
+  LiteratureResultsProvider 
+} from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
 
@@ -55,15 +63,17 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <div className="flex-1 min-h-0">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          // Provider hierarchy: ClinicalProfile -> MatchedPhenotype -> Literature
+          // Provider hierarchy: ClinicalProfile -> Screening -> Phenotype -> Literature
           <ClinicalProfileProvider sessionId={currentSessionId}>
-            <PhenotypeResultsProvider sessionId={currentSessionId}>
-              <LiteratureResultsProvider>
-                <SplitView>
-                  {children}
-                </SplitView>
-              </LiteratureResultsProvider>
-            </PhenotypeResultsProvider>
+            <ScreeningResultsProvider>
+              <PhenotypeResultsProvider sessionId={currentSessionId}>
+                <LiteratureResultsProvider>
+                  <SplitView>
+                    {children}
+                  </SplitView>
+                </LiteratureResultsProvider>
+              </PhenotypeResultsProvider>
+            </ScreeningResultsProvider>
           </ClinicalProfileProvider>
         ) : (
           // Full Width: Pre-analysis workflow

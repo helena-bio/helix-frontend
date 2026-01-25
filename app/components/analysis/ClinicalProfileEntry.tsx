@@ -379,10 +379,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         {/* Header */}
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} animated={isSaving} />
-          <div>
+          <div className="text-center">
             <h1 className="text-3xl font-bold">Clinical Profile</h1>
             <p className="text-base text-muted-foreground">
-              Patient demographics, clinical context, and phenotype data for enhanced variant analysis
+              Patient demographics and clinical data for variant analysis
             </p>
           </div>
         </div>
