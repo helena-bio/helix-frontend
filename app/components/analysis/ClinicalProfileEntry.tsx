@@ -169,12 +169,26 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   }, [searchQuery])
 
   const handleAddTerm = useCallback(async (term: HPOTerm) => {
+    console.log('[DEBUG] handleAddTerm called')
+    console.log('[DEBUG] term:', term)
+    console.log('[DEBUG] selectedTerms:', selectedTerms)
+    console.log('[DEBUG] profile:', profile)
+    
     if (!selectedTerms.find((t) => t.hpo_id === term.hpo_id)) {
-      await addHPOTerm(term)
-      setMatchingResult(null)
-      toast.success('Added: ' + term.name)
+      console.log('[DEBUG] Term not found, calling addHPOTerm...')
+      try {
+        await addHPOTerm(term)
+        console.log('[DEBUG] addHPOTerm completed')
+        setMatchingResult(null)
+        toast.success('Added: ' + term.name)
+      } catch (error) {
+        console.error('[DEBUG] addHPOTerm failed:', error)
+        toast.error('Failed to add term')
+      }
+    } else {
+      console.log('[DEBUG] Term already exists')
     }
-  }, [selectedTerms, addHPOTerm])
+  }, [selectedTerms, addHPOTerm, profile])
 
   const handleRemoveTerm = useCallback(async (termId: string) => {
     await removeHPOTerm(termId)
@@ -278,7 +292,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         sample_info: sampleInfo,
         consent,
       })
-      
+
       // Save clinical notes if changed
       if (clinicalNotes !== profile?.phenotype?.clinical_notes) {
         await updateProfile({
@@ -294,7 +308,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           consent,
         })
       }
-      
+
       return true
     } catch (error) {
       toast.error('Failed to save profile')
@@ -329,7 +343,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // Continue to analysis - orchestrates all analyses
   const handleContinue = useCallback(async () => {
     setIsProcessing(true)
-    
+
     try {
       // Step 1: Save clinical profile
       setProcessingStep('Saving clinical profile...')
@@ -344,7 +358,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       try {
         const ageY = ageYears ? parseInt(ageYears, 10) : undefined
         const ageD = ageDays ? parseInt(ageDays, 10) : undefined
-        
+
         await screeningMutation.mutateAsync({
           session_id: sessionId,
           age_years: ageY,
@@ -361,7 +375,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           has_parental_samples: hasParentalSamples,
           has_affected_sibling: hasAffectedSibling,
         })
-        
+
         toast.success('Screening analysis complete')
       } catch (error) {
         console.error('Screening failed:', error)
@@ -377,7 +391,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
             sessionId,
             patientHpoIds: selectedTerms.map(t => t.hpo_id),
           })
-          
+
           setMatchingResult(result)
           toast.success('Phenotype matching complete')
         } catch (error) {
@@ -392,11 +406,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
       setProcessingStep('Complete!')
       toast.success('Analysis pipeline complete')
-      
+
       // Navigate to analysis view
       onComplete?.()
       nextStep()
-      
+
     } catch (error) {
       console.error('Analysis pipeline error:', error)
       toast.error('Analysis pipeline failed')
