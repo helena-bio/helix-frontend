@@ -86,7 +86,7 @@ export function ClinicalAnalysis({
 
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
-  const { setScreeningSummary } = useScreeningResults()
+  const { setScreeningResponse } = useScreeningResults()
 
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
@@ -151,7 +151,7 @@ export function ClinicalAnalysis({
           const screeningResponse = await screeningMutation.mutateAsync(screeningPayload)
           
           // Save screening summary to context for AI
-          setScreeningSummary(screeningResponse.summary)
+          setScreeningResponse(screeningResponse)
           
           updateStageStatus('screening', 'completed')
           toast.success('Screening analysis complete')
@@ -209,7 +209,7 @@ export function ClinicalAnalysis({
     hpoTerms,
     phenotypeMatchingMutation,
     screeningMutation,
-    setScreeningSummary,
+    setScreeningResponse,
     updateStageStatus,
     nextStep,
     onComplete,
