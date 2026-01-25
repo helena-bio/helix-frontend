@@ -40,7 +40,7 @@ interface ClinicalProfileContextValue {
 
   // Actions - Full profile
   updateProfile: (data: SaveClinicalProfileRequest) => Promise<void>
-  
+
   // Actions - Partial updates
   updateDemographicsOnly: (demographics: Demographics) => Promise<void>
   updateEthnicity: (ethnicity: EthnicityData) => Promise<void>
@@ -49,11 +49,11 @@ interface ClinicalProfileContextValue {
   updateReproductive: (reproductive: ReproductiveContext) => Promise<void>
   updateSampleInfo: (sampleInfo: SampleInfo) => Promise<void>
   updateConsent: (consent: ConsentPreferences) => Promise<void>
-  
+
   // HPO-specific helpers (for backward compatibility with PhenotypeEntry)
   addHPOTerm: (term: { hpo_id: string; name: string; definition?: string }) => Promise<void>
   removeHPOTerm: (hpoId: string) => Promise<void>
-  
+
   refetch: () => Promise<void>
 
   // Computed
@@ -86,12 +86,14 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   const updateProfile = async (data: SaveClinicalProfileRequest) => {
     if (!sessionId) throw new Error('No session ID')
     await saveMutation.mutateAsync({ sessionId, data })
+    await refetch()
   }
 
   // Partial updates - merge with existing data
   const updateDemographicsOnly = async (demographics: Demographics) => {
     if (!sessionId) throw new Error('No session ID')
     await updateDemographicsMutation.mutateAsync({ sessionId, demographics })
+    await refetch()
   }
 
   const updateEthnicity = async (ethnicity: EthnicityData) => {
@@ -107,6 +109,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       consent: profile?.consent,
     }
     await saveMutation.mutateAsync({ sessionId, data })
+    await refetch()
   }
 
   const updateClinicalContext = async (clinical_context: ClinicalContext) => {
@@ -122,11 +125,13 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       consent: profile?.consent,
     }
     await saveMutation.mutateAsync({ sessionId, data })
+    await refetch()
   }
 
   const updatePhenotypeData = async (phenotype: PhenotypeData) => {
     if (!sessionId) throw new Error('No session ID')
     await updatePhenotypeMutation.mutateAsync({ sessionId, phenotype })
+    await refetch()
   }
 
   const updateReproductive = async (reproductive: ReproductiveContext) => {
@@ -142,6 +147,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       consent: profile?.consent,
     }
     await saveMutation.mutateAsync({ sessionId, data })
+    await refetch()
   }
 
   const updateSampleInfo = async (sample_info: SampleInfo) => {
@@ -157,6 +163,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       consent: profile?.consent,
     }
     await saveMutation.mutateAsync({ sessionId, data })
+    await refetch()
   }
 
   const updateConsent = async (consent: ConsentPreferences) => {
@@ -172,6 +179,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       consent,
     }
     await saveMutation.mutateAsync({ sessionId, data })
+    await refetch()
   }
 
   // HPO-specific helpers
@@ -194,6 +202,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     }
 
     await updatePhenotypeMutation.mutateAsync({ sessionId, phenotype: updatedPhenotype })
+    await refetch()
   }
 
   const removeHPOTerm = async (hpoId: string) => {
@@ -210,6 +219,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     }
 
     await updatePhenotypeMutation.mutateAsync({ sessionId, phenotype: updatedPhenotype })
+    await refetch()
   }
 
   // Computed values
