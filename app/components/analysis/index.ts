@@ -1,6 +1,6 @@
 export { UploadValidationFlow } from './UploadValidationFlow'
 export { ClinicalProfileEntry } from './ClinicalProfileEntry'
-export { ClinicalAnalysisFlow } from './ClinicalAnalysisFlow'
+export { ClinicalAnalysis } from './ClinicalAnalysis'
 export { ProcessingFlow } from './ProcessingFlow'
 export { ModuleRouter } from './ModuleRouter'
 export { VariantDetailPanel } from './VariantDetailPanel'

@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * ClinicalAnalysisFlow - Clinical Analysis Pipeline Progress
+ * ClinicalAnalysis - Clinical Analysis Pipeline Progress
  *
  * Receives clinical data from ClinicalProfileEntry and runs analyses:
  * 1. Screening Analysis (age-aware prioritization) - REQUIRED
@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-interface ClinicalAnalysisFlowProps {
+interface ClinicalAnalysisProps {
   sessionId: string
   onComplete?: () => void
   onError?: (error: Error) => void
@@ -69,11 +69,11 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
 
 type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed'
 
-export function ClinicalAnalysisFlow({
+export function ClinicalAnalysis({
   sessionId,
   onComplete,
   onError,
-}: ClinicalAnalysisFlowProps) {
+}: ClinicalAnalysisProps) {
   const [stageStatuses, setStageStatuses] = useState<Record<string, StageStatus>>({
     screening: 'pending',
     phenotype: 'pending',

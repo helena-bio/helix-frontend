@@ -4,7 +4,7 @@
  * ClinicalProfileEntry Component - Patient Clinical Profile
  *
  * Collects patient data and saves to context (LOCAL STATE + HPO in backend)
- * NO analysis here - that happens in ClinicalAnalysisFlow
+ * Shows ClinicalAnalysis after successful save
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { HPOTermCard } from './HPOTermCard'
 import { HelixLoader } from '@/components/ui/helix-loader'
-import { useJourney } from '@/contexts/JourneyContext'
+import { ClinicalAnalysis } from './ClinicalAnalysis'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
 import type {
@@ -56,7 +56,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const {
     hpoTerms,
     clinicalNotes,
-    isLoadingHPO,
     addHPOTerm,
     removeHPOTerm,
     setClinicalNotes,
@@ -77,6 +76,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [aiInput, setAiInput] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [showAnalysis, setShowAnalysis] = useState(false)
 
   // LOCAL STATE - Demografia
   const [ageYears, setAgeYears] = useState<string>('')
@@ -113,7 +113,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [localClinicalNotes, setLocalClinicalNotes] = useState(clinicalNotes)
 
   const searchContainerRef = useRef<HTMLDivElement>(null)
-  const { nextStep } = useJourney()
   const debouncedQuery = useDebounce(searchQuery, 300)
 
   const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
@@ -275,8 +274,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       }
 
       toast.success('Clinical profile saved')
-      onComplete?.()
-      nextStep()
+      setShowAnalysis(true)
 
     } catch (error) {
       console.error('Failed to save profile:', error)
@@ -314,8 +312,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     setConsent,
     setClinicalNotes,
     savePhenotype,
-    nextStep,
-    onComplete,
   ])
 
   const clearSearch = useCallback(() => {
@@ -323,6 +319,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   }, [])
 
   const showSuggestions = searchQuery.length >= 2 && filteredSuggestions.length > 0
+
+  // Show ClinicalAnalysis after successful save
+  if (showAnalysis) {
+    return <ClinicalAnalysis sessionId={sessionId} onComplete={onComplete} />
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
