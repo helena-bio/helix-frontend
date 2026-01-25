@@ -274,6 +274,53 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       }
 
       toast.success('Clinical profile saved')
+
+      // DEBUG: Log complete clinical profile context
+      console.log('='.repeat(80))
+      console.log('CLINICAL PROFILE CONTEXT - COMPLETE SNAPSHOT')
+      console.log('='.repeat(80))
+      console.log(JSON.stringify({
+        session_id: sessionId,
+        demographics: {
+          sex,
+          age_years: ageY,
+          age_days: ageD,
+        },
+        ethnicity: ethnicity ? {
+          primary: ethnicity,
+          note: ethnicityNote || undefined,
+        } : undefined,
+        clinical_context: indication ? {
+          indication,
+          indication_details: indicationDetails || undefined,
+          family_history: {
+            has_affected_relatives: hasFamilyHistory,
+            consanguinity: hasConsanguinity,
+            details: familyHistoryDetails || undefined,
+          }
+        } : undefined,
+        reproductive: {
+          is_pregnant: isPregnant,
+          gestational_age_weeks: gestationalAge ? parseInt(gestationalAge, 10) : undefined,
+          family_planning: familyPlanning,
+        },
+        sample_info: sampleType ? {
+          sample_type: sampleType,
+          has_parental_samples: hasParentalSamples,
+          has_affected_sibling: hasAffectedSibling,
+        } : undefined,
+        consent: {
+          secondary_findings: consentSecondaryFindings,
+          carrier_results: consentCarrierResults,
+          pharmacogenomics: consentPharmacogenomics,
+        },
+        phenotype: {
+          hpo_terms: hpoTerms,
+          clinical_notes: localClinicalNotes,
+        }
+      }, null, 2))
+      console.log('='.repeat(80))
+
       setShowAnalysis(true)
 
     } catch (error) {
@@ -283,6 +330,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       setIsSaving(false)
     }
   }, [
+    sessionId,
     ageYears,
     ageDays,
     sex,
