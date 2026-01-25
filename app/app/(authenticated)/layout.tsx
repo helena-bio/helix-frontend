@@ -2,11 +2,11 @@
 /**
  * Authenticated Layout
  * Two modes:
- * 1. Pre-analysis: Full width workflow (upload, validation, phenotype, processing)
+ * 1. Pre-analysis: Full width workflow (upload, validation, profile, processing)
  * 2. Post-analysis: Split view (45% Chat/Sidebar + 55% View Panel)
  *
  * Providers hierarchy (post-analysis):
- * - PhenotypeProvider: Patient HPO terms
+ * - ClinicalProfileProvider: Complete patient clinical profile (demographics, phenotype, etc)
  * - MatchedPhenotypeProvider: Cached phenotype matching results
  * - LiteratureProvider: Clinical literature search results
  */
@@ -14,7 +14,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
-import { PhenotypeProvider, MatchedPhenotypeProvider, LiteratureProvider } from '@/contexts'
+import { ClinicalProfileProvider, MatchedPhenotypeProvider, LiteratureProvider } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useAnalysis } from '@/contexts/AnalysisContext'
 
@@ -55,8 +55,8 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <div className="flex-1 min-h-0">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          // Provider hierarchy: Phenotype -> MatchedPhenotype -> Literature
-          <PhenotypeProvider sessionId={currentSessionId}>
+          // Provider hierarchy: ClinicalProfile -> MatchedPhenotype -> Literature
+          <ClinicalProfileProvider sessionId={currentSessionId}>
             <MatchedPhenotypeProvider sessionId={currentSessionId}>
               <LiteratureProvider>
                 <SplitView>
@@ -64,7 +64,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
                 </SplitView>
               </LiteratureProvider>
             </MatchedPhenotypeProvider>
-          </PhenotypeProvider>
+          </ClinicalProfileProvider>
         ) : (
           // Full Width: Pre-analysis workflow
           <main className="h-full overflow-auto bg-background">

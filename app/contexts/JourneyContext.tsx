@@ -2,7 +2,7 @@
  * Journey Context - Workflow Step Management
  *
  * Manages the current step in the analysis workflow:
- * Upload -> Validation -> Processing -> Phenotype -> Analysis
+ * Upload -> Validation -> Processing -> Profile -> Analysis
  *
  * Following Lumiere pattern: UI state only, no server data
  * IMPORTANT: currentStep is persisted to localStorage to survive page refresh
@@ -25,7 +25,7 @@ const STORAGE_KEY = 'helix_journey_step'
 /**
  * Workflow steps in order
  */
-export type JourneyStep = 'upload' | 'validation' | 'processing' | 'phenotype' | 'analysis'
+export type JourneyStep = 'upload' | 'validation' | 'processing' | 'profile' | 'analysis'
 
 /**
  * Step status for UI rendering
@@ -44,12 +44,12 @@ export interface StepInfo {
 
 /**
  * All steps with metadata
- * Order: Upload -> Validation -> Processing -> Phenotype -> Analysis
+ * Order: Upload -> Validation -> Processing -> Profile -> Analysis
  *
- * Phenotype is AFTER Processing because:
+ * Profile is AFTER Processing because:
  * 1. We need variants in DuckDB to run phenotype matching
- * 2. User can skip phenotype and go directly to analysis
- * 3. Better UX - user sees match results before analysis
+ * 2. User can skip profile and go directly to analysis
+ * 3. Better UX - user sees clinical context before analysis
  */
 export const JOURNEY_STEPS: readonly StepInfo[] = [
   {
@@ -71,9 +71,9 @@ export const JOURNEY_STEPS: readonly StepInfo[] = [
     order: 2,
   },
   {
-    id: 'phenotype',
-    label: 'Phenotype',
-    description: 'Match patient phenotypes to variants',
+    id: 'profile',
+    label: 'Profile',
+    description: 'Patient clinical profile and phenotype matching',
     order: 3,
   },
   {
@@ -133,8 +133,15 @@ export function JourneyProvider({
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        if (parsed.step && JOURNEY_STEPS.some(s => s.id === parsed.step)) {
-          setCurrentStepState(parsed.step)
+        let step = parsed.step
+        
+        // Migration: phenotype -> profile
+        if (step === 'phenotype') {
+          step = 'profile'
+        }
+        
+        if (step && JOURNEY_STEPS.some(s => s.id === step)) {
+          setCurrentStepState(step)
         }
       } catch (e) {
         console.error('Failed to parse stored journey step:', e)
@@ -191,7 +198,7 @@ export function JourneyProvider({
     }
   }, [currentStepIndex, setCurrentStep])
 
-  // Skip phenotype and go directly to analysis
+  // Skip profile and go directly to analysis
   const skipToAnalysis = useCallback(() => {
     setCurrentStep('analysis')
   }, [setCurrentStep])

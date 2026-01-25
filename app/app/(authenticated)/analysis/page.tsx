@@ -5,15 +5,15 @@
  * Journey Order:
  * 1. Upload/Validation - Upload VCF file and validate
  * 2. Processing - Run ACMG classification pipeline
- * 3. Phenotype - Enter HPO terms and run phenotype matching (optional)
+ * 3. Profile - Enter clinical profile and run phenotype matching (optional)
  * 4. Analysis - View and analyze variants
  */
 import { useAnalysis } from '@/contexts/AnalysisContext'
 import { useJourney } from '@/contexts/JourneyContext'
-import { PhenotypeProvider } from '@/contexts/PhenotypeContext'
+import { ClinicalProfileProvider } from '@/contexts/ClinicalProfileContext'
 import {
   UploadValidationFlow,
-  PhenotypeEntry,
+  ClinicalProfileEntry,
   ProcessingFlow,
   ModuleRouter
 } from '@/components/analysis'
@@ -51,8 +51,8 @@ export default function AnalysisPage() {
     )
   }
 
-  // Step 3: Phenotype Entry & Matching (optional)
-  if (currentStep === 'phenotype') {
+  // Step 3: Clinical Profile Entry & Phenotype Matching (optional)
+  if (currentStep === 'profile') {
     if (!currentSessionId) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -61,9 +61,9 @@ export default function AnalysisPage() {
       )
     }
     return (
-      <PhenotypeProvider sessionId={currentSessionId}>
-        <PhenotypeEntry sessionId={currentSessionId} />
-      </PhenotypeProvider>
+      <ClinicalProfileProvider sessionId={currentSessionId}>
+        <ClinicalProfileEntry sessionId={currentSessionId} />
+      </ClinicalProfileProvider>
     )
   }
 

@@ -6,6 +6,7 @@ export {
   useQCMetrics,
   useVariants,
 } from './queries/use-variant-analysis-queries'
+export { useClinicalProfile } from './queries/use-clinical-profile'
 
 // Mutations
 export {
@@ -16,6 +17,12 @@ export { useStartValidation } from './mutations/use-validation-mutations'
 export { useHPOExtract } from './mutations/use-hpo-extract'
 export { useSavePhenotype, useDeletePhenotype } from './mutations/use-phenotype-mutations'
 export { useRunPhenotypeMatching } from './mutations/use-phenotype-matching'
+export {
+  useSaveClinicalProfile,
+  useDeleteClinicalProfile,
+  useUpdateDemographics,
+  useUpdatePhenotype,
+} from './mutations/use-clinical-profile-mutations'
 
 // Utilities
 export { useDebounce } from './use-debounce'
