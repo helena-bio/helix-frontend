@@ -74,6 +74,7 @@ interface ClinicalProfileEntryProps {
 export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileEntryProps) {
   const {
     profile,
+    isLoading,
     updateProfile,
     addHPOTerm,
     removeHPOTerm,
@@ -150,6 +151,24 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     sex &&
     (ageYears || ageDays)
   )
+
+  // Create minimal profile if it doesn't exist
+  useEffect(() => {
+    const createMinimalProfile = async () => {
+      if (sessionId && !profile && !isLoading) {
+        console.log('[ClinicalProfileEntry] Creating minimal profile for new session')
+        try {
+          await updateProfile({
+            demographics: { sex: 'female' }, // Default, user will change
+          })
+        } catch (error) {
+          console.error('[ClinicalProfileEntry] Failed to create minimal profile:', error)
+        }
+      }
+    }
+    
+    createMinimalProfile()
+  }, [sessionId, profile, isLoading, updateProfile])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
