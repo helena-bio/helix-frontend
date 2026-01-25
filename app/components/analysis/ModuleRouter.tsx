@@ -7,6 +7,7 @@
 
 import { useSession } from '@/contexts/SessionContext'
 import { VariantAnalysisView } from './VariantAnalysisView'
+import { ScreeningView } from '@/components/screening/ScreeningView'
 import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
 import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
 
@@ -22,24 +23,9 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
     return <VariantAnalysisView sessionId={sessionId} />
   }
 
-  // VUS Prioritization
+  // Clinical Screening (formerly VUS Prioritization)
   if (selectedModule === 'vus') {
-    return (
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">VUS Prioritization</h1>
-          <p className="text-base text-muted-foreground">
-            This module will help prioritize Variants of Unknown Significance using AI-powered analysis.
-          </p>
-          <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-base font-medium">Coming soon...</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This feature is under development.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
+    return <ScreeningView sessionId={sessionId} />
   }
 
   // Phenotype Matching
