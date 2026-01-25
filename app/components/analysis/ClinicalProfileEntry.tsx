@@ -13,7 +13,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
   ArrowRight, Loader2, CheckCircle2, User,
-  Globe, Stethoscope, Users, Settings
+  Globe, Settings
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -83,7 +83,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // UI state - всички collapsed по подразбиране
   const [searchQuery, setSearchQuery] = useState('')
   const [showAIAssist, setShowAIAssist] = useState(false)
-  const [showClinicalNotes, setShowClinicalNotes] = useState(false)
   const [showRecommended, setShowRecommended] = useState(false)
   const [showPhenotype, setShowPhenotype] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -452,7 +451,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="h-4 w-4" />
               Patient Demographics
-              <Badge variant="destructive" className="ml-2">Required</Badge>
+              <Badge variant="destructive" className="ml-2 text-xs">Required</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -523,7 +522,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
                     <span>Additional Information</span>
-                    <Badge variant="secondary" className="ml-2">Recommended</Badge>
+                    <Badge variant="secondary" className="ml-2 text-xs">Recommended</Badge>
                   </div>
                   {showRecommended ? (
                     <ChevronUp className="h-4 w-4" />
@@ -542,8 +541,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
               <CardContent className="pt-0 space-y-6">
                 {/* Ethnicity */}
                 <div className="space-y-3">
-                  <Label className="text-base font-medium flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
+                  <Label className="text-base font-medium">
                     Ethnicity & Ancestry
                   </Label>
                   <Select value={ethnicity} onValueChange={(val) => setEthnicity(val as Ethnicity)}>
@@ -569,8 +567,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
                 {/* Clinical Context */}
                 <div className="space-y-3">
-                  <Label className="text-base font-medium flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4" />
+                  <Label className="text-base font-medium">
                     Clinical Context
                   </Label>
                   <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
@@ -596,8 +593,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
                 {/* Family History */}
                 <div className="space-y-3">
-                  <Label className="text-base font-medium flex items-center gap-2">
-                    <Users className="h-4 w-4" />
+                  <Label className="text-base font-medium">
                     Family History
                   </Label>
                   <div className="space-y-2">
@@ -644,7 +640,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   <div className="flex items-center gap-2">
                     <Dna className="h-4 w-4" />
                     <span>Phenotype Information</span>
-                    <Badge variant="secondary" className="ml-2">Optional</Badge>
+                    <Badge variant="secondary" className="ml-2 text-xs">Optional</Badge>
                   </div>
                   {showPhenotype ? (
                     <ChevronUp className="h-4 w-4" />
@@ -761,27 +757,16 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   </Collapsible>
                 </Card>
 
-                {/* Clinical Notes */}
-                <Collapsible open={showClinicalNotes} onOpenChange={setShowClinicalNotes}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="mb-2">
-                      {showClinicalNotes ? (
-                        <ChevronUp className="h-4 w-4 mr-2" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 mr-2" />
-                      )}
-                      <span className="text-base">Additional Clinical Notes</span>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <Textarea
-                      value={clinicalNotes}
-                      onChange={(e) => setClinicalNotes(e.target.value)}
-                      placeholder="e.g. Patient has recurrent febrile seizures..."
-                      className="min-h-[100px] text-base bg-background"
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
+                {/* Clinical Notes - Always visible */}
+                <div className="space-y-2">
+                  <Label className="text-base font-medium">Additional Clinical Notes</Label>
+                  <Textarea
+                    value={clinicalNotes}
+                    onChange={(e) => setClinicalNotes(e.target.value)}
+                    placeholder="e.g. Patient has recurrent febrile seizures..."
+                    className="min-h-[100px] text-base bg-background"
+                  />
+                </div>
 
                 {/* Selected Terms */}
                 {selectedTerms.length > 0 ? (
@@ -817,7 +802,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   <div className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
                     <span>Advanced Options</span>
-                    <Badge variant="outline" className="ml-2">Optional</Badge>
+                    <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
                   </div>
                   {showAdvanced ? (
                     <ChevronUp className="h-4 w-4" />
