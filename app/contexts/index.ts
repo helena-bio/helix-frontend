@@ -4,5 +4,3 @@ export { ClinicalProfileProvider, useClinicalProfileContext } from './ClinicalPr
 export { PhenotypeResultsProvider, usePhenotypeResults } from './PhenotypeResultsContext'
 export { LiteratureResultsProvider, useLiteratureResults } from './LiteratureResultsContext'
 export { ScreeningResultsProvider, useScreeningResults } from './ScreeningResultsContext'
-
-export type { ScreeningResult } from './ScreeningResultsContext'

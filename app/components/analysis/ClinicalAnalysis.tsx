@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
+import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { Card, CardContent } from '@/components/ui/card'
@@ -85,6 +86,7 @@ export function ClinicalAnalysis({
 
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
+  const { setScreeningSummary } = useScreeningResults()
 
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
@@ -146,7 +148,11 @@ export function ClinicalAnalysis({
           console.log(JSON.stringify(screeningPayload, null, 2))
           console.log('='.repeat(80))
 
-          await screeningMutation.mutateAsync(screeningPayload)
+          const screeningResponse = await screeningMutation.mutateAsync(screeningPayload)
+          
+          // Save screening summary to context for AI
+          setScreeningSummary(screeningResponse.summary)
+          
           updateStageStatus('screening', 'completed')
           toast.success('Screening analysis complete')
         } catch (error) {
@@ -203,6 +209,7 @@ export function ClinicalAnalysis({
     hpoTerms,
     phenotypeMatchingMutation,
     screeningMutation,
+    setScreeningSummary,
     updateStageStatus,
     nextStep,
     onComplete,

@@ -47,7 +47,7 @@ const MODULES: Module[] = [
   },
   {
     id: 'vus',
-    name: 'VUS Prioritization',
+    name: 'Screening',
     icon: TrendingUp,
     requiresSession: true,
   },

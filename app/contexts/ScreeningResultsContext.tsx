@@ -3,33 +3,16 @@
 /**
  * ScreeningResultsContext - Store and provide screening analysis results
  * 
- * Stores screening results for AI context and analysis display
+ * Stores screening summary for AI context and analysis display
  */
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-
-export interface ScreeningResult {
-  session_id: string
-  total_variants_screened: number
-  flagged_variants: number
-  high_priority_count?: number
-  medium_priority_count?: number
-  low_priority_count?: number
-  screening_mode: string
-  ethnicity?: string
-  patient_age?: number
-  patient_sex?: string
-  has_hpo_terms: boolean
-  hpo_term_count?: number
-  indication?: string
-  has_family_history?: boolean
-  timestamp: string
-}
+import type { ScreeningSummary } from '@/lib/api/screening'
 
 interface ScreeningResultsContextValue {
-  screeningResult: ScreeningResult | null
-  setScreeningResult: (result: ScreeningResult) => void
-  clearScreeningResult: () => void
+  screeningSummary: ScreeningSummary | null
+  setScreeningSummary: (summary: ScreeningSummary) => void
+  clearScreeningSummary: () => void
 }
 
 const ScreeningResultsContext = createContext<ScreeningResultsContextValue | undefined>(undefined)
@@ -39,24 +22,28 @@ interface ScreeningResultsProviderProps {
 }
 
 export function ScreeningResultsProvider({ children }: ScreeningResultsProviderProps) {
-  const [screeningResult, setScreeningResultState] = useState<ScreeningResult | null>(null)
+  const [screeningSummary, setScreeningSummaryState] = useState<ScreeningSummary | null>(null)
 
-  const setScreeningResult = useCallback((result: ScreeningResult) => {
-    console.log('Setting screening result:', result)
-    setScreeningResultState(result)
+  const setScreeningSummary = useCallback((summary: ScreeningSummary) => {
+    console.log('='.repeat(80))
+    console.log('SCREENING RESULTS SAVED TO CONTEXT')
+    console.log('='.repeat(80))
+    console.log(JSON.stringify(summary, null, 2))
+    console.log('='.repeat(80))
+    setScreeningSummaryState(summary)
   }, [])
 
-  const clearScreeningResult = useCallback(() => {
-    console.log('Clearing screening result')
-    setScreeningResultState(null)
+  const clearScreeningSummary = useCallback(() => {
+    console.log('Clearing screening summary')
+    setScreeningSummaryState(null)
   }, [])
 
   return (
     <ScreeningResultsContext.Provider
       value={{
-        screeningResult,
-        setScreeningResult,
-        clearScreeningResult,
+        screeningSummary,
+        setScreeningSummary,
+        clearScreeningSummary,
       }}
     >
       {children}
