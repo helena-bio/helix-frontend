@@ -23,6 +23,7 @@ export {
   useUpdateDemographics,
   useUpdatePhenotype,
 } from './mutations/use-clinical-profile-mutations'
+export { useRunScreening } from './mutations/use-screening'
 
 // Utilities
 export { useDebounce } from './use-debounce'

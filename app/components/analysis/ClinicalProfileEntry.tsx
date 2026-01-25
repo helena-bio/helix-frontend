@@ -3,18 +3,16 @@
 /**
  * ClinicalProfileEntry Component - Patient Clinical Profile
  *
- * Collects comprehensive patient information:
- * - Demographics (age, sex) - REQUIRED
- * - Ethnicity & ancestry - RECOMMENDED
- * - Clinical context - RECOMMENDED
- * - Phenotype (HPO terms) - OPTIONAL
- * - Advanced options - OPTIONAL
+ * Collects comprehensive patient information and runs:
+ * 1. Screening analysis (age-aware variant prioritization)
+ * 2. Phenotype matching (if HPO terms provided)
+ * 3. Literature analysis (automated)
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, CheckCircle2, BarChart3, User,
+  ArrowRight, Loader2, CheckCircle2, User,
   Globe, Stethoscope, Users, Settings
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -32,6 +30,7 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
 import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
+import { useRunScreening } from '@/hooks/mutations/use-screening'
 import type {
   Demographics,
   Sex,
@@ -70,10 +69,9 @@ interface MatchingResult {
 interface ClinicalProfileEntryProps {
   sessionId: string
   onComplete?: () => void
-  onSkip?: () => void
 }
 
-export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: ClinicalProfileEntryProps) {
+export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileEntryProps) {
   const {
     profile,
     updateProfile,
@@ -82,15 +80,17 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
     hasRequiredData,
   } = useClinicalProfileContext()
 
-  // UI state
+  // UI state - всички collapsed по подразбиране
   const [searchQuery, setSearchQuery] = useState('')
   const [showAIAssist, setShowAIAssist] = useState(false)
   const [showClinicalNotes, setShowClinicalNotes] = useState(false)
   const [showRecommended, setShowRecommended] = useState(false)
+  const [showPhenotype, setShowPhenotype] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [aiInput, setAiInput] = useState('')
   const [matchingResult, setMatchingResult] = useState<MatchingResult | null>(null)
-  const [isMatching, setIsMatching] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingStep, setProcessingStep] = useState<string>('')
 
   // Demographics state
   const [ageYears, setAgeYears] = useState<string>(profile?.demographics?.age_years?.toString() || '')
@@ -128,7 +128,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
 
   const searchContainerRef = useRef<HTMLDivElement>(null)
 
-  const { nextStep, skipToAnalysis } = useJourney()
+  const { nextStep } = useJourney()
 
   const debouncedQuery = useDebounce(searchQuery, 300)
 
@@ -139,6 +139,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
 
   const extractMutation = useHPOExtract()
   const matchingMutation = useRunPhenotypeMatching()
+  const screeningMutation = useRunScreening()
 
   const selectedTerms = profile?.phenotype?.hpo_terms || []
 
@@ -219,7 +220,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
 
     if (!sex || (!ageY && !ageD)) {
       toast.error('Please fill required fields')
-      return
+      return false
     }
 
     const demographics: Demographics = {
@@ -273,9 +274,27 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
         sample_info: sampleInfo,
         consent,
       })
-      toast.success('Clinical profile saved')
+      
+      // Save clinical notes if changed
+      if (clinicalNotes !== profile?.phenotype?.clinical_notes) {
+        await updateProfile({
+          demographics,
+          ethnicity: ethnicityData,
+          clinical_context: clinicalContext,
+          phenotype: {
+            hpo_terms: selectedTerms,
+            clinical_notes: clinicalNotes,
+          },
+          reproductive,
+          sample_info: sampleInfo,
+          consent,
+        })
+      }
+      
+      return true
     } catch (error) {
       toast.error('Failed to save profile')
+      return false
     }
   }, [
     ageYears,
@@ -297,79 +316,110 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
     consentSecondaryFindings,
     consentCarrierResults,
     consentPharmacogenomics,
+    clinicalNotes,
+    selectedTerms,
     profile,
     updateProfile,
   ])
 
-  // Run phenotype matching
-  const handleRunMatching = useCallback(async () => {
-    if (selectedTerms.length === 0) {
-      toast.error('Please add at least one HPO term')
-      return
-    }
-
-    setIsMatching(true)
-
-    try {
-      const result = await matchingMutation.mutateAsync({
-        sessionId,
-        patientHpoIds: selectedTerms.map(t => t.hpo_id),
-      })
-
-      setMatchingResult(result)
-
-      toast.success('Phenotype matching complete')
-    } catch (error) {
-      toast.error('Matching failed')
-    } finally {
-      setIsMatching(false)
-    }
-  }, [selectedTerms, sessionId, matchingMutation])
-
-  // Continue to analysis
+  // Continue to analysis - orchestrates all analyses
   const handleContinue = useCallback(async () => {
-    // Save profile
-    await handleSaveProfile()
+    setIsProcessing(true)
+    
+    try {
+      // Step 1: Save clinical profile
+      setProcessingStep('Saving clinical profile...')
+      const saved = await handleSaveProfile()
+      if (!saved) {
+        setIsProcessing(false)
+        return
+      }
 
-    // Save clinical notes if changed
-    if (clinicalNotes !== profile?.phenotype?.clinical_notes) {
-      await updateProfile({
-        demographics: profile?.demographics || { sex: 'female' },
-        ethnicity: profile?.ethnicity,
-        clinical_context: profile?.clinical_context,
-        phenotype: {
-          hpo_terms: selectedTerms,
-          clinical_notes: clinicalNotes,
-        },
-        reproductive: profile?.reproductive,
-        sample_info: profile?.sample_info,
-        consent: profile?.consent,
-      })
+      // Step 2: Run screening (REQUIRED - age-aware variant prioritization)
+      setProcessingStep('Running screening analysis...')
+      try {
+        const ageY = ageYears ? parseInt(ageYears, 10) : undefined
+        const ageD = ageDays ? parseInt(ageDays, 10) : undefined
+        
+        await screeningMutation.mutateAsync({
+          session_id: sessionId,
+          age_years: ageY,
+          age_days: ageD,
+          sex,
+          ethnicity: ethnicity !== 'european' ? ethnicity : undefined,
+          has_family_history: hasFamilyHistory,
+          indication,
+          consanguinity: hasConsanguinity,
+          screening_mode: 'proactive_adult',
+          patient_hpo_terms: selectedTerms.map(t => t.hpo_id),
+          sample_type: sampleType,
+          is_pregnant: isPregnant,
+          has_parental_samples: hasParentalSamples,
+          has_affected_sibling: hasAffectedSibling,
+        })
+        
+        toast.success('Screening analysis complete')
+      } catch (error) {
+        console.error('Screening failed:', error)
+        toast.error('Screening analysis failed')
+        // Continue anyway - screening is not blocking
+      }
+
+      // Step 3: Run phenotype matching (OPTIONAL - only if HPO terms provided)
+      if (selectedTerms.length > 0) {
+        setProcessingStep('Running phenotype matching...')
+        try {
+          const result = await matchingMutation.mutateAsync({
+            sessionId,
+            patientHpoIds: selectedTerms.map(t => t.hpo_id),
+          })
+          
+          setMatchingResult(result)
+          toast.success('Phenotype matching complete')
+        } catch (error) {
+          console.error('Phenotype matching failed:', error)
+          toast.error('Phenotype matching failed')
+          // Continue anyway - phenotype matching is optional
+        }
+      }
+
+      // Step 4: Literature analysis would run automatically in background
+      // (handled by literature service via event bus)
+
+      setProcessingStep('Complete!')
+      toast.success('Analysis pipeline complete')
+      
+      // Navigate to analysis view
+      onComplete?.()
+      nextStep()
+      
+    } catch (error) {
+      console.error('Analysis pipeline error:', error)
+      toast.error('Analysis pipeline failed')
+    } finally {
+      setIsProcessing(false)
+      setProcessingStep('')
     }
-
-    // Run matching if we have terms but haven't matched yet
-    if (selectedTerms.length > 0 && !matchingResult) {
-      await handleRunMatching()
-    }
-
-    onComplete?.()
-    nextStep()
   }, [
     handleSaveProfile,
-    clinicalNotes,
-    profile,
+    screeningMutation,
+    matchingMutation,
+    sessionId,
+    ageYears,
+    ageDays,
+    sex,
+    ethnicity,
+    hasFamilyHistory,
+    indication,
+    hasConsanguinity,
     selectedTerms,
-    matchingResult,
-    handleRunMatching,
-    updateProfile,
+    sampleType,
+    isPregnant,
+    hasParentalSamples,
+    hasAffectedSibling,
     nextStep,
     onComplete,
   ])
-
-  const handleSkip = useCallback(() => {
-    onSkip?.()
-    skipToAnalysis()
-  }, [skipToAnalysis, onSkip])
 
   const clearSearch = useCallback(() => {
     setSearchQuery('')
@@ -387,7 +437,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-center gap-4">
-          <HelixLoader size="xs" speed={3} animated={isMatching} />
+          <HelixLoader size="xs" speed={3} animated={isProcessing} />
           <div>
             <h1 className="text-3xl font-bold">Clinical Profile</h1>
             <p className="text-base text-muted-foreground">
@@ -464,11 +514,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
           </CardContent>
         </Card>
 
-        {/* RECOMMENDED: Ethnicity & Clinical Context */}
-        <Collapsible open={showRecommended} onOpenChange={setShowRecommended}>
-          <CollapsibleTrigger asChild>
-            <Card className="cursor-pointer hover:bg-accent/50">
-              <CardHeader className="pb-3">
+        {/* RECOMMENDED: Ethnicity & Clinical Context - Single Card */}
+        <Card>
+          <Collapsible open={showRecommended} onOpenChange={setShowRecommended}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
                 <CardTitle className="text-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4" />
@@ -481,12 +531,15 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
                     <ChevronDown className="h-4 w-4" />
                   )}
                 </CardTitle>
+                {!showRecommended && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Ethnicity improves variant frequency filtering. Family history boosts relevant gene prioritization.
+                  </p>
+                )}
               </CardHeader>
-            </Card>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card>
-              <CardContent className="pt-6 space-y-6">
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-6">
                 {/* Ethnicity */}
                 <div className="space-y-3">
                   <Label className="text-base font-medium flex items-center gap-2">
@@ -578,170 +631,188 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
                   )}
                 </div>
               </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Phenotype Section */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Dna className="h-4 w-4" />
-              Phenotype Information
-              <Badge variant="secondary" className="ml-2">Optional</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search */}
-            <div ref={searchContainerRef}>
-              <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search phenotype or HPO term..."
-                  className="pl-9 pr-9 text-base"
-                />
-                {isSearching && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                )}
-                {searchQuery && !isSearching && (
-                  <button
-                    onClick={clearSearch}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-
-              {showSuggestions && (
-                <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
-                  {filteredSuggestions.map((term) => (
-                    <button
-                      key={term.hpo_id}
-                      onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
-                      className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-medium">{term.name}</span>
-                          <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
-                        </div>
-                        {term.definition && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {term.definition.replace(/^"/, '').replace(/".*$/, '')}
-                          </p>
-                        )}
-                      </div>
-                      <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* AI Assistant */}
-            <Card className="border-primary/20 bg-primary/5">
-              <Collapsible open={showAIAssist} onOpenChange={setShowAIAssist}>
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-3 h-auto hover:bg-primary/10"
-                  >
-                    <div className="flex items-center gap-2 text-primary">
-                      <Sparkles className="h-4 w-4" />
-                      <span className="text-base font-medium">Suggest HPO terms from free text</span>
-                    </div>
-                    {showAIAssist ? (
-                      <ChevronUp className="h-4 w-4 text-primary" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-primary" />
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="px-3 pb-3 space-y-3">
-                    <Textarea
-                      value={aiInput}
-                      onChange={(e) => setAiInput(e.target.value)}
-                      placeholder="Example: Child with epilepsy, developmental delay and hypotonia"
-                      className="min-h-[80px] bg-background text-base"
-                    />
-                    <Button
-                      onClick={handleGenerateSuggestions}
-                      disabled={!aiInput.trim() || extractMutation.isPending}
-                      size="sm"
-                      className="w-full"
-                    >
-                      {extractMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          <span className="text-base">Extracting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          <span className="text-base">Generate Suggestions</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </Card>
-
-            {/* Clinical Notes */}
-            <Collapsible open={showClinicalNotes} onOpenChange={setShowClinicalNotes}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="mb-2">
-                  {showClinicalNotes ? (
-                    <ChevronUp className="h-4 w-4 mr-2" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                  )}
-                  <span className="text-base">Additional Clinical Notes</span>
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <Textarea
-                  value={clinicalNotes}
-                  onChange={(e) => setClinicalNotes(e.target.value)}
-                  placeholder="e.g. Patient has recurrent febrile seizures..."
-                  className="min-h-[100px] text-base bg-background"
-                />
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Selected Terms */}
-            {selectedTerms.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Selected Phenotypes ({selectedTerms.length})</p>
-                {selectedTerms.map((term) => (
-                  <HPOTermCard
-                    key={term.hpo_id}
-                    hpoId={term.hpo_id}
-                    name={term.name}
-                    definition={term.definition}
-                    onRemove={handleRemoveTerm}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                <p className="text-sm text-muted-foreground">No phenotypes selected</p>
-                <p className="text-xs text-muted-foreground mt-1">Search and add HPO terms above</p>
-              </div>
-            )}
-          </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
-        {/* ADVANCED OPTIONS */}
-        <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-          <CollapsibleTrigger asChild>
-            <Card className="cursor-pointer hover:bg-accent/50">
-              <CardHeader className="pb-3">
+        {/* OPTIONAL: Phenotype Section - Single Card with Collapse */}
+        <Card>
+          <Collapsible open={showPhenotype} onOpenChange={setShowPhenotype}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Dna className="h-4 w-4" />
+                    <span>Phenotype Information</span>
+                    <Badge variant="secondary" className="ml-2">Optional</Badge>
+                  </div>
+                  {showPhenotype ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </CardTitle>
+                {!showPhenotype && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Adding patient symptoms (HPO terms) enables phenotype-based variant matching and prioritization.
+                  </p>
+                )}
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-4">
+                {/* Search */}
+                <div ref={searchContainerRef}>
+                  <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search phenotype or HPO term..."
+                      className="pl-9 pr-9 text-base"
+                    />
+                    {isSearching && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                    {searchQuery && !isSearching && (
+                      <button
+                        onClick={clearSearch}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {showSuggestions && (
+                    <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
+                      {filteredSuggestions.map((term) => (
+                        <button
+                          key={term.hpo_id}
+                          onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
+                          className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base font-medium">{term.name}</span>
+                              <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
+                            </div>
+                            {term.definition && (
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                {term.definition.replace(/^"/, '').replace(/".*$/, '')}
+                              </p>
+                            )}
+                          </div>
+                          <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Assistant */}
+                <Card className="border-primary/20 bg-primary/5">
+                  <Collapsible open={showAIAssist} onOpenChange={setShowAIAssist}>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-3 h-auto hover:bg-primary/10"
+                      >
+                        <div className="flex items-center gap-2 text-primary">
+                          <Sparkles className="h-4 w-4" />
+                          <span className="text-base font-medium">Suggest HPO terms from free text</span>
+                        </div>
+                        {showAIAssist ? (
+                          <ChevronUp className="h-4 w-4 text-primary" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-primary" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="px-3 pb-3 space-y-3">
+                        <Textarea
+                          value={aiInput}
+                          onChange={(e) => setAiInput(e.target.value)}
+                          placeholder="Example: Child with epilepsy, developmental delay and hypotonia"
+                          className="min-h-[80px] bg-background text-base"
+                        />
+                        <Button
+                          onClick={handleGenerateSuggestions}
+                          disabled={!aiInput.trim() || extractMutation.isPending}
+                          size="sm"
+                          className="w-full"
+                        >
+                          {extractMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              <span className="text-base">Extracting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4 mr-2" />
+                              <span className="text-base">Generate Suggestions</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+
+                {/* Clinical Notes */}
+                <Collapsible open={showClinicalNotes} onOpenChange={setShowClinicalNotes}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="mb-2">
+                      {showClinicalNotes ? (
+                        <ChevronUp className="h-4 w-4 mr-2" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 mr-2" />
+                      )}
+                      <span className="text-base">Additional Clinical Notes</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Textarea
+                      value={clinicalNotes}
+                      onChange={(e) => setClinicalNotes(e.target.value)}
+                      placeholder="e.g. Patient has recurrent febrile seizures..."
+                      className="min-h-[100px] text-base bg-background"
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Selected Terms */}
+                {selectedTerms.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Selected Phenotypes ({selectedTerms.length})</p>
+                    {selectedTerms.map((term) => (
+                      <HPOTermCard
+                        key={term.hpo_id}
+                        hpoId={term.hpo_id}
+                        name={term.name}
+                        definition={term.definition}
+                        onRemove={handleRemoveTerm}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                    <p className="text-sm text-muted-foreground">No phenotypes selected</p>
+                    <p className="text-xs text-muted-foreground mt-1">Search and add HPO terms above</p>
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+
+        {/* ADVANCED OPTIONS - Single Card */}
+        <Card>
+          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
                 <CardTitle className="text-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
@@ -754,12 +825,15 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
                     <ChevronDown className="h-4 w-4" />
                   )}
                 </CardTitle>
+                {!showAdvanced && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Reproductive context, sample information, and result reporting preferences.
+                  </p>
+                )}
               </CardHeader>
-            </Card>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <Card>
-              <CardContent className="pt-6 space-y-6">
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-6">
                 {/* Reproductive Context */}
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Reproductive Context</Label>
@@ -867,9 +941,9 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
 
         {/* Matching Results */}
         {matchingResult && (
@@ -877,7 +951,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2 text-green-700 dark:text-green-400">
                 <CheckCircle2 className="h-5 w-5" />
-                Matching Complete
+                Phenotype Matching Complete
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-4">
@@ -928,24 +1002,31 @@ export function ClinicalProfileEntry({ sessionId, onComplete, onSkip }: Clinical
           </Card>
         )}
 
-        {/* Actions */}
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={handleSkip}>
-            <span className="text-base">Skip to Analysis</span>
-          </Button>
+        {/* Processing Status */}
+        {isProcessing && (
+          <Card className="border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                <p className="text-base font-medium text-blue-900 dark:text-blue-300">
+                  {processingStep}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Actions - Only Continue button, disabled until required data filled */}
+        <div className="flex justify-end">
           <Button
             onClick={handleContinue}
-            disabled={!hasRequiredData}
+            disabled={!hasRequiredData || isProcessing}
+            size="lg"
           >
-            {isMatching ? (
+            {isProcessing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                <span className="text-base">Matching...</span>
-              </>
-            ) : selectedTerms.length > 0 && !matchingResult ? (
-              <>
-                <BarChart3 className="h-4 w-4 mr-2" />
-                <span className="text-base">Match & Continue</span>
+                <span className="text-base">{processingStep || 'Processing...'}</span>
               </>
             ) : (
               <>
