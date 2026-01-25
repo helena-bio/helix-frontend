@@ -6,11 +6,11 @@
  * 1. Pre-analysis: Full width workflow (upload, validation, profile, processing)
  * 2. Post-analysis: Split view (45% Chat/Sidebar + 55% View Panel)
  *
- * Providers hierarchy (post-analysis):
+ * Providers hierarchy (both modes):
  * - ClinicalProfileProvider: Complete patient clinical profile (demographics, phenotype, etc)
  * - ScreeningResultsProvider: Clinical screening analysis results
- * - PhenotypeResultsProvider: Cached phenotype matching results
- * - LiteratureResultsProvider: Clinical literature search results
+ * - PhenotypeResultsProvider: Cached phenotype matching results (post-analysis only)
+ * - LiteratureResultsProvider: Clinical literature search results (post-analysis only)
  */
 
 import { ReactNode, useEffect, useState } from 'react'
@@ -63,7 +63,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <div className="flex-1 min-h-0">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          // Provider hierarchy: ClinicalProfile -> Screening -> Phenotype -> Literature
+          // Provider hierarchy: ClinicalProfile → Screening → Phenotype → Literature
           <ClinicalProfileProvider sessionId={currentSessionId}>
             <ScreeningResultsProvider>
               <PhenotypeResultsProvider sessionId={currentSessionId}>
@@ -77,9 +77,14 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
           </ClinicalProfileProvider>
         ) : (
           // Full Width: Pre-analysis workflow
-          <main className="h-full overflow-auto bg-background">
-            {children}
-          </main>
+          // Also wrapped with ClinicalProfile + Screening providers
+          <ClinicalProfileProvider sessionId={currentSessionId}>
+            <ScreeningResultsProvider>
+              <main className="h-full overflow-auto bg-background">
+                {children}
+              </main>
+            </ScreeningResultsProvider>
+          </ClinicalProfileProvider>
         )}
       </div>
     </div>

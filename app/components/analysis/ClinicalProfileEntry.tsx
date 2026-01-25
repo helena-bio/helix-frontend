@@ -388,12 +388,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         </div>
 
         {/* REQUIRED: Demographics */}
-        <Card className="border-red-200 dark:border-red-900">
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="h-4 w-4" />
               Patient Demographics
-              <Badge variant="destructive" className="ml-2 text-xs">Required</Badge>
+              <Badge variant="outline" className="ml-2 text-xs">Required</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
