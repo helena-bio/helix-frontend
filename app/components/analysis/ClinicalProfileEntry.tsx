@@ -77,7 +77,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     updateProfile,
     addHPOTerm,
     removeHPOTerm,
-    hasRequiredData,
   } = useClinicalProfileContext()
 
   // UI state - всички collapsed по подразбиране
@@ -145,6 +144,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !selectedTerms.find((t) => t.hpo_id === term.hpo_id)
   ) || []
+
+  // Local validation - check form data directly, not saved profile
+  const hasRequiredFormData = !!(
+    sex &&
+    (ageYears || ageDays)
+  )
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1005,7 +1010,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         <div className="flex justify-end">
           <Button
             onClick={handleContinue}
-            disabled={!hasRequiredData || isProcessing}
+            disabled={!hasRequiredFormData || isProcessing}
             size="lg"
           >
             {isProcessing ? (
