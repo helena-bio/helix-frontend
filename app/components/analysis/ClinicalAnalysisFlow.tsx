@@ -31,25 +31,6 @@ import { toast } from 'sonner'
 
 interface ClinicalAnalysisFlowProps {
   sessionId: string
-  demographics: {
-    sex: string
-    age_years?: number
-    age_days?: number
-  }
-  ethnicity?: string
-  ethnicityNotes?: string
-  indication?: string
-  indicationDetails?: string
-  hasFamilyHistory?: boolean
-  consanguinity?: boolean
-  isPregnant?: boolean
-  familyPlanning?: boolean
-  sampleType?: string
-  hasParentalSamples?: boolean
-  hasAffectedSibling?: boolean
-  consentSecondaryFindings?: boolean
-  consentCarrierResults?: boolean
-  consentPharmacogenomics?: boolean
   onComplete?: () => void
   onError?: (error: Error) => void
 }
@@ -90,21 +71,6 @@ type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed'
 
 export function ClinicalAnalysisFlow({
   sessionId,
-  demographics,
-  ethnicity,
-  ethnicityNotes,
-  indication,
-  indicationDetails,
-  hasFamilyHistory,
-  consanguinity,
-  isPregnant,
-  familyPlanning,
-  sampleType,
-  hasParentalSamples,
-  hasAffectedSibling,
-  consentSecondaryFindings,
-  consentCarrierResults,
-  consentPharmacogenomics,
   onComplete,
   onError,
 }: ClinicalAnalysisFlowProps) {
@@ -118,7 +84,7 @@ export function ClinicalAnalysisFlow({
   const startedRef = useRef(false)
 
   const { nextStep } = useJourney()
-  const { hpoTerms, clinicalNotes } = useClinicalProfileContext()
+  const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
 
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
@@ -140,6 +106,12 @@ export function ClinicalAnalysisFlow({
 
     const runAnalyses = async () => {
       try {
+        const profile = getCompleteProfile()
+        
+        if (!profile.demographics) {
+          throw new Error('Demographics data is required')
+        }
+
         // Stage 1: Screening Analysis (REQUIRED)
         setCurrentStage('screening')
         updateStageStatus('screening', 'running')
@@ -147,26 +119,19 @@ export function ClinicalAnalysisFlow({
         try {
           await screeningMutation.mutateAsync({
             session_id: sessionId,
-            age_years: demographics.age_years,
-            age_days: demographics.age_days,
-            sex: demographics.sex,
-            ethnicity: ethnicity || undefined,
-            ethnicity_notes: ethnicityNotes || undefined,
-            indication: indication || undefined,
-            indication_details: indicationDetails || undefined,
-            has_family_history: hasFamilyHistory || false,
-            consanguinity: consanguinity || false,
+            age_years: profile.demographics.age_years,
+            age_days: profile.demographics.age_days,
+            sex: profile.demographics.sex,
+            ethnicity: profile.ethnicity?.primary,
+            indication: profile.clinical_context?.indication,
+            has_family_history: profile.clinical_context?.family_history?.has_affected_relatives || false,
+            consanguinity: profile.clinical_context?.family_history?.consanguinity || false,
             screening_mode: 'proactive_adult',
-            patient_hpo_terms: hpoTerms.map(t => t.hpo_id),
-            clinical_notes: clinicalNotes || undefined,
-            is_pregnant: isPregnant || false,
-            family_planning: familyPlanning || false,
-            sample_type: sampleType || undefined,
-            has_parental_samples: hasParentalSamples || false,
-            has_affected_sibling: hasAffectedSibling || false,
-            include_secondary_findings: consentSecondaryFindings ?? true,
-            include_carrier_results: consentCarrierResults ?? true,
-            include_pharmacogenomics: consentPharmacogenomics ?? false,
+            patient_hpo_terms: profile.phenotype?.hpo_terms?.map(t => t.hpo_id) || [],
+            sample_type: profile.sample_info?.sample_type,
+            is_pregnant: profile.reproductive?.is_pregnant || false,
+            has_parental_samples: profile.sample_info?.has_parental_samples || false,
+            has_affected_sibling: profile.sample_info?.has_affected_sibling || false,
           })
           updateStageStatus('screening', 'completed')
           toast.success('Screening analysis complete')
@@ -220,23 +185,8 @@ export function ClinicalAnalysisFlow({
     runAnalyses()
   }, [
     sessionId,
-    demographics,
-    ethnicity,
-    ethnicityNotes,
-    indication,
-    indicationDetails,
-    hasFamilyHistory,
-    consanguinity,
-    isPregnant,
-    familyPlanning,
-    sampleType,
-    hasParentalSamples,
-    hasAffectedSibling,
-    consentSecondaryFindings,
-    consentCarrierResults,
-    consentPharmacogenomics,
+    getCompleteProfile,
     hpoTerms,
-    clinicalNotes,
     phenotypeMatchingMutation,
     screeningMutation,
     updateStageStatus,

@@ -158,13 +158,11 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   const hasLoadedResults = useRef(false)
 
   // Dependencies
-  const { profile } = useClinicalProfileContext()
-  const phenotype = profile?.phenotype
-
+  const { hpoTerms } = useClinicalProfileContext()
   // Get HPO terms from phenotype context
   const patientHpoIds = useMemo(() => {
-    return phenotype?.hpo_terms.map(t => t.hpo_id) || []
-  }, [phenotype])
+    return hpoTerms.map(t => t.hpo_id)
+  }, [hpoTerms])
 
   // Load existing results from DuckDB when session changes
   useEffect(() => {

@@ -355,8 +355,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   }, [])
 
   // Contexts
-  const { profile } = useClinicalProfileContext()
-  const phenotype = profile?.phenotype
+  const { hpoTerms } = useClinicalProfileContext()
   const {
     status,
     isLoading,
@@ -369,8 +368,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     totalGenes,
   } = useMatchedPhenotype()
 
-  const selectedTerms = phenotype?.hpo_terms || []
-
+  const selectedTerms = hpoTerms
   // Handle tier card click
   const handleTierClick = (tier: TierFilter) => {
     setTierFilter(prev => prev === tier ? 'all' : tier)

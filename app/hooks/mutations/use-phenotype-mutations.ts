@@ -5,7 +5,8 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { savePhenotype, deletePhenotype, SavePhenotypeRequest } from '@/lib/api/hpo'
+import { savePhenotype, deletePhenotype } from '@/lib/api/hpo'
+import type { SavePhenotypeRequest } from '@/lib/api/clinical-profile'
 
 /**
  * Hook for saving patient phenotype data.

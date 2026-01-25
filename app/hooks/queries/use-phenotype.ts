@@ -5,7 +5,8 @@
  */
 
 import { useQuery, UseQueryOptions } from '@tanstack/react-query'
-import { getPhenotype, PatientPhenotype } from '@/lib/api/hpo'
+import { getPhenotype } from '@/lib/api/hpo'
+import type { PatientPhenotype } from '@/lib/api/clinical-profile'
 
 export const phenotypeKeys = {
   all: ['phenotype'] as const,

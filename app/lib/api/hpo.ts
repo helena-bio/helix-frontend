@@ -5,6 +5,8 @@
  * Includes session-based phenotype matching with DuckDB backing.
  */
 
+import type { PatientPhenotype, SavePhenotypeRequest, SavePhenotypeResponse } from './clinical-profile'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
 
 export interface HPOTerm {
@@ -32,31 +34,6 @@ export interface ExtractHPOResponse {
   terms: ExtractedTerm[]
   original_text: string
   total: number
-}
-
-export interface PatientPhenotype {
-  id: string
-  session_id: string
-  hpo_terms: Array<{
-    hpo_id: string
-    name: string
-    definition?: string
-  }>
-  clinical_notes: string
-  term_count: number
-}
-
-export interface SavePhenotypeRequest {
-  hpo_terms: Array<{
-    hpo_id: string
-    name: string
-    definition?: string
-  }>
-  clinical_notes: string
-}
-
-export interface SavePhenotypeResponse extends PatientPhenotype {
-  message: string
 }
 
 export async function searchHPOTerms(
@@ -114,6 +91,7 @@ export async function extractHPOFromText(text: string): Promise<ExtractHPORespon
   return response.json()
 }
 
+// Legacy functions - deprecated, use clinical-profile.ts instead
 export async function savePhenotype(
   sessionId: string,
   data: SavePhenotypeRequest

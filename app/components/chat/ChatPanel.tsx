@@ -124,7 +124,7 @@ const MessageBubble = memo(function MessageBubble({ message, onPublicationClick 
                   {pub.pmid && (
                     <span className="flex items-center gap-1 text-sm text-primary shrink-0">
                       <span>PMID:{pub.pmid}</span>
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="h-3 w-4" />
                     </span>
                   )}
                 </div>
@@ -211,11 +211,10 @@ export function ChatPanel() {
     setSelectedPublicationId,
     openDetails,
   } = useAnalysis()
-  
-  // Get clinical profile (includes phenotype data)
-  const { profile } = useClinicalProfileContext()
-  const phenotype = profile?.phenotype
-  
+
+  // Get clinical profile (HPO terms and clinical notes)
+  const { hpoTerms, clinicalNotes } = useClinicalProfileContext()
+
   const {
     aggregatedResults,
     tier1Count,
@@ -297,18 +296,18 @@ export function ChatPanel() {
       const metadata: Record<string, any> = {}
 
       // 1. Patient Phenotype Context (selected HPO terms)
-      if (phenotype && phenotype.hpo_terms && phenotype.hpo_terms.length > 0) {
+      if (hpoTerms && hpoTerms.length > 0) {
         metadata.phenotype_context = {
-          hpo_terms: phenotype.hpo_terms.map(t => ({
+          hpo_terms: hpoTerms.map(t => ({
             hpo_id: t.hpo_id,
             name: t.name,
           })),
-          hpo_ids: phenotype.hpo_terms.map(t => t.hpo_id),
-          term_count: phenotype.hpo_terms.length,
+          hpo_ids: hpoTerms.map(t => t.hpo_id),
+          term_count: hpoTerms.length,
         }
 
-        if (phenotype.clinical_notes) {
-          metadata.phenotype_context.clinical_notes = phenotype.clinical_notes
+        if (clinicalNotes) {
+          metadata.phenotype_context.clinical_notes = clinicalNotes
         }
       }
 

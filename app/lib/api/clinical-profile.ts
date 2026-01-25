@@ -5,14 +5,8 @@
  * Uses phenotype service endpoint: /sessions/{id}/phenotype
  */
 
+import type { HPOTerm } from "./hpo"
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
-
-export interface HPOTerm {
-  hpo_id: string
-  name: string
-  definition?: string
-  synonyms?: string[]
-}
 
 export interface PatientPhenotype {
   id: string

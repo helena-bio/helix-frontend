@@ -207,9 +207,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
 
   // Get phenotype matching results and patient HPO terms
   const { status: matchingStatus, aggregatedResults } = useMatchedPhenotype()
-  const { profile } = useClinicalProfileContext()
-  const phenotype = profile?.phenotype
-
+  const { hpoTerms } = useClinicalProfileContext()
   // Build clinical data map from phenotype matching results
   const clinicalDataMap = useMemo(() => {
     const map = new Map<string, GeneClinicalData>()
@@ -304,7 +302,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
     }
 
     // Get patient HPO terms
-    const patientHpoTerms = phenotype?.hpo_terms || []
+    const patientHpoTerms = hpoTerms
     if (patientHpoTerms.length === 0) {
       console.log('[LiteratureContext] No patient HPO terms, skipping auto-search')
       return
@@ -338,7 +336,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
 
     // Trigger search (without variants for now - simpler)
     runSearch(topGenes, hpoTermsForSearch, undefined, 50)
-  }, [matchingStatus, aggregatedResults, phenotype, runSearch])
+  }, [matchingStatus, aggregatedResults, runSearch])
 
   // Computed values - apply combined scoring
   const groupedByGene = useMemo(
