@@ -5,7 +5,6 @@
  *
  * Card-based layout matching PhenotypeMatchingView design.
  * Shows age-aware screening with tier-based prioritization.
- * NO ACMG classification display (already shown in Variant Analysis).
  */
 
 import { useState, useMemo } from 'react'
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
@@ -53,17 +52,18 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
-    <div
-      className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-base font-bold text-muted-foreground">#{rank}</span>
-            <span className="text-lg font-semibold">{variant.gene_symbol}</span>
-            <Badge variant="outline" className={`text-sm ${getTierColor(variant.tier)}`}>
+    <Card>
+      <CardHeader
+        className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {/* Header - Flex layout with justify-between */}
+        <div className="flex items-center justify-between">
+          {/* Left: Rank + Gene + Tier + Actionability */}
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
+            <span className="text-lg font-semibold w-16">{variant.gene_symbol}</span>
+            <Badge variant="outline" className={`text-sm w-16 justify-center ${getTierColor(variant.tier)}`}>
               {variant.tier.replace('_', ' ')}
             </Badge>
             <Badge
@@ -78,82 +78,84 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
               {variant.clinical_actionability.toUpperCase()}
             </Badge>
           </div>
-          <p className="text-base font-mono text-muted-foreground">
-            {variant.hgvs_protein || 'No protein change'}
-          </p>
-          <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-xl font-bold">{variant.total_score.toFixed(1)}</p>
-            <p className="text-xs text-muted-foreground">Total Score</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsExpanded(!isExpanded)
-            }}
-          >
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
 
-      {/* Expanded Content */}
+          {/* Right: Score + Chevron */}
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <p className="text-lg font-bold">{variant.total_score.toFixed(1)}</p>
+              <p className="text-sm text-muted-foreground">Score</p>
+            </div>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+      </CardHeader>
+
       {isExpanded && (
-        <div className="mt-4 space-y-4">
+        <CardContent className="space-y-3">
+          {/* Protein Change and Consequence */}
+          <div>
+            <p className="text-base font-mono text-muted-foreground mb-1">
+              {variant.hgvs_protein || 'No protein change'}
+            </p>
+            <ConsequenceBadges consequence={variant.consequence} />
+          </div>
+
           {/* Score Breakdown */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Constraint</p>
-              <p className="text-base font-mono">{variant.constraint_score.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Deleteriousness</p>
-              <p className="text-base font-mono">{variant.deleteriousness_score.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Phenotype</p>
-              <p className="text-base font-mono">{variant.phenotype_score.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Age Relevance</p>
-              <p className="text-base font-mono">{variant.age_relevance_score.toFixed(2)}</p>
+          <div>
+            <p className="text-base font-semibold mb-2">Score Breakdown</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Constraint</p>
+                <p className="text-base font-mono">{variant.constraint_score.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Deleteriousness</p>
+                <p className="text-base font-mono">{variant.deleteriousness_score.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Phenotype</p>
+                <p className="text-base font-mono">{variant.phenotype_score.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Age Relevance</p>
+                <p className="text-base font-mono">{variant.age_relevance_score.toFixed(2)}</p>
+              </div>
             </div>
           </div>
 
           {/* Boosts */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">ACMG Boost</p>
-              <p className="text-base font-mono">{variant.acmg_boost.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ethnicity Boost</p>
-              <p className="text-base font-mono">{variant.ethnicity_boost.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Family History</p>
-              <p className="text-base font-mono">{variant.family_history_boost.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">De Novo Boost</p>
-              <p className="text-base font-mono">{variant.de_novo_boost.toFixed(2)}</p>
+          <div>
+            <p className="text-base font-semibold mb-2">Clinical Boosts</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <p className="text-sm text-muted-foreground">ACMG</p>
+                <p className="text-base font-mono">{variant.acmg_boost.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Ethnicity</p>
+                <p className="text-base font-mono">{variant.ethnicity_boost.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Family History</p>
+                <p className="text-base font-mono">{variant.family_history_boost.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">De Novo</p>
+                <p className="text-base font-mono">{variant.de_novo_boost.toFixed(2)}</p>
+              </div>
             </div>
           </div>
 
           {/* Justification */}
           {variant.justification && (
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Clinical Justification</p>
-              <p className="text-base">{variant.justification}</p>
+              <p className="text-base font-semibold mb-1">Clinical Justification</p>
+              <p className="text-base text-muted-foreground">{variant.justification}</p>
             </div>
           )}
 
           {/* Age Group and Mode */}
-          <div className="flex gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <p className="text-sm text-muted-foreground">Age Group</p>
               <p className="text-base">{variant.age_group}</p>
@@ -179,9 +181,9 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
               View Full Details
             </Button>
           </div>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -229,7 +231,7 @@ function TierCard({ count, label, tooltip, isSelected, onClick, colorClasses }: 
 
 export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps) {
   const { screeningResponse } = useScreeningResults()
-  const { hpoTerms } = useClinicalProfileContext()
+  const { hpoTerms, demographics, ethnicity } = useClinicalProfileContext()
   const [geneFilter, setGeneFilter] = useState('')
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -319,34 +321,6 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
         </Badge>
       </div>
 
-      {/* Summary Info */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Age Group</p>
-              <p className="text-base font-semibold">{summary.age_group}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Sex</p>
-              <p className="text-base font-semibold">{summary.sex}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ethnicity</p>
-              <p className="text-base font-semibold">{summary.ethnicity || 'Not specified'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Screening Mode</p>
-              <p className="text-base font-semibold">{summary.screening_mode.replace(/_/g, ' ')}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Processing Time</p>
-              <p className="text-base font-semibold">{summary.processing_time_seconds.toFixed(1)}s</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Tier Cards */}
       <div className="grid grid-cols-5 gap-3">
         <TierCard
@@ -391,41 +365,63 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
         />
       </div>
 
-      {/* Patient Phenotypes Section */}
+      {/* Patient Clinical Context */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            Patient Clinical Context
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            {hpoTerms.length === 0 ? (
-              <p className="text-base text-muted-foreground py-4 text-center">
-                No phenotypes defined for this case.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {hpoTerms.map((term) => (
-                  <Badge
-                    key={term.hpo_id}
-                    variant="secondary"
-                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
-                  >
-                    {term.name}
-                  </Badge>
-                ))}
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {/* Demographics Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Age Group</p>
+                <p className="text-base font-semibold">{summary.age_group}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Sex</p>
+                <p className="text-base font-semibold">{summary.sex}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Ethnicity</p>
+                <p className="text-base font-semibold">{summary.ethnicity || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Screening Mode</p>
+                <p className="text-base font-semibold">{summary.screening_mode.replace(/_/g, ' ')}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Processing Time</p>
+                <p className="text-base font-semibold">{summary.processing_time_seconds.toFixed(1)}s</p>
+              </div>
+            </div>
+
+            {/* HPO Terms */}
+            {hpoTerms.length > 0 && (
+              <div className="pt-4 border-t">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <p className="text-base font-semibold">Patient Phenotypes</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {hpoTerms.map((term) => (
+                    <Badge
+                      key={term.hpo_id}
+                      variant="secondary"
+                      className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
+                    >
+                      {term.name}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
 
-          <div className="flex gap-3 pt-2">
-            <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground">
-              Screening prioritizes variants based on age-specific disease onset, phenotype relevance, 
-              ethnicity-specific prevalence, and clinical actionability.
-            </p>
+            {/* Info */}
+            <div className="flex gap-3 pt-2">
+              <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                Screening prioritizes variants based on age-specific disease onset, phenotype relevance, 
+                ethnicity-specific prevalence, and clinical actionability.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
