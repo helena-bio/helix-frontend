@@ -1,66 +1,70 @@
 /**
  * Clinical Profile Context Provider
  *
- * Manages complete patient clinical profile including:
- * - Demographics (age, sex)
- * - Ethnicity & ancestry
- * - Family history
- * - Clinical context
- * - Phenotype data (HPO terms)
- * - Reproductive context
- * - Sample info
- * - Consent preferences
+ * Manages patient clinical profile as LOCAL STATE:
+ * - Demographics (age, sex) - LOCAL ONLY
+ * - Ethnicity & ancestry - LOCAL ONLY
+ * - Family history - LOCAL ONLY
+ * - Clinical context - LOCAL ONLY
+ * - Reproductive context - LOCAL ONLY
+ * - Sample info - LOCAL ONLY
+ * - Consent preferences - LOCAL ONLY
+ *
+ * HPO terms stored in backend via /sessions/{id}/phenotype
  */
 'use client'
 
-import { createContext, useContext, ReactNode } from 'react'
-import { useClinicalProfile } from '@/hooks/queries/use-clinical-profile'
+import React, { createContext, useContext, ReactNode, useState, useCallback } from 'react'
+import { usePatientPhenotype } from '@/hooks/queries/use-clinical-profile'
 import {
-  useSaveClinicalProfile,
-  useUpdateDemographics,
-  useUpdatePhenotype,
+  useSavePatientPhenotype,
 } from '@/hooks/mutations/use-clinical-profile-mutations'
 import type {
   ClinicalProfile,
-  SaveClinicalProfileRequest,
   Demographics,
   EthnicityData,
   ClinicalContext,
-  PhenotypeData,
   ReproductiveContext,
   SampleInfo,
   ConsentPreferences,
 } from '@/types/clinical-profile.types'
 
 interface ClinicalProfileContextValue {
-  // Data
-  profile: ClinicalProfile | null
-  isLoading: boolean
-  error: Error | null
+  // Local state
+  demographics: Demographics
+  ethnicity?: EthnicityData
+  clinicalContext?: ClinicalContext
+  reproductive: ReproductiveContext
+  sampleInfo?: SampleInfo
+  consent: ConsentPreferences
 
-  // Actions - Full profile
-  updateProfile: (data: SaveClinicalProfileRequest) => Promise<void>
+  // Backend HPO terms
+  hpoTerms: Array<{ hpo_id: string; name: string; definition?: string }>
+  clinicalNotes: string
+  isLoadingHPO: boolean
 
-  // Actions - Partial updates
-  updateDemographicsOnly: (demographics: Demographics) => Promise<void>
-  updateEthnicity: (ethnicity: EthnicityData) => Promise<void>
-  updateClinicalContext: (context: ClinicalContext) => Promise<void>
-  updatePhenotypeData: (phenotype: PhenotypeData) => Promise<void>
-  updateReproductive: (reproductive: ReproductiveContext) => Promise<void>
-  updateSampleInfo: (sampleInfo: SampleInfo) => Promise<void>
-  updateConsent: (consent: ConsentPreferences) => Promise<void>
+  // Actions - Local state updates (no API)
+  setDemographics: (data: Demographics) => void
+  setEthnicity: (data: EthnicityData | undefined) => void
+  setClinicalContext: (data: ClinicalContext | undefined) => void
+  setReproductive: (data: ReproductiveContext) => void
+  setSampleInfo: (data: SampleInfo | undefined) => void
+  setConsent: (data: ConsentPreferences) => void
 
-  // HPO-specific helpers (for backward compatibility with PhenotypeEntry)
+  // Actions - HPO terms (backend API)
   addHPOTerm: (term: { hpo_id: string; name: string; definition?: string }) => Promise<void>
   removeHPOTerm: (hpoId: string) => Promise<void>
-
-  refetch: () => Promise<void>
+  setClinicalNotes: (notes: string) => void
+  savePhenotype: () => Promise<void>
 
   // Computed
   hpoTermIds: string[]
   termCount: number
   hasRequiredData: boolean
   hasRecommendedData: boolean
+
+  // Complete profile for submission
+  getCompleteProfile: () => ClinicalProfile
 }
 
 const ClinicalProfileContext = createContext<ClinicalProfileContextValue | undefined>(undefined)
@@ -71,194 +75,132 @@ interface ClinicalProfileProviderProps {
 }
 
 export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfileProviderProps) {
+  // Local state - NO backend storage
+  const [demographics, setDemographics] = useState<Demographics>({ sex: 'female' })
+  const [ethnicity, setEthnicity] = useState<EthnicityData | undefined>(undefined)
+  const [clinicalContext, setClinicalContext] = useState<ClinicalContext | undefined>(undefined)
+  const [reproductive, setReproductive] = useState<ReproductiveContext>({
+    is_pregnant: false,
+    family_planning: false,
+  })
+  const [sampleInfo, setSampleInfo] = useState<SampleInfo | undefined>(undefined)
+  const [consent, setConsent] = useState<ConsentPreferences>({
+    secondary_findings: true,
+    carrier_results: true,
+    pharmacogenomics: false,
+  })
+
+  // Backend HPO terms
   const {
-    data: profile,
-    isLoading,
-    error,
+    data: phenotypeData,
+    isLoading: isLoadingHPO,
     refetch,
-  } = useClinicalProfile(sessionId)
+  } = usePatientPhenotype(sessionId)
 
-  const saveMutation = useSaveClinicalProfile()
-  const updateDemographicsMutation = useUpdateDemographics()
-  const updatePhenotypeMutation = useUpdatePhenotype()
+  const savePhenotypeMutation = useSavePatientPhenotype()
 
-  // Full profile update
-  const updateProfile = async (data: SaveClinicalProfileRequest) => {
-    if (!sessionId) throw new Error('No session ID')
-    await saveMutation.mutateAsync({ sessionId, data })
-    await refetch()
-  }
+  // Local HPO state (synced with backend on load)
+  const [localHPOTerms, setLocalHPOTerms] = useState<Array<{ hpo_id: string; name: string; definition?: string }>>([])
+  const [localClinicalNotes, setLocalClinicalNotes] = useState<string>('')
 
-  // Partial updates - merge with existing data
-  const updateDemographicsOnly = async (demographics: Demographics) => {
-    if (!sessionId) throw new Error('No session ID')
-    await updateDemographicsMutation.mutateAsync({ sessionId, demographics })
-    await refetch()
-  }
-
-  const updateEthnicity = async (ethnicity: EthnicityData) => {
-    if (!sessionId) throw new Error('No session ID')
-    const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'female' },
-      ethnicity,
-      clinical_context: profile?.clinical_context,
-      phenotype: profile?.phenotype,
-      reproductive: profile?.reproductive,
-      sample_info: profile?.sample_info,
-      previous_tests: profile?.previous_tests,
-      consent: profile?.consent,
+  // Sync backend data to local state when loaded
+  const syncFromBackend = useCallback(() => {
+    if (phenotypeData) {
+      setLocalHPOTerms(phenotypeData.hpo_terms || [])
+      setLocalClinicalNotes(phenotypeData.clinical_notes || '')
     }
-    await saveMutation.mutateAsync({ sessionId, data })
-    await refetch()
-  }
+  }, [phenotypeData])
 
-  const updateClinicalContext = async (clinical_context: ClinicalContext) => {
-    if (!sessionId) throw new Error('No session ID')
-    const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'female' },
-      ethnicity: profile?.ethnicity,
-      clinical_context,
-      phenotype: profile?.phenotype,
-      reproductive: profile?.reproductive,
-      sample_info: profile?.sample_info,
-      previous_tests: profile?.previous_tests,
-      consent: profile?.consent,
-    }
-    await saveMutation.mutateAsync({ sessionId, data })
-    await refetch()
-  }
+  // Sync on data load
+  React.useEffect(() => {
+    syncFromBackend()
+  }, [syncFromBackend])
 
-  const updatePhenotypeData = async (phenotype: PhenotypeData) => {
-    if (!sessionId) throw new Error('No session ID')
-    await updatePhenotypeMutation.mutateAsync({ sessionId, phenotype })
-    await refetch()
-  }
-
-  const updateReproductive = async (reproductive: ReproductiveContext) => {
-    if (!sessionId) throw new Error('No session ID')
-    const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'female' },
-      ethnicity: profile?.ethnicity,
-      clinical_context: profile?.clinical_context,
-      phenotype: profile?.phenotype,
-      reproductive,
-      sample_info: profile?.sample_info,
-      previous_tests: profile?.previous_tests,
-      consent: profile?.consent,
-    }
-    await saveMutation.mutateAsync({ sessionId, data })
-    await refetch()
-  }
-
-  const updateSampleInfo = async (sample_info: SampleInfo) => {
-    if (!sessionId) throw new Error('No session ID')
-    const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'female' },
-      ethnicity: profile?.ethnicity,
-      clinical_context: profile?.clinical_context,
-      phenotype: profile?.phenotype,
-      reproductive: profile?.reproductive,
-      sample_info,
-      previous_tests: profile?.previous_tests,
-      consent: profile?.consent,
-    }
-    await saveMutation.mutateAsync({ sessionId, data })
-    await refetch()
-  }
-
-  const updateConsent = async (consent: ConsentPreferences) => {
-    if (!sessionId) throw new Error('No session ID')
-    const data: SaveClinicalProfileRequest = {
-      demographics: profile?.demographics || { sex: 'female' },
-      ethnicity: profile?.ethnicity,
-      clinical_context: profile?.clinical_context,
-      phenotype: profile?.phenotype,
-      reproductive: profile?.reproductive,
-      sample_info: profile?.sample_info,
-      previous_tests: profile?.previous_tests,
-      consent,
-    }
-    await saveMutation.mutateAsync({ sessionId, data })
-    await refetch()
-  }
-
-  // HPO-specific helpers
-  const addHPOTerm = async (term: { hpo_id: string; name: string; definition?: string }) => {
-    if (!sessionId) throw new Error('No session ID')
-
-    const existingTerms = profile?.phenotype?.hpo_terms || []
-
-    // Check if term already exists
-    if (existingTerms.some(t => t.hpo_id === term.hpo_id)) {
+  // HPO term management
+  const addHPOTerm = useCallback(async (term: { hpo_id: string; name: string; definition?: string }) => {
+    if (localHPOTerms.some(t => t.hpo_id === term.hpo_id)) {
       return
     }
+    setLocalHPOTerms(prev => [...prev, term])
+  }, [localHPOTerms])
 
-    const updatedPhenotype: PhenotypeData = {
-      hpo_terms: [...existingTerms, term],
-      clinical_synopsis: profile?.phenotype?.clinical_synopsis,
-      onset_age: profile?.phenotype?.onset_age,
-      severity: profile?.phenotype?.severity,
-      clinical_notes: profile?.phenotype?.clinical_notes,
-    }
+  const removeHPOTerm = useCallback(async (hpoId: string) => {
+    setLocalHPOTerms(prev => prev.filter(t => t.hpo_id !== hpoId))
+  }, [])
 
-    await updatePhenotypeMutation.mutateAsync({ sessionId, phenotype: updatedPhenotype })
-    await refetch()
-  }
+  const setClinicalNotesLocal = useCallback((notes: string) => {
+    setLocalClinicalNotes(notes)
+  }, [])
 
-  const removeHPOTerm = async (hpoId: string) => {
+  // Save phenotype to backend
+  const savePhenotype = useCallback(async () => {
     if (!sessionId) throw new Error('No session ID')
 
-    const existingTerms = profile?.phenotype?.hpo_terms || []
+    await savePhenotypeMutation.mutateAsync({
+      sessionId,
+      hpo_terms: localHPOTerms,
+      clinical_notes: localClinicalNotes,
+    })
 
-    const updatedPhenotype: PhenotypeData = {
-      hpo_terms: existingTerms.filter(t => t.hpo_id !== hpoId),
-      clinical_synopsis: profile?.phenotype?.clinical_synopsis,
-      onset_age: profile?.phenotype?.onset_age,
-      severity: profile?.phenotype?.severity,
-      clinical_notes: profile?.phenotype?.clinical_notes,
-    }
-
-    await updatePhenotypeMutation.mutateAsync({ sessionId, phenotype: updatedPhenotype })
     await refetch()
-  }
+  }, [sessionId, localHPOTerms, localClinicalNotes, savePhenotypeMutation, refetch])
 
   // Computed values
-  const hpoTermIds = profile?.phenotype?.hpo_terms.map(t => t.hpo_id) || []
-  const termCount = profile?.phenotype?.hpo_terms.length || 0
+  const hpoTermIds = localHPOTerms.map(t => t.hpo_id)
+  const termCount = localHPOTerms.length
 
-  // Check if required data is present
   const hasRequiredData = !!(
-    profile?.demographics?.sex &&
-    (profile?.demographics?.age_years !== undefined || profile?.demographics?.age_days !== undefined)
+    demographics.sex &&
+    (demographics.age_years !== undefined || demographics.age_days !== undefined)
   )
 
-  // Check if recommended data is present
   const hasRecommendedData = !!(
-    profile?.ethnicity?.primary &&
-    profile?.clinical_context?.indication
+    ethnicity?.primary &&
+    clinicalContext?.indication
   )
+
+  // Get complete profile for submission
+  const getCompleteProfile = useCallback((): ClinicalProfile => {
+    return {
+      session_id: sessionId!,
+      demographics,
+      ethnicity,
+      clinical_context: clinicalContext,
+      phenotype: {
+        hpo_terms: localHPOTerms,
+        clinical_notes: localClinicalNotes,
+      },
+      reproductive,
+      sample_info: sampleInfo,
+      consent,
+    }
+  }, [sessionId, demographics, ethnicity, clinicalContext, localHPOTerms, localClinicalNotes, reproductive, sampleInfo, consent])
 
   const value: ClinicalProfileContextValue = {
-    profile: profile ?? null,
-    isLoading,
-    error: error as Error | null,
-    updateProfile,
-    updateDemographicsOnly,
-    updateEthnicity,
-    updateClinicalContext,
-    updatePhenotypeData,
-    updateReproductive,
-    updateSampleInfo,
-    updateConsent,
+    demographics,
+    ethnicity,
+    clinicalContext,
+    reproductive,
+    sampleInfo,
+    consent,
+    hpoTerms: localHPOTerms,
+    clinicalNotes: localClinicalNotes,
+    isLoadingHPO,
+    setDemographics,
+    setEthnicity,
+    setClinicalContext,
+    setReproductive,
+    setSampleInfo,
+    setConsent,
     addHPOTerm,
     removeHPOTerm,
-    refetch: async () => {
-      await refetch()
-    },
+    setClinicalNotes: setClinicalNotesLocal,
+    savePhenotype,
     hpoTermIds,
     termCount,
     hasRequiredData,
     hasRecommendedData,
+    getCompleteProfile,
   }
 
   return <ClinicalProfileContext.Provider value={value}>{children}</ClinicalProfileContext.Provider>

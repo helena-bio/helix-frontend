@@ -1,17 +1,16 @@
 /**
- * Query hook for fetching clinical profile
+ * Query hook for fetching patient phenotype (HPO terms)
  */
 
 import { useQuery } from '@tanstack/react-query'
-import { getClinicalProfile } from '@/lib/api/clinical-profile'
-import type { ClinicalProfile } from '@/types/clinical-profile.types'
+import { getPatientPhenotype, PatientPhenotype } from '@/lib/api/clinical-profile'
 
-export function useClinicalProfile(sessionId: string | null) {
-  return useQuery<ClinicalProfile | null>({
-    queryKey: ['clinical-profile', sessionId],
+export function usePatientPhenotype(sessionId: string | null) {
+  return useQuery<PatientPhenotype | null>({
+    queryKey: ['patient-phenotype', sessionId],
     queryFn: () => {
       if (!sessionId) return null
-      return getClinicalProfile(sessionId)
+      return getPatientPhenotype(sessionId)
     },
     enabled: !!sessionId,
     staleTime: 1000 * 60 * 5, // 5 minutes
