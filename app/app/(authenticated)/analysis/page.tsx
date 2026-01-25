@@ -46,6 +46,7 @@ export default function AnalysisPage() {
         </div>
       )
     }
+
     return (
       <ProcessingFlow sessionId={currentSessionId} />
     )
@@ -60,6 +61,7 @@ export default function AnalysisPage() {
         </div>
       )
     }
+
     return (
       <ClinicalProfileProvider sessionId={currentSessionId}>
         <ClinicalProfileEntry sessionId={currentSessionId} />
@@ -67,7 +69,7 @@ export default function AnalysisPage() {
     )
   }
 
-  // Step 4: Analysis View
+  // Step 4: Analysis View - wrap with ClinicalProfileProvider
   if (currentStep === 'analysis') {
     if (!currentSessionId) {
       return (
@@ -76,7 +78,12 @@ export default function AnalysisPage() {
         </div>
       )
     }
-    return <ModuleRouter sessionId={currentSessionId} />
+
+    return (
+      <ClinicalProfileProvider sessionId={currentSessionId}>
+        <ModuleRouter sessionId={currentSessionId} />
+      </ClinicalProfileProvider>
+    )
   }
 
   return null

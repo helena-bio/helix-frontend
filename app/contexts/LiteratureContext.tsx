@@ -33,7 +33,7 @@ import {
   buildLiteratureSearchRequest,
 } from '@/lib/api/literature'
 import { useMatchedPhenotype } from './MatchedPhenotypeContext'
-import { usePhenotypeContext } from './PhenotypeContext'
+import { useClinicalProfileContext } from './ClinicalProfileContext'
 import type {
   ClinicalSearchResponse,
   PublicationResult,
@@ -207,7 +207,8 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
 
   // Get phenotype matching results and patient HPO terms
   const { status: matchingStatus, aggregatedResults } = useMatchedPhenotype()
-  const { phenotype } = usePhenotypeContext()
+  const { profile } = useClinicalProfileContext()
+  const phenotype = profile?.phenotype
 
   // Build clinical data map from phenotype matching results
   const clinicalDataMap = useMemo(() => {

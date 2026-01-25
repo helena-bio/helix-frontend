@@ -23,7 +23,7 @@ import {
   useRef,
   type ReactNode
 } from 'react'
-import { usePhenotypeContext } from './PhenotypeContext'
+import { useClinicalProfileContext } from './ClinicalProfileContext'
 import {
   runSessionPhenotypeMatching,
   getMatchingResults,
@@ -158,7 +158,8 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   const hasLoadedResults = useRef(false)
 
   // Dependencies
-  const { phenotype } = usePhenotypeContext()
+  const { profile } = useClinicalProfileContext()
+  const phenotype = profile?.phenotype
 
   // Get HPO terms from phenotype context
   const patientHpoIds = useMemo(() => {

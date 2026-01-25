@@ -34,7 +34,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
+import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useMatchedPhenotype, type GeneAggregatedResult } from '@/contexts/MatchedPhenotypeContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import {
@@ -355,7 +355,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   }, [])
 
   // Contexts
-  const { phenotype } = usePhenotypeContext()
+  const { profile } = useClinicalProfileContext()
+  const phenotype = profile?.phenotype
   const {
     status,
     isLoading,

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, memo } from 'react'
 import { Send, Square, Sparkles, Database, BookOpen, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAnalysis } from '@/contexts/AnalysisContext'
-import { usePhenotypeContext } from '@/contexts/PhenotypeContext'
+import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useMatchedPhenotype } from '@/contexts/MatchedPhenotypeContext'
 import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
@@ -78,7 +78,7 @@ const MessageBubble = memo(function MessageBubble({ message, onPublicationClick 
   // Literature search results
   if (message.type === 'literature_result' && message.literatureData) {
     const publications = message.literatureData.results || []
-    
+
     return (
       <div className="p-4 bg-card border border-border rounded-lg">
         <details className="mb-4">
@@ -98,11 +98,11 @@ const MessageBubble = memo(function MessageBubble({ message, onPublicationClick 
             <BookOpen className="h-4 w-4 text-primary" />
             <span>Publications ({publications.length})</span>
           </div>
-          
+
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {publications.map((pub: any, idx: number) => (
-              <div 
-                key={pub.pmid || idx} 
+              <div
+                key={pub.pmid || idx}
                 className="p-3 bg-muted/50 rounded-lg border border-border/50 hover:border-primary/30 hover:bg-muted/70 transition-colors cursor-pointer"
                 onClick={() => pub.pmid && onPublicationClick?.(pub.pmid)}
               >
@@ -154,10 +154,10 @@ const MessageBubble = memo(function MessageBubble({ message, onPublicationClick 
   )
 })
 
-const ThinkingIndicator = memo(function ThinkingIndicator({ 
-  mode = 'thinking' 
-}: { 
-  mode?: 'thinking' | 'querying' | 'literature' 
+const ThinkingIndicator = memo(function ThinkingIndicator({
+  mode = 'thinking'
+}: {
+  mode?: 'thinking' | 'querying' | 'literature'
 }) {
   const config = {
     thinking: {
@@ -211,7 +211,11 @@ export function ChatPanel() {
     setSelectedPublicationId,
     openDetails,
   } = useAnalysis()
-  const { phenotype } = usePhenotypeContext()
+  
+  // Get clinical profile (includes phenotype data)
+  const { profile } = useClinicalProfileContext()
+  const phenotype = profile?.phenotype
+  
   const {
     aggregatedResults,
     tier1Count,
@@ -293,14 +297,14 @@ export function ChatPanel() {
       const metadata: Record<string, any> = {}
 
       // 1. Patient Phenotype Context (selected HPO terms)
-      if (phenotype && phenotype.hpo_terms.length > 0) {
+      if (phenotype && phenotype.hpo_terms && phenotype.hpo_terms.length > 0) {
         metadata.phenotype_context = {
           hpo_terms: phenotype.hpo_terms.map(t => ({
             hpo_id: t.hpo_id,
             name: t.name,
           })),
           hpo_ids: phenotype.hpo_terms.map(t => t.hpo_id),
-          term_count: phenotype.term_count,
+          term_count: phenotype.hpo_terms.length,
         }
 
         if (phenotype.clinical_notes) {
