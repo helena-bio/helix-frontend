@@ -28,7 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@helix/shared/components/ui/tooltip'
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import { cn } from '@helix/shared/lib/utils'
 
 interface Module {
@@ -84,7 +84,7 @@ export function Sidebar() {
     selectedModule,
     setSelectedModule,
     currentSessionId,
-  } = useAnalysis()
+  } = useSession()
 
   const handleModuleClick = (moduleId: string, requiresSession: boolean) => {
     if (requiresSession && !currentSessionId) {

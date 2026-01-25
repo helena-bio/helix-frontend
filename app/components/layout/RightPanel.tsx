@@ -9,7 +9,7 @@
  */
 
 import { ReactNode } from 'react'
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import { VariantDetailPanel } from '@/components/analysis'
 import { PublicationDetailPanel } from '@/components/chat'
 
@@ -24,7 +24,7 @@ export function RightPanel({ children }: RightPanelProps) {
     selectedPublicationId,
     isDetailsOpen,
     closeDetails,
-  } = useAnalysis()
+  } = useSession()
 
   // Show PublicationDetailPanel if publication is selected
   if (isDetailsOpen && selectedPublicationId) {

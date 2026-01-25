@@ -7,7 +7,7 @@
 
 import { PieChart, BarChart } from '@/components/charts'
 import { VariantsCompactTable } from '@/components/analysis'
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import type { VisualizationConfig } from '@/types/visualization.types'
 
 interface QueryVisualizationProps {
@@ -16,7 +16,7 @@ interface QueryVisualizationProps {
 }
 
 export function QueryVisualization({ data, config }: QueryVisualizationProps) {
-  const { setSelectedVariantId, openDetails } = useAnalysis()
+  const { setSelectedVariantId, openDetails } = useSession()
 
   // Handler for variant click - opens detail panel
   const handleVariantClick = (variantIdx: number) => {

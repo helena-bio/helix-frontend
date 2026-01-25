@@ -5,7 +5,7 @@
  * Used in analysis page to display different content in View Panel (60%)
  */
 
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import { VariantAnalysisView } from './VariantAnalysisView'
 import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
 import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
@@ -15,7 +15,7 @@ interface ModuleRouterProps {
 }
 
 export function ModuleRouter({ sessionId }: ModuleRouterProps) {
-  const { selectedModule } = useAnalysis()
+  const { selectedModule } = useSession()
 
   // Default view: Variant Analysis
   if (!selectedModule || selectedModule === 'analysis') {

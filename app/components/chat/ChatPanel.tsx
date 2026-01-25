@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import { Send, Square, Sparkles, Database, BookOpen, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
-import { useMatchedPhenotype } from '@/contexts/MatchedPhenotypeContext'
+import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
@@ -210,7 +210,7 @@ export function ChatPanel() {
     currentSessionId,
     setSelectedPublicationId,
     openDetails,
-  } = useAnalysis()
+  } = useSession()
 
   // Get clinical profile (HPO terms and clinical notes)
   const { hpoTerms, clinicalNotes } = useClinicalProfileContext()
@@ -223,7 +223,7 @@ export function ChatPanel() {
     tier4Count,
     variantsAnalyzed,
     totalGenes,
-  } = useMatchedPhenotype()
+  } = usePhenotypeResults()
 
   // Get variant statistics for analysis context
   const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {

@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from '@helix/shared/components/ui/tooltip'
 import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import { cn } from '@helix/shared/lib/utils'
 
 function getStepIcon(status: StepStatus) {
@@ -47,7 +47,7 @@ function getLineColor(status: StepStatus): string {
 
 export function JourneyPanel() {
   const { getStepStatus, canNavigateTo, goToStep, resetJourney } = useJourney()
-  const { currentSessionId, setCurrentSessionId } = useAnalysis()
+  const { currentSessionId, setCurrentSessionId } = useSession()
 
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {

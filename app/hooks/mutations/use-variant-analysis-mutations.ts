@@ -5,7 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadVCFFile, startProcessing } from '@/lib/api/variant-analysis'
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import type { AnalysisSession } from '@/types/variant.types'
 import { toast } from 'sonner'
 
@@ -14,7 +14,7 @@ import { toast } from 'sonner'
  */
 export function useUploadVCF() {
   const queryClient = useQueryClient()
-  const { setCurrentSessionId } = useAnalysis()
+  const { setCurrentSessionId } = useSession()
 
   return useMutation({
     mutationFn: async ({

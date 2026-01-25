@@ -107,7 +107,13 @@ export function ClinicalAnalysis({
     const runAnalyses = async () => {
       try {
         const profile = getCompleteProfile()
-        
+
+        console.log('='.repeat(80))
+        console.log('CLINICAL ANALYSIS - COMPLETE PROFILE FROM CONTEXT')
+        console.log('='.repeat(80))
+        console.log(JSON.stringify(profile, null, 2))
+        console.log('='.repeat(80))
+
         if (!profile.demographics) {
           throw new Error('Demographics data is required')
         }
@@ -117,7 +123,7 @@ export function ClinicalAnalysis({
         updateStageStatus('screening', 'running')
 
         try {
-          await screeningMutation.mutateAsync({
+          const screeningPayload = {
             session_id: sessionId,
             age_years: profile.demographics.age_years,
             age_days: profile.demographics.age_days,
@@ -132,7 +138,15 @@ export function ClinicalAnalysis({
             is_pregnant: profile.reproductive?.is_pregnant || false,
             has_parental_samples: profile.sample_info?.has_parental_samples || false,
             has_affected_sibling: profile.sample_info?.has_affected_sibling || false,
-          })
+          }
+
+          console.log('='.repeat(80))
+          console.log('SCREENING API REQUEST PAYLOAD')
+          console.log('='.repeat(80))
+          console.log(JSON.stringify(screeningPayload, null, 2))
+          console.log('='.repeat(80))
+
+          await screeningMutation.mutateAsync(screeningPayload)
           updateStageStatus('screening', 'completed')
           toast.success('Screening analysis complete')
         } catch (error) {

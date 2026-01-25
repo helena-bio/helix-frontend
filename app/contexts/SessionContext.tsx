@@ -12,7 +12,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 
 const STORAGE_KEY = 'helix_current_session'
 
-interface AnalysisContextType {
+interface SessionContextType {
   // Sidebar state
   isSidebarOpen: boolean
   toggleSidebar: () => void
@@ -49,13 +49,13 @@ interface AnalysisContextType {
   hideChat: () => void
 }
 
-const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined)
+const SessionContext = createContext<SessionContextType | undefined>(undefined)
 
-interface AnalysisProviderProps {
+interface SessionProviderProps {
   children: ReactNode
 }
 
-export function AnalysisProvider({ children }: AnalysisProviderProps) {
+export function SessionProvider({ children }: SessionProviderProps) {
   // Sidebar state - responsive default (closed on small screens)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
@@ -159,7 +159,7 @@ export function AnalysisProvider({ children }: AnalysisProviderProps) {
     setIsChatVisible(false)
   }, [])
 
-  const value: AnalysisContextType = {
+  const value: SessionContextType = {
     isSidebarOpen,
     toggleSidebar,
     setSidebarOpen,
@@ -188,16 +188,16 @@ export function AnalysisProvider({ children }: AnalysisProviderProps) {
   }
 
   return (
-    <AnalysisContext.Provider value={value}>
+    <SessionContext.Provider value={value}>
       {children}
-    </AnalysisContext.Provider>
+    </SessionContext.Provider>
   )
 }
 
-export function useAnalysis(): AnalysisContextType {
-  const context = useContext(AnalysisContext)
+export function useSession(): SessionContextType {
+  const context = useContext(SessionContext)
   if (!context) {
-    throw new Error('useAnalysis must be used within AnalysisProvider')
+    throw new Error('useSession must be used within SessionProvider')
   }
   return context
 }

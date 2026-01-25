@@ -47,7 +47,7 @@ export interface GeneAggregatedResult {
   variants: SessionMatchResult[]
 }
 
-interface MatchedPhenotypeContextValue {
+interface PhenotypeResultsContextValue {
   // Status
   status: MatchingStatus
   isLoading: boolean
@@ -135,14 +135,14 @@ function aggregateResultsByGene(results: SessionMatchResult[]): GeneAggregatedRe
 // CONTEXT
 // ============================================================================
 
-const MatchedPhenotypeContext = createContext<MatchedPhenotypeContextValue | undefined>(undefined)
+const PhenotypeResultsContext = createContext<PhenotypeResultsContextValue | undefined>(undefined)
 
-interface MatchedPhenotypeProviderProps {
+interface PhenotypeResultsProviderProps {
   sessionId: string | null
   children: ReactNode
 }
 
-export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenotypeProviderProps) {
+export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResultsProviderProps) {
   // State
   const [status, setStatus] = useState<MatchingStatus>('idle')
   const [error, setError] = useState<Error | null>(null)
@@ -168,7 +168,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   useEffect(() => {
     if (!sessionId || sessionId === currentSessionId.current) return
 
-    console.log('[MatchedPhenotypeContext] Session changed, checking for existing results:', sessionId)
+    console.log('[PhenotypeResultsContext] Session changed, checking for existing results:', sessionId)
     currentSessionId.current = sessionId
     hasLoadedResults.current = false
     setAggregatedResults(null)
@@ -178,7 +178,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
     // Try to load existing results from DuckDB
     getMatchingResults(sessionId)
       .then((response) => {
-        console.log('[MatchedPhenotypeContext] Loaded existing results from DuckDB:', response.results.length)
+        console.log('[PhenotypeResultsContext] Loaded existing results from DuckDB:', response.results.length)
         
         // Store tier counts
         setTier1Count(response.tier_1_count)
@@ -190,7 +190,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
         // Aggregate by gene
         if (response.results.length > 0) {
           const aggregated = aggregateResultsByGene(response.results)
-          console.log('[MatchedPhenotypeContext] Aggregated genes:', aggregated.length)
+          console.log('[PhenotypeResultsContext] Aggregated genes:', aggregated.length)
           setAggregatedResults(aggregated)
           setStatus('success')
         } else {
@@ -203,10 +203,10 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
       .catch((err) => {
         // 404 is expected if no results exist yet
         if (err.message.includes('404') || err.message.includes('No phenotype matching results')) {
-          console.log('[MatchedPhenotypeContext] No existing results found (expected)')
+          console.log('[PhenotypeResultsContext] No existing results found (expected)')
           setStatus('idle')
         } else {
-          console.error('[MatchedPhenotypeContext] Failed to load results:', err)
+          console.error('[PhenotypeResultsContext] Failed to load results:', err)
           setError(err)
           setStatus('error')
         }
@@ -216,17 +216,17 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
 
   // Run matching (manual trigger)
   const runMatching = useCallback(async () => {
-    console.log('[MatchedPhenotypeContext] runMatching called')
+    console.log('[PhenotypeResultsContext] runMatching called')
     console.log('  sessionId:', sessionId)
     console.log('  patientHpoIds:', patientHpoIds)
 
     if (!sessionId) {
-      console.warn('[MatchedPhenotypeContext] Cannot run matching - no session')
+      console.warn('[PhenotypeResultsContext] Cannot run matching - no session')
       return
     }
 
     if (patientHpoIds.length === 0) {
-      console.warn('[MatchedPhenotypeContext] No phenotypes selected')
+      console.warn('[PhenotypeResultsContext] No phenotypes selected')
       setStatus('no_phenotypes')
       return
     }
@@ -236,16 +236,16 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
 
     try {
       // Call session-based matching API (reads from DuckDB, saves results)
-      console.log('[MatchedPhenotypeContext] Calling session matching API...')
+      console.log('[PhenotypeResultsContext] Calling session matching API...')
       const runResponse = await runSessionPhenotypeMatching({
         sessionId,
         patientHpoIds,
       })
 
-      console.log('[MatchedPhenotypeContext] Matching complete:', runResponse)
+      console.log('[PhenotypeResultsContext] Matching complete:', runResponse)
 
       if (runResponse.variants_with_hpo === 0) {
-        console.warn('[MatchedPhenotypeContext] No variants with HPO annotations')
+        console.warn('[PhenotypeResultsContext] No variants with HPO annotations')
         setStatus('success')
         setAggregatedResults(null)
         setTier1Count(0)
@@ -269,7 +269,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
       // Aggregate by gene
       if (resultsResponse.results.length > 0) {
         const aggregated = aggregateResultsByGene(resultsResponse.results)
-        console.log('[MatchedPhenotypeContext] Aggregated genes:', aggregated.length)
+        console.log('[PhenotypeResultsContext] Aggregated genes:', aggregated.length)
         setAggregatedResults(aggregated)
       } else {
         setAggregatedResults(null)
@@ -277,7 +277,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
 
       setStatus('success')
     } catch (err) {
-      console.error('[MatchedPhenotypeContext] Matching failed:', err)
+      console.error('[PhenotypeResultsContext] Matching failed:', err)
       setError(err as Error)
       setStatus('error')
     }
@@ -299,7 +299,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   const prevHpoCount = useRef(patientHpoIds.length)
   useEffect(() => {
     if (prevHpoCount.current !== patientHpoIds.length && prevHpoCount.current > 0) {
-      console.log('[MatchedPhenotypeContext] Phenotypes changed, re-running matching')
+      console.log('[PhenotypeResultsContext] Phenotypes changed, re-running matching')
       prevHpoCount.current = patientHpoIds.length
       if (aggregatedResults && hasLoadedResults.current) {
         runMatching()
@@ -310,7 +310,7 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   }, [patientHpoIds.length, aggregatedResults, runMatching])
 
   // Computed values
-  const value = useMemo<MatchedPhenotypeContextValue>(() => ({
+  const value = useMemo<PhenotypeResultsContextValue>(() => ({
     status,
     isLoading: status === 'pending' || status === 'loading',
     error,
@@ -337,16 +337,16 @@ export function MatchedPhenotypeProvider({ sessionId, children }: MatchedPhenoty
   ])
 
   return (
-    <MatchedPhenotypeContext.Provider value={value}>
+    <PhenotypeResultsContext.Provider value={value}>
       {children}
-    </MatchedPhenotypeContext.Provider>
+    </PhenotypeResultsContext.Provider>
   )
 }
 
-export function useMatchedPhenotype(): MatchedPhenotypeContextValue {
-  const context = useContext(MatchedPhenotypeContext)
+export function usePhenotypeResults(): PhenotypeResultsContextValue {
+  const context = useContext(PhenotypeResultsContext)
   if (!context) {
-    throw new Error('useMatchedPhenotype must be used within MatchedPhenotypeProvider')
+    throw new Error('usePhenotypeResults must be used within PhenotypeResultsProvider')
   }
   return context
 }

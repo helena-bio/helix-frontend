@@ -8,7 +8,7 @@
  * 3. Profile - Enter clinical profile and run phenotype matching (optional)
  * 4. Analysis - View and analyze variants
  */
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { ClinicalProfileProvider } from '@/contexts/ClinicalProfileContext'
 import {
@@ -20,7 +20,7 @@ import {
 import { Loader2 } from 'lucide-react'
 
 export default function AnalysisPage() {
-  const { currentSessionId, setCurrentSessionId } = useAnalysis()
+  const { currentSessionId, setCurrentSessionId } = useSession()
   const { currentStep } = useJourney()
 
   // Handle upload+validation complete

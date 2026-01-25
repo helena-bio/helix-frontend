@@ -35,7 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
-import { useMatchedPhenotype, type GeneAggregatedResult } from '@/contexts/MatchedPhenotypeContext'
+import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import {
   getACMGColor,
@@ -366,7 +366,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     tier4Count,
     variantsAnalyzed,
     totalGenes,
-  } = useMatchedPhenotype()
+  } = usePhenotypeResults()
 
   const selectedTerms = hpoTerms
   // Handle tier card click

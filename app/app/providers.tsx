@@ -10,7 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@helix/shared/components/ui/sonner'
-import { AnalysisProvider } from '@/contexts/AnalysisContext'
+import { SessionProvider } from '@/contexts/SessionContext'
 import { JourneyProvider } from '@/contexts/JourneyContext'
 
 // Create QueryClient instance
@@ -42,12 +42,12 @@ export function Providers({ children }: ProvidersProps) {
         enableSystem={false}
         disableTransitionOnChange
       >
-        <AnalysisProvider>
+        <SessionProvider>
           <JourneyProvider>
             {children}
             <Toaster />
           </JourneyProvider>
-        </AnalysisProvider>
+        </SessionProvider>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} position="bottom" />
     </QueryClientProvider>

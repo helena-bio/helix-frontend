@@ -36,8 +36,8 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useLiterature } from '@/contexts/LiteratureContext'
-import { useAnalysis } from '@/contexts/AnalysisContext'
+import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
+import { useSession } from '@/contexts/SessionContext'
 import { getPubMedUrl, getPMCUrl, formatAuthors } from '@/lib/api/literature'
 import type { PublicationResult, GenePublicationGroup } from '@/types/literature.types'
 
@@ -423,9 +423,9 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
     error,
     totalResults,
     groupedByGene,
-  } = useLiterature()
+  } = useLiteratureResults()
 
-  const { setSelectedPublicationId, openDetails } = useAnalysis()
+  const { setSelectedPublicationId, openDetails } = useSession()
 
   // Handle view details click
   const handleViewDetails = (pmid: string) => {

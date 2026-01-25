@@ -11,7 +11,7 @@
  *
  * Flow:
  * 1. MatchedPhenotypeContext completes matching (status='success')
- * 2. LiteratureContext detects change and extracts genes from results
+ * 2. LiteratureResultsContext detects change and extracts genes from results
  * 3. Auto-triggers literature search with genes + patient HPO terms
  * 4. Results grouped by gene with combined scoring applied
  * 5. Results available for display and AI context
@@ -32,7 +32,7 @@ import {
   searchClinicalLiterature,
   buildLiteratureSearchRequest,
 } from '@/lib/api/literature'
-import { useMatchedPhenotype } from './MatchedPhenotypeContext'
+import { usePhenotypeResults } from './PhenotypeResultsContext'
 import { useClinicalProfileContext } from './ClinicalProfileContext'
 import type {
   ClinicalSearchResponse,
@@ -62,7 +62,7 @@ const LITERATURE_WEIGHT = 0.4
 // CONTEXT TYPE
 // ============================================================================
 
-interface LiteratureContextValue {
+interface LiteratureResultsContextValue {
   // Status
   status: LiteratureStatus
   isLoading: boolean
@@ -186,13 +186,13 @@ function countByStrength(results: PublicationResult[]): {
 // CONTEXT
 // ============================================================================
 
-const LiteratureContext = createContext<LiteratureContextValue | undefined>(undefined)
+const LiteratureResultsContext = createContext<LiteratureResultsContextValue | undefined>(undefined)
 
-interface LiteratureProviderProps {
+interface LiteratureResultsProviderProps {
   children: ReactNode
 }
 
-export function LiteratureProvider({ children }: LiteratureProviderProps) {
+export function LiteratureResultsProvider({ children }: LiteratureResultsProviderProps) {
   // State
   const [status, setStatus] = useState<LiteratureStatus>('idle')
   const [error, setError] = useState<Error | null>(null)
@@ -206,7 +206,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
   const isSearching = useRef<boolean>(false)
 
   // Get phenotype matching results and patient HPO terms
-  const { status: matchingStatus, aggregatedResults } = useMatchedPhenotype()
+  const { status: matchingStatus, aggregatedResults } = usePhenotypeResults()
   const { hpoTerms } = useClinicalProfileContext()
   // Build clinical data map from phenotype matching results
   const clinicalDataMap = useMemo(() => {
@@ -231,20 +231,20 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
     limit: number = 50
   ) => {
     if (genes.length === 0) {
-      console.log('[LiteratureContext] No genes provided, skipping search')
+      console.log('[LiteratureResultsContext] No genes provided, skipping search')
       setStatus('no_data')
       return
     }
 
     if (hpoTerms.length === 0) {
-      console.log('[LiteratureContext] No phenotypes provided, skipping search')
+      console.log('[LiteratureResultsContext] No phenotypes provided, skipping search')
       setStatus('no_data')
       return
     }
 
     // Prevent concurrent searches
     if (isSearching.current) {
-      console.log('[LiteratureContext] Search already in progress, skipping')
+      console.log('[LiteratureResultsContext] Search already in progress, skipping')
       return
     }
 
@@ -258,7 +258,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
       const request = buildLiteratureSearchRequest(genes, hpoTerms, variants)
       request.limit = limit
 
-      console.log('[LiteratureContext] Searching literature:', {
+      console.log('[LiteratureResultsContext] Searching literature:', {
         genes: genes.length,
         hpoTerms: hpoTerms.length,
         variants: variants?.length || 0,
@@ -266,7 +266,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
 
       const response = await searchClinicalLiterature(request)
 
-      console.log('[LiteratureContext] Search complete:', {
+      console.log('[LiteratureResultsContext] Search complete:', {
         totalResults: response.total_results,
         searchTimeMs: response.query_summary.search_time_ms,
       })
@@ -275,7 +275,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
       setQuerySummary(response.query_summary)
       setStatus(response.results.length > 0 ? 'success' : 'no_data')
     } catch (err) {
-      console.error('[LiteratureContext] Search failed:', err)
+      console.error('[LiteratureResultsContext] Search failed:', err)
       setError(err as Error)
       setStatus('error')
     } finally {
@@ -304,7 +304,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
     // Get patient HPO terms
     const patientHpoTerms = hpoTerms
     if (patientHpoTerms.length === 0) {
-      console.log('[LiteratureContext] No patient HPO terms, skipping auto-search')
+      console.log('[LiteratureResultsContext] No patient HPO terms, skipping auto-search')
       return
     }
 
@@ -318,11 +318,11 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
 
     // Skip if we already searched with these parameters
     if (searchKey === lastSearchKey.current) {
-      console.log('[LiteratureContext] Already searched with these parameters, skipping')
+      console.log('[LiteratureResultsContext] Already searched with these parameters, skipping')
       return
     }
 
-    console.log('[LiteratureContext] Auto-triggering literature search after phenotype matching')
+    console.log('[LiteratureResultsContext] Auto-triggering literature search after phenotype matching')
     console.log('  Genes:', topGenes)
     console.log('  HPO terms:', patientHpoTerms.length)
 
@@ -379,7 +379,7 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
   }, [results, searchedGenes, searchedHpoTerms, counts, groupedByGene])
 
   // Context value
-  const value = useMemo<LiteratureContextValue>(() => ({
+  const value = useMemo<LiteratureResultsContextValue>(() => ({
     status,
     isLoading: status === 'loading',
     error,
@@ -411,16 +411,16 @@ export function LiteratureProvider({ children }: LiteratureProviderProps) {
   ])
 
   return (
-    <LiteratureContext.Provider value={value}>
+    <LiteratureResultsContext.Provider value={value}>
       {children}
-    </LiteratureContext.Provider>
+    </LiteratureResultsContext.Provider>
   )
 }
 
-export function useLiterature(): LiteratureContextValue {
-  const context = useContext(LiteratureContext)
+export function useLiteratureResults(): LiteratureResultsContextValue {
+  const context = useContext(LiteratureResultsContext)
   if (!context) {
-    throw new Error('useLiterature must be used within LiteratureProvider')
+    throw new Error('useLiteratureResults must be used within LiteratureResultsProvider')
   }
   return context
 }
