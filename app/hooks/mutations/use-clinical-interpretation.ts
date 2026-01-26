@@ -14,7 +14,7 @@ interface ClinicalInterpretationParams {
   onError?: (error: Error) => void
 }
 
-const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:9007'
+const AI_API_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 
 export function useClinicalInterpretation() {
   const { currentSessionId } = useSession()
