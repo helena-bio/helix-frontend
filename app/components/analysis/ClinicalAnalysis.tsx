@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState, useRef } from 'react'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
-import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
+import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
 import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
@@ -100,7 +100,7 @@ export function ClinicalAnalysis({
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
-  const { aggregatedResults, runMatching: runPhenotypeMatching, totalGenes, tier1Count, tier2Count } = usePhenotypeResults()
+  const { runMatching: runPhenotypeMatching } = usePhenotypeResults()
   const { setInterpretation, interpretation } = useClinicalInterpretationContext()
 
   const screeningMutation = useRunScreening()
@@ -137,6 +137,8 @@ export function ClinicalAnalysis({
         }
 
         // Stage 1: Phenotype Matching (OPTIONAL - but runs FIRST if HPO terms exist)
+        let phenotypeResults: GeneAggregatedResult[] = []
+        
         if (hpoTerms.length > 0) {
           setCurrentStage('phenotype')
           updateStageStatus('phenotype', 'running')
@@ -147,23 +149,16 @@ export function ClinicalAnalysis({
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING - Running first to identify Tier 1/2 candidates')
             console.log(`Patient HPO terms: ${hpoIds.join(', ')}`)
-            console.log('BEFORE runMatching - aggregatedResults:', aggregatedResults)
             console.log('='.repeat(80))
 
-            // Pass HPO IDs explicitly to runMatching
-            await runPhenotypeMatching(hpoIds)
+            // Get results directly from runMatching - no state dependency
+            phenotypeResults = await runPhenotypeMatching(hpoIds)
             
             console.log('='.repeat(80))
-            console.log('AFTER runMatching - aggregatedResults:', aggregatedResults)
-            console.log('  totalGenes:', totalGenes)
-            console.log('  tier1Count:', tier1Count)
-            console.log('  tier2Count:', tier2Count)
-            console.log('  aggregatedResults length:', aggregatedResults?.length || 0)
-            if (aggregatedResults && aggregatedResults.length > 0) {
-              console.log('  First gene:', aggregatedResults[0])
-              console.log('  Tier 1 genes:', aggregatedResults.filter(r => r.best_tier === 'TIER_1').map(r => r.gene_symbol))
-              console.log('  Tier 2 genes:', aggregatedResults.filter(r => r.best_tier === 'TIER_2').map(r => r.gene_symbol))
-            }
+            console.log('PHENOTYPE MATCHING COMPLETE')
+            console.log('  Total genes:', phenotypeResults.length)
+            console.log('  Tier 1 genes:', phenotypeResults.filter(r => r.best_tier === 'TIER_1').map(r => r.gene_symbol))
+            console.log('  Tier 2 genes:', phenotypeResults.filter(r => r.best_tier === 'TIER_2').map(r => r.gene_symbol))
             console.log('='.repeat(80))
 
             updateStageStatus('phenotype', 'completed')
@@ -215,25 +210,24 @@ export function ClinicalAnalysis({
           throw new Error('Clinical screening failed')
         }
 
-        // Stage 3: Literature Search (for key genes from phenotype/screening)
+        // Stage 3: Literature Search (for key genes from phenotype results)
         setCurrentStage('literature')
         updateStageStatus('literature', 'running')
 
         try {
           console.log('='.repeat(80))
           console.log('LITERATURE SEARCH - Checking for top genes')
-          console.log('  aggregatedResults:', aggregatedResults)
-          console.log('  aggregatedResults length:', aggregatedResults?.length || 0)
+          console.log('  phenotypeResults length:', phenotypeResults.length)
           console.log('='.repeat(80))
 
-          // Extract top genes from phenotype matching results
+          // Extract top genes from phenotype results (directly from Stage 1)
           const topGenes: string[] = []
 
-          if (aggregatedResults && aggregatedResults.length > 0) {
-            const tier1Genes = aggregatedResults
+          if (phenotypeResults.length > 0) {
+            const tier1Genes = phenotypeResults
               .filter(r => r.best_tier === 'TIER_1')
               .map(r => r.gene_symbol)
-            const tier2Genes = aggregatedResults
+            const tier2Genes = phenotypeResults
               .filter(r => r.best_tier === 'TIER_2')
               .map(r => r.gene_symbol)
 
@@ -325,7 +319,6 @@ export function ClinicalAnalysis({
     sessionId,
     getCompleteProfile,
     hpoTerms,
-    aggregatedResults,
     runPhenotypeMatching,
     screeningMutation,
     literatureSearchMutation,
@@ -337,9 +330,6 @@ export function ClinicalAnalysis({
     nextStep,
     onComplete,
     onError,
-    totalGenes,
-    tier1Count,
-    tier2Count,
   ])
 
   const progress = calculateProgress()

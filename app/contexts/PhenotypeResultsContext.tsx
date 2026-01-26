@@ -55,8 +55,8 @@ interface PhenotypeResultsContextValue {
   // Aggregated results by gene (sorted by clinical priority)
   aggregatedResults: GeneAggregatedResult[] | null
 
-  // Actions - REFACTORED: accepts HPO IDs as parameter
-  runMatching: (patientHpoIds: string[]) => Promise<void>
+  // Actions - Returns results directly for immediate use
+  runMatching: (patientHpoIds: string[]) => Promise<GeneAggregatedResult[]>
   clearResults: () => void
 
   // Computed
@@ -206,21 +206,21 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       })
   }, [sessionId])
 
-  // REFACTORED: Run matching with explicit HPO IDs parameter
-  const runMatching = useCallback(async (patientHpoIds: string[]) => {
+  // ARCHITECTURAL FIX: Run matching and return results directly
+  const runMatching = useCallback(async (patientHpoIds: string[]): Promise<GeneAggregatedResult[]> => {
     console.log('[PhenotypeResultsContext] runMatching called')
     console.log('  sessionId:', sessionId)
     console.log('  patientHpoIds:', patientHpoIds)
 
     if (!sessionId) {
       console.warn('[PhenotypeResultsContext] Cannot run matching - no session')
-      return
+      return []
     }
 
     if (patientHpoIds.length === 0) {
       console.warn('[PhenotypeResultsContext] No phenotypes provided')
       setStatus('no_phenotypes')
-      return
+      return []
     }
 
     setStatus('pending')
@@ -245,7 +245,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
         setTier3Count(0)
         setTier4Count(0)
         setVariantsAnalyzed(0)
-        return
+        return []
       }
 
       // Fetch results from DuckDB (they were just saved by the API)
@@ -259,8 +259,9 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       setVariantsAnalyzed(resultsResponse.variants_analyzed)
 
       // Aggregate by gene
+      let aggregated: GeneAggregatedResult[] = []
       if (resultsResponse.results.length > 0) {
-        const aggregated = aggregateResultsByGene(resultsResponse.results)
+        aggregated = aggregateResultsByGene(resultsResponse.results)
         console.log('[PhenotypeResultsContext] Aggregated genes:', aggregated.length)
         setAggregatedResults(aggregated)
       } else {
@@ -268,12 +269,16 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       }
 
       setStatus('success')
+      
+      // RETURN results directly for immediate use by caller
+      return aggregated
     } catch (err) {
       console.error('[PhenotypeResultsContext] Matching failed:', err)
       setError(err as Error)
       setStatus('error')
+      return []
     }
-  }, [sessionId])  // Only depends on sessionId now
+  }, [sessionId])
 
   // Clear results
   const clearResults = useCallback(() => {
