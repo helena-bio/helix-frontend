@@ -101,7 +101,7 @@ export function ClinicalAnalysis({
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
-  const { phenotypeResponse } = usePhenotypeResults()
+  const { aggregatedResults } = usePhenotypeResults()
   const { setInterpretation, interpretation } = useClinicalInterpretationContext()
 
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
@@ -210,12 +210,12 @@ export function ClinicalAnalysis({
           // Extract top genes from phenotype matching results
           const topGenes: string[] = []
 
-          if (phenotypeResponse?.results) {
-            const tier1Genes = phenotypeResponse.results
-              .filter(r => r.tier === 1)
+          if (aggregatedResults && aggregatedResults.length > 0) {
+            const tier1Genes = aggregatedResults
+              .filter(r => r.best_tier === 'TIER_1')
               .map(r => r.gene_symbol)
-            const tier2Genes = phenotypeResponse.results
-              .filter(r => r.tier === 2)
+            const tier2Genes = aggregatedResults
+              .filter(r => r.best_tier === 'TIER_2')
               .map(r => r.gene_symbol)
 
             topGenes.push(...tier1Genes, ...tier2Genes.slice(0, 10))
@@ -299,7 +299,7 @@ export function ClinicalAnalysis({
     sessionId,
     getCompleteProfile,
     hpoTerms,
-    phenotypeResponse,
+    aggregatedResults,
     phenotypeMatchingMutation,
     screeningMutation,
     literatureSearchMutation,
