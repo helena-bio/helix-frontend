@@ -142,14 +142,16 @@ export function ClinicalAnalysis({
           updateStageStatus('phenotype', 'running')
 
           try {
+            const hpoIds = hpoTerms.map(t => t.hpo_id)
+            
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING - Running first to identify Tier 1/2 candidates')
-            console.log(`Patient HPO terms: ${hpoTerms.map(t => t.hpo_id).join(', ')}`)
+            console.log(`Patient HPO terms: ${hpoIds.join(', ')}`)
             console.log('BEFORE runMatching - aggregatedResults:', aggregatedResults)
             console.log('='.repeat(80))
 
-            // Use context method instead of mutation - this updates aggregatedResults automatically
-            await runPhenotypeMatching()
+            // Pass HPO IDs explicitly to runMatching
+            await runPhenotypeMatching(hpoIds)
             
             console.log('='.repeat(80))
             console.log('AFTER runMatching - aggregatedResults:', aggregatedResults)

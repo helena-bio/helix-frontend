@@ -23,7 +23,6 @@ import {
   useRef,
   type ReactNode
 } from 'react'
-import { useClinicalProfileContext } from './ClinicalProfileContext'
 import {
   runSessionPhenotypeMatching,
   getMatchingResults,
@@ -56,8 +55,8 @@ interface PhenotypeResultsContextValue {
   // Aggregated results by gene (sorted by clinical priority)
   aggregatedResults: GeneAggregatedResult[] | null
 
-  // Actions
-  runMatching: () => Promise<void>
+  // Actions - REFACTORED: accepts HPO IDs as parameter
+  runMatching: (patientHpoIds: string[]) => Promise<void>
   clearResults: () => void
 
   // Computed
@@ -87,7 +86,7 @@ function aggregateResultsByGene(results: SessionMatchResult[]): GeneAggregatedRe
 
   results.forEach((result) => {
     const geneSymbol = result.gene_symbol || 'Unknown'
-    
+
     if (!geneMap.has(geneSymbol)) {
       geneMap.set(geneSymbol, {
         variants: [],
@@ -157,13 +156,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   const currentSessionId = useRef<string | null>(null)
   const hasLoadedResults = useRef(false)
 
-  // Dependencies
-  const { hpoTerms } = useClinicalProfileContext()
-  // Get HPO terms from phenotype context
-  const patientHpoIds = useMemo(() => {
-    return hpoTerms.map(t => t.hpo_id)
-  }, [hpoTerms])
-
   // Load existing results from DuckDB when session changes
   useEffect(() => {
     if (!sessionId || sessionId === currentSessionId.current) return
@@ -179,7 +171,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     getMatchingResults(sessionId)
       .then((response) => {
         console.log('[PhenotypeResultsContext] Loaded existing results from DuckDB:', response.results.length)
-        
+
         // Store tier counts
         setTier1Count(response.tier_1_count)
         setTier2Count(response.tier_2_count)
@@ -214,8 +206,8 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       })
   }, [sessionId])
 
-  // Run matching (manual trigger)
-  const runMatching = useCallback(async () => {
+  // REFACTORED: Run matching with explicit HPO IDs parameter
+  const runMatching = useCallback(async (patientHpoIds: string[]) => {
     console.log('[PhenotypeResultsContext] runMatching called')
     console.log('  sessionId:', sessionId)
     console.log('  patientHpoIds:', patientHpoIds)
@@ -226,7 +218,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     }
 
     if (patientHpoIds.length === 0) {
-      console.warn('[PhenotypeResultsContext] No phenotypes selected')
+      console.warn('[PhenotypeResultsContext] No phenotypes provided')
       setStatus('no_phenotypes')
       return
     }
@@ -258,7 +250,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
       // Fetch results from DuckDB (they were just saved by the API)
       const resultsResponse = await getMatchingResults(sessionId)
-      
+
       // Store tier counts
       setTier1Count(resultsResponse.tier_1_count)
       setTier2Count(resultsResponse.tier_2_count)
@@ -281,7 +273,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       setError(err as Error)
       setStatus('error')
     }
-  }, [sessionId, patientHpoIds])
+  }, [sessionId])  // Only depends on sessionId now
 
   // Clear results
   const clearResults = useCallback(() => {
@@ -294,20 +286,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     setTier4Count(0)
     setVariantsAnalyzed(0)
   }, [])
-
-  // Re-run when phenotypes change (only if we already have results)
-  const prevHpoCount = useRef(patientHpoIds.length)
-  useEffect(() => {
-    if (prevHpoCount.current !== patientHpoIds.length && prevHpoCount.current > 0) {
-      console.log('[PhenotypeResultsContext] Phenotypes changed, re-running matching')
-      prevHpoCount.current = patientHpoIds.length
-      if (aggregatedResults && hasLoadedResults.current) {
-        runMatching()
-      }
-    } else {
-      prevHpoCount.current = patientHpoIds.length
-    }
-  }, [patientHpoIds.length, aggregatedResults, runMatching])
 
   // Computed values
   const value = useMemo<PhenotypeResultsContextValue>(() => ({
