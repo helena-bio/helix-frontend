@@ -100,7 +100,7 @@ export function ClinicalAnalysis({
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
-  const { aggregatedResults, runMatching: runPhenotypeMatching } = usePhenotypeResults()
+  const { aggregatedResults, runMatching: runPhenotypeMatching, totalGenes, tier1Count, tier2Count } = usePhenotypeResults()
   const { setInterpretation, interpretation } = useClinicalInterpretationContext()
 
   const screeningMutation = useRunScreening()
@@ -145,11 +145,25 @@ export function ClinicalAnalysis({
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING - Running first to identify Tier 1/2 candidates')
             console.log(`Patient HPO terms: ${hpoTerms.map(t => t.hpo_id).join(', ')}`)
+            console.log('BEFORE runMatching - aggregatedResults:', aggregatedResults)
             console.log('='.repeat(80))
 
             // Use context method instead of mutation - this updates aggregatedResults automatically
             await runPhenotypeMatching()
             
+            console.log('='.repeat(80))
+            console.log('AFTER runMatching - aggregatedResults:', aggregatedResults)
+            console.log('  totalGenes:', totalGenes)
+            console.log('  tier1Count:', tier1Count)
+            console.log('  tier2Count:', tier2Count)
+            console.log('  aggregatedResults length:', aggregatedResults?.length || 0)
+            if (aggregatedResults && aggregatedResults.length > 0) {
+              console.log('  First gene:', aggregatedResults[0])
+              console.log('  Tier 1 genes:', aggregatedResults.filter(r => r.best_tier === 'TIER_1').map(r => r.gene_symbol))
+              console.log('  Tier 2 genes:', aggregatedResults.filter(r => r.best_tier === 'TIER_2').map(r => r.gene_symbol))
+            }
+            console.log('='.repeat(80))
+
             updateStageStatus('phenotype', 'completed')
             toast.success('Phenotype matching complete')
           } catch (error) {
@@ -204,6 +218,12 @@ export function ClinicalAnalysis({
         updateStageStatus('literature', 'running')
 
         try {
+          console.log('='.repeat(80))
+          console.log('LITERATURE SEARCH - Checking for top genes')
+          console.log('  aggregatedResults:', aggregatedResults)
+          console.log('  aggregatedResults length:', aggregatedResults?.length || 0)
+          console.log('='.repeat(80))
+
           // Extract top genes from phenotype matching results
           const topGenes: string[] = []
 
@@ -215,8 +235,13 @@ export function ClinicalAnalysis({
               .filter(r => r.best_tier === 'TIER_2')
               .map(r => r.gene_symbol)
 
+            console.log('  Found Tier 1 genes:', tier1Genes)
+            console.log('  Found Tier 2 genes:', tier2Genes)
+
             topGenes.push(...tier1Genes, ...tier2Genes.slice(0, 10))
           }
+
+          console.log('  Final topGenes list:', topGenes)
 
           if (topGenes.length > 0) {
             console.log('='.repeat(80))
@@ -233,7 +258,9 @@ export function ClinicalAnalysis({
             updateStageStatus('literature', 'completed')
             toast.success('Literature search complete')
           } else {
+            console.log('='.repeat(80))
             console.log('No top genes for literature search - skipping')
+            console.log('='.repeat(80))
             updateStageStatus('literature', 'skipped')
           }
         } catch (error) {
@@ -308,6 +335,9 @@ export function ClinicalAnalysis({
     nextStep,
     onComplete,
     onError,
+    totalGenes,
+    tier1Count,
+    tier2Count,
   ])
 
   const progress = calculateProgress()
