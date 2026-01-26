@@ -2,7 +2,6 @@
  * Application Providers
  * Wraps app with all necessary context providers
  */
-
 'use client'
 
 import { ReactNode } from 'react'
@@ -12,6 +11,7 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@helix/shared/components/ui/sonner'
 import { SessionProvider } from '@/contexts/SessionContext'
 import { JourneyProvider } from '@/contexts/JourneyContext'
+import { ClinicalInterpretationProvider } from '@/contexts/ClinicalInterpretationContext'
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -44,8 +44,10 @@ export function Providers({ children }: ProvidersProps) {
       >
         <SessionProvider>
           <JourneyProvider>
-            {children}
-            <Toaster />
+            <ClinicalInterpretationProvider>
+              {children}
+              <Toaster />
+            </ClinicalInterpretationProvider>
           </JourneyProvider>
         </SessionProvider>
       </ThemeProvider>

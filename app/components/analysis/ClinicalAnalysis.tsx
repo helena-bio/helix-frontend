@@ -15,6 +15,7 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
+import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
 import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
@@ -95,13 +96,13 @@ export function ClinicalAnalysis({
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [interpretationText, setInterpretationText] = useState<string>('')
   const startedRef = useRef(false)
 
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
   const { phenotypeResponse } = usePhenotypeResults()
+  const { setInterpretation, interpretation } = useClinicalInterpretationContext()
 
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
@@ -247,7 +248,7 @@ export function ClinicalAnalysis({
         // Stage 4: Clinical Interpretation (AI-powered diagnostic analysis with streaming)
         setCurrentStage('clinical_interpretation')
         updateStageStatus('clinical_interpretation', 'running')
-        setInterpretationText('') // Clear previous text
+        setInterpretation('') // Clear previous interpretation
 
         try {
           console.log('='.repeat(80))
@@ -257,12 +258,14 @@ export function ClinicalAnalysis({
           await clinicalInterpretationMutation.mutateAsync({
             sessionId,
             onStreamToken: (token) => {
-              // Append streaming token to text
-              setInterpretationText((prev) => prev + token)
+              // Append streaming token to interpretation in context
+              setInterpretation((interpretation || '') + token)
             },
             onComplete: (fullText) => {
               console.log('Clinical interpretation streaming complete')
               console.log(`Generated ${fullText.length} characters`)
+              // Final interpretation is already in context from streaming
+              setInterpretation(fullText)
             },
             onError: (error) => {
               console.error('Clinical interpretation streaming error:', error)
@@ -302,6 +305,8 @@ export function ClinicalAnalysis({
     literatureSearchMutation,
     clinicalInterpretationMutation,
     setScreeningResponse,
+    setInterpretation,
+    interpretation,
     updateStageStatus,
     nextStep,
     onComplete,
@@ -464,8 +469,8 @@ export function ClinicalAnalysis({
                         </p>
                       </div>
                       <div className="text-sm whitespace-pre-wrap leading-relaxed min-h-[100px]">
-                        {interpretationText || 'Analyzing clinical data...'}
-                        {interpretationText && <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" />}
+                        {interpretation || 'Analyzing clinical data...'}
+                        {interpretation && <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" />}
                       </div>
                     </div>
                   </CardContent>
