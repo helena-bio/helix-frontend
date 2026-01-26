@@ -7,7 +7,7 @@
  * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
  * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
  * 3. Literature Search (for key genes) - AUTOMATIC
- * 4. Clinical Interpretation (AI-powered diagnosis) - AUTOMATIC
+ * 4. Clinical Interpretation (AI-powered diagnosis) - AUTOMATIC WITH STREAMING
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -18,6 +18,7 @@ import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
+import { useClinicalInterpretation } from '@/hooks/mutations/use-clinical-interpretation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -105,6 +106,7 @@ export function ClinicalAnalysis({
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
+  const clinicalInterpretationMutation = useClinicalInterpretation()
 
   const calculateProgress = useCallback((): number => {
     const statuses = Object.values(stageStatuses)
@@ -206,7 +208,7 @@ export function ClinicalAnalysis({
         try {
           // Extract top genes from phenotype matching results
           const topGenes: string[] = []
-          
+
           if (phenotypeResponse?.results) {
             const tier1Genes = phenotypeResponse.results
               .filter(r => r.tier === 1)
@@ -214,7 +216,7 @@ export function ClinicalAnalysis({
             const tier2Genes = phenotypeResponse.results
               .filter(r => r.tier === 2)
               .map(r => r.gene_symbol)
-            
+
             topGenes.push(...tier1Genes, ...tier2Genes.slice(0, 10))
           }
 
@@ -229,7 +231,7 @@ export function ClinicalAnalysis({
               hpoTerms: hpoTerms,
               limit: 50,
             })
-            
+
             updateStageStatus('literature', 'completed')
             toast.success('Literature search complete')
           } else {
@@ -242,22 +244,32 @@ export function ClinicalAnalysis({
           toast.warning('Literature search failed - continuing without literature context')
         }
 
-        // Stage 4: Clinical Interpretation (AI-powered diagnostic analysis)
+        // Stage 4: Clinical Interpretation (AI-powered diagnostic analysis with streaming)
         setCurrentStage('clinical_interpretation')
         updateStageStatus('clinical_interpretation', 'running')
+        setInterpretationText('') // Clear previous text
 
         try {
           console.log('='.repeat(80))
-          console.log('CLINICAL INTERPRETATION - AI diagnostic analysis')
+          console.log('CLINICAL INTERPRETATION - Starting AI analysis with streaming')
           console.log('='.repeat(80))
 
-          // TODO: Implement AI streaming interpretation
-          // For now, simulate with timeout
-          await new Promise(resolve => setTimeout(resolve, 2000))
-          
-          // Placeholder text
-          setInterpretationText('Clinical interpretation will be generated here via AI streaming...')
-          
+          await clinicalInterpretationMutation.mutateAsync({
+            sessionId,
+            onStreamToken: (token) => {
+              // Append streaming token to text
+              setInterpretationText((prev) => prev + token)
+            },
+            onComplete: (fullText) => {
+              console.log('Clinical interpretation streaming complete')
+              console.log(`Generated ${fullText.length} characters`)
+            },
+            onError: (error) => {
+              console.error('Clinical interpretation streaming error:', error)
+              throw error
+            },
+          })
+
           updateStageStatus('clinical_interpretation', 'completed')
           toast.success('Clinical interpretation complete')
         } catch (error) {
@@ -288,6 +300,7 @@ export function ClinicalAnalysis({
     phenotypeMatchingMutation,
     screeningMutation,
     literatureSearchMutation,
+    clinicalInterpretationMutation,
     setScreeningResponse,
     updateStageStatus,
     nextStep,
@@ -440,15 +453,19 @@ export function ClinicalAnalysis({
               </div>
 
               {/* Clinical Interpretation Streaming Display */}
-              {currentStage === 'clinical_interpretation' && interpretationText && (
-                <Card className="bg-muted/30">
+              {currentStage === 'clinical_interpretation' && (
+                <Card className="bg-muted/30 border-primary/20">
                   <CardContent className="pt-4">
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        AI Clinical Interpretation:
-                      </p>
-                      <div className="text-sm whitespace-pre-wrap">
-                        {interpretationText}
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        <p className="text-sm font-medium text-primary">
+                          AI Clinical Interpretation
+                        </p>
+                      </div>
+                      <div className="text-sm whitespace-pre-wrap leading-relaxed min-h-[100px]">
+                        {interpretationText || 'Analyzing clinical data...'}
+                        {interpretationText && <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" />}
                       </div>
                     </div>
                   </CardContent>
