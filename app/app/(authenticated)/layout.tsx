@@ -1,5 +1,4 @@
 "use client"
-
 /**
  * Authenticated Layout
  * Two modes:
@@ -9,19 +8,18 @@
  * Providers hierarchy (both modes):
  * - ClinicalProfileProvider: Complete patient clinical profile (demographics, phenotype, etc)
  * - ScreeningResultsProvider: Clinical screening analysis results
- * - PhenotypeResultsProvider: Cached phenotype matching results (post-analysis only)
+ * - PhenotypeResultsProvider: Phenotype matching results (available in both modes)
  * - LiteratureResultsProvider: Clinical literature search results (post-analysis only)
  */
-
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
-import { 
-  ClinicalProfileProvider, 
+import {
+  ClinicalProfileProvider,
   ScreeningResultsProvider,
-  PhenotypeResultsProvider, 
-  LiteratureResultsProvider 
+  PhenotypeResultsProvider,
+  LiteratureResultsProvider
 } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
@@ -77,12 +75,14 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
           </ClinicalProfileProvider>
         ) : (
           // Full Width: Pre-analysis workflow
-          // Also wrapped with ClinicalProfile + Screening providers
+          // Also wrapped with ClinicalProfile + Screening + Phenotype providers
           <ClinicalProfileProvider sessionId={currentSessionId}>
             <ScreeningResultsProvider>
-              <main className="h-full overflow-auto bg-background">
-                {children}
-              </main>
+              <PhenotypeResultsProvider sessionId={currentSessionId}>
+                <main className="h-full overflow-auto bg-background">
+                  {children}
+                </main>
+              </PhenotypeResultsProvider>
             </ScreeningResultsProvider>
           </ClinicalProfileProvider>
         )}
