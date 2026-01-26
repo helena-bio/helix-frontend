@@ -19,6 +19,7 @@ import { useClinicalInterpretation as useClinicalInterpretationContext } from '@
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
 import { useClinicalInterpretation } from '@/hooks/mutations/use-clinical-interpretation'
+import { isTier1, isTier2 } from '@/types/tiers.types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -157,8 +158,8 @@ export function ClinicalAnalysis({
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING COMPLETE')
             console.log('  Total genes:', phenotypeResults.length)
-            console.log('  Tier 1 genes:', phenotypeResults.filter(r => r.best_tier === 'TIER_1').map(r => r.gene_symbol))
-            console.log('  Tier 2 genes:', phenotypeResults.filter(r => r.best_tier === 'TIER_2').map(r => r.gene_symbol))
+            console.log('  Tier 1 genes:', phenotypeResults.filter(r => isTier1(r.best_tier)).map(r => r.gene_symbol))
+            console.log('  Tier 2 genes:', phenotypeResults.filter(r => isTier2(r.best_tier)).map(r => r.gene_symbol))
             console.log('='.repeat(80))
 
             updateStageStatus('phenotype', 'completed')
@@ -220,15 +221,15 @@ export function ClinicalAnalysis({
           console.log('  phenotypeResults length:', phenotypeResults.length)
           console.log('='.repeat(80))
 
-          // Extract top genes from phenotype results (directly from Stage 1)
+          // Extract top genes from phenotype results using tier helpers
           const topGenes: string[] = []
 
           if (phenotypeResults.length > 0) {
             const tier1Genes = phenotypeResults
-              .filter(r => r.best_tier === 'TIER_1')
+              .filter(r => isTier1(r.best_tier))
               .map(r => r.gene_symbol)
             const tier2Genes = phenotypeResults
-              .filter(r => r.best_tier === 'TIER_2')
+              .filter(r => isTier2(r.best_tier))
               .map(r => r.gene_symbol)
 
             console.log('  Found Tier 1 genes:', tier1Genes)

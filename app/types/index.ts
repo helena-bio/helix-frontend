@@ -3,3 +3,6 @@ export * from './ai.types'
 export * from './visualization.types'
 export * from './literature.types'
 export * from './clinical-profile.types'
+
+// Tier system
+export * from './tiers.types'
