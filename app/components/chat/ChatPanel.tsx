@@ -7,6 +7,7 @@ import { useSession } from '@/contexts/SessionContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
+import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
 import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
@@ -218,18 +219,10 @@ export function ChatPanel() {
   // Get complete clinical profile
   const { getCompleteProfile } = useClinicalProfileContext()
 
-  const {
-    aggregatedResults,
-    tier1Count,
-    tier2Count,
-    tier3Count,
-    tier4Count,
-    variantsAnalyzed,
-    totalGenes,
-  } = usePhenotypeResults()
-
-  // Get screening results
-  const { screeningResponse } = useScreeningResults()
+  // Safe context access - these providers are only available in analysis mode
+  const phenotypeResults = usePhenotypeResults()
+  const screeningResults = useScreeningResults()
+  const literatureResults = useLiteratureResults()
 
   // Get clinical interpretation
   const { interpretation, hasInterpretation } = useClinicalInterpretationContext()
@@ -368,15 +361,15 @@ export function ChatPanel() {
       }
 
       // 2. Matched Phenotype Results Context (from DuckDB)
-      if (aggregatedResults && aggregatedResults.length > 0) {
+      if (phenotypeResults?.aggregatedResults && phenotypeResults.aggregatedResults.length > 0) {
         metadata.matched_phenotype_context = {
-          total_genes: totalGenes,
-          variants_analyzed: variantsAnalyzed,
-          tier_1_count: tier1Count,
-          tier_2_count: tier2Count,
-          tier_3_count: tier3Count,
-          tier_4_count: tier4Count,
-          top_matched_genes: aggregatedResults.slice(0, 20).map(g => ({
+          total_genes: phenotypeResults.totalGenes,
+          variants_analyzed: phenotypeResults.variantsAnalyzed,
+          tier_1_count: phenotypeResults.tier1Count,
+          tier_2_count: phenotypeResults.tier2Count,
+          tier_3_count: phenotypeResults.tier3Count,
+          tier_4_count: phenotypeResults.tier4Count,
+          top_matched_genes: phenotypeResults.aggregatedResults.slice(0, 20).map(g => ({
             gene_symbol: g.gene_symbol,
             rank: g.rank,
             clinical_score: g.best_clinical_score,
@@ -389,20 +382,20 @@ export function ChatPanel() {
       }
 
       // 3. Screening Results Context
-      if (screeningResponse) {
+      if (screeningResults?.screeningResponse) {
         metadata.screening_context = {
-          summary: screeningResponse.summary,
-          tier1_count: screeningResponse.summary.tier1_count,
-          tier2_count: screeningResponse.summary.tier2_count,
-          tier3_count: screeningResponse.summary.tier3_count,
-          tier4_count: screeningResponse.summary.tier4_count,
-          top_tier1_variants: screeningResponse.tier1_results.slice(0, 5).map(v => ({
+          summary: screeningResults.screeningResponse.summary,
+          tier1_count: screeningResults.screeningResponse.summary.tier1_count,
+          tier2_count: screeningResults.screeningResponse.summary.tier2_count,
+          tier3_count: screeningResults.screeningResponse.summary.tier3_count,
+          tier4_count: screeningResults.screeningResponse.summary.tier4_count,
+          top_tier1_variants: screeningResults.screeningResponse.tier1_results.slice(0, 5).map(v => ({
             gene_symbol: v.gene_symbol,
             tier: v.tier,
             total_score: v.total_score,
             clinical_actionability: v.clinical_actionability,
           })),
-          top_tier2_variants: screeningResponse.tier2_results.slice(0, 5).map(v => ({
+          top_tier2_variants: screeningResults.screeningResponse.tier2_results.slice(0, 5).map(v => ({
             gene_symbol: v.gene_symbol,
             tier: v.tier,
             total_score: v.total_score,
