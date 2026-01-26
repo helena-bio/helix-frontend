@@ -105,19 +105,19 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
             <p className="text-base font-semibold mb-2">Score Breakdown</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <p className="text-sm text-muted-foreground">Constraint</p>
+                <p className="text-md text-muted-foreground">Constraint</p>
                 <p className="text-base font-mono">{variant.constraint_score.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Deleteriousness</p>
+                <p className="text-md text-muted-foreground">Deleteriousness</p>
                 <p className="text-base font-mono">{variant.deleteriousness_score.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Phenotype</p>
+                <p className="text-md text-muted-foreground">Phenotype</p>
                 <p className="text-base font-mono">{variant.phenotype_score.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Age Relevance</p>
+                <p className="text-md text-muted-foreground">Age Relevance</p>
                 <p className="text-base font-mono">{variant.age_relevance_score.toFixed(2)}</p>
               </div>
             </div>
@@ -128,19 +128,19 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
             <p className="text-base font-semibold mb-2">Clinical Boosts</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <p className="text-sm text-muted-foreground">ACMG</p>
+                <p className="text-md text-muted-foreground">ACMG</p>
                 <p className="text-base font-mono">{variant.acmg_boost.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Ethnicity</p>
+                <p className="text-md text-muted-foreground">Ethnicity</p>
                 <p className="text-base font-mono">{variant.ethnicity_boost.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Family History</p>
+                <p className="text-md text-muted-foreground">Family History</p>
                 <p className="text-base font-mono">{variant.family_history_boost.toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">De Novo</p>
+                <p className="text-md text-muted-foreground">De Novo</p>
                 <p className="text-base font-mono">{variant.de_novo_boost.toFixed(2)}</p>
               </div>
             </div>
@@ -418,7 +418,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
             <div className="flex gap-3 pt-2">
               <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
-                Screening prioritizes variants based on age-specific disease onset, phenotype relevance, 
+                Screening prioritizes variants based on age-specific disease onset, phenotype relevance,
                 ethnicity-specific prevalence, and clinical actionability.
               </p>
             </div>
