@@ -7,6 +7,7 @@ import { useSession } from '@/contexts/SessionContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
+import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
 import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
@@ -200,6 +201,7 @@ export function ChatPanel() {
   const [isQuerying, setIsQuerying] = useState(false)
   const [isSearchingLiterature, setIsSearchingLiterature] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
+  const [hasStreamedInterpretation, setHasStreamedInterpretation] = useState(false)
 
   // Track current streaming message ID for multi-round support
   const currentStreamingIdRef = useRef<string | null>(null)
@@ -229,6 +231,9 @@ export function ChatPanel() {
   // Get screening results
   const { screeningResponse } = useScreeningResults()
 
+  // Get clinical interpretation
+  const { interpretation, hasInterpretation } = useClinicalInterpretationContext()
+
   // Get variant statistics for analysis context
   const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {
     enabled: !!currentSessionId,
@@ -244,17 +249,68 @@ export function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Initial message or stream clinical interpretation
   useEffect(() => {
-    if (messages.length === 0 && currentSessionId) {
-      setMessages([{
-        id: '1',
-        role: 'assistant',
-        content: "Hello! I'm your AI assistant for variant analysis. I can help you understand the results, filter variants, and provide clinical insights. What would you like to know?",
-        timestamp: new Date(),
-        type: 'text',
-      }])
+    if (messages.length === 0 && currentSessionId && !hasStreamedInterpretation) {
+      if (hasInterpretation() && interpretation) {
+        // Stream clinical interpretation as first message
+        console.log('[ChatPanel] Streaming clinical interpretation as first message')
+        
+        const interpretationMessageId = 'interpretation-initial'
+        const interpretationMessage: Message = {
+          id: interpretationMessageId,
+          role: 'assistant',
+          content: '',
+          timestamp: new Date(),
+          isStreaming: true,
+          type: 'text',
+        }
+        
+        setMessages([interpretationMessage])
+        setHasStreamedInterpretation(true)
+        
+        // Stream character by character
+        let charIndex = 0
+        const streamInterval = setInterval(() => {
+          if (charIndex < interpretation.length) {
+            const chunk = interpretation.slice(charIndex, charIndex + 3) // 3 chars at a time for faster streaming
+            
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === interpretationMessageId
+                  ? { ...msg, content: msg.content + chunk }
+                  : msg
+              )
+            )
+            
+            charIndex += 3
+          } else {
+            // Streaming complete
+            clearInterval(streamInterval)
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === interpretationMessageId
+                  ? { ...msg, isStreaming: false }
+                  : msg
+              )
+            )
+          }
+        }, 10) // 10ms interval for smooth streaming
+        
+        return () => clearInterval(streamInterval)
+      } else {
+        // No interpretation, show default greeting
+        setMessages([{
+          id: '1',
+          role: 'assistant',
+          content: "Hello! I'm your AI assistant for variant analysis. I can help you understand the results, filter variants, and provide clinical insights. What would you like to know?",
+          timestamp: new Date(),
+          type: 'text',
+        }])
+        setHasStreamedInterpretation(true)
+      }
     }
-  }, [currentSessionId])
+  }, [currentSessionId, interpretation, hasInterpretation, messages.length, hasStreamedInterpretation])
 
   // ============================================================================
   // HANDLERS
@@ -564,7 +620,7 @@ export function ChatPanel() {
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold">AI Assistant</h2>
             <p className="text-sm text-muted-foreground truncate">
-              Variant Analysis Assistant
+              Clinical Interpretation
             </p>
           </div>
         </div>
