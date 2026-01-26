@@ -14,6 +14,8 @@ interface ClinicalInterpretationParams {
   onError?: (error: Error) => void
 }
 
+const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:9007'
+
 export function useClinicalInterpretation() {
   const { currentSessionId } = useSession()
   const { getCompleteProfile } = useClinicalProfileContext()
@@ -90,7 +92,7 @@ export function useClinicalInterpretation() {
       }
 
       // Call AI service with SSE streaming
-      const response = await fetch('http://localhost:9007/api/v1/analysis/interpret/stream', {
+      const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
