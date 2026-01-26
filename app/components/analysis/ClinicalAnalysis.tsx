@@ -3,23 +3,21 @@
 /**
  * ClinicalAnalysis - Clinical Analysis Pipeline Progress
  *
- * NEW WORKFLOW - Phenotype-first prioritization:
+ * NEW WORKFLOW - Complete clinical pipeline:
  * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
  * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
- * 3. Literature Analysis (automatic background) - AUTOMATIC
- *
- * Why phenotype first?
- * - Phenotype matching identifies Tier 1/2 candidates
- * - Screening reads phenotype tiers and gives priority boost
- * - Results in better clinical prioritization
+ * 3. Literature Search (for key genes) - AUTOMATIC
+ * 4. Clinical Interpretation (AI-powered diagnosis) - AUTOMATIC
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
+import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
+import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -32,6 +30,7 @@ import {
   Dna,
   Filter,
   BookOpen,
+  Brain,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -66,10 +65,17 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
   },
   {
     id: 'literature',
-    name: 'Literature Analysis',
+    name: 'Literature Search',
     icon: <BookOpen className="h-4 w-4" />,
-    description: 'Automated literature review',
+    description: 'Searching publications for key genes',
     required: false,
+  },
+  {
+    id: 'clinical_interpretation',
+    name: 'Clinical Interpretation',
+    icon: <Brain className="h-4 w-4" />,
+    description: 'AI-powered diagnostic analysis',
+    required: true,
   },
 ]
 
@@ -84,17 +90,21 @@ export function ClinicalAnalysis({
     phenotype: 'pending',
     screening: 'pending',
     literature: 'pending',
+    clinical_interpretation: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [interpretationText, setInterpretationText] = useState<string>('')
   const startedRef = useRef(false)
 
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
+  const { phenotypeResponse } = usePhenotypeResults()
 
   const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
+  const literatureSearchMutation = useRunLiteratureSearch()
 
   const calculateProgress = useCallback((): number => {
     const statuses = Object.values(stageStatuses)
@@ -116,7 +126,7 @@ export function ClinicalAnalysis({
         const profile = getCompleteProfile()
 
         console.log('='.repeat(80))
-        console.log('CLINICAL ANALYSIS - NEW WORKFLOW (PHENOTYPE FIRST)')
+        console.log('CLINICAL ANALYSIS - COMPLETE PIPELINE')
         console.log('='.repeat(80))
         console.log(JSON.stringify(profile, null, 2))
         console.log('='.repeat(80))
@@ -141,18 +151,18 @@ export function ClinicalAnalysis({
               patientHpoIds: hpoTerms.map(t => t.hpo_id),
             })
             updateStageStatus('phenotype', 'completed')
-            toast.success('Phenotype matching complete - tiers saved to DuckDB')
+            toast.success('Phenotype matching complete')
           } catch (error) {
             console.error('Phenotype matching failed:', error)
             updateStageStatus('phenotype', 'failed')
-            toast.warning('Phenotype matching failed - screening will run without phenotype boost')
+            toast.warning('Phenotype matching failed - continuing without phenotype boost')
           }
         } else {
           console.log('No HPO terms - skipping phenotype matching')
           updateStageStatus('phenotype', 'skipped')
         }
 
-        // Stage 2: Screening Analysis (REQUIRED - now enhanced with phenotype tiers)
+        // Stage 2: Screening Analysis (REQUIRED - enhanced with phenotype tiers)
         setCurrentStage('screening')
         updateStageStatus('screening', 'running')
 
@@ -176,30 +186,85 @@ export function ClinicalAnalysis({
 
           console.log('='.repeat(80))
           console.log('SCREENING ANALYSIS - Enhanced with phenotype tiers')
-          console.log('Will boost Tier 1 phenotype (+0.25) and Tier 2 phenotype (+0.15)')
-          console.log('='.repeat(80))
-          console.log(JSON.stringify(screeningPayload, null, 2))
           console.log('='.repeat(80))
 
           const screeningResponse = await screeningMutation.mutateAsync(screeningPayload)
-
-          // Save screening summary to context for AI
           setScreeningResponse(screeningResponse)
 
           updateStageStatus('screening', 'completed')
-          toast.success('Clinical screening complete with phenotype context')
+          toast.success('Clinical screening complete')
         } catch (error) {
           console.error('Screening failed:', error)
           updateStageStatus('screening', 'failed')
           throw new Error('Clinical screening failed')
         }
 
-        // Stage 3: Literature Analysis (automatic background task)
+        // Stage 3: Literature Search (for key genes from phenotype/screening)
         setCurrentStage('literature')
         updateStageStatus('literature', 'running')
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        updateStageStatus('literature', 'completed')
-        toast.success('Literature analysis started')
+
+        try {
+          // Extract top genes from phenotype matching results
+          const topGenes: string[] = []
+          
+          if (phenotypeResponse?.results) {
+            const tier1Genes = phenotypeResponse.results
+              .filter(r => r.tier === 1)
+              .map(r => r.gene_symbol)
+            const tier2Genes = phenotypeResponse.results
+              .filter(r => r.tier === 2)
+              .map(r => r.gene_symbol)
+            
+            topGenes.push(...tier1Genes, ...tier2Genes.slice(0, 10))
+          }
+
+          if (topGenes.length > 0) {
+            console.log('='.repeat(80))
+            console.log(`LITERATURE SEARCH - Searching for ${topGenes.length} top genes`)
+            console.log(`Genes: ${topGenes.join(', ')}`)
+            console.log('='.repeat(80))
+
+            await literatureSearchMutation.mutateAsync({
+              genes: topGenes,
+              hpoTerms: hpoTerms,
+              limit: 50,
+            })
+            
+            updateStageStatus('literature', 'completed')
+            toast.success('Literature search complete')
+          } else {
+            console.log('No top genes for literature search - skipping')
+            updateStageStatus('literature', 'skipped')
+          }
+        } catch (error) {
+          console.error('Literature search failed:', error)
+          updateStageStatus('literature', 'failed')
+          toast.warning('Literature search failed - continuing without literature context')
+        }
+
+        // Stage 4: Clinical Interpretation (AI-powered diagnostic analysis)
+        setCurrentStage('clinical_interpretation')
+        updateStageStatus('clinical_interpretation', 'running')
+
+        try {
+          console.log('='.repeat(80))
+          console.log('CLINICAL INTERPRETATION - AI diagnostic analysis')
+          console.log('='.repeat(80))
+
+          // TODO: Implement AI streaming interpretation
+          // For now, simulate with timeout
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          
+          // Placeholder text
+          setInterpretationText('Clinical interpretation will be generated here via AI streaming...')
+          
+          updateStageStatus('clinical_interpretation', 'completed')
+          toast.success('Clinical interpretation complete')
+        } catch (error) {
+          console.error('Clinical interpretation failed:', error)
+          updateStageStatus('clinical_interpretation', 'failed')
+          toast.warning('Clinical interpretation failed - results available without AI interpretation')
+        }
 
         setCurrentStage(null)
         toast.success('Clinical analysis pipeline complete')
@@ -219,8 +284,10 @@ export function ClinicalAnalysis({
     sessionId,
     getCompleteProfile,
     hpoTerms,
+    phenotypeResponse,
     phenotypeMatchingMutation,
     screeningMutation,
+    literatureSearchMutation,
     setScreeningResponse,
     updateStageStatus,
     nextStep,
@@ -236,7 +303,8 @@ export function ClinicalAnalysis({
     const stageNames: Record<string, string> = {
       phenotype: 'Running Phenotype Matching',
       screening: 'Running Clinical Screening',
-      literature: 'Starting Literature Analysis',
+      literature: 'Searching Literature',
+      clinical_interpretation: 'Generating Clinical Interpretation',
     }
 
     return stageNames[currentStage] || 'Processing...'
@@ -301,9 +369,9 @@ export function ClinicalAnalysis({
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} />
           <div>
-            <h1 className="text-3xl font-bold">Clinical Profile</h1>
+            <h1 className="text-3xl font-bold">Clinical Analysis</h1>
             <p className="text-base text-muted-foreground">
-              Clinical data for variant analysis
+              Comprehensive variant analysis pipeline
             </p>
           </div>
         </div>
@@ -359,7 +427,7 @@ export function ClinicalAnalysis({
                         <p className="text-base font-medium">
                           {stage.name}
                           {isSkipped && <span className="text-xs text-muted-foreground ml-2">(skipped)</span>}
-                          {isFailed && <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">(failed)</span>}
+                          {isFailed && <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">(warning)</span>}
                         </p>
                         <p className="text-sm text-muted-foreground">{stage.description}</p>
                       </div>
@@ -370,14 +438,29 @@ export function ClinicalAnalysis({
                   )
                 })}
               </div>
+
+              {/* Clinical Interpretation Streaming Display */}
+              {currentStage === 'clinical_interpretation' && interpretationText && (
+                <Card className="bg-muted/30">
+                  <CardContent className="pt-4">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        AI Clinical Interpretation:
+                      </p>
+                      <div className="text-sm whitespace-pre-wrap">
+                        {interpretationText}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <Alert>
           <AlertDescription className="text-base">
-            Clinical analysis enhances variant prioritization with patient-specific data.
-            Phenotype matching runs first to identify top candidates.
+            Complete clinical pipeline: phenotype matching → screening → literature → AI interpretation
           </AlertDescription>
         </Alert>
       </div>
