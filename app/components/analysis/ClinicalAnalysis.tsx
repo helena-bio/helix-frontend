@@ -16,7 +16,6 @@ import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
-import { useRunPhenotypeMatching } from '@/hooks/mutations/use-phenotype-matching'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
 import { useClinicalInterpretation } from '@/hooks/mutations/use-clinical-interpretation'
@@ -101,10 +100,9 @@ export function ClinicalAnalysis({
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
-  const { aggregatedResults } = usePhenotypeResults()
+  const { aggregatedResults, runMatching: runPhenotypeMatching } = usePhenotypeResults()
   const { setInterpretation, interpretation } = useClinicalInterpretationContext()
 
-  const phenotypeMatchingMutation = useRunPhenotypeMatching()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
   const clinicalInterpretationMutation = useClinicalInterpretation()
@@ -149,10 +147,9 @@ export function ClinicalAnalysis({
             console.log(`Patient HPO terms: ${hpoTerms.map(t => t.hpo_id).join(', ')}`)
             console.log('='.repeat(80))
 
-            await phenotypeMatchingMutation.mutateAsync({
-              sessionId,
-              patientHpoIds: hpoTerms.map(t => t.hpo_id),
-            })
+            // Use context method instead of mutation - this updates aggregatedResults automatically
+            await runPhenotypeMatching()
+            
             updateStageStatus('phenotype', 'completed')
             toast.success('Phenotype matching complete')
           } catch (error) {
@@ -300,7 +297,7 @@ export function ClinicalAnalysis({
     getCompleteProfile,
     hpoTerms,
     aggregatedResults,
-    phenotypeMatchingMutation,
+    runPhenotypeMatching,
     screeningMutation,
     literatureSearchMutation,
     clinicalInterpretationMutation,
