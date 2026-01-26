@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
+import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
@@ -212,8 +213,8 @@ export function ChatPanel() {
     openDetails,
   } = useSession()
 
-  // Get clinical profile (HPO terms and clinical notes)
-  const { hpoTerms, clinicalNotes } = useClinicalProfileContext()
+  // Get complete clinical profile
+  const { getCompleteProfile } = useClinicalProfileContext()
 
   const {
     aggregatedResults,
@@ -224,6 +225,9 @@ export function ChatPanel() {
     variantsAnalyzed,
     totalGenes,
   } = usePhenotypeResults()
+
+  // Get screening results
+  const { screeningResponse } = useScreeningResults()
 
   // Get variant statistics for analysis context
   const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {
@@ -295,20 +299,16 @@ export function ChatPanel() {
       // Build metadata with ALL available contexts
       const metadata: Record<string, any> = {}
 
-      // 1. Patient Phenotype Context (selected HPO terms)
-      if (hpoTerms && hpoTerms.length > 0) {
-        metadata.phenotype_context = {
-          hpo_terms: hpoTerms.map(t => ({
-            hpo_id: t.hpo_id,
-            name: t.name,
-          })),
-          hpo_ids: hpoTerms.map(t => t.hpo_id),
-          term_count: hpoTerms.length,
-        }
-
-        if (clinicalNotes) {
-          metadata.phenotype_context.clinical_notes = clinicalNotes
-        }
+      // 1. Complete Clinical Profile (demographics, ethnicity, clinical context, etc.)
+      const clinicalProfile = getCompleteProfile()
+      metadata.clinical_profile = {
+        demographics: clinicalProfile.demographics,
+        ethnicity: clinicalProfile.ethnicity,
+        clinical_context: clinicalProfile.clinical_context,
+        phenotype: clinicalProfile.phenotype,
+        reproductive: clinicalProfile.reproductive,
+        sample_info: clinicalProfile.sample_info,
+        consent: clinicalProfile.consent,
       }
 
       // 2. Matched Phenotype Results Context (from DuckDB)
@@ -332,13 +332,36 @@ export function ChatPanel() {
         }
       }
 
-      // 3. Analysis Summary Context (variant statistics)
+      // 3. Screening Results Context
+      if (screeningResponse) {
+        metadata.screening_context = {
+          summary: screeningResponse.summary,
+          tier1_count: screeningResponse.summary.tier1_count,
+          tier2_count: screeningResponse.summary.tier2_count,
+          tier3_count: screeningResponse.summary.tier3_count,
+          tier4_count: screeningResponse.summary.tier4_count,
+          top_tier1_variants: screeningResponse.tier1_results.slice(0, 5).map(v => ({
+            gene_symbol: v.gene_symbol,
+            tier: v.tier,
+            total_score: v.total_score,
+            clinical_actionability: v.clinical_actionability,
+          })),
+          top_tier2_variants: screeningResponse.tier2_results.slice(0, 5).map(v => ({
+            gene_symbol: v.gene_symbol,
+            tier: v.tier,
+            total_score: v.total_score,
+            clinical_actionability: v.clinical_actionability,
+          })),
+        }
+      }
+
+      // 4. Analysis Summary Context (variant statistics)
       if (statistics) {
         metadata.analysis_summary = {
           total_variants: statistics.total_variants,
           classification_breakdown: statistics.classification_breakdown,
           impact_breakdown: statistics.impact_breakdown,
-          top_genes: statistics.top_genes.slice(0, 10), // Top 10 genes
+          top_genes: statistics.top_genes.slice(0, 10),
         }
       }
 
