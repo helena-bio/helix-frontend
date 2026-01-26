@@ -3,10 +3,15 @@
 /**
  * ClinicalAnalysis - Clinical Analysis Pipeline Progress
  *
- * Receives clinical data from ClinicalProfileEntry and runs analyses:
- * 1. Screening Analysis (age-aware prioritization) - REQUIRED
- * 2. Phenotype Matching (if HPO terms provided) - OPTIONAL
+ * NEW WORKFLOW - Phenotype-first prioritization:
+ * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
+ * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
  * 3. Literature Analysis (automatic background) - AUTOMATIC
+ *
+ * Why phenotype first?
+ * - Phenotype matching identifies Tier 1/2 candidates
+ * - Screening reads phenotype tiers and gives priority boost
+ * - Results in better clinical prioritization
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -46,18 +51,18 @@ interface AnalysisStage {
 
 const ANALYSIS_STAGES: AnalysisStage[] = [
   {
-    id: 'screening',
-    name: 'Screening Analysis',
-    icon: <Filter className="h-4 w-4" />,
-    description: 'Age-aware variant prioritization',
-    required: true,
-  },
-  {
     id: 'phenotype',
     name: 'Phenotype Matching',
     icon: <Dna className="h-4 w-4" />,
-    description: 'Matching variants to patient phenotype',
+    description: 'Identifying variants matching patient phenotype',
     required: false,
+  },
+  {
+    id: 'screening',
+    name: 'Clinical Screening',
+    icon: <Filter className="h-4 w-4" />,
+    description: 'Enhanced prioritization with phenotype context',
+    required: true,
   },
   {
     id: 'literature',
@@ -76,8 +81,8 @@ export function ClinicalAnalysis({
   onError,
 }: ClinicalAnalysisProps) {
   const [stageStatuses, setStageStatuses] = useState<Record<string, StageStatus>>({
-    screening: 'pending',
     phenotype: 'pending',
+    screening: 'pending',
     literature: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
@@ -111,7 +116,7 @@ export function ClinicalAnalysis({
         const profile = getCompleteProfile()
 
         console.log('='.repeat(80))
-        console.log('CLINICAL ANALYSIS - COMPLETE PROFILE FROM CONTEXT')
+        console.log('CLINICAL ANALYSIS - NEW WORKFLOW (PHENOTYPE FIRST)')
         console.log('='.repeat(80))
         console.log(JSON.stringify(profile, null, 2))
         console.log('='.repeat(80))
@@ -120,7 +125,34 @@ export function ClinicalAnalysis({
           throw new Error('Demographics data is required')
         }
 
-        // Stage 1: Screening Analysis (REQUIRED)
+        // Stage 1: Phenotype Matching (OPTIONAL - but runs FIRST if HPO terms exist)
+        if (hpoTerms.length > 0) {
+          setCurrentStage('phenotype')
+          updateStageStatus('phenotype', 'running')
+
+          try {
+            console.log('='.repeat(80))
+            console.log('PHENOTYPE MATCHING - Running first to identify Tier 1/2 candidates')
+            console.log(`Patient HPO terms: ${hpoTerms.map(t => t.hpo_id).join(', ')}`)
+            console.log('='.repeat(80))
+
+            await phenotypeMatchingMutation.mutateAsync({
+              sessionId,
+              patientHpoIds: hpoTerms.map(t => t.hpo_id),
+            })
+            updateStageStatus('phenotype', 'completed')
+            toast.success('Phenotype matching complete - tiers saved to DuckDB')
+          } catch (error) {
+            console.error('Phenotype matching failed:', error)
+            updateStageStatus('phenotype', 'failed')
+            toast.warning('Phenotype matching failed - screening will run without phenotype boost')
+          }
+        } else {
+          console.log('No HPO terms - skipping phenotype matching')
+          updateStageStatus('phenotype', 'skipped')
+        }
+
+        // Stage 2: Screening Analysis (REQUIRED - now enhanced with phenotype tiers)
         setCurrentStage('screening')
         updateStageStatus('screening', 'running')
 
@@ -143,43 +175,23 @@ export function ClinicalAnalysis({
           }
 
           console.log('='.repeat(80))
-          console.log('SCREENING API REQUEST PAYLOAD')
+          console.log('SCREENING ANALYSIS - Enhanced with phenotype tiers')
+          console.log('Will boost Tier 1 phenotype (+0.25) and Tier 2 phenotype (+0.15)')
           console.log('='.repeat(80))
           console.log(JSON.stringify(screeningPayload, null, 2))
           console.log('='.repeat(80))
 
           const screeningResponse = await screeningMutation.mutateAsync(screeningPayload)
-          
+
           // Save screening summary to context for AI
           setScreeningResponse(screeningResponse)
-          
+
           updateStageStatus('screening', 'completed')
-          toast.success('Screening analysis complete')
+          toast.success('Clinical screening complete with phenotype context')
         } catch (error) {
           console.error('Screening failed:', error)
           updateStageStatus('screening', 'failed')
-          throw new Error('Screening analysis failed')
-        }
-
-        // Stage 2: Phenotype Matching (OPTIONAL - only if HPO terms)
-        if (hpoTerms.length > 0) {
-          setCurrentStage('phenotype')
-          updateStageStatus('phenotype', 'running')
-
-          try {
-            await phenotypeMatchingMutation.mutateAsync({
-              sessionId,
-              patientHpoIds: hpoTerms.map(t => t.hpo_id),
-            })
-            updateStageStatus('phenotype', 'completed')
-            toast.success('Phenotype matching complete')
-          } catch (error) {
-            console.error('Phenotype matching failed:', error)
-            updateStageStatus('phenotype', 'failed')
-            toast.warning('Phenotype matching failed, continuing...')
-          }
-        } else {
-          updateStageStatus('phenotype', 'skipped')
+          throw new Error('Clinical screening failed')
         }
 
         // Stage 3: Literature Analysis (automatic background task)
@@ -222,8 +234,8 @@ export function ClinicalAnalysis({
     if (!currentStage) return 'Initializing...'
 
     const stageNames: Record<string, string> = {
-      screening: 'Running Screening Analysis',
       phenotype: 'Running Phenotype Matching',
+      screening: 'Running Clinical Screening',
       literature: 'Starting Literature Analysis',
     }
 
@@ -365,7 +377,7 @@ export function ClinicalAnalysis({
         <Alert>
           <AlertDescription className="text-base">
             Clinical analysis enhances variant prioritization with patient-specific data.
-            This typically takes 30-60 seconds.
+            Phenotype matching runs first to identify top candidates.
           </AlertDescription>
         </Alert>
       </div>
