@@ -4,7 +4,7 @@
 
 import { marked } from 'marked'
 import { jsPDF } from 'jspdf'
-import { MdTextRender } from 'jspdf-md-renderer'
+import { MdTextRender, type RenderOption } from 'jspdf-md-renderer'
 
 export type ReportFormat = 'md' | 'docx' | 'pdf'
 
@@ -81,43 +81,81 @@ ${htmlContent}
  */
 async function downloadPdf(content: string, filename: string) {
   try {
-    // Create PDF document
+    // Create PDF document - exact config from library example
     const doc = new jsPDF({
       unit: 'mm',
+      orientation: 'p',
       format: 'a4',
-      orientation: 'portrait'
+      putOnlyUsedFonts: true,
+      hotfixes: ['px_scaling'],
+      userUnit: 96
     })
     
-    // Configure options for markdown rendering with proper types
-    const options = {
-      cursor: { x: 10, y: 10 },
+    // A4 page configuration from example
+    const width = 210
+    const height = 297
+    const xmargin = 8
+    const topmargin = height * 0.1
+    const xpading = 15
+    const maxLineWidth = width - (2 * xpading)
+    const maxContentHeight = height
+    const lineSpace = 6.2
+    const defaultIndent = 8
+    const defaultLineHeightFactor = 1.4
+    const defaultFontSize = 11
+    const defaultTitleFontSize = defaultFontSize + 2
+    
+    let y = topmargin
+    
+    // Configure options with proper RenderOption type
+    const options: RenderOption = {
+      cursor: {
+        x: xpading,
+        y: y
+      },
       page: {
-        format: 'a4' as const,
-        unit: 'mm' as const,
-        orientation: 'portrait' as const,
-        maxContentWidth: 190,
-        maxContentHeight: 277,
-        lineSpace: 1.5,
-        defaultLineHeightFactor: 1.2,
-        defaultFontSize: 11,
-        defaultTitleFontSize: 14,
-        topmargin: 10,
-        xpading: 10,
-        xmargin: 10,
-        indent: 10,
+        format: 'a4',
+        orientation: 'p',
+        defaultFontSize: defaultFontSize,
+        defaultLineHeightFactor: defaultLineHeightFactor,
+        defaultTitleFontSize: defaultTitleFontSize,
+        indent: defaultIndent,
+        lineSpace: lineSpace,
+        maxContentHeight: maxContentHeight,
+        maxContentWidth: maxLineWidth,
+        topmargin: topmargin,
+        xmargin: xmargin,
+        xpading: xpading
+      },
+      endCursorYHandler: (endY) => { 
+        y = endY 
       },
       font: {
-        bold: { name: 'helvetica' as const, style: 'bold' as const },
-        regular: { name: 'helvetica' as const, style: 'normal' as const },
-        light: { name: 'helvetica' as const, style: 'light' as const },
-      },
-      endCursorYHandler: (y: number) => {
-        console.log('PDF generation complete. Final Y position:', y)
+        bold: {
+          name: 'helvetica',
+          style: 'bold'
+        },
+        regular: {
+          name: 'helvetica',
+          style: 'normal'
+        },
+        light: {
+          name: 'helvetica',
+          style: 'light'
+        } 
       }
     }
     
     // Render markdown to PDF
     await MdTextRender(doc, content, options)
+    
+    // Set document metadata
+    doc.setProperties({
+      title: filename,
+      subject: 'Clinical Genetic Interpretation Report',
+      author: 'Helix Insight',
+      creator: 'Helix Insight Platform'
+    })
     
     // Download the PDF
     doc.save(`${filename}.pdf`)
