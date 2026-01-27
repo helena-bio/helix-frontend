@@ -7,7 +7,7 @@
  * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
  * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
  * 3. Literature Search (for key genes) - AUTOMATIC
- * 4. Clinical Interpretation (AI-powered diagnosis) - AUTOMATIC WITH STREAMING
+ * 4. Navigate to split view → Clinical Interpretation starts in ChatPanel
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -15,10 +15,8 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
-import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
-import { useClinicalInterpretation } from '@/hooks/mutations/use-clinical-interpretation'
 import { isTier1, isTier2 } from '@/types/tiers.types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -32,7 +30,6 @@ import {
   Dna,
   Filter,
   BookOpen,
-  Brain,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -72,13 +69,6 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
     description: 'Searching publications for key genes',
     required: false,
   },
-  {
-    id: 'clinical_interpretation',
-    name: 'Clinical Interpretation',
-    icon: <Brain className="h-4 w-4" />,
-    description: 'AI-powered diagnostic analysis',
-    required: true,
-  },
 ]
 
 type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed'
@@ -92,7 +82,6 @@ export function ClinicalAnalysis({
     phenotype: 'pending',
     screening: 'pending',
     literature: 'pending',
-    clinical_interpretation: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -102,11 +91,9 @@ export function ClinicalAnalysis({
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
   const { runMatching: runPhenotypeMatching } = usePhenotypeResults()
-  const { setInterpretation } = useClinicalInterpretationContext()
 
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
-  const clinicalInterpretationMutation = useClinicalInterpretation()
 
   const calculateProgress = useCallback((): number => {
     const statuses = Object.values(stageStatuses)
@@ -128,7 +115,7 @@ export function ClinicalAnalysis({
         const profile = getCompleteProfile()
 
         console.log('='.repeat(80))
-        console.log('CLINICAL ANALYSIS - COMPLETE PIPELINE')
+        console.log('CLINICAL ANALYSIS - PIPELINE (Stages 1-3)')
         console.log('='.repeat(80))
         console.log(JSON.stringify(profile, null, 2))
         console.log('='.repeat(80))
@@ -152,7 +139,6 @@ export function ClinicalAnalysis({
             console.log(`Patient HPO terms: ${hpoIds.join(', ')}`)
             console.log('='.repeat(80))
 
-            // Get results directly from runMatching - no state dependency
             phenotypeResults = await runPhenotypeMatching(hpoIds)
             
             console.log('='.repeat(80))
@@ -221,7 +207,6 @@ export function ClinicalAnalysis({
           console.log('  phenotypeResults length:', phenotypeResults.length)
           console.log('='.repeat(80))
 
-          // Extract top genes from phenotype results using tier helpers
           const topGenes: string[] = []
 
           if (phenotypeResults.length > 0) {
@@ -266,43 +251,14 @@ export function ClinicalAnalysis({
           toast.warning('Literature search failed - continuing without literature context')
         }
 
-        // Stage 4: Clinical Interpretation (AI-powered diagnostic analysis - runs in background)
-        setCurrentStage('clinical_interpretation')
-        updateStageStatus('clinical_interpretation', 'running')
-        setInterpretation('') // Clear previous interpretation
-
-        try {
-          console.log('='.repeat(80))
-          console.log('CLINICAL INTERPRETATION - Starting AI analysis with streaming')
-          console.log('='.repeat(80))
-
-          await clinicalInterpretationMutation.mutateAsync({
-            sessionId,
-            onStreamToken: (token) => {
-              // Silently accumulate interpretation in context - will be shown in ChatPanel
-              setInterpretation((prev) => (prev || '') + token)
-            },
-            onComplete: (fullText) => {
-              console.log('Clinical interpretation streaming complete')
-              console.log(`Generated ${fullText.length} characters`)
-              setInterpretation(fullText)
-            },
-            onError: (error) => {
-              console.error('Clinical interpretation streaming error:', error)
-              throw error
-            },
-          })
-
-          updateStageStatus('clinical_interpretation', 'completed')
-          toast.success('Clinical interpretation complete')
-        } catch (error) {
-          console.error('Clinical interpretation failed:', error)
-          updateStageStatus('clinical_interpretation', 'failed')
-          toast.warning('Clinical interpretation failed - results available without AI interpretation')
-        }
-
+        // Pipeline complete - navigate to split view for clinical interpretation
         setCurrentStage(null)
-        toast.success('Clinical analysis pipeline complete')
+        console.log('='.repeat(80))
+        console.log('PIPELINE COMPLETE - Navigating to split view')
+        console.log('Clinical interpretation will start in ChatPanel')
+        console.log('='.repeat(80))
+        
+        toast.success('Analysis pipeline complete')
         onComplete?.()
         nextStep()
 
@@ -322,9 +278,7 @@ export function ClinicalAnalysis({
     runPhenotypeMatching,
     screeningMutation,
     literatureSearchMutation,
-    clinicalInterpretationMutation,
     setScreeningResponse,
-    setInterpretation,
     updateStageStatus,
     nextStep,
     onComplete,
@@ -340,7 +294,6 @@ export function ClinicalAnalysis({
       phenotype: 'Running Phenotype Matching',
       screening: 'Running Clinical Screening',
       literature: 'Searching Literature',
-      clinical_interpretation: 'Generating Clinical Interpretation',
     }
 
     return stageNames[currentStage] || 'Processing...'
@@ -383,9 +336,9 @@ export function ClinicalAnalysis({
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold mb-2">Analysis Complete</h3>
+                <h3 className="text-lg font-semibold mb-2">Pipeline Complete</h3>
                 <p className="text-md text-muted-foreground">
-                  Clinical analysis pipeline has finished successfully
+                  Clinical interpretation will start in chat
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3">
@@ -407,7 +360,7 @@ export function ClinicalAnalysis({
           <div>
             <h1 className="text-3xl font-bold">Clinical Analysis</h1>
             <p className="text-base text-muted-foreground">
-              Comprehensive variant analysis pipeline
+              Preparing data for AI interpretation
             </p>
           </div>
         </div>
@@ -480,7 +433,7 @@ export function ClinicalAnalysis({
 
         <Alert>
           <AlertDescription className="text-base">
-            Complete clinical pipeline: phenotype matching → screening → literature → AI interpretation
+            Pipeline: phenotype matching → screening → literature → navigate to chat for AI interpretation
           </AlertDescription>
         </Alert>
       </div>

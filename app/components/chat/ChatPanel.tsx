@@ -11,6 +11,7 @@ import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
 import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
+import { useClinicalInterpretation } from '@/hooks/mutations/use-clinical-interpretation'
 import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
 import type { Message } from '@/types/ai.types'
@@ -160,7 +161,7 @@ const MessageBubble = memo(function MessageBubble({ message, onPublicationClick 
 const ThinkingIndicator = memo(function ThinkingIndicator({
   mode = 'thinking'
 }: {
-  mode?: 'thinking' | 'querying' | 'literature'
+  mode?: 'thinking' | 'querying' | 'literature' | 'interpreting'
 }) {
   const config = {
     thinking: {
@@ -174,6 +175,10 @@ const ThinkingIndicator = memo(function ThinkingIndicator({
     literature: {
       icon: BookOpen,
       text: 'Searching literature...',
+    },
+    interpreting: {
+      icon: Sparkles,
+      text: 'Generating clinical interpretation...',
     },
   }
 
@@ -202,7 +207,8 @@ export function ChatPanel() {
   const [isQuerying, setIsQuerying] = useState(false)
   const [isSearchingLiterature, setIsSearchingLiterature] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
-  const [hasStreamedInterpretation, setHasStreamedInterpretation] = useState(false)
+  const [isInterpretationStarted, setIsInterpretationStarted] = useState(false)
+  const [isGeneratingInterpretation, setIsGeneratingInterpretation] = useState(false)
 
   // Track current streaming message ID for multi-round support
   const currentStreamingIdRef = useRef<string | null>(null)
@@ -225,7 +231,7 @@ export function ChatPanel() {
   const literatureResults = useLiteratureResults()
 
   // Get clinical interpretation
-  const { interpretation, hasInterpretation } = useClinicalInterpretationContext()
+  const { setInterpretation, hasInterpretation } = useClinicalInterpretationContext()
 
   // Get variant statistics for analysis context
   const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {
@@ -233,6 +239,7 @@ export function ChatPanel() {
   })
 
   const { streamMessage } = useAIChatStream()
+  const clinicalInterpretationMutation = useClinicalInterpretation()
 
   // ============================================================================
   // EFFECTS
@@ -242,68 +249,73 @@ export function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Initial message or stream clinical interpretation
+  // Auto-start clinical interpretation when ChatPanel mounts
   useEffect(() => {
-    if (messages.length === 0 && currentSessionId && !hasStreamedInterpretation) {
-      if (hasInterpretation() && interpretation) {
-        // Stream clinical interpretation as first message
-        console.log('[ChatPanel] Streaming clinical interpretation as first message')
-        
-        const interpretationMessageId = 'interpretation-initial'
-        const interpretationMessage: Message = {
-          id: interpretationMessageId,
-          role: 'assistant',
-          content: '',
-          timestamp: new Date(),
-          isStreaming: true,
-          type: 'text',
-        }
-        
-        setMessages([interpretationMessage])
-        setHasStreamedInterpretation(true)
-        
-        // Stream character by character
-        let charIndex = 0
-        const streamInterval = setInterval(() => {
-          if (charIndex < interpretation.length) {
-            const chunk = interpretation.slice(charIndex, charIndex + 3) // 3 chars at a time for faster streaming
-            
-            setMessages(prev =>
-              prev.map(msg =>
-                msg.id === interpretationMessageId
-                  ? { ...msg, content: msg.content + chunk }
-                  : msg
-              )
-            )
-            
-            charIndex += 3
-          } else {
-            // Streaming complete
-            clearInterval(streamInterval)
-            setMessages(prev =>
-              prev.map(msg =>
-                msg.id === interpretationMessageId
-                  ? { ...msg, isStreaming: false }
-                  : msg
-              )
-            )
-          }
-        }, 10) // 10ms interval for smooth streaming
-        
-        return () => clearInterval(streamInterval)
-      } else {
-        // No interpretation, show default greeting
-        setMessages([{
-          id: '1',
-          role: 'assistant',
-          content: "Hello! I'm your AI assistant for variant analysis. I can help you understand the results, filter variants, and provide clinical insights. What would you like to know?",
-          timestamp: new Date(),
-          type: 'text',
-        }])
-        setHasStreamedInterpretation(true)
-      }
+    if (isInterpretationStarted || !currentSessionId) return
+    if (hasInterpretation()) return // Already have interpretation
+
+    console.log('[ChatPanel] Auto-starting clinical interpretation')
+    setIsInterpretationStarted(true)
+    setIsGeneratingInterpretation(true)
+
+    // Create streaming message for interpretation
+    const interpretationMessageId = 'interpretation-initial'
+    const interpretationMessage: Message = {
+      id: interpretationMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      isStreaming: true,
+      type: 'text',
     }
-  }, [currentSessionId, interpretation, hasInterpretation, messages.length, hasStreamedInterpretation])
+
+    setMessages([interpretationMessage])
+
+    // Start clinical interpretation streaming
+    clinicalInterpretationMutation.mutateAsync({
+      sessionId: currentSessionId,
+      onStreamToken: (token) => {
+        // Update streaming message with token
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === interpretationMessageId && msg.isStreaming
+              ? { ...msg, content: msg.content + token }
+              : msg
+          )
+        )
+        // Also update context
+        setInterpretation((prev) => (prev || '') + token)
+      },
+      onComplete: (fullText) => {
+        console.log('[ChatPanel] Clinical interpretation complete')
+        // Finalize streaming message
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === interpretationMessageId
+              ? { ...msg, isStreaming: false }
+              : msg
+          )
+        )
+        setInterpretation(fullText)
+        setIsGeneratingInterpretation(false)
+      },
+      onError: (error) => {
+        console.error('[ChatPanel] Clinical interpretation failed:', error)
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === interpretationMessageId
+              ? {
+                  ...msg,
+                  content: `Error generating clinical interpretation: ${error.message}. You can still ask questions about the variants.`,
+                  isStreaming: false,
+                }
+              : msg
+          )
+        )
+        setIsGeneratingInterpretation(false)
+      },
+    })
+  }, [currentSessionId, isInterpretationStarted, hasInterpretation, clinicalInterpretationMutation, setInterpretation])
 
   // ============================================================================
   // HANDLERS
@@ -315,7 +327,7 @@ export function ChatPanel() {
   }
 
   const handleSend = async () => {
-    if (!inputValue.trim() || isSending) return
+    if (!inputValue.trim() || isSending || isGeneratingInterpretation) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -613,7 +625,7 @@ export function ChatPanel() {
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold">AI Assistant</h2>
             <p className="text-sm text-muted-foreground truncate">
-              Clinical Interpretation
+              {isGeneratingInterpretation ? 'Generating clinical interpretation...' : 'Clinical Interpretation'}
             </p>
           </div>
         </div>
@@ -637,6 +649,11 @@ export function ChatPanel() {
               </div>
             </div>
           ))}
+
+          {/* Generating interpretation indicator */}
+          {isGeneratingInterpretation && displayMessages.length === 0 && (
+            <ThinkingIndicator mode="interpreting" />
+          )}
 
           {/* Thinking Indicator - only at very start */}
           {shouldShowThinking && (
@@ -665,15 +682,15 @@ export function ChatPanel() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about variants, genes, or phenotypes..."
+            placeholder={isGeneratingInterpretation ? "Generating interpretation..." : "Ask about variants, genes, or phenotypes..."}
             rows={3}
-            disabled={isSending}
+            disabled={isSending || isGeneratingInterpretation}
             className="w-full px-4 py-3 pr-12 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-base disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={!inputValue.trim() || isSending}
+            disabled={!inputValue.trim() || isSending || isGeneratingInterpretation}
             className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
           >
             {isSending ? (
