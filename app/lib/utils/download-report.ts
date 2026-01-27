@@ -3,7 +3,7 @@
  */
 
 import { marked } from 'marked'
-import jsPDF from 'jspdf'
+import html2pdf from 'html2pdf.js'
 
 export type ReportFormat = 'md' | 'docx' | 'pdf'
 
@@ -50,6 +50,7 @@ async function downloadDocx(content: string, filename: string) {
     h3 { font-size: 14pt; font-weight: bold; margin-top: 8pt; margin-bottom: 3pt; }
     p { margin-top: 0; margin-bottom: 8pt; }
     ul, ol { margin-left: 20pt; }
+    li { margin-bottom: 4pt; }
     code { 
       font-family: 'Courier New', monospace; 
       background-color: #f5f5f5;
@@ -89,65 +90,73 @@ ${htmlContent}
 }
 
 /**
- * Download PDF report
+ * Download PDF report with proper formatting
  */
 async function downloadPdf(content: string, filename: string) {
   try {
     // Convert markdown to HTML
     const htmlContent = await marked.parse(content)
     
-    // Create a temporary container
-    const container = document.createElement('div')
-    container.style.position = 'absolute'
-    container.style.left = '-9999px'
-    container.style.width = '210mm' // A4 width
-    container.style.padding = '20mm'
-    container.style.fontFamily = 'Arial, sans-serif'
-    container.style.fontSize = '11pt'
-    container.style.lineHeight = '1.5'
-    container.innerHTML = htmlContent
-    document.body.appendChild(container)
-
-    // Create PDF
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    })
-
-    // Get all text content and split into lines
-    const lines = container.innerText.split('\n')
-    let y = 20 // Start position
-    const lineHeight = 7
-    const maxWidth = 170 // Max text width (A4 width - margins)
-    const pageHeight = 277 // A4 height in mm
-
-    pdf.setFontSize(11)
-
-    for (const line of lines) {
-      if (line.trim()) {
-        // Check if we need a new page
-        if (y > pageHeight - 20) {
-          pdf.addPage()
-          y = 20
-        }
-
-        // Split long lines
-        const splitLines = pdf.splitTextToSize(line, maxWidth)
-        for (const splitLine of splitLines) {
-          pdf.text(splitLine, 20, y)
-          y += lineHeight
-        }
-      } else {
-        y += lineHeight / 2 // Empty line spacing
+    // Create styled HTML
+    const styledHtml = `
+      <div style="
+        font-family: Arial, sans-serif;
+        font-size: 11pt;
+        line-height: 1.6;
+        color: #000;
+        max-width: 210mm;
+        padding: 20mm;
+      ">
+        <style>
+          h1 { font-size: 18pt; font-weight: bold; margin-top: 16pt; margin-bottom: 8pt; }
+          h2 { font-size: 16pt; font-weight: bold; margin-top: 14pt; margin-bottom: 6pt; }
+          h3 { font-size: 14pt; font-weight: bold; margin-top: 12pt; margin-bottom: 4pt; }
+          p { margin-top: 0; margin-bottom: 8pt; }
+          ul, ol { margin-left: 20pt; padding-left: 10pt; }
+          li { margin-bottom: 4pt; }
+          strong { font-weight: bold; }
+          em { font-style: italic; }
+          code {
+            font-family: 'Courier New', monospace;
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            font-size: 10pt;
+          }
+          pre {
+            background-color: #f5f5f5;
+            padding: 10pt;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+            font-size: 9pt;
+          }
+        </style>
+        ${htmlContent}
+      </div>
+    `
+    
+    // Create temporary element
+    const element = document.createElement('div')
+    element.innerHTML = styledHtml
+    
+    // Configure html2pdf options
+    const opt = {
+      margin: 10,
+      filename: `${filename}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        letterRendering: true
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait' 
       }
     }
-
-    // Clean up
-    document.body.removeChild(container)
-
-    // Download
-    pdf.save(`${filename}.pdf`)
+    
+    // Generate PDF
+    await html2pdf().set(opt).from(element).save()
   } catch (error) {
     console.error('PDF generation failed:', error)
     throw new Error('Failed to generate PDF file')
