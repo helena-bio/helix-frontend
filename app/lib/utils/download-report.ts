@@ -3,7 +3,8 @@
  */
 
 import { marked } from 'marked'
-import html2pdf from 'html2pdf.js'
+import { jsPDF } from 'jspdf'
+import { MdTextRender } from 'jspdf-md-renderer'
 
 export type ReportFormat = 'md' | 'docx' | 'pdf'
 
@@ -24,14 +25,11 @@ function downloadMarkdown(content: string, filename: string) {
 
 /**
  * Download DOCX report
- * Uses HTML wrapper with Word MIME type for better compatibility
  */
 async function downloadDocx(content: string, filename: string) {
   try {
-    // Convert markdown to HTML
     const htmlContent = await marked.parse(content)
     
-    // Create Word-compatible HTML with proper styling
     const wordHtml = `
 <!DOCTYPE html>
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
@@ -51,17 +49,6 @@ async function downloadDocx(content: string, filename: string) {
     p { margin-top: 0; margin-bottom: 8pt; }
     ul, ol { margin-left: 20pt; }
     li { margin-bottom: 4pt; }
-    code { 
-      font-family: 'Courier New', monospace; 
-      background-color: #f5f5f5;
-      padding: 2px 4px;
-    }
-    pre {
-      background-color: #f5f5f5;
-      padding: 10pt;
-      border: 1px solid #ddd;
-      overflow-x: auto;
-    }
     strong { font-weight: bold; }
     em { font-style: italic; }
   </style>
@@ -90,116 +77,47 @@ ${htmlContent}
 }
 
 /**
- * Download PDF report with proper formatting
+ * Download PDF using jspdf-md-renderer
  */
 async function downloadPdf(content: string, filename: string) {
   try {
-    // Convert markdown to HTML
-    const htmlContent = await marked.parse(content)
+    // Create PDF document
+    const doc = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait'
+    })
     
-    // Create styled HTML with ONLY basic colors (no lab(), oklch(), etc.)
-    const styledHtml = `
-      <div style="
-        font-family: Arial, sans-serif;
-        font-size: 11pt;
-        line-height: 1.6;
-        color: #000000;
-        background-color: #ffffff;
-      ">
-        <style>
-          * {
-            color: #000000 !important;
-            background-color: transparent !important;
-          }
-          h1 { 
-            font-size: 18pt; 
-            font-weight: bold; 
-            margin-top: 16pt; 
-            margin-bottom: 8pt;
-            color: #000000 !important;
-          }
-          h2 { 
-            font-size: 16pt; 
-            font-weight: bold; 
-            margin-top: 14pt; 
-            margin-bottom: 6pt;
-            color: #000000 !important;
-          }
-          h3 { 
-            font-size: 14pt; 
-            font-weight: bold; 
-            margin-top: 12pt; 
-            margin-bottom: 4pt;
-            color: #000000 !important;
-          }
-          p { 
-            margin-top: 0; 
-            margin-bottom: 8pt;
-            color: #000000 !important;
-          }
-          ul, ol { 
-            margin-left: 20pt; 
-            padding-left: 10pt;
-          }
-          li { 
-            margin-bottom: 4pt;
-            color: #000000 !important;
-          }
-          strong { 
-            font-weight: bold;
-            color: #000000 !important;
-          }
-          em { 
-            font-style: italic;
-            color: #000000 !important;
-          }
-          code {
-            font-family: 'Courier New', monospace;
-            background-color: #f5f5f5 !important;
-            padding: 2px 4px;
-            font-size: 10pt;
-            color: #000000 !important;
-          }
-          pre {
-            background-color: #f5f5f5 !important;
-            padding: 10pt;
-            border: 1px solid #cccccc;
-            overflow-x: auto;
-            font-size: 9pt;
-            color: #000000 !important;
-          }
-        </style>
-        ${htmlContent}
-      </div>
-    `
-    
-    // Create temporary element
-    const element = document.createElement('div')
-    element.innerHTML = styledHtml
-    
-    // Configure html2pdf options with proper types
-    const opt = {
-      margin: 10,
-      filename: `${filename}.pdf`,
-      image: { 
-        type: 'jpeg' as const, 
-        quality: 0.98 
+    // Configure options for markdown rendering
+    const options = {
+      cursor: { x: 10, y: 10 },
+      page: {
+        format: 'a4',
+        unit: 'mm',
+        orientation: 'portrait',
+        maxContentWidth: 190,
+        maxContentHeight: 277,
+        lineSpace: 1.5,
+        defaultLineHeightFactor: 1.2,
+        defaultFontSize: 11,
+        defaultTitleFontSize: 14,
+        topmargin: 10,
+        xpading: 10,
+        xmargin: 10,
+        indent: 10,
       },
-      html2canvas: { 
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        backgroundColor: '#ffffff'
-      },
-      jsPDF: { 
-        unit: 'mm' as const, 
-        format: 'a4' as const, 
-        orientation: 'portrait' as const
+      font: {
+        bold: { name: 'helvetica', style: 'bold' },
+        regular: { name: 'helvetica', style: 'normal' },
+        light: { name: 'helvetica', style: 'light' },
       }
     }
     
-    // Generate PDF
-    await html2pdf().set(opt).from(element).save()
+    // Render markdown to PDF
+    await MdTextRender(doc, content, options)
+    
+    // Download the PDF
+    doc.save(`${filename}.pdf`)
   } catch (error) {
     console.error('PDF generation failed:', error)
     throw new Error('Failed to generate PDF file')
