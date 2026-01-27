@@ -4,9 +4,12 @@ import React, { createContext, useContext, useState, useCallback } from 'react'
 
 interface ClinicalInterpretationContextValue {
   interpretation: string | null
+  isGenerating: boolean
   setInterpretation: (text: string | ((prev: string | null) => string)) => void
+  setIsGenerating: (generating: boolean) => void
   clearInterpretation: () => void
   hasInterpretation: () => boolean
+  isComplete: () => boolean
 }
 
 const ClinicalInterpretationContext = createContext<ClinicalInterpretationContextValue | undefined>(
@@ -15,6 +18,7 @@ const ClinicalInterpretationContext = createContext<ClinicalInterpretationContex
 
 export function ClinicalInterpretationProvider({ children }: { children: React.ReactNode }) {
   const [interpretation, setInterpretationState] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const setInterpretation = useCallback((text: string | ((prev: string | null) => string)) => {
     if (typeof text === 'function') {
@@ -32,19 +36,27 @@ export function ClinicalInterpretationProvider({ children }: { children: React.R
   const clearInterpretation = useCallback(() => {
     console.log('[ClinicalInterpretationContext] Clearing interpretation')
     setInterpretationState(null)
+    setIsGenerating(false)
   }, [])
 
   const hasInterpretation = useCallback(() => {
     return interpretation !== null && interpretation.length > 0
   }, [interpretation])
 
+  const isComplete = useCallback(() => {
+    return hasInterpretation() && !isGenerating
+  }, [hasInterpretation, isGenerating])
+
   return (
     <ClinicalInterpretationContext.Provider
       value={{
         interpretation,
+        isGenerating,
         setInterpretation,
+        setIsGenerating,
         clearInterpretation,
         hasInterpretation,
+        isComplete,
       }}
     >
       {children}
