@@ -55,7 +55,7 @@ export function RightPanel({ children }: RightPanelProps) {
 
   // Default: Show module content (ModuleRouter)
   return (
-    <div className="w-[55%] h-full overflow-y-auto bg-background">
+    <div className="w-[55%] h-full overflow-y-scroll bg-background">
       {children}
     </div>
   )
