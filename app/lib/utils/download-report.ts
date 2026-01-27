@@ -51,6 +51,9 @@ async function downloadDocx(content: string, filename: string) {
     li { margin-bottom: 4pt; }
     strong { font-weight: bold; }
     em { font-style: italic; }
+    table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
+    th, td { border: 1px solid #ddd; padding: 8pt; text-align: left; }
+    th { background-color: #f5f5f5; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -107,7 +110,7 @@ async function downloadPdf(content: string, filename: string) {
     
     let y = topmargin
     
-    // Configure options with proper RenderOption type
+    // CRITICAL: Font must be empty strings, not 'helvetica'!
     const options: RenderOption = {
       cursor: {
         x: xpading,
@@ -132,16 +135,16 @@ async function downloadPdf(content: string, filename: string) {
       },
       font: {
         bold: {
-          name: 'helvetica',
-          style: 'bold'
+          name: '',
+          style: ''
         },
         regular: {
-          name: 'helvetica',
-          style: 'normal'
+          name: '',
+          style: ''
         },
         light: {
-          name: 'helvetica',
-          style: 'light'
+          name: '',
+          style: ''
         } 
       }
     }
