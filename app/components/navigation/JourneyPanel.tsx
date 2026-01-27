@@ -26,6 +26,7 @@ import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyCo
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
 import { cn } from '@helix/shared/lib/utils'
+import { downloadClinicalReport } from '@/lib/utils/download-report'
 
 function getStepIcon(status: StepStatus) {
   switch (status) {
@@ -77,10 +78,18 @@ export function JourneyPanel() {
       return
     }
 
-    console.log('[JourneyPanel] Interpretation length:', interpretation.length)
+    console.log('[JourneyPanel] Downloading report:', {
+      format,
+      sessionId: currentSessionId,
+      interpretationLength: interpretation.length,
+    })
     
-    // TODO: Implement download functionality
-    alert(`Download ${format.toUpperCase()} - Coming soon!\n\nInterpretation is ready (${interpretation.length} chars)`)
+    try {
+      downloadClinicalReport(interpretation, format, currentSessionId || 'report')
+    } catch (error) {
+      console.error('[JourneyPanel] Download failed:', error)
+      alert('Download failed. Please try again.')
+    }
   }
 
   // Debug logging for Download Report visibility
@@ -191,15 +200,24 @@ export function JourneyPanel() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleDownloadReport('pdf')}>
+              <DropdownMenuItem 
+                onClick={() => handleDownloadReport('pdf')}
+                className="cursor-pointer"
+              >
                 <Download className="h-3 w-3 mr-2" />
                 Download as PDF
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownloadReport('docx')}>
+              <DropdownMenuItem 
+                onClick={() => handleDownloadReport('docx')}
+                className="cursor-pointer"
+              >
                 <Download className="h-3 w-3 mr-2" />
                 Download as DOCX
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownloadReport('md')}>
+              <DropdownMenuItem 
+                onClick={() => handleDownloadReport('md')}
+                className="cursor-pointer"
+              >
                 <Download className="h-3 w-3 mr-2" />
                 Download as Markdown
               </DropdownMenuItem>
