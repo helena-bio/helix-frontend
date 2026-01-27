@@ -82,8 +82,13 @@ ${htmlContent}
  */
 async function downloadPdf(content: string, filename: string) {
   try {
-    // CORRECT URL: matches backend endpoint /report/download
-    const response = await fetch('http://localhost:9007/report/download', {
+    // Use environment variable for backend URL
+    const backendUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
+    const endpoint = `${backendUrl}/report/download`
+    
+    console.log('PDF download endpoint:', endpoint)
+    
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
