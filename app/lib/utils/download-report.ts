@@ -138,20 +138,23 @@ async function downloadPdf(content: string, filename: string) {
     const element = document.createElement('div')
     element.innerHTML = styledHtml
     
-    // Configure html2pdf options
+    // Configure html2pdf options with proper types
     const opt = {
       margin: 10,
       filename: `${filename}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { 
+        type: 'jpeg' as const, 
+        quality: 0.98 
+      },
       html2canvas: { 
         scale: 2,
         useCORS: true,
         letterRendering: true
       },
       jsPDF: { 
-        unit: 'mm', 
-        format: 'a4', 
-        orientation: 'portrait' 
+        unit: 'mm' as const, 
+        format: 'a4' as const, 
+        orientation: 'portrait' as const
       }
     }
     
