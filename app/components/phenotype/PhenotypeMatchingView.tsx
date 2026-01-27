@@ -421,7 +421,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   }
 
   return (
-    <div className="p-6 space-y-6 overflow-y-scroll [scrollbar-gutter:stable]">
+    <div className="p-6 space-y-6 overflow-y-auto [scrollbar-gutter:stable]">
       {/* Header */}
       <div className="flex items-start gap-4">
         <div className="p-3 rounded-lg bg-primary/10">
