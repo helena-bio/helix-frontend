@@ -5,9 +5,10 @@
 
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, X } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, X, Download, ChevronDown } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -15,8 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@helix/shared/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@helix/shared/components/ui/dropdown-menu'
 import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
+import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
 import { cn } from '@helix/shared/lib/utils'
 
 function getStepIcon(status: StepStatus) {
@@ -46,8 +54,9 @@ function getLineColor(status: StepStatus): string {
 }
 
 export function JourneyPanel() {
-  const { getStepStatus, canNavigateTo, goToStep, resetJourney } = useJourney()
+  const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
   const { currentSessionId, setCurrentSessionId } = useSession()
+  const { interpretation, isGenerating, hasInterpretation, isComplete } = useClinicalInterpretation()
 
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {
@@ -59,6 +68,36 @@ export function JourneyPanel() {
     setCurrentSessionId(null)
     resetJourney()
   }
+
+  const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
+    console.log('[JourneyPanel] Download report requested:', format)
+    
+    if (!interpretation || !hasInterpretation()) {
+      console.error('[JourneyPanel] No clinical interpretation available')
+      return
+    }
+
+    console.log('[JourneyPanel] Interpretation length:', interpretation.length)
+    
+    // TODO: Implement download functionality
+    alert(`Download ${format.toUpperCase()} - Coming soon!\n\nInterpretation is ready (${interpretation.length} chars)`)
+  }
+
+  // Debug logging for Download Report visibility
+  useEffect(() => {
+    console.log('[JourneyPanel] Download Report Status Check:', {
+      currentStep,
+      hasInterpretation: hasInterpretation(),
+      isGenerating,
+      isComplete: isComplete(),
+      interpretationLength: interpretation?.length || 0,
+    })
+  }, [currentStep, hasInterpretation, isGenerating, isComplete, interpretation])
+
+  // Show Download Report button only in Analysis step when interpretation is complete
+  const showDownloadReport = currentStep === 'analysis' && isComplete()
+
+  console.log('[JourneyPanel] showDownloadReport:', showDownloadReport)
 
   return (
     <div className="h-full flex items-center gap-6 overflow-hidden">
@@ -135,18 +174,52 @@ export function JourneyPanel() {
         })}
       </div>
 
-      {/* Clear File button - Right side, fixed */}
-      {currentSessionId && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleClearFile}
-          className="h-8 text-sm shrink-0 mr-6"
-        >
-          <X className="h-4 w-4 mr-2" />
-          Clear File
-        </Button>
-      )}
+      {/* Right side buttons */}
+      <div className="flex items-center gap-3 shrink-0 mr-6">
+        {/* Download Report button - Only in Analysis step when interpretation is complete */}
+        {showDownloadReport && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-sm"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Report
+                <ChevronDown className="h-3 w-3 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleDownloadReport('pdf')}>
+                <Download className="h-3 w-3 mr-2" />
+                Download as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadReport('docx')}>
+                <Download className="h-3 w-3 mr-2" />
+                Download as DOCX
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadReport('md')}>
+                <Download className="h-3 w-3 mr-2" />
+                Download as Markdown
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        {/* Clear File button */}
+        {currentSessionId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFile}
+            className="h-8 text-sm"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Clear File
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
