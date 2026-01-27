@@ -88,13 +88,13 @@ async function downloadPdf(content: string, filename: string) {
       orientation: 'portrait'
     })
     
-    // Configure options for markdown rendering
+    // Configure options for markdown rendering with proper types
     const options = {
       cursor: { x: 10, y: 10 },
       page: {
-        format: 'a4',
-        unit: 'mm',
-        orientation: 'portrait',
+        format: 'a4' as const,
+        unit: 'mm' as const,
+        orientation: 'portrait' as const,
         maxContentWidth: 190,
         maxContentHeight: 277,
         lineSpace: 1.5,
@@ -107,9 +107,12 @@ async function downloadPdf(content: string, filename: string) {
         indent: 10,
       },
       font: {
-        bold: { name: 'helvetica', style: 'bold' },
-        regular: { name: 'helvetica', style: 'normal' },
-        light: { name: 'helvetica', style: 'light' },
+        bold: { name: 'helvetica' as const, style: 'bold' as const },
+        regular: { name: 'helvetica' as const, style: 'normal' as const },
+        light: { name: 'helvetica' as const, style: 'light' as const },
+      },
+      endCursorYHandler: (y: number) => {
+        console.log('PDF generation complete. Final Y position:', y)
       }
     }
     
