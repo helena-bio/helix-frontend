@@ -7,16 +7,20 @@
  * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
  * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
  * 3. Literature Search (for key genes) - AUTOMATIC
- * 4. Navigate to split view → Clinical Interpretation starts in ChatPanel
+ * 4. Data Prefetch (pre-load all view data) - REQUIRED
+ * 5. Navigate to split view → Clinical Interpretation starts in ChatPanel
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
+import { variantAnalysisKeys } from '@/hooks/queries/use-variant-analysis-queries'
+import * as variantAPI from '@/lib/api/variant-analysis'
 import { isTier1, isTier2 } from '@/types/tiers.types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -30,6 +34,7 @@ import {
   Dna,
   Filter,
   BookOpen,
+  Download,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -69,6 +74,13 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
     description: 'Searching publications for key genes',
     required: false,
   },
+  {
+    id: 'prefetch',
+    name: 'Data Prefetch',
+    icon: <Download className="h-4 w-4" />,
+    description: 'Pre-loading analysis data for instant visualization',
+    required: true,
+  },
 ]
 
 type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed'
@@ -82,16 +94,17 @@ export function ClinicalAnalysis({
     phenotype: 'pending',
     screening: 'pending',
     literature: 'pending',
+    prefetch: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const startedRef = useRef(false)
 
+  const queryClient = useQueryClient()
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
   const { runMatching: runPhenotypeMatching } = usePhenotypeResults()
-
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
 
@@ -115,7 +128,7 @@ export function ClinicalAnalysis({
         const profile = getCompleteProfile()
 
         console.log('='.repeat(80))
-        console.log('CLINICAL ANALYSIS - PIPELINE (Stages 1-3)')
+        console.log('CLINICAL ANALYSIS - PIPELINE (Stages 1-4)')
         console.log('='.repeat(80))
         console.log(JSON.stringify(profile, null, 2))
         console.log('='.repeat(80))
@@ -126,21 +139,19 @@ export function ClinicalAnalysis({
 
         // Stage 1: Phenotype Matching (OPTIONAL - but runs FIRST if HPO terms exist)
         let phenotypeResults: GeneAggregatedResult[] = []
-        
         if (hpoTerms.length > 0) {
           setCurrentStage('phenotype')
           updateStageStatus('phenotype', 'running')
 
           try {
             const hpoIds = hpoTerms.map(t => t.hpo_id)
-            
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING - Running first to identify Tier 1/2 candidates')
             console.log(`Patient HPO terms: ${hpoIds.join(', ')}`)
             console.log('='.repeat(80))
 
             phenotypeResults = await runPhenotypeMatching(hpoIds)
-            
+
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING COMPLETE')
             console.log('  Total genes:', phenotypeResults.length)
@@ -208,11 +219,11 @@ export function ClinicalAnalysis({
           console.log('='.repeat(80))
 
           const topGenes: string[] = []
-
           if (phenotypeResults.length > 0) {
             const tier1Genes = phenotypeResults
               .filter(r => isTier1(r.best_tier))
               .map(r => r.gene_symbol)
+
             const tier2Genes = phenotypeResults
               .filter(r => isTier2(r.best_tier))
               .map(r => r.gene_symbol)
@@ -251,17 +262,61 @@ export function ClinicalAnalysis({
           toast.warning('Literature search failed - continuing without literature context')
         }
 
+        // Stage 4: Data Prefetch (pre-load ALL view data for instant rendering)
+        setCurrentStage('prefetch')
+        updateStageStatus('prefetch', 'running')
+
+        try {
+          console.log('='.repeat(80))
+          console.log('DATA PREFETCH - Pre-loading all view data')
+          console.log('='.repeat(80))
+
+          // Prefetch variants by gene (NO pagination = ALL genes)
+          console.log('  Prefetching variants by gene (all genes)...')
+          await queryClient.prefetchQuery({
+            queryKey: variantAnalysisKeys.variantsByGene(sessionId, {}),
+            queryFn: () => variantAPI.getVariantsByGene(sessionId, {}),
+            staleTime: 10 * 60 * 1000, // 10 minutes
+          })
+
+          // Prefetch variant statistics
+          console.log('  Prefetching variant statistics...')
+          await queryClient.prefetchQuery({
+            queryKey: variantAnalysisKeys.statistics(sessionId),
+            queryFn: () => variantAPI.getVariantStatistics(sessionId),
+            staleTime: 10 * 60 * 1000, // 10 minutes
+          })
+
+          console.log('='.repeat(80))
+          console.log('DATA PREFETCH COMPLETE - All data ready for instant rendering')
+          console.log('  - Variants by gene: cached')
+          console.log('  - Variant statistics: cached')
+          console.log('  - Phenotype results: already in context')
+          console.log('  - Screening results: already in context')
+          console.log('  - Literature results: already in context')
+          console.log('='.repeat(80))
+
+          updateStageStatus('prefetch', 'completed')
+          toast.success('Data prefetch complete - ready for instant analysis')
+        } catch (error) {
+          console.error('Data prefetch failed:', error)
+          updateStageStatus('prefetch', 'failed')
+          toast.warning('Data prefetch failed - views may load slowly')
+          // Don't throw - continue anyway, views will load data on demand
+        }
+
         // Pipeline complete - navigate to split view for clinical interpretation
         setCurrentStage(null)
+
         console.log('='.repeat(80))
         console.log('PIPELINE COMPLETE - Navigating to split view')
         console.log('Clinical interpretation will start in ChatPanel')
+        console.log('All view data is pre-loaded for instant rendering')
         console.log('='.repeat(80))
-        
+
         toast.success('Analysis pipeline complete')
         onComplete?.()
         nextStep()
-
       } catch (error) {
         const err = error as Error
         setErrorMessage(err.message)
@@ -273,6 +328,7 @@ export function ClinicalAnalysis({
     runAnalyses()
   }, [
     sessionId,
+    queryClient,
     getCompleteProfile,
     hpoTerms,
     runPhenotypeMatching,
@@ -289,13 +345,12 @@ export function ClinicalAnalysis({
 
   const getStageName = useCallback((): string => {
     if (!currentStage) return 'Initializing...'
-
     const stageNames: Record<string, string> = {
       phenotype: 'Running Phenotype Matching',
       screening: 'Running Clinical Screening',
       literature: 'Searching Literature',
+      prefetch: 'Pre-loading Analysis Data',
     }
-
     return stageNames[currentStage] || 'Processing...'
   }, [currentStage])
 
@@ -338,7 +393,7 @@ export function ClinicalAnalysis({
               <div>
                 <h3 className="text-lg font-semibold mb-2">Pipeline Complete</h3>
                 <p className="text-md text-muted-foreground">
-                  Clinical interpretation will start in chat
+                  All data pre-loaded - launching analysis view
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3">
@@ -433,7 +488,7 @@ export function ClinicalAnalysis({
 
         <Alert>
           <AlertDescription className="text-base">
-            Pipeline: phenotype matching → screening → literature → navigate to chat for AI interpretation
+            Pipeline: phenotype → screening → literature → data prefetch → AI interpretation
           </AlertDescription>
         </Alert>
       </div>
