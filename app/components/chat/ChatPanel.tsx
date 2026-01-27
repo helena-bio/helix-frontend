@@ -281,31 +281,44 @@ export function ChatPanel() {
     setIsInterpretationStarted(true)
     setIsGeneratingInterpretation(true)
 
-    // Create streaming message for interpretation
+    // Track streaming message ID
     const interpretationMessageId = 'interpretation-initial'
-    const interpretationMessage: Message = {
-      id: interpretationMessageId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      isStreaming: true,
-      type: 'text',
-    }
-
-    setMessages([interpretationMessage])
+    currentStreamingIdRef.current = interpretationMessageId
 
     // Start clinical interpretation streaming
     clinicalInterpretationMutation.mutateAsync({
       sessionId: currentSessionId,
       onStreamToken: (token) => {
-        // Update streaming message with token
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.id === interpretationMessageId && msg.isStreaming
-              ? { ...msg, content: msg.content + token }
-              : msg
-          )
-        )
+        const currentId = currentStreamingIdRef.current
+        if (!currentId) return
+
+        // Update or create streaming message
+        setMessages(prev => {
+          const existingMessage = prev.find(m => m.id === currentId)
+          
+          if (existingMessage) {
+            // Update existing message
+            return prev.map(msg =>
+              msg.id === currentId && msg.isStreaming
+                ? { ...msg, content: msg.content + token }
+                : msg
+            )
+          } else {
+            // Create streaming message with first token
+            return [
+              ...prev,
+              {
+                id: currentId,
+                role: 'assistant' as const,
+                content: token,
+                timestamp: new Date(),
+                isStreaming: true,
+                type: 'text' as const,
+              }
+            ]
+          }
+        })
+
         // Also update context
         setInterpretation((prev) => (prev || '') + token)
       },
@@ -321,21 +334,30 @@ export function ChatPanel() {
         )
         setInterpretation(fullText)
         setIsGeneratingInterpretation(false)
+        currentStreamingIdRef.current = null
       },
       onError: (error) => {
         console.error('[ChatPanel] Clinical interpretation failed:', error)
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.id === interpretationMessageId
-              ? {
-                  ...msg,
-                  content: `Error generating clinical interpretation: ${error.message}. You can still ask questions about the variants.`,
-                  isStreaming: false,
-                }
-              : msg
-          )
-        )
+        setMessages(prev => {
+          const existingMessage = prev.find(m => m.id === interpretationMessageId)
+          
+          const errorMessage: Message = {
+            id: interpretationMessageId,
+            role: 'assistant',
+            content: `Error generating clinical interpretation: ${error.message}. You can still ask questions about the variants.`,
+            timestamp: new Date(),
+            isStreaming: false,
+            type: 'text',
+          }
+
+          if (existingMessage) {
+            return prev.map(msg => msg.id === interpretationMessageId ? errorMessage : msg)
+          } else {
+            return [...prev, errorMessage]
+          }
+        })
         setIsGeneratingInterpretation(false)
+        currentStreamingIdRef.current = null
       },
     })
   }, [currentSessionId, isInterpretationStarted, hasInterpretation, clinicalInterpretationMutation, setInterpretation])
@@ -364,20 +386,9 @@ export function ChatPanel() {
     setInputValue('')
     setIsSending(true)
 
-    // Create initial streaming message
+    // Track streaming message ID (will be created on first token)
     const streamingMessageId = (Date.now() + 1).toString()
     currentStreamingIdRef.current = streamingMessageId
-
-    const streamingMessage: Message = {
-      id: streamingMessageId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      isStreaming: true,
-      type: 'text',
-    }
-
-    setMessages(prev => [...prev, streamingMessage])
 
     try {
       // Build metadata with ALL available contexts
@@ -463,14 +474,32 @@ export function ChatPanel() {
           const currentId = currentStreamingIdRef.current
           if (!currentId) return
 
-          setMessages(prev =>
-            prev.map(msg => {
-              if (msg.id === currentId && msg.isStreaming) {
-                return { ...msg, content: msg.content + token }
-              }
-              return msg
-            })
-          )
+          setMessages(prev => {
+            // Check if streaming message exists
+            const existingMessage = prev.find(m => m.id === currentId)
+            
+            if (existingMessage) {
+              // Update existing message
+              return prev.map(msg =>
+                msg.id === currentId && msg.isStreaming
+                  ? { ...msg, content: msg.content + token }
+                  : msg
+              )
+            } else {
+              // Create streaming message with first token
+              return [
+                ...prev,
+                {
+                  id: currentId,
+                  role: 'assistant' as const,
+                  content: token,
+                  timestamp: new Date(),
+                  isStreaming: true,
+                  type: 'text' as const,
+                }
+              ]
+            }
+          })
         },
 
         onQueryingStarted: () => {
@@ -560,20 +589,9 @@ export function ChatPanel() {
           setIsQuerying(false)
           setIsSearchingLiterature(false)
 
-          // Create new streaming message for next round
+          // Create new streaming message ID for next round (will create on first token)
           const newStreamingId = `continuation-${Date.now()}`
           currentStreamingIdRef.current = newStreamingId
-
-          const continuationMessage: Message = {
-            id: newStreamingId,
-            role: 'assistant',
-            content: '',
-            timestamp: new Date(),
-            isStreaming: true,
-            type: 'text',
-          }
-
-          setMessages(prev => [...prev, continuationMessage])
         },
 
         onComplete: () => {
@@ -592,17 +610,23 @@ export function ChatPanel() {
 
           const currentId = currentStreamingIdRef.current
           if (currentId) {
-            setMessages(prev =>
-              prev.map(msg =>
-                msg.id === currentId
-                  ? {
-                      ...msg,
-                      content: `Error: ${error.message}. Please try again.`,
-                      isStreaming: false,
-                    }
-                  : msg
-              )
-            )
+            setMessages(prev => {
+              const existingMessage = prev.find(m => m.id === currentId)
+              const errorMessage: Message = {
+                id: currentId,
+                role: 'assistant',
+                content: `Error: ${error.message}. Please try again.`,
+                timestamp: new Date(),
+                isStreaming: false,
+                type: 'text',
+              }
+
+              if (existingMessage) {
+                return prev.map(msg => msg.id === currentId ? errorMessage : msg)
+              } else {
+                return [...prev, errorMessage]
+              }
+            })
           }
           setIsSending(false)
           setIsQuerying(false)
@@ -635,9 +659,10 @@ export function ChatPanel() {
     msg.type === 'query_result' || msg.type === 'literature_result' || msg.content || msg.isStreaming
   )
 
-  // Show thinking indicator only at very start (before first token)
+  // Show thinking indicator when sending but no message with content yet
   const lastMessage = displayMessages[displayMessages.length - 1]
-  const shouldShowThinking = isSending && !isQuerying && !isSearchingLiterature && lastMessage?.isStreaming && lastMessage?.content === ''
+  const shouldShowThinking = isSending && !isQuerying && !isSearchingLiterature && 
+    (!lastMessage || lastMessage.role === 'user')
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
@@ -678,7 +703,7 @@ export function ChatPanel() {
             <ThinkingIndicator mode="interpreting" />
           )}
 
-          {/* Thinking Indicator - only at very start */}
+          {/* Thinking Indicator - shown when sending but no assistant message yet */}
           {shouldShowThinking && (
             <ThinkingIndicator mode="thinking" />
           )}
