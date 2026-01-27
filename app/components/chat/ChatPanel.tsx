@@ -209,11 +209,13 @@ export function ChatPanel() {
   const [conversationId, setConversationId] = useState<string | undefined>()
   const [isInterpretationStarted, setIsInterpretationStarted] = useState(false)
   const [isGeneratingInterpretation, setIsGeneratingInterpretation] = useState(false)
+  const [isAtBottom, setIsAtBottom] = useState(true)
 
   // Track current streaming message ID for multi-round support
   const currentStreamingIdRef = useRef<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const {
@@ -245,9 +247,30 @@ export function ChatPanel() {
   // EFFECTS
   // ============================================================================
 
+  // Smart auto-scroll: only scroll if user is at bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    if (isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, isAtBottom])
+
+  // Track if user is at bottom
+  useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+      
+      // Consider "at bottom" if within 100px
+      const atBottom = distanceFromBottom < 100
+      setIsAtBottom(atBottom)
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Auto-start clinical interpretation when ChatPanel mounts
   useEffect(() => {
@@ -632,7 +655,7 @@ export function ChatPanel() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4" ref={messagesContainerRef}>
         <div className="space-y-6 max-w-4xl">
           {displayMessages.map((message) => (
             <div
