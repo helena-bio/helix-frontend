@@ -79,11 +79,11 @@ ${htmlContent}
 
 /**
  * Download PDF report via backend service
- * TODO: Implement backend PDF generation endpoint
  */
 async function downloadPdf(content: string, filename: string) {
   try {
-    const response = await fetch('/api/ai/download-report', {
+    // CORRECT URL: matches backend endpoint /report/download
+    const response = await fetch('http://localhost:9007/report/download', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -95,7 +95,8 @@ async function downloadPdf(content: string, filename: string) {
     })
 
     if (!response.ok) {
-      throw new Error('PDF generation failed on server')
+      const errorText = await response.text()
+      throw new Error(`PDF generation failed: ${response.status} - ${errorText}`)
     }
 
     const blob = await response.blob()
