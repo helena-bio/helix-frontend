@@ -102,7 +102,7 @@ export function ClinicalAnalysis({
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
   const { runMatching: runPhenotypeMatching } = usePhenotypeResults()
-  const { setInterpretation, interpretation } = useClinicalInterpretationContext()
+  const { setInterpretation } = useClinicalInterpretationContext()
 
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
@@ -266,7 +266,7 @@ export function ClinicalAnalysis({
           toast.warning('Literature search failed - continuing without literature context')
         }
 
-        // Stage 4: Clinical Interpretation (AI-powered diagnostic analysis with streaming)
+        // Stage 4: Clinical Interpretation (AI-powered diagnostic analysis - runs in background)
         setCurrentStage('clinical_interpretation')
         updateStageStatus('clinical_interpretation', 'running')
         setInterpretation('') // Clear previous interpretation
@@ -279,13 +279,12 @@ export function ClinicalAnalysis({
           await clinicalInterpretationMutation.mutateAsync({
             sessionId,
             onStreamToken: (token) => {
-              // Append streaming token to interpretation in context
-              setInterpretation((interpretation || '') + token)
+              // Silently accumulate interpretation in context - will be shown in ChatPanel
+              setInterpretation((prev) => (prev || '') + token)
             },
             onComplete: (fullText) => {
               console.log('Clinical interpretation streaming complete')
               console.log(`Generated ${fullText.length} characters`)
-              // Final interpretation is already in context from streaming
               setInterpretation(fullText)
             },
             onError: (error) => {
@@ -326,7 +325,6 @@ export function ClinicalAnalysis({
     clinicalInterpretationMutation,
     setScreeningResponse,
     setInterpretation,
-    interpretation,
     updateStageStatus,
     nextStep,
     onComplete,
@@ -476,26 +474,6 @@ export function ClinicalAnalysis({
                   )
                 })}
               </div>
-
-              {/* Clinical Interpretation Streaming Display */}
-              {currentStage === 'clinical_interpretation' && (
-                <Card className="bg-muted/30 border-primary/20">
-                  <CardContent className="pt-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-primary" />
-                        <p className="text-sm font-medium text-primary">
-                          AI Clinical Interpretation
-                        </p>
-                      </div>
-                      <div className="text-sm whitespace-pre-wrap leading-relaxed min-h-[100px]">
-                        {interpretation || 'Analyzing clinical data...'}
-                        {interpretation && <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" />}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </CardContent>
         </Card>
