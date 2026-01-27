@@ -38,46 +38,6 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
     return <LiteratureMatchingView sessionId={sessionId} />
   }
 
-  // False Positive Filter
-  if (selectedModule === 'fpf') {
-    return (
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">False Positive Filter</h1>
-          <p className="text-base text-muted-foreground">
-            ML-powered filtering to identify and remove sequencing artifacts.
-          </p>
-          <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-base font-medium">Coming soon...</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This feature is under development.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Guidelines Tracker
-  if (selectedModule === 'guidelines') {
-    return (
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Guidelines Tracker</h1>
-          <p className="text-base text-muted-foreground">
-            Track guideline changes and receive notifications for variant reclassifications.
-          </p>
-          <div className="mt-8 p-6 bg-muted rounded-lg">
-            <p className="text-base font-medium">Coming soon...</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This feature is under development.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Fallback
+  // Fallback - should not reach here with current modules
   return <VariantAnalysisView sessionId={sessionId} />
 }

@@ -63,18 +63,6 @@ const MODULES: Module[] = [
     icon: BookOpen,
     requiresSession: true,
   },
-  {
-    id: 'fpf',
-    name: 'False Positive Filter',
-    icon: Filter,
-    requiresSession: true,
-  },
-  {
-    id: 'guidelines',
-    name: 'Guidelines Tracker',
-    icon: Settings,
-    requiresSession: true,
-  },
 ]
 
 export function Sidebar() {
