@@ -232,8 +232,8 @@ export function ChatPanel() {
   const screeningResults = useScreeningResults()
   const literatureResults = useLiteratureResults()
 
-  // Get clinical interpretation
-  const { setInterpretation, hasInterpretation } = useClinicalInterpretationContext()
+  // Get clinical interpretation context with setIsGenerating
+  const { setInterpretation, setIsGenerating, hasInterpretation } = useClinicalInterpretationContext()
 
   // Get variant statistics for analysis context
   const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {
@@ -280,6 +280,7 @@ export function ChatPanel() {
     console.log('[ChatPanel] Auto-starting clinical interpretation')
     setIsInterpretationStarted(true)
     setIsGeneratingInterpretation(true)
+    setIsGenerating(true) // Track in context
 
     // Track streaming message ID
     const interpretationMessageId = 'interpretation-initial'
@@ -334,6 +335,7 @@ export function ChatPanel() {
         )
         setInterpretation(fullText)
         setIsGeneratingInterpretation(false)
+        setIsGenerating(false) // Done generating
         currentStreamingIdRef.current = null
       },
       onError: (error) => {
@@ -357,10 +359,11 @@ export function ChatPanel() {
           }
         })
         setIsGeneratingInterpretation(false)
+        setIsGenerating(false) // Done generating (with error)
         currentStreamingIdRef.current = null
       },
     })
-  }, [currentSessionId, isInterpretationStarted, hasInterpretation, clinicalInterpretationMutation, setInterpretation])
+  }, [currentSessionId, isInterpretationStarted, hasInterpretation, clinicalInterpretationMutation, setInterpretation, setIsGenerating])
 
   // ============================================================================
   // HANDLERS
