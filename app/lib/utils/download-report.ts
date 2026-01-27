@@ -97,37 +97,76 @@ async function downloadPdf(content: string, filename: string) {
     // Convert markdown to HTML
     const htmlContent = await marked.parse(content)
     
-    // Create styled HTML
+    // Create styled HTML with ONLY basic colors (no lab(), oklch(), etc.)
     const styledHtml = `
       <div style="
         font-family: Arial, sans-serif;
         font-size: 11pt;
         line-height: 1.6;
-        color: #000;
-        max-width: 210mm;
-        padding: 20mm;
+        color: #000000;
+        background-color: #ffffff;
       ">
         <style>
-          h1 { font-size: 18pt; font-weight: bold; margin-top: 16pt; margin-bottom: 8pt; }
-          h2 { font-size: 16pt; font-weight: bold; margin-top: 14pt; margin-bottom: 6pt; }
-          h3 { font-size: 14pt; font-weight: bold; margin-top: 12pt; margin-bottom: 4pt; }
-          p { margin-top: 0; margin-bottom: 8pt; }
-          ul, ol { margin-left: 20pt; padding-left: 10pt; }
-          li { margin-bottom: 4pt; }
-          strong { font-weight: bold; }
-          em { font-style: italic; }
+          * {
+            color: #000000 !important;
+            background-color: transparent !important;
+          }
+          h1 { 
+            font-size: 18pt; 
+            font-weight: bold; 
+            margin-top: 16pt; 
+            margin-bottom: 8pt;
+            color: #000000 !important;
+          }
+          h2 { 
+            font-size: 16pt; 
+            font-weight: bold; 
+            margin-top: 14pt; 
+            margin-bottom: 6pt;
+            color: #000000 !important;
+          }
+          h3 { 
+            font-size: 14pt; 
+            font-weight: bold; 
+            margin-top: 12pt; 
+            margin-bottom: 4pt;
+            color: #000000 !important;
+          }
+          p { 
+            margin-top: 0; 
+            margin-bottom: 8pt;
+            color: #000000 !important;
+          }
+          ul, ol { 
+            margin-left: 20pt; 
+            padding-left: 10pt;
+          }
+          li { 
+            margin-bottom: 4pt;
+            color: #000000 !important;
+          }
+          strong { 
+            font-weight: bold;
+            color: #000000 !important;
+          }
+          em { 
+            font-style: italic;
+            color: #000000 !important;
+          }
           code {
             font-family: 'Courier New', monospace;
-            background-color: #f5f5f5;
+            background-color: #f5f5f5 !important;
             padding: 2px 4px;
             font-size: 10pt;
+            color: #000000 !important;
           }
           pre {
-            background-color: #f5f5f5;
+            background-color: #f5f5f5 !important;
             padding: 10pt;
-            border: 1px solid #ddd;
+            border: 1px solid #cccccc;
             overflow-x: auto;
             font-size: 9pt;
+            color: #000000 !important;
           }
         </style>
         ${htmlContent}
@@ -149,7 +188,8 @@ async function downloadPdf(content: string, filename: string) {
       html2canvas: { 
         scale: 2,
         useCORS: true,
-        letterRendering: true
+        letterRendering: true,
+        backgroundColor: '#ffffff'
       },
       jsPDF: { 
         unit: 'mm' as const, 
