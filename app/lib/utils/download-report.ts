@@ -3,8 +3,6 @@
  */
 
 import { marked } from 'marked'
-import { jsPDF } from 'jspdf'
-import { MdTextRender, type RenderOption } from 'jspdf-md-renderer'
 
 export type ReportFormat = 'md' | 'docx' | 'pdf'
 
@@ -53,7 +51,7 @@ async function downloadDocx(content: string, filename: string) {
     em { font-style: italic; }
     table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
     th, td { border: 1px solid #ddd; padding: 8pt; text-align: left; }
-    th { background-color: #f5f5f5; font-weight: bold; }
+    th { background-color: #4a90e2; color: white; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -80,91 +78,38 @@ ${htmlContent}
 }
 
 /**
- * Download PDF using jspdf-md-renderer
+ * Download PDF report via backend service
+ * TODO: Implement backend PDF generation endpoint
  */
 async function downloadPdf(content: string, filename: string) {
   try {
-    // Create PDF document - exact config from library example
-    const doc = new jsPDF({
-      unit: 'mm',
-      orientation: 'p',
-      format: 'a4',
-      putOnlyUsedFonts: true,
-      hotfixes: ['px_scaling'],
-      userUnit: 96
+    const response = await fetch('/api/ai/download-report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: content,
+        filename: filename
+      })
     })
-    
-    // A4 page configuration from example
-    const width = 210
-    const height = 297
-    const xmargin = 8
-    const topmargin = height * 0.1
-    const xpading = 15
-    const maxLineWidth = width - (2 * xpading)
-    const maxContentHeight = height
-    const lineSpace = 6.2
-    const defaultIndent = 8
-    const defaultLineHeightFactor = 1.4
-    const defaultFontSize = 11
-    const defaultTitleFontSize = defaultFontSize + 2
-    
-    let y = topmargin
-    
-    // CRITICAL: Font must be empty strings, not 'helvetica'!
-    const options: RenderOption = {
-      cursor: {
-        x: xpading,
-        y: y
-      },
-      page: {
-        format: 'a4',
-        orientation: 'p',
-        defaultFontSize: defaultFontSize,
-        defaultLineHeightFactor: defaultLineHeightFactor,
-        defaultTitleFontSize: defaultTitleFontSize,
-        indent: defaultIndent,
-        lineSpace: lineSpace,
-        maxContentHeight: maxContentHeight,
-        maxContentWidth: maxLineWidth,
-        topmargin: topmargin,
-        xmargin: xmargin,
-        xpading: xpading
-      },
-      endCursorYHandler: (endY) => { 
-        y = endY 
-      },
-      font: {
-        bold: {
-          name: '',
-          style: ''
-        },
-        regular: {
-          name: '',
-          style: ''
-        },
-        light: {
-          name: '',
-          style: ''
-        } 
-      }
+
+    if (!response.ok) {
+      throw new Error('PDF generation failed on server')
     }
-    
-    // Render markdown to PDF
-    await MdTextRender(doc, content, options)
-    
-    // Set document metadata
-    doc.setProperties({
-      title: filename,
-      subject: 'Clinical Genetic Interpretation Report',
-      author: 'Helix Insight',
-      creator: 'Helix Insight Platform'
-    })
-    
-    // Download the PDF
-    doc.save(`${filename}.pdf`)
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${filename}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   } catch (error) {
     console.error('PDF generation failed:', error)
-    throw new Error('Failed to generate PDF file')
+    throw new Error('Failed to generate PDF file. Backend service not available.')
   }
 }
 
