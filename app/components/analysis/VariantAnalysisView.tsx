@@ -63,23 +63,28 @@ const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
   return filter
 }
 
-// Check if gene matches ACMG filter
-const geneMatchesACMG = (gene: GeneAggregated, filter: ACMGFilter): boolean => {
+// Check if variant matches ACMG filter
+const variantMatchesACMG = (variant: VariantInGene, filter: ACMGFilter): boolean => {
   if (filter === 'all') return true
-
   const acmgClass = acmgFilterToBackend(filter)
-  if (!acmgClass) return true
-
-  // Check if gene has any variant with this ACMG class
-  return gene.variants.some(v => v.acmg_class === acmgClass)
+  return variant.acmg_class === acmgClass
 }
 
-// Check if gene matches Impact filter
-const geneMatchesImpact = (gene: GeneAggregated, filter: ImpactFilter): boolean => {
+// Check if variant matches Impact filter
+const variantMatchesImpact = (variant: VariantInGene, filter: ImpactFilter): boolean => {
   if (filter === 'all') return true
+  return variant.impact === filter
+}
 
-  // Check if gene has any variant with this impact
-  return gene.variants.some(v => v.impact === filter)
+// Check if gene has any variant matching filters
+const geneMatchesFilters = (
+  gene: GeneAggregated,
+  acmgFilter: ACMGFilter,
+  impactFilter: ImpactFilter
+): boolean => {
+  return gene.variants.some(v =>
+    variantMatchesACMG(v, acmgFilter) && variantMatchesImpact(v, impactFilter)
+  )
 }
 
 // ============================================================================
@@ -219,10 +224,19 @@ interface GeneSectionProps {
   gene: GeneAggregated
   rank: number
   onViewVariantDetails: (variantIdx: number) => void
+  acmgFilter: ACMGFilter
+  impactFilter: ImpactFilter
 }
 
-function GeneSection({ gene, rank, onViewVariantDetails }: GeneSectionProps) {
+function GeneSection({ gene, rank, onViewVariantDetails, acmgFilter, impactFilter }: GeneSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+
+  // Filter variants to show based on active filters
+  const visibleVariants = useMemo(() => {
+    return gene.variants.filter(v =>
+      variantMatchesACMG(v, acmgFilter) && variantMatchesImpact(v, impactFilter)
+    )
+  }, [gene.variants, acmgFilter, impactFilter])
 
   return (
     <Card>
@@ -246,7 +260,7 @@ function GeneSection({ gene, rank, onViewVariantDetails }: GeneSectionProps) {
               </Badge>
             )}
             <Badge variant="secondary" className="text-sm">
-              {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
+              {visibleVariants.length} variant{visibleVariants.length !== 1 ? 's' : ''}
             </Badge>
             {gene.best_impact && (
               <Badge variant="outline" className={`text-sm ${getImpactColor(gene.best_impact)}`}>
@@ -279,7 +293,7 @@ function GeneSection({ gene, rank, onViewVariantDetails }: GeneSectionProps) {
 
       {isExpanded && (
         <CardContent className="space-y-3">
-          {gene.variants.map((variant) => (
+          {visibleVariants.map((variant) => (
             <VariantCard
               key={variant.variant_idx}
               variant={variant}
@@ -377,15 +391,8 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const filteredGenes = useMemo(() => {
     let filtered = allGenes
 
-    // Filter by ACMG
-    if (acmgFilter !== 'all') {
-      filtered = filtered.filter(g => geneMatchesACMG(g, acmgFilter))
-    }
-
-    // Filter by Impact
-    if (impactFilter !== 'all') {
-      filtered = filtered.filter(g => geneMatchesImpact(g, impactFilter))
-    }
+    // Filter genes that have at least one variant matching both filters
+    filtered = filtered.filter(g => geneMatchesFilters(g, acmgFilter, impactFilter))
 
     // Filter by gene name
     if (geneFilter.trim()) {
@@ -421,14 +428,17 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
   }, [globalStats])
 
-  // Calculate Impact counts from FILTERED genes (not global stats)
-  // This ensures impact counts match the selected ACMG filter
+  // Calculate Impact counts from FILTERED variants (not genes)
+  // Count only variants that match ACMG and Impact filters
   const impactCounts = useMemo(() => {
     const counts = { high: 0, moderate: 0, low: 0, modifier: 0 }
 
-    // Count impacts from all variants in filtered genes
-    filteredGenes.forEach(gene => {
+    // Count impacts from variants that match ACMG filter
+    allGenes.forEach(gene => {
       gene.variants.forEach(variant => {
+        // Only count variants that match the active ACMG filter
+        if (!variantMatchesACMG(variant, acmgFilter)) return
+
         if (variant.impact === 'HIGH') counts.high++
         else if (variant.impact === 'MODERATE') counts.moderate++
         else if (variant.impact === 'LOW') counts.low++
@@ -437,7 +447,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     })
 
     return counts
-  }, [filteredGenes])
+  }, [allGenes, acmgFilter])
 
   // Handle filter clicks
   const handleAcmgClick = (filter: ACMGFilter) => {
@@ -622,6 +632,8 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
               gene={gene}
               rank={idx + 1}
               onViewVariantDetails={setSelectedVariantIdx}
+              acmgFilter={acmgFilter}
+              impactFilter={impactFilter}
             />
           ))}
 
