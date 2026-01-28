@@ -5,11 +5,13 @@
  * 1. Reads variants directly from DuckDB (no HTTP transfer)
  * 2. Saves results to DuckDB (persistent across sessions)
  * 3. Auto-loads existing results on mount
+ * 4. Auto-cleanup when session becomes null
  *
  * Flow:
  * - Mount: Check if results exist in DuckDB, load if available
  * - User clicks "Run": Call session matching API, saves to DuckDB
  * - Navigate away & back: Results auto-load from DuckDB
+ * - Clear session: All data cleared automatically
  */
 'use client'
 
@@ -156,10 +158,28 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   const currentSessionId = useRef<string | null>(null)
   const hasLoadedResults = useRef(false)
 
-  // Load existing results from DuckDB when session changes
+  // Load existing results from DuckDB when session changes OR cleanup when null
   useEffect(() => {
-    if (!sessionId || sessionId === currentSessionId.current) return
+    // Case 1: Session cleared - cleanup all data
+    if (sessionId === null) {
+      console.log('[PhenotypeResultsContext] Session cleared - resetting phenotype results')
+      currentSessionId.current = null
+      hasLoadedResults.current = false
+      setAggregatedResults(null)
+      setStatus('idle')
+      setError(null)
+      setTier1Count(0)
+      setTier2Count(0)
+      setTier3Count(0)
+      setTier4Count(0)
+      setVariantsAnalyzed(0)
+      return
+    }
 
+    // Case 2: Same session - do nothing
+    if (sessionId === currentSessionId.current) return
+
+    // Case 3: New session - load results from DuckDB
     console.log('[PhenotypeResultsContext] Session changed, checking for existing results:', sessionId)
     currentSessionId.current = sessionId
     hasLoadedResults.current = false
@@ -269,7 +289,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       }
 
       setStatus('success')
-      
+
       // RETURN results directly for immediate use by caller
       return aggregated
     } catch (err) {

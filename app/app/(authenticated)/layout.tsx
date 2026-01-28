@@ -6,6 +6,7 @@
  * 2. Post-analysis: Split view (45% Chat/Sidebar + 55% View Panel)
  *
  * Providers hierarchy (both modes):
+ * - ClinicalInterpretationProvider: Clinical interpretation (per-session)
  * - ClinicalProfileProvider: Complete patient clinical profile
  * - ScreeningResultsProvider: Clinical screening analysis results
  * - PhenotypeResultsProvider: Phenotype matching results
@@ -15,12 +16,14 @@
  * - URL is source of truth: /analysis?session=<uuid>
  * - No session in URL = fresh start (upload step)
  * - Session in URL = continue existing session
+ * - All providers receive sessionId and auto-cleanup when it changes
  */
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
 import {
+  ClinicalInterpretationProvider,
   ClinicalProfileProvider,
   ScreeningResultsProvider,
   PhenotypeResultsProvider,
@@ -78,31 +81,35 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <div className="flex-1 min-h-0">
         {isAnalysisComplete ? (
           // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          <ClinicalProfileProvider sessionId={currentSessionId}>
-            <ScreeningResultsProvider>
-              <PhenotypeResultsProvider sessionId={currentSessionId}>
-                <LiteratureResultsProvider>
-                  <SplitView>
-                    {children}
-                  </SplitView>
-                </LiteratureResultsProvider>
-              </PhenotypeResultsProvider>
-            </ScreeningResultsProvider>
-          </ClinicalProfileProvider>
+          <ClinicalInterpretationProvider sessionId={currentSessionId}>
+            <ClinicalProfileProvider sessionId={currentSessionId}>
+              <ScreeningResultsProvider sessionId={currentSessionId}>
+                <PhenotypeResultsProvider sessionId={currentSessionId}>
+                  <LiteratureResultsProvider>
+                    <SplitView>
+                      {children}
+                    </SplitView>
+                  </LiteratureResultsProvider>
+                </PhenotypeResultsProvider>
+              </ScreeningResultsProvider>
+            </ClinicalProfileProvider>
+          </ClinicalInterpretationProvider>
         ) : (
           // Full Width: Pre-analysis workflow
           // Same provider hierarchy for consistency
-          <ClinicalProfileProvider sessionId={currentSessionId}>
-            <ScreeningResultsProvider>
-              <PhenotypeResultsProvider sessionId={currentSessionId}>
-                <LiteratureResultsProvider>
-                  <main className="h-full overflow-auto bg-background">
-                    {children}
-                  </main>
-                </LiteratureResultsProvider>
-              </PhenotypeResultsProvider>
-            </ScreeningResultsProvider>
-          </ClinicalProfileProvider>
+          <ClinicalInterpretationProvider sessionId={currentSessionId}>
+            <ClinicalProfileProvider sessionId={currentSessionId}>
+              <ScreeningResultsProvider sessionId={currentSessionId}>
+                <PhenotypeResultsProvider sessionId={currentSessionId}>
+                  <LiteratureResultsProvider>
+                    <main className="h-full overflow-auto bg-background">
+                      {children}
+                    </main>
+                  </LiteratureResultsProvider>
+                </PhenotypeResultsProvider>
+              </ScreeningResultsProvider>
+            </ClinicalProfileProvider>
+          </ClinicalInterpretationProvider>
         )}
       </div>
     </div>

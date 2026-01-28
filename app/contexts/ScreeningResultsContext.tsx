@@ -2,11 +2,12 @@
 
 /**
  * ScreeningResultsContext - Store and provide screening analysis results
- * 
+ *
  * Stores complete screening response (summary + tier results) for display and AI context
+ * Auto-cleanup when session changes or becomes null
  */
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 import type { ScreeningResponse } from '@/lib/api/screening'
 
 interface ScreeningResultsContextValue {
@@ -18,11 +19,20 @@ interface ScreeningResultsContextValue {
 const ScreeningResultsContext = createContext<ScreeningResultsContextValue | undefined>(undefined)
 
 interface ScreeningResultsProviderProps {
+  sessionId: string | null
   children: ReactNode
 }
 
-export function ScreeningResultsProvider({ children }: ScreeningResultsProviderProps) {
+export function ScreeningResultsProvider({ sessionId, children }: ScreeningResultsProviderProps) {
   const [screeningResponse, setScreeningResponseState] = useState<ScreeningResponse | null>(null)
+
+  // Auto-cleanup when session changes or becomes null
+  useEffect(() => {
+    if (sessionId === null) {
+      console.log('[ScreeningResultsContext] Session cleared - resetting screening results')
+      setScreeningResponseState(null)
+    }
+  }, [sessionId])
 
   const setScreeningResponse = useCallback((response: ScreeningResponse) => {
     console.log('='.repeat(80))

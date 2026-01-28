@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 
 interface ClinicalInterpretationContextValue {
   interpretation: string | null
@@ -16,9 +16,23 @@ const ClinicalInterpretationContext = createContext<ClinicalInterpretationContex
   undefined
 )
 
-export function ClinicalInterpretationProvider({ children }: { children: React.ReactNode }) {
+interface ClinicalInterpretationProviderProps {
+  sessionId: string | null
+  children: React.ReactNode
+}
+
+export function ClinicalInterpretationProvider({ sessionId, children }: ClinicalInterpretationProviderProps) {
   const [interpretation, setInterpretationState] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // Auto-cleanup when session changes or becomes null
+  useEffect(() => {
+    if (sessionId === null) {
+      console.log('[ClinicalInterpretationContext] Session cleared - resetting interpretation')
+      setInterpretationState(null)
+      setIsGenerating(false)
+    }
+  }, [sessionId])
 
   const setInterpretation = useCallback((text: string | ((prev: string | null) => string)) => {
     if (typeof text === 'function') {

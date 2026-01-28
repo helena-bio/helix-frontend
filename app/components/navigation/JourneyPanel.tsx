@@ -6,6 +6,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CheckCircle2, Clock, Lock, X, Download, ChevronDown } from 'lucide-react'
@@ -25,7 +26,6 @@ import {
 import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
-import { useGlobalReset } from '@/hooks'
 import { cn } from '@helix/shared/lib/utils'
 import { downloadClinicalReport } from '@/lib/utils/download-report'
 
@@ -56,10 +56,10 @@ function getLineColor(status: StepStatus): string {
 }
 
 export function JourneyPanel() {
-  const { getStepStatus, canNavigateTo, goToStep, currentStep } = useJourney()
-  const { currentSessionId } = useSession()
+  const router = useRouter()
+  const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
+  const { currentSessionId, setCurrentSessionId } = useSession()
   const { interpretation, isGenerating, hasInterpretation, isComplete } = useClinicalInterpretation()
-  const { resetAll } = useGlobalReset()
 
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {
@@ -69,10 +69,19 @@ export function JourneyPanel() {
 
   /**
    * Clear File - Complete Reset
-   * Uses useGlobalReset hook to clear ALL contexts and navigate to clean state
+   * 1. Clear sessionId (triggers auto-cleanup in providers via useEffect)
+   * 2. Reset journey to upload
+   * 3. Navigate to /analysis (without sessionId in URL)
    */
   const handleClearFile = () => {
-    resetAll()
+    // Clear session - this will trigger cleanup in all providers
+    setCurrentSessionId(null)
+    
+    // Reset journey to upload step
+    resetJourney()
+    
+    // Navigate to clean /analysis page
+    router.push('/analysis')
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
