@@ -269,6 +269,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       setSessionId(uploadResult.id)
       setUploadProgress(100)
 
+      // CRITICAL: Notify parent of sessionId to add to URL
+      onComplete?.(uploadResult.id)
+
       // Phase 2: Start validation
       setPhase('validating')
       setValidationProgress(0)
@@ -285,7 +288,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       toast.error('Process failed', { description: err.message })
       onError?.(err)
     }
-  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, onError])
+  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, onComplete, onError])
 
   // Reset handler
   const handleReset = useCallback(() => {
@@ -310,9 +313,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const handleProcessingClick = useCallback(() => {
     if (sessionId) {
       nextStep() // validation -> processing (UPDATE JOURNEY FIRST!)
-      onComplete?.(sessionId) // then notify parent to update URL
+      // onComplete already called after upload, no need to call again
     }
-  }, [sessionId, nextStep, onComplete])
+  }, [sessionId, nextStep])
 
   // Download QC report
   const handleDownloadQC = useCallback(() => {
