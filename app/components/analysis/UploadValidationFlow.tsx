@@ -306,11 +306,11 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     }
   }, [uploadMutation, startValidationMutation])
 
-  // Handle processing button click - advance to processing step
+  // Handle processing button click - IMPORTANT: Update journey BEFORE notifying parent
   const handleProcessingClick = useCallback(() => {
     if (sessionId) {
-      onComplete?.(sessionId)
-      nextStep() // validation -> processing
+      nextStep() // validation -> processing (UPDATE JOURNEY FIRST!)
+      onComplete?.(sessionId) // then notify parent to update URL
     }
   }, [sessionId, nextStep, onComplete])
 
