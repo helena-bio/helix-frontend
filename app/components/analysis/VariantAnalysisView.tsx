@@ -66,10 +66,10 @@ const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
 // Check if gene matches ACMG filter
 const geneMatchesACMG = (gene: GeneAggregated, filter: ACMGFilter): boolean => {
   if (filter === 'all') return true
-  
+
   const acmgClass = acmgFilterToBackend(filter)
   if (!acmgClass) return true
-  
+
   // Check if gene has any variant with this ACMG class
   return gene.variants.some(v => v.acmg_class === acmgClass)
 }
@@ -77,7 +77,7 @@ const geneMatchesACMG = (gene: GeneAggregated, filter: ACMGFilter): boolean => {
 // Check if gene matches Impact filter
 const geneMatchesImpact = (gene: GeneAggregated, filter: ImpactFilter): boolean => {
   if (filter === 'all') return true
-  
+
   // Check if gene has any variant with this impact
   return gene.variants.some(v => v.impact === filter)
 }
@@ -421,16 +421,23 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
   }, [globalStats])
 
-  // Calculate Impact counts from global stats
+  // Calculate Impact counts from FILTERED genes (not global stats)
+  // This ensures impact counts match the selected ACMG filter
   const impactCounts = useMemo(() => {
-    if (!globalStats) return { high: 0, moderate: 0, low: 0, modifier: 0 }
-    return {
-      high: globalStats.impact_breakdown['HIGH'] || 0,
-      moderate: globalStats.impact_breakdown['MODERATE'] || 0,
-      low: globalStats.impact_breakdown['LOW'] || 0,
-      modifier: globalStats.impact_breakdown['MODIFIER'] || 0,
-    }
-  }, [globalStats])
+    const counts = { high: 0, moderate: 0, low: 0, modifier: 0 }
+
+    // Count impacts from all variants in filtered genes
+    filteredGenes.forEach(gene => {
+      gene.variants.forEach(variant => {
+        if (variant.impact === 'HIGH') counts.high++
+        else if (variant.impact === 'MODERATE') counts.moderate++
+        else if (variant.impact === 'LOW') counts.low++
+        else if (variant.impact === 'MODIFIER') counts.modifier++
+      })
+    })
+
+    return counts
+  }, [filteredGenes])
 
   // Handle filter clicks
   const handleAcmgClick = (filter: ACMGFilter) => {
