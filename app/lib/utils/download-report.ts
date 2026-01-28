@@ -29,7 +29,7 @@ async function downloadFromBackend(
 ) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
-    const endpoint = `${backendUrl}/report/download`
+    const endpoint = `${backendUrl}/api/v1/report/download`
     
     console.log(`${format.toUpperCase()} download:`, endpoint)
     
