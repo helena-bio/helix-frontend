@@ -71,7 +71,7 @@ export function JourneyPanel() {
    * Clear File - Complete Reset
    * 1. Clear sessionId (triggers auto-cleanup in providers via useEffect)
    * 2. Reset journey to upload
-   * 3. Navigate to /analysis (without sessionId in URL)
+   * 3. Navigate to /analysis (without sessionId in URL) - use replace to clear URL
    */
   const handleClearFile = () => {
     // Clear session - this will trigger cleanup in all providers
@@ -80,8 +80,8 @@ export function JourneyPanel() {
     // Reset journey to upload step
     resetJourney()
     
-    // Navigate to clean /analysis page
-    router.push('/analysis')
+    // Navigate to clean /analysis page - REPLACE URL to clear query params
+    router.replace('/analysis')
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
