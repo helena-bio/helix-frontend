@@ -2,12 +2,10 @@
  * Download clinical interpretation report in various formats
  */
 
-import { marked } from 'marked'
-
 export type ReportFormat = 'md' | 'docx' | 'pdf'
 
 /**
- * Download markdown report
+ * Download markdown report (client-side)
  */
 function downloadMarkdown(content: string, filename: string) {
   const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
@@ -22,71 +20,18 @@ function downloadMarkdown(content: string, filename: string) {
 }
 
 /**
- * Download DOCX report
+ * Download report via backend service (PDF or DOCX)
  */
-async function downloadDocx(content: string, filename: string) {
+async function downloadFromBackend(
+  content: string, 
+  filename: string,
+  format: 'pdf' | 'docx'
+) {
   try {
-    const htmlContent = await marked.parse(content)
-    
-    const wordHtml = `
-<!DOCTYPE html>
-<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
-<head>
-  <meta charset='utf-8'>
-  <title>${filename}</title>
-  <style>
-    body {
-      font-family: 'Calibri', sans-serif;
-      font-size: 11pt;
-      line-height: 1.5;
-      margin: 1in;
-    }
-    h1 { font-size: 18pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; }
-    h2 { font-size: 16pt; font-weight: bold; margin-top: 10pt; margin-bottom: 4pt; }
-    h3 { font-size: 14pt; font-weight: bold; margin-top: 8pt; margin-bottom: 3pt; }
-    p { margin-top: 0; margin-bottom: 8pt; }
-    ul, ol { margin-left: 20pt; }
-    li { margin-bottom: 4pt; }
-    strong { font-weight: bold; }
-    em { font-style: italic; }
-    table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
-    th, td { border: 1px solid #ddd; padding: 8pt; text-align: left; }
-    th { background-color: #4a90e2; color: white; font-weight: bold; }
-  </style>
-</head>
-<body>
-${htmlContent}
-</body>
-</html>
-`
-    
-    const blob = new Blob([wordHtml], { 
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${filename}.docx`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  } catch (error) {
-    console.error('DOCX generation failed:', error)
-    throw new Error('Failed to generate DOCX file')
-  }
-}
-
-/**
- * Download PDF report via backend service
- */
-async function downloadPdf(content: string, filename: string) {
-  try {
-    // Use environment variable for backend URL
     const backendUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
     const endpoint = `${backendUrl}/report/download`
     
-    console.log('PDF download endpoint:', endpoint)
+    console.log(`${format.toUpperCase()} download:`, endpoint)
     
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -95,27 +40,28 @@ async function downloadPdf(content: string, filename: string) {
       },
       body: JSON.stringify({
         content: content,
-        filename: filename
+        filename: filename,
+        format: format
       })
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`PDF generation failed: ${response.status} - ${errorText}`)
+      throw new Error(`${format.toUpperCase()} generation failed: ${response.status} - ${errorText}`)
     }
 
     const blob = await response.blob()
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${filename}.pdf`
+    link.download = `${filename}.${format}`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   } catch (error) {
-    console.error('PDF generation failed:', error)
-    throw new Error('Failed to generate PDF file. Backend service not available.')
+    console.error(`${format.toUpperCase()} generation failed:`, error)
+    throw new Error(`Failed to generate ${format.toUpperCase()} file. Backend service not available.`)
   }
 }
 
@@ -133,13 +79,18 @@ export async function downloadClinicalReport(
   try {
     switch (format) {
       case 'md':
+        // Client-side markdown download
         downloadMarkdown(interpretation, filename)
         break
+      
       case 'docx':
-        await downloadDocx(interpretation, filename)
+        // Backend DOCX generation
+        await downloadFromBackend(interpretation, filename, 'docx')
         break
+      
       case 'pdf':
-        await downloadPdf(interpretation, filename)
+        // Backend PDF generation
+        await downloadFromBackend(interpretation, filename, 'pdf')
         break
     }
   } catch (error) {
