@@ -1,16 +1,15 @@
 /**
- * Analysis Context - UI State Only
+ * Session Context - UI State Only
  * Following Lumiere pattern: NO server data in Context
  * Server data managed by React Query
  *
- * IMPORTANT: sessionId is persisted to localStorage to survive page refresh
+ * IMPORTANT: sessionId comes from URL query params, NOT localStorage
+ * URL is the source of truth for session management
  */
 
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-
-const STORAGE_KEY = 'helix_current_session'
 
 interface SessionContextType {
   // Sidebar state
@@ -23,6 +22,7 @@ interface SessionContextType {
   setSelectedModule: (module: string | null) => void
 
   // Current session (reference only, data comes from React Query)
+  // NOTE: This is set from URL query params in the layout
   currentSessionId: string | null
   setCurrentSessionId: (sessionId: string | null) => void
 
@@ -62,9 +62,8 @@ export function SessionProvider({ children }: SessionProviderProps) {
   // Module selection
   const [selectedModule, setSelectedModule] = useState<string | null>(null)
 
-  // Current session - initialized from localStorage
-  const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null)
-  const [isHydrated, setIsHydrated] = useState(false)
+  // Current session - will be set from URL in authenticated layout
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
 
   // Variant selection
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -78,33 +77,6 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   // Chat visibility
   const [isChatVisible, setIsChatVisible] = useState(false)
-
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        if (parsed.sessionId) {
-          setCurrentSessionIdState(parsed.sessionId)
-        }
-      } catch (e) {
-        console.error('Failed to parse stored session:', e)
-        localStorage.removeItem(STORAGE_KEY)
-      }
-    }
-    setIsHydrated(true)
-  }, [])
-
-  // Persist sessionId to localStorage
-  const setCurrentSessionId = useCallback((sessionId: string | null) => {
-    setCurrentSessionIdState(sessionId)
-    if (sessionId) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ sessionId }))
-    } else {
-      localStorage.removeItem(STORAGE_KEY)
-    }
-  }, [])
 
   // Responsive sidebar - matches xl breakpoint (1280px)
   useEffect(() => {
@@ -180,11 +152,6 @@ export function SessionProvider({ children }: SessionProviderProps) {
     isChatVisible,
     showChat,
     hideChat,
-  }
-
-  // Don't render children until hydrated to avoid hydration mismatch
-  if (!isHydrated) {
-    return null
   }
 
   return (

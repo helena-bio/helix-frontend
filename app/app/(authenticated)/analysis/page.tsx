@@ -7,7 +7,12 @@
  * 2. Processing - Run ACMG classification pipeline
  * 3. Profile - Enter clinical profile and run phenotype matching (optional)
  * 4. Analysis - View and analyze variants
+ *
+ * SESSION MANAGEMENT:
+ * - After upload completes, sessionId is added to URL: /analysis?session=<uuid>
+ * - URL becomes the source of truth for the session
  */
+import { useRouter } from 'next/navigation'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { ClinicalProfileProvider } from '@/contexts/ClinicalProfileContext'
@@ -20,12 +25,15 @@ import {
 import { Loader2 } from 'lucide-react'
 
 export default function AnalysisPage() {
+  const router = useRouter()
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { currentStep } = useJourney()
 
-  // Handle upload+validation complete
+  // Handle upload+validation complete - add sessionId to URL
   const handleUploadValidationComplete = (sessionId: string) => {
     setCurrentSessionId(sessionId)
+    // Add sessionId to URL
+    router.push(`/analysis?session=${sessionId}`)
   }
 
   // Step 1: Upload & Validation

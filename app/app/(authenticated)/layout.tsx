@@ -10,9 +10,14 @@
  * - ScreeningResultsProvider: Clinical screening analysis results
  * - PhenotypeResultsProvider: Phenotype matching results
  * - LiteratureResultsProvider: Clinical literature search results
+ *
+ * SESSION MANAGEMENT:
+ * - URL is source of truth: /analysis?session=<uuid>
+ * - No session in URL = fresh start (upload step)
+ * - Session in URL = continue existing session
  */
 import { ReactNode, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
 import { SplitView } from '@/components/layout/SplitView'
 import {
@@ -30,13 +35,15 @@ interface AuthenticatedLayoutProps {
 
 export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { currentStep } = useJourney()
-  const { currentSessionId } = useSession()
+  const { currentSessionId, setCurrentSessionId } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isChecking, setIsChecking] = useState(true)
 
   // Check if analysis is complete (show split view)
   const isAnalysisComplete = currentStep === 'analysis'
 
+  // Auth check
   useEffect(() => {
     const token = localStorage.getItem('helix_auth_token')
     if (!token) {
@@ -45,6 +52,16 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       setIsChecking(false)
     }
   }, [router])
+
+  // Sync sessionId from URL to SessionContext
+  useEffect(() => {
+    const sessionFromUrl = searchParams.get('session')
+    
+    // Update context if URL has changed
+    if (sessionFromUrl !== currentSessionId) {
+      setCurrentSessionId(sessionFromUrl)
+    }
+  }, [searchParams, currentSessionId, setCurrentSessionId])
 
   if (isChecking) {
     return null

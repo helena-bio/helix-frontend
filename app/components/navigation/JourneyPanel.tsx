@@ -25,6 +25,7 @@ import {
 import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
+import { useGlobalReset } from '@/hooks'
 import { cn } from '@helix/shared/lib/utils'
 import { downloadClinicalReport } from '@/lib/utils/download-report'
 
@@ -55,9 +56,10 @@ function getLineColor(status: StepStatus): string {
 }
 
 export function JourneyPanel() {
-  const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
-  const { currentSessionId, setCurrentSessionId } = useSession()
+  const { getStepStatus, canNavigateTo, goToStep, currentStep } = useJourney()
+  const { currentSessionId } = useSession()
   const { interpretation, isGenerating, hasInterpretation, isComplete } = useClinicalInterpretation()
+  const { resetAll } = useGlobalReset()
 
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {
@@ -65,14 +67,17 @@ export function JourneyPanel() {
     }
   }
 
+  /**
+   * Clear File - Complete Reset
+   * Uses useGlobalReset hook to clear ALL contexts and navigate to clean state
+   */
   const handleClearFile = () => {
-    setCurrentSessionId(null)
-    resetJourney()
+    resetAll()
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
     console.log('[JourneyPanel] Download report requested:', format)
-    
+
     if (!interpretation || !hasInterpretation()) {
       console.error('[JourneyPanel] No clinical interpretation available')
       return
@@ -83,7 +88,7 @@ export function JourneyPanel() {
       sessionId: currentSessionId,
       interpretationLength: interpretation.length,
     })
-    
+
     try {
       downloadClinicalReport(interpretation, format, currentSessionId || 'report')
     } catch (error) {
@@ -200,21 +205,21 @@ export function JourneyPanel() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => handleDownloadReport('pdf')}
                 className="cursor-pointer"
               >
                 <Download className="h-3 w-3 mr-2" />
                 Download as PDF
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => handleDownloadReport('docx')}
                 className="cursor-pointer"
               >
                 <Download className="h-3 w-3 mr-2" />
                 Download as DOCX
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => handleDownloadReport('md')}
                 className="cursor-pointer"
               >
