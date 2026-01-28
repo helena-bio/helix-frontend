@@ -71,47 +71,36 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header - Journey Panel with Logo */}
-      <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">
-        <JourneyPanel />
-      </header>
+    <ClinicalInterpretationProvider sessionId={currentSessionId}>
+      <ClinicalProfileProvider sessionId={currentSessionId}>
+        <ScreeningResultsProvider sessionId={currentSessionId}>
+          <PhenotypeResultsProvider sessionId={currentSessionId}>
+            <LiteratureResultsProvider>
+              <div className="h-screen flex flex-col">
+                {/* Header - Journey Panel with Logo */}
+                <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">
+                  <JourneyPanel />
+                </header>
 
-      {/* Main area */}
-      <div className="flex-1 min-h-0">
-        {isAnalysisComplete ? (
-          // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-          <ClinicalInterpretationProvider sessionId={currentSessionId}>
-            <ClinicalProfileProvider sessionId={currentSessionId}>
-              <ScreeningResultsProvider sessionId={currentSessionId}>
-                <PhenotypeResultsProvider sessionId={currentSessionId}>
-                  <LiteratureResultsProvider>
+                {/* Main area */}
+                <div className="flex-1 min-h-0">
+                  {isAnalysisComplete ? (
+                    // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
                     <SplitView>
                       {children}
                     </SplitView>
-                  </LiteratureResultsProvider>
-                </PhenotypeResultsProvider>
-              </ScreeningResultsProvider>
-            </ClinicalProfileProvider>
-          </ClinicalInterpretationProvider>
-        ) : (
-          // Full Width: Pre-analysis workflow
-          // Same provider hierarchy for consistency
-          <ClinicalInterpretationProvider sessionId={currentSessionId}>
-            <ClinicalProfileProvider sessionId={currentSessionId}>
-              <ScreeningResultsProvider sessionId={currentSessionId}>
-                <PhenotypeResultsProvider sessionId={currentSessionId}>
-                  <LiteratureResultsProvider>
+                  ) : (
+                    // Full Width: Pre-analysis workflow
                     <main className="h-full overflow-auto bg-background">
                       {children}
                     </main>
-                  </LiteratureResultsProvider>
-                </PhenotypeResultsProvider>
-              </ScreeningResultsProvider>
-            </ClinicalProfileProvider>
-          </ClinicalInterpretationProvider>
-        )}
-      </div>
-    </div>
+                  )}
+                </div>
+              </div>
+            </LiteratureResultsProvider>
+          </PhenotypeResultsProvider>
+        </ScreeningResultsProvider>
+      </ClinicalProfileProvider>
+    </ClinicalInterpretationProvider>
   )
 }
