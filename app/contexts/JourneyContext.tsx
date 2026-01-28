@@ -6,6 +6,9 @@
  *
  * Following Lumiere pattern: UI state only, no server data
  * IMPORTANT: currentStep is persisted to localStorage to survive page refresh
+ * 
+ * SESSION INTEGRATION:
+ * Journey resets to 'upload' when sessionId becomes null (multi-tab isolation)
  */
 
 'use client'
@@ -19,6 +22,7 @@ import {
   useEffect,
   type ReactNode
 } from 'react'
+import { useSession } from './SessionContext'
 
 const STORAGE_KEY = 'helix_journey_step'
 
@@ -124,6 +128,7 @@ export function JourneyProvider({
   children,
   initialStep = 'upload'
 }: JourneyProviderProps) {
+  const { currentSessionId } = useSession()
   const [currentStep, setCurrentStepState] = useState<JourneyStep>(initialStep)
   const [isHydrated, setIsHydrated] = useState(false)
 
@@ -134,12 +139,12 @@ export function JourneyProvider({
       try {
         const parsed = JSON.parse(stored)
         let step = parsed.step
-        
+
         // Migration: phenotype -> profile
         if (step === 'phenotype') {
           step = 'profile'
         }
-        
+
         if (step && JOURNEY_STEPS.some(s => s.id === step)) {
           setCurrentStepState(step)
         }
@@ -150,6 +155,15 @@ export function JourneyProvider({
     }
     setIsHydrated(true)
   }, [])
+
+  // Auto-reset journey when sessionId becomes null
+  useEffect(() => {
+    if (currentSessionId === null) {
+      console.log('[JourneyContext] Session cleared - resetting to upload')
+      setCurrentStepState('upload')
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  }, [currentSessionId])
 
   // Persist step to localStorage
   const setCurrentStep = useCallback((step: JourneyStep) => {
