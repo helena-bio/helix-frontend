@@ -14,7 +14,7 @@
  * Seamless flow:
  * 1. File Selection (drag & drop or browse) - Journey: upload
  * 2. Upload Progress - Journey: upload
- * 3. Validation Progress - Journey: validation (auto-advance)
+ * 3. Validation Progress - Journey: validation (direct advance)
  * 4. QC Results display - Journey: validation
  * 5. User clicks "Start Processing" -> Journey: processing
  */
@@ -68,27 +68,18 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
-  const hasAdvancedToValidation = useRef(false)
 
   // Mutations
   const uploadMutation = useUploadVCF()
   const startValidationMutation = useStartValidation()
 
   // Journey context
-  const { currentStep, nextStep } = useJourney()
+  const { nextStep } = useJourney()
 
   // Poll task status when validating
   const { data: taskStatus } = useTaskStatus(taskId, {
     enabled: !!taskId && phase === 'validating',
   })
-
-  // Advance journey to validation when we start validating
-  useEffect(() => {
-    if (phase === 'validating' && currentStep === 'upload' && !hasAdvancedToValidation.current) {
-      hasAdvancedToValidation.current = true
-      nextStep() // upload -> validation
-    }
-  }, [phase, currentStep, nextStep])
 
   // Handle validation task completion
   useEffect(() => {
@@ -255,7 +246,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setUploadProgress(0)
     setValidationProgress(0)
     setPhase('uploading')
-    hasAdvancedToValidation.current = false
 
     try {
       // Phase 1: Upload
@@ -274,6 +264,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
       // Phase 2: Start validation
       setPhase('validating')
+      nextStep() // upload -> validation (DIRECT CALL - no useEffect race condition)
       setValidationProgress(0)
 
       const validationResult = await startValidationMutation.mutateAsync(uploadResult.id)
@@ -288,7 +279,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       toast.error('Process failed', { description: err.message })
       onError?.(err)
     }
-  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, onComplete, onError])
+  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, nextStep, onComplete, onError])
 
   // Reset handler
   const handleReset = useCallback(() => {
@@ -301,7 +292,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setQcResults(null)
     setUploadProgress(0)
     setValidationProgress(0)
-    hasAdvancedToValidation.current = false
     uploadMutation.reset()
     startValidationMutation.reset()
     if (fileInputRef.current) {
@@ -309,11 +299,10 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     }
   }, [uploadMutation, startValidationMutation])
 
-  // Handle processing button click - IMPORTANT: Update journey BEFORE notifying parent
+  // Handle processing button click
   const handleProcessingClick = useCallback(() => {
     if (sessionId) {
-      nextStep() // validation -> processing (UPDATE JOURNEY FIRST!)
-      // onComplete already called after upload, no need to call again
+      nextStep() // validation -> processing
     }
   }, [sessionId, nextStep])
 
