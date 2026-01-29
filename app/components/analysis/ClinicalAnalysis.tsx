@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState, useRef } from 'react'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
-import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
+import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
@@ -101,7 +101,7 @@ export function ClinicalAnalysis({
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
-  const { runMatching: runPhenotypeMatching } = usePhenotypeResults()
+  const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults, aggregatedResults: phenotypeResults } = usePhenotypeResults()
   const { loadAllVariants, loadProgress: streamingProgress } = useVariantsResults()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
@@ -144,7 +144,6 @@ export function ClinicalAnalysis({
         }
 
         // Stage 1: Phenotype Matching (OPTIONAL - but runs FIRST if HPO terms exist)
-        let phenotypeResults: GeneAggregatedResult[] = []
         if (hpoTerms.length > 0) {
           setCurrentStage('phenotype')
           updateStageStatus('phenotype', 'running')
@@ -152,17 +151,24 @@ export function ClinicalAnalysis({
           try {
             const hpoIds = hpoTerms.map(t => t.hpo_id)
             console.log('='.repeat(80))
-            console.log('PHENOTYPE MATCHING - Running first to identify Tier 1/2 candidates')
+            console.log('PHENOTYPE MATCHING - Running computation and streaming')
             console.log(`Patient HPO terms: ${hpoIds.join(', ')}`)
             console.log('='.repeat(80))
 
-            phenotypeResults = await runPhenotypeMatching(hpoIds)
+            // Step 1: Trigger backend computation
+            await runPhenotypeMatching(hpoIds)
 
+            // Step 2: Stream aggregated results
+            await loadAllPhenotypeResults(sessionId)
+
+            // phenotypeResults now available from context via aggregatedResults
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING COMPLETE')
-            console.log('  Total genes:', phenotypeResults.length)
-            console.log('  Tier 1 genes:', phenotypeResults.filter(r => isTier1(r.best_tier)).map(r => r.gene_symbol))
-            console.log('  Tier 2 genes:', phenotypeResults.filter(r => isTier2(r.best_tier)).map(r => r.gene_symbol))
+            console.log('  Total genes:', phenotypeResults?.length || 0)
+            if (phenotypeResults) {
+              console.log('  Tier 1 genes:', phenotypeResults.filter(r => isTier1(r.best_tier)).map(r => r.gene_symbol))
+              console.log('  Tier 2 genes:', phenotypeResults.filter(r => isTier2(r.best_tier)).map(r => r.gene_symbol))
+            }
             console.log('='.repeat(80))
 
             updateStageStatus('phenotype', 'completed')
@@ -221,11 +227,11 @@ export function ClinicalAnalysis({
         try {
           console.log('='.repeat(80))
           console.log('LITERATURE SEARCH - Checking for top genes')
-          console.log('  phenotypeResults length:', phenotypeResults.length)
+          console.log('  phenotypeResults length:', phenotypeResults?.length || 0)
           console.log('='.repeat(80))
 
           const topGenes: string[] = []
-          if (phenotypeResults.length > 0) {
+          if (phenotypeResults && phenotypeResults.length > 0) {
             const tier1Genes = phenotypeResults
               .filter(r => isTier1(r.best_tier))
               .map(r => r.gene_symbol)
@@ -280,7 +286,7 @@ export function ClinicalAnalysis({
           console.log('='.repeat(80))
 
           console.log('[ClinicalAnalysis] Calling loadAllVariants...')
-          
+
           // Stream all variants directly to VariantsResultsContext
           await loadAllVariants(sessionId)
 
@@ -288,7 +294,7 @@ export function ClinicalAnalysis({
           console.log('='.repeat(80))
           console.log('DATA STREAMING COMPLETE - All data loaded to context')
           console.log('  - Variants: loaded to VariantsResultsContext')
-          console.log('  - Phenotype results: already in context')
+          console.log('  - Phenotype results: loaded to PhenotypeResultsContext')
           console.log('  - Screening results: already in context')
           console.log('  - Literature results: already in context')
           console.log('='.repeat(80))
@@ -328,6 +334,8 @@ export function ClinicalAnalysis({
     getCompleteProfile,
     hpoTerms,
     runPhenotypeMatching,
+    loadAllPhenotypeResults,
+    phenotypeResults,
     screeningMutation,
     literatureSearchMutation,
     setScreeningResponse,
