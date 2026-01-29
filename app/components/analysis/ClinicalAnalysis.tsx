@@ -110,14 +110,14 @@ export function ClinicalAnalysis({
     const statuses = Object.values(stageStatuses)
     const completed = statuses.filter(s => s === 'completed' || s === 'skipped').length
     const total = statuses.length
-    
+
     // If currently streaming, factor in streaming progress
     if (currentStage === 'streaming' && stageStatuses.streaming === 'running') {
       const baseProgress = (completed / total) * 100
       const streamingWeight = (1 / total) * 100
       return Math.round(baseProgress + (streamingProgress / 100) * streamingWeight)
     }
-    
+
     return Math.round((completed / total) * 100)
   }, [stageStatuses, currentStage, streamingProgress])
 
@@ -275,11 +275,16 @@ export function ClinicalAnalysis({
         try {
           console.log('='.repeat(80))
           console.log('DATA STREAMING - Streaming all variants to context')
+          console.log('  sessionId:', sessionId)
+          console.log('  loadAllVariants function:', typeof loadAllVariants)
           console.log('='.repeat(80))
 
+          console.log('[ClinicalAnalysis] Calling loadAllVariants...')
+          
           // Stream all variants directly to VariantsResultsContext
           await loadAllVariants(sessionId)
 
+          console.log('[ClinicalAnalysis] loadAllVariants completed!')
           console.log('='.repeat(80))
           console.log('DATA STREAMING COMPLETE - All data loaded to context')
           console.log('  - Variants: loaded to VariantsResultsContext')
@@ -291,7 +296,7 @@ export function ClinicalAnalysis({
           updateStageStatus('streaming', 'completed')
           toast.success('Data streaming complete - ready for instant analysis')
         } catch (error) {
-          console.error('Data streaming failed:', error)
+          console.error('[ClinicalAnalysis] Data streaming failed:', error)
           updateStageStatus('streaming', 'failed')
           toast.warning('Data streaming failed - views may load slowly')
           // Don't throw - continue anyway, views will load data on demand
