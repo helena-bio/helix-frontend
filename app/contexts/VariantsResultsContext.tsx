@@ -22,22 +22,22 @@ interface VariantsResultsContextValue {
   // Data
   allGenes: GeneAggregated[]
   totalVariants: number
-  
+
   // Loading state
   isLoading: boolean
   loadProgress: number
   error: string | null
-  
+
   // Actions
   loadAllVariants: (sessionId: string) => Promise<void>
   clearVariants: () => void
-  
+
   // Local operations (instant!)
   filterByGene: (geneSymbol: string) => GeneAggregated[]
   filterByAcmg: (acmgClass: string) => GeneAggregated[]
   filterByImpact: (impact: string) => GeneAggregated[]
   searchGenes: (query: string) => GeneAggregated[]
-  
+
   // Computed stats
   totalGenes: number
   pathogenicCount: number
@@ -58,10 +58,10 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
   const [isLoading, setIsLoading] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Ref for tracking current session
   const currentSessionId = useRef<string | null>(null)
-  
+
   // Auto-cleanup when session changes or becomes null
   useEffect(() => {
     // Case 1: Session cleared - cleanup all data
@@ -75,10 +75,10 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       setIsLoading(false)
       return
     }
-    
+
     // Case 2: Same session - do nothing
     if (sessionId === currentSessionId.current) return
-    
+
     // Case 3: New session - clear old data
     console.log('[VariantsResultsContext] Session changed - clearing old data')
     currentSessionId.current = sessionId
@@ -88,74 +88,74 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     setError(null)
     setIsLoading(false)
   }, [sessionId])
-  
+
   // Load all variants via streaming
   const loadAllVariants = useCallback(async (sessionId: string) => {
     setIsLoading(true)
     setLoadProgress(0)
     setError(null)
     setAllGenes([])
-    
+
     try {
       console.log('[VariantsResultsContext] Starting streaming load...')
-      
+
       const response = await fetch(
-        `${API_BASE_URL}/api/v1/sessions/${sessionId}/variants/stream/by-gene`,
+        `${API_BASE_URL}/sessions/${sessionId}/variants/stream/by-gene`,
         {
           headers: {
             'Accept-Encoding': 'gzip',
           },
         }
       )
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
-      
+
       if (!response.body) {
         throw new Error('No response body')
       }
-      
+
       // Stream reader with decompression
       const reader = response.body
         .pipeThrough(new DecompressionStream('gzip'))
         .pipeThrough(new TextDecoderStream())
         .getReader()
-      
+
       let buffer = ''
       let loadedGenes: GeneAggregated[] = []
       let totalGenesCount = 0
       let totalVariantsCount = 0
-      
+
       while (true) {
         const { value, done } = await reader.read()
-        
+
         if (done) break
-        
+
         buffer += value
         const lines = buffer.split('\n')
         buffer = lines.pop() || ''
-        
+
         for (const line of lines) {
           if (!line.trim()) continue
-          
+
           try {
             const parsed = JSON.parse(line)
-            
+
             if (parsed.type === 'metadata') {
               totalGenesCount = parsed.total_genes
               totalVariantsCount = parsed.total_variants
               console.log(`[VariantsResultsContext] Streaming ${totalGenesCount} genes, ${totalVariantsCount} variants...`)
             } else if (parsed.type === 'gene') {
               loadedGenes.push(parsed.data)
-              
+
               // Update progress every 100 genes
               if (loadedGenes.length % 100 === 0) {
-                const progress = totalGenesCount > 0 
+                const progress = totalGenesCount > 0
                   ? Math.round((loadedGenes.length / totalGenesCount) * 100)
                   : 0
                 setLoadProgress(progress)
-                
+
                 // Update state in batches for performance
                 setAllGenes([...loadedGenes])
               }
@@ -167,22 +167,22 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
           }
         }
       }
-      
+
       // Final update
       setAllGenes(loadedGenes)
       setTotalVariants(totalVariantsCount)
       setLoadProgress(100)
       setIsLoading(false)
-      
+
       console.log(`[VariantsResultsContext] All data loaded locally: ${loadedGenes.length} genes`)
-      
+
     } catch (err) {
       console.error('[VariantsResultsContext] Streaming failed:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
       setIsLoading(false)
     }
   }, [])
-  
+
   // Clear variants
   const clearVariants = useCallback(() => {
     setAllGenes([])
@@ -191,47 +191,47 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     setError(null)
     setIsLoading(false)
   }, [])
-  
+
   // LOCAL OPERATIONS (all instant - no API calls!)
-  
+
   const filterByGene = useCallback((geneSymbol: string) => {
     return allGenes.filter(g => g.gene_symbol === geneSymbol)
   }, [allGenes])
-  
+
   const filterByAcmg = useCallback((acmgClass: string) => {
-    return allGenes.filter(g => 
+    return allGenes.filter(g =>
       g.variants.some(v => v.acmg_class === acmgClass)
     )
   }, [allGenes])
-  
+
   const filterByImpact = useCallback((impact: string) => {
     return allGenes.filter(g =>
       g.variants.some(v => v.impact === impact)
     )
   }, [allGenes])
-  
+
   const searchGenes = useCallback((query: string) => {
     const lowerQuery = query.toLowerCase()
     return allGenes.filter(g =>
       g.gene_symbol.toLowerCase().includes(lowerQuery)
     )
   }, [allGenes])
-  
+
   // Computed statistics
   const totalGenes = allGenes.length
-  
+
   const pathogenicCount = useMemo(() => {
     return allGenes.reduce((sum, g) => sum + g.pathogenic_count, 0)
   }, [allGenes])
-  
+
   const likelyPathogenicCount = useMemo(() => {
     return allGenes.reduce((sum, g) => sum + g.likely_pathogenic_count, 0)
   }, [allGenes])
-  
+
   const vusCount = useMemo(() => {
     return allGenes.reduce((sum, g) => sum + g.vus_count, 0)
   }, [allGenes])
-  
+
   return (
     <VariantsResultsContext.Provider
       value={{
