@@ -279,7 +279,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
     } catch (err) {
       console.error('[PhenotypeResultsContext] Streaming failed:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(err instanceof Error ? err : new Error('Unknown error'))
       setStatus('error')
       throw err
     }
