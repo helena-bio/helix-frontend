@@ -1,19 +1,20 @@
+"use client"
+
 /**
- * Matched Phenotype Context - DuckDB Backed
+ * Matched Phenotype Context - Streaming Architecture
  *
- * Uses session-based phenotype matching API that:
- * 1. Reads variants directly from DuckDB (no HTTP transfer)
- * 2. Saves results to DuckDB (persistent across sessions)
- * 3. Auto-loads existing results on mount
- * 4. Auto-cleanup when session becomes null
+ * NEW WORKFLOW (matching Variants streaming):
+ * 1. runMatching() - triggers backend computation, saves to DuckDB
+ * 2. loadAllPhenotypeResults() - streams aggregated results by gene
+ * 3. Backend does aggregation (not frontend!)
+ * 4. Progressive loading with progress tracking
  *
  * Flow:
- * - Mount: Check if results exist in DuckDB, load if available
- * - User clicks "Run": Call session matching API, saves to DuckDB
- * - Navigate away & back: Results auto-load from DuckDB
- * - Clear session: All data cleared automatically
+ * - ClinicalAnalysis Stage 1: runMatching() → loadAllPhenotypeResults()
+ * - Results stream directly to context (pre-aggregated by gene)
+ * - Views read from pre-loaded context data
+ * - Auto-cleanup when session becomes null
  */
-'use client'
 
 import {
   createContext,
@@ -27,9 +28,10 @@ import {
 } from 'react'
 import {
   runSessionPhenotypeMatching,
-  getMatchingResults,
   type SessionMatchResult,
 } from '@/lib/api/hpo'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
 // ============================================================================
 // TYPES
@@ -52,13 +54,15 @@ interface PhenotypeResultsContextValue {
   // Status
   status: MatchingStatus
   isLoading: boolean
+  loadProgress: number
   error: Error | null
 
   // Aggregated results by gene (sorted by clinical priority)
   aggregatedResults: GeneAggregatedResult[] | null
 
-  // Actions - Returns results directly for immediate use
-  runMatching: (patientHpoIds: string[]) => Promise<GeneAggregatedResult[]>
+  // Actions
+  runMatching: (patientHpoIds: string[]) => Promise<void>
+  loadAllPhenotypeResults: (sessionId: string) => Promise<void>
   clearResults: () => void
 
   // Computed
@@ -68,68 +72,6 @@ interface PhenotypeResultsContextValue {
   tier3Count: number
   tier4Count: number
   variantsAnalyzed: number
-}
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Aggregate results by gene, using best clinical score
- */
-function aggregateResultsByGene(results: SessionMatchResult[]): GeneAggregatedResult[] {
-  const geneMap = new Map<string, {
-    variants: SessionMatchResult[]
-    bestClinicalScore: number
-    bestPhenotypeScore: number
-    bestTier: string
-    matchedTerms: Set<string>
-  }>()
-
-  results.forEach((result) => {
-    const geneSymbol = result.gene_symbol || 'Unknown'
-
-    if (!geneMap.has(geneSymbol)) {
-      geneMap.set(geneSymbol, {
-        variants: [],
-        bestClinicalScore: result.clinical_priority_score,
-        bestPhenotypeScore: result.phenotype_match_score,
-        bestTier: result.clinical_tier,
-        matchedTerms: new Set(),
-      })
-    }
-
-    const geneData = geneMap.get(geneSymbol)!
-    geneData.variants.push(result)
-
-    // Track best scores
-    if (result.clinical_priority_score > geneData.bestClinicalScore) {
-      geneData.bestClinicalScore = result.clinical_priority_score
-      geneData.bestTier = result.clinical_tier
-    }
-    geneData.bestPhenotypeScore = Math.max(geneData.bestPhenotypeScore, result.phenotype_match_score)
-
-    // Collect matched HPO terms
-    result.individual_matches.forEach(match => {
-      if (match.similarity_score > 0.5 && match.patient_hpo_name) {
-        geneData.matchedTerms.add(match.patient_hpo_name)
-      }
-    })
-  })
-
-  return Array.from(geneMap.entries())
-    .map(([gene_symbol, data]) => ({
-      gene_symbol,
-      rank: 0,
-      best_clinical_score: data.bestClinicalScore,
-      best_phenotype_score: data.bestPhenotypeScore,
-      best_tier: data.bestTier,
-      variant_count: data.variants.length,
-      matched_hpo_terms: Array.from(data.matchedTerms),
-      variants: data.variants.sort((a, b) => b.clinical_priority_score - a.clinical_priority_score),
-    }))
-    .sort((a, b) => b.best_clinical_score - a.best_clinical_score)
-    .map((item, idx) => ({ ...item, rank: idx + 1 }))
 }
 
 // ============================================================================
@@ -146,6 +88,7 @@ interface PhenotypeResultsProviderProps {
 export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResultsProviderProps) {
   // State
   const [status, setStatus] = useState<MatchingStatus>('idle')
+  const [loadProgress, setLoadProgress] = useState(0)
   const [error, setError] = useState<Error | null>(null)
   const [aggregatedResults, setAggregatedResults] = useState<GeneAggregatedResult[] | null>(null)
   const [tier1Count, setTier1Count] = useState(0)
@@ -156,18 +99,17 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
   // Refs for tracking
   const currentSessionId = useRef<string | null>(null)
-  const hasLoadedResults = useRef(false)
 
-  // Load existing results from DuckDB when session changes OR cleanup when null
+  // Auto-cleanup when session changes or becomes null
   useEffect(() => {
     // Case 1: Session cleared - cleanup all data
     if (sessionId === null) {
       console.log('[PhenotypeResultsContext] Session cleared - resetting phenotype results')
       currentSessionId.current = null
-      hasLoadedResults.current = false
       setAggregatedResults(null)
       setStatus('idle')
       setError(null)
+      setLoadProgress(0)
       setTier1Count(0)
       setTier2Count(0)
       setTier3Count(0)
@@ -179,75 +121,42 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     // Case 2: Same session - do nothing
     if (sessionId === currentSessionId.current) return
 
-    // Case 3: New session - load results from DuckDB
-    console.log('[PhenotypeResultsContext] Session changed, checking for existing results:', sessionId)
+    // Case 3: New session - clear old data
+    console.log('[PhenotypeResultsContext] Session changed - clearing old data')
     currentSessionId.current = sessionId
-    hasLoadedResults.current = false
     setAggregatedResults(null)
-    setStatus('loading')
+    setStatus('idle')
     setError(null)
-
-    // Try to load existing results from DuckDB
-    getMatchingResults(sessionId)
-      .then((response) => {
-        console.log('[PhenotypeResultsContext] Loaded existing results from DuckDB:', response.results.length)
-
-        // Store tier counts
-        setTier1Count(response.tier_1_count)
-        setTier2Count(response.tier_2_count)
-        setTier3Count(response.tier_3_count)
-        setTier4Count(response.tier_4_count)
-        setVariantsAnalyzed(response.variants_analyzed)
-
-        // Aggregate by gene
-        if (response.results.length > 0) {
-          const aggregated = aggregateResultsByGene(response.results)
-          console.log('[PhenotypeResultsContext] Aggregated genes:', aggregated.length)
-          setAggregatedResults(aggregated)
-          setStatus('success')
-        } else {
-          setAggregatedResults(null)
-          setStatus('idle')
-        }
-
-        hasLoadedResults.current = true
-      })
-      .catch((err) => {
-        // 404 is expected if no results exist yet
-        if (err.message.includes('404') || err.message.includes('No phenotype matching results')) {
-          console.log('[PhenotypeResultsContext] No existing results found (expected)')
-          setStatus('idle')
-        } else {
-          console.error('[PhenotypeResultsContext] Failed to load results:', err)
-          setError(err)
-          setStatus('error')
-        }
-        hasLoadedResults.current = true
-      })
+    setLoadProgress(0)
+    setTier1Count(0)
+    setTier2Count(0)
+    setTier3Count(0)
+    setTier4Count(0)
+    setVariantsAnalyzed(0)
   }, [sessionId])
 
-  // ARCHITECTURAL FIX: Run matching and return results directly
-  const runMatching = useCallback(async (patientHpoIds: string[]): Promise<GeneAggregatedResult[]> => {
+  // Run phenotype matching (trigger backend computation only)
+  const runMatching = useCallback(async (patientHpoIds: string[]): Promise<void> => {
     console.log('[PhenotypeResultsContext] runMatching called')
     console.log('  sessionId:', sessionId)
     console.log('  patientHpoIds:', patientHpoIds)
 
     if (!sessionId) {
       console.warn('[PhenotypeResultsContext] Cannot run matching - no session')
-      return []
+      return
     }
 
     if (patientHpoIds.length === 0) {
       console.warn('[PhenotypeResultsContext] No phenotypes provided')
       setStatus('no_phenotypes')
-      return []
+      return
     }
 
     setStatus('pending')
     setError(null)
 
     try {
-      // Call session-based matching API (reads from DuckDB, saves results)
+      // Call session-based matching API (computes & saves to DuckDB)
       console.log('[PhenotypeResultsContext] Calling session matching API...')
       const runResponse = await runSessionPhenotypeMatching({
         sessionId,
@@ -265,46 +174,123 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
         setTier3Count(0)
         setTier4Count(0)
         setVariantsAnalyzed(0)
-        return []
+        return
       }
 
-      // Fetch results from DuckDB (they were just saved by the API)
-      const resultsResponse = await getMatchingResults(sessionId)
-
-      // Store tier counts
-      setTier1Count(resultsResponse.tier_1_count)
-      setTier2Count(resultsResponse.tier_2_count)
-      setTier3Count(resultsResponse.tier_3_count)
-      setTier4Count(resultsResponse.tier_4_count)
-      setVariantsAnalyzed(resultsResponse.variants_analyzed)
-
-      // Aggregate by gene
-      let aggregated: GeneAggregatedResult[] = []
-      if (resultsResponse.results.length > 0) {
-        aggregated = aggregateResultsByGene(resultsResponse.results)
-        console.log('[PhenotypeResultsContext] Aggregated genes:', aggregated.length)
-        setAggregatedResults(aggregated)
-      } else {
-        setAggregatedResults(null)
-      }
-
+      // NOTE: Don't fetch results here - caller will call loadAllPhenotypeResults()
       setStatus('success')
-
-      // RETURN results directly for immediate use by caller
-      return aggregated
     } catch (err) {
       console.error('[PhenotypeResultsContext] Matching failed:', err)
       setError(err as Error)
       setStatus('error')
-      return []
+      throw err
     }
   }, [sessionId])
+
+  // Load all phenotype results via streaming (like variants!)
+  const loadAllPhenotypeResults = useCallback(async (sessionId: string) => {
+    setStatus('loading')
+    setLoadProgress(0)
+    setError(null)
+    setAggregatedResults(null)
+
+    try {
+      console.log('[PhenotypeResultsContext] Starting streaming load...')
+
+      const response = await fetch(
+        `${API_BASE_URL}/phenotype/api/sessions/${sessionId}/phenotype/stream/by-gene`
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      if (!response.body) {
+        throw new Error('No response body')
+      }
+
+      console.log('[PhenotypeResultsContext] Response headers:', {
+        contentType: response.headers.get('content-type'),
+        contentEncoding: response.headers.get('content-encoding'),
+      })
+
+      // Browser automatically decompresses based on Content-Encoding header
+      const reader = response.body
+        .pipeThrough(new TextDecoderStream())
+        .getReader()
+
+      let buffer = ''
+      let loadedGenes: GeneAggregatedResult[] = []
+      let totalGenesCount = 0
+
+      while (true) {
+        const { value, done } = await reader.read()
+
+        if (done) break
+
+        buffer += value
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+
+          try {
+            const parsed = JSON.parse(line)
+
+            if (parsed.type === 'metadata') {
+              totalGenesCount = parsed.total_genes
+              console.log(`[PhenotypeResultsContext] Streaming ${totalGenesCount} genes...`)
+              
+              // Store tier counts from metadata
+              setTier1Count(parsed.tier_1_count)
+              setTier2Count(parsed.tier_2_count)
+              setTier3Count(parsed.tier_3_count)
+              setTier4Count(parsed.tier_4_count)
+              setVariantsAnalyzed(parsed.total_variants)
+            } else if (parsed.type === 'gene') {
+              loadedGenes.push(parsed.data)
+
+              // Update progress every 50 genes
+              if (loadedGenes.length % 50 === 0) {
+                const progress = totalGenesCount > 0
+                  ? Math.round((loadedGenes.length / totalGenesCount) * 100)
+                  : 0
+                setLoadProgress(progress)
+
+                // Update state in batches for performance
+                setAggregatedResults([...loadedGenes])
+              }
+            } else if (parsed.type === 'complete') {
+              console.log(`[PhenotypeResultsContext] Streaming complete: ${parsed.total_streamed} genes loaded`)
+            }
+          } catch (e) {
+            console.warn('[PhenotypeResultsContext] Failed to parse line:', e)
+          }
+        }
+      }
+
+      // Final update
+      setAggregatedResults(loadedGenes)
+      setLoadProgress(100)
+      setStatus('success')
+
+      console.log(`[PhenotypeResultsContext] All data loaded: ${loadedGenes.length} genes`)
+
+    } catch (err) {
+      console.error('[PhenotypeResultsContext] Streaming failed:', err)
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      setStatus('error')
+      throw err
+    }
+  }, [])
 
   // Clear results
   const clearResults = useCallback(() => {
     setAggregatedResults(null)
     setStatus('idle')
     setError(null)
+    setLoadProgress(0)
     setTier1Count(0)
     setTier2Count(0)
     setTier3Count(0)
@@ -316,9 +302,11 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   const value = useMemo<PhenotypeResultsContextValue>(() => ({
     status,
     isLoading: status === 'pending' || status === 'loading',
+    loadProgress,
     error,
     aggregatedResults,
     runMatching,
+    loadAllPhenotypeResults,
     clearResults,
     totalGenes: aggregatedResults?.length || 0,
     tier1Count,
@@ -328,9 +316,11 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     variantsAnalyzed,
   }), [
     status,
+    loadProgress,
     error,
     aggregatedResults,
     runMatching,
+    loadAllPhenotypeResults,
     clearResults,
     tier1Count,
     tier2Count,
