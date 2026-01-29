@@ -100,12 +100,7 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       console.log('[VariantsResultsContext] Starting streaming load...')
 
       const response = await fetch(
-        `${API_BASE_URL}/sessions/${sessionId}/variants/stream/by-gene`,
-        {
-          headers: {
-            'Accept-Encoding': 'gzip',
-          },
-        }
+        `${API_BASE_URL}/sessions/${sessionId}/variants/stream/by-gene`
       )
 
       if (!response.ok) {
@@ -115,6 +110,11 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       if (!response.body) {
         throw new Error('No response body')
       }
+
+      console.log('[VariantsResultsContext] Response headers:', {
+        contentType: response.headers.get('content-type'),
+        contentEncoding: response.headers.get('content-encoding'),
+      })
 
       // Stream reader with decompression
       const reader = response.body
