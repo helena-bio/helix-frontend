@@ -36,13 +36,8 @@ export function ClinicalInterpretationProvider({ sessionId, children }: Clinical
 
   const setInterpretation = useCallback((text: string | ((prev: string | null) => string)) => {
     if (typeof text === 'function') {
-      setInterpretationState((prev) => {
-        const newText = text(prev)
-        console.log('[ClinicalInterpretationContext] Setting interpretation (functional):', newText.substring(0, 100) + '...')
-        return newText
-      })
+      setInterpretationState((prev) => text(prev))
     } else {
-      console.log('[ClinicalInterpretationContext] Setting interpretation:', text.substring(0, 100) + '...')
       setInterpretationState(text)
     }
   }, [])
