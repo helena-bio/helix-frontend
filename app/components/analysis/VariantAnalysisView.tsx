@@ -4,7 +4,7 @@
  * VariantAnalysisView Component - CLINICAL GRADE
  *
  * Card-based layout with LOCAL filtering (from context).
- * Data is pre-loaded in VariantsResultsContext via streaming.
+ * Data is pre-loaded in VariantsResultsContext via streaming in ClinicalAnalysis.
  *
  * Features:
  * - Card per gene (not table rows)
@@ -349,12 +349,11 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
 // ============================================================================
 
 export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
-  // Get data from context (already loaded via streaming)
+  // Get data from context (pre-loaded in ClinicalAnalysis Stage 4)
   const {
     allGenes,
     totalVariants,
     isLoading,
-    loadAllVariants,
     pathogenicCount,
     likelyPathogenicCount,
     vusCount,
@@ -366,14 +365,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
-
-  // AUTO-LOAD variants on mount
-  useEffect(() => {
-    if (sessionId && !isLoading && allGenes.length === 0) {
-      console.log('[VariantAnalysisView] Auto-loading variants for session:', sessionId)
-      loadAllVariants(sessionId)
-    }
-  }, [sessionId, isLoading, allGenes.length, loadAllVariants])
 
   // Intersection Observer for lazy loading VISUALIZATION (not data)
   const observerRef = useRef<IntersectionObserver | null>(null)
