@@ -5,3 +5,4 @@ export { PhenotypeResultsProvider, usePhenotypeResults } from './PhenotypeResult
 export { LiteratureResultsProvider, useLiteratureResults } from './LiteratureResultsContext'
 export { ScreeningResultsProvider, useScreeningResults } from './ScreeningResultsContext'
 export * from './ClinicalInterpretationContext'
+export * from './VariantsResultsContext'

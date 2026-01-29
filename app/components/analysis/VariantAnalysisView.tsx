@@ -3,8 +3,8 @@
 /**
  * VariantAnalysisView Component - CLINICAL GRADE
  *
- * Card-based layout with LOCAL filtering (like PhenotypeMatchingView).
- * Loads ALL genes once, filters in memory for instant response.
+ * Card-based layout with LOCAL filtering (from context).
+ * Data is pre-loaded in VariantsResultsContext via streaming.
  *
  * Features:
  * - Card per gene (not table rows)
@@ -30,7 +30,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useVariantsByGene, useVariantStatistics } from '@/hooks/queries'
+import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { VariantDetailPanel } from './VariantDetailPanel'
 import {
   getACMGColor,
@@ -349,6 +349,16 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
 // ============================================================================
 
 export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
+  // Get data from context (already loaded via streaming)
+  const {
+    allGenes,
+    totalVariants,
+    isLoading,
+    pathogenicCount,
+    likelyPathogenicCount,
+    vusCount,
+  } = useVariantsResults()
+
   // Local state for filters
   const [geneFilter, setGeneFilter] = useState('')
   const [acmgFilter, setAcmgFilter] = useState<ACMGFilter>('all')
@@ -372,20 +382,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
 
     if (node) observerRef.current.observe(node)
   }, [])
-
-  // Load ALL genes at once (no page/page_size = backend returns everything)
-  const { data: allGenesData, isLoading: genesLoading } = useVariantsByGene(
-    sessionId,
-    {} // Empty filters = no pagination, return ALL genes
-  )
-
-  // Global stats (always unfiltered)
-  const { data: globalStats, isLoading: globalStatsLoading } = useVariantStatistics(sessionId)
-
-  const isLoading = globalStatsLoading || genesLoading
-
-  // All genes from backend
-  const allGenes = allGenesData?.genes ?? []
 
   // LOCAL FILTERING (instant, no API calls)
   const filteredGenes = useMemo(() => {
@@ -415,21 +411,23 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     setVisibleCount(INITIAL_LOAD)
   }, [geneFilter, acmgFilter, impactFilter])
 
-  // Calculate ACMG counts from global stats (always total counts)
+  // Calculate ACMG counts from ALL genes (always total counts)
   const acmgCounts = useMemo(() => {
-    if (!globalStats) return { total: 0, pathogenic: 0, likely_pathogenic: 0, vus: 0, likely_benign: 0, benign: 0 }
-    return {
-      total: globalStats.total_variants,
-      pathogenic: globalStats.classification_breakdown['Pathogenic'] || 0,
-      likely_pathogenic: globalStats.classification_breakdown['Likely Pathogenic'] || 0,
-      vus: globalStats.classification_breakdown['Uncertain Significance'] || 0,
-      likely_benign: globalStats.classification_breakdown['Likely Benign'] || 0,
-      benign: globalStats.classification_breakdown['Benign'] || 0,
-    }
-  }, [globalStats])
+    // Calculate likely_benign and benign from allGenes
+    const likely_benign = allGenes.reduce((sum, g) => sum + g.likely_benign_count, 0)
+    const benign = allGenes.reduce((sum, g) => sum + g.benign_count, 0)
 
-  // Calculate Impact counts from FILTERED variants (not genes)
-  // Count only variants that match ACMG and Impact filters
+    return {
+      total: totalVariants,
+      pathogenic: pathogenicCount,
+      likely_pathogenic: likelyPathogenicCount,
+      vus: vusCount,
+      likely_benign,
+      benign,
+    }
+  }, [allGenes, totalVariants, pathogenicCount, likelyPathogenicCount, vusCount])
+
+  // Calculate Impact counts from FILTERED variants
   const impactCounts = useMemo(() => {
     const counts = { high: 0, moderate: 0, low: 0, modifier: 0 }
 
@@ -501,7 +499,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       </div>
 
       {/* ACMG Classification Cards */}
-      {globalStats && (
+      {hasResults && (
         <div className="grid grid-cols-6 gap-3">
           <FilterCard
             count={acmgCounts.total}
@@ -555,7 +553,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       )}
 
       {/* Impact Cards */}
-      {globalStats && (
+      {hasResults && (
         <div className="grid grid-cols-4 gap-3">
           <FilterCard
             count={impactCounts.high}

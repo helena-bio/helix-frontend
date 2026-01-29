@@ -7,20 +7,18 @@
  * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
  * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
  * 3. Literature Search (for key genes) - AUTOMATIC
- * 4. Data Prefetch (pre-load all view data) - REQUIRED
+ * 4. Data Streaming (stream all variants to context) - REQUIRED
  * 5. Navigate to split view → Clinical Interpretation starts in ChatPanel
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
+import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
-import { variantAnalysisKeys } from '@/hooks/queries/use-variant-analysis-queries'
-import * as variantAPI from '@/lib/api/variant-analysis'
 import { isTier1, isTier2 } from '@/types/tiers.types'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -75,10 +73,10 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
     required: false,
   },
   {
-    id: 'prefetch',
-    name: 'Data Prefetch',
+    id: 'streaming',
+    name: 'Data Streaming',
     icon: <Download className="h-4 w-4" />,
-    description: 'Pre-loading analysis data for instant visualization',
+    description: 'Streaming all variants for instant visualization',
     required: true,
   },
 ]
@@ -94,17 +92,17 @@ export function ClinicalAnalysis({
     phenotype: 'pending',
     screening: 'pending',
     literature: 'pending',
-    prefetch: 'pending',
+    streaming: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const startedRef = useRef(false)
 
-  const queryClient = useQueryClient()
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
   const { runMatching: runPhenotypeMatching } = usePhenotypeResults()
+  const { loadAllVariants, loadProgress: streamingProgress } = useVariantsResults()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
 
@@ -112,8 +110,16 @@ export function ClinicalAnalysis({
     const statuses = Object.values(stageStatuses)
     const completed = statuses.filter(s => s === 'completed' || s === 'skipped').length
     const total = statuses.length
+    
+    // If currently streaming, factor in streaming progress
+    if (currentStage === 'streaming' && stageStatuses.streaming === 'running') {
+      const baseProgress = (completed / total) * 100
+      const streamingWeight = (1 / total) * 100
+      return Math.round(baseProgress + (streamingProgress / 100) * streamingWeight)
+    }
+    
     return Math.round((completed / total) * 100)
-  }, [stageStatuses])
+  }, [stageStatuses, currentStage, streamingProgress])
 
   const updateStageStatus = useCallback((stageId: string, status: StageStatus) => {
     setStageStatuses(prev => ({ ...prev, [stageId]: status }))
@@ -262,46 +268,32 @@ export function ClinicalAnalysis({
           toast.warning('Literature search failed - continuing without literature context')
         }
 
-        // Stage 4: Data Prefetch (pre-load ALL view data for instant rendering)
-        setCurrentStage('prefetch')
-        updateStageStatus('prefetch', 'running')
+        // Stage 4: Data Streaming (stream ALL variants to context)
+        setCurrentStage('streaming')
+        updateStageStatus('streaming', 'running')
 
         try {
           console.log('='.repeat(80))
-          console.log('DATA PREFETCH - Pre-loading all view data')
+          console.log('DATA STREAMING - Streaming all variants to context')
           console.log('='.repeat(80))
 
-          // Prefetch variants by gene (NO pagination = ALL genes)
-          console.log('  Prefetching variants by gene (all genes)...')
-          await queryClient.prefetchQuery({
-            queryKey: variantAnalysisKeys.variantsByGene(sessionId, {}),
-            queryFn: () => variantAPI.getVariantsByGene(sessionId, {}),
-            staleTime: 10 * 60 * 1000, // 10 minutes
-          })
-
-          // Prefetch variant statistics
-          console.log('  Prefetching variant statistics...')
-          await queryClient.prefetchQuery({
-            queryKey: variantAnalysisKeys.statistics(sessionId),
-            queryFn: () => variantAPI.getVariantStatistics(sessionId),
-            staleTime: 10 * 60 * 1000, // 10 minutes
-          })
+          // Stream all variants directly to VariantsResultsContext
+          await loadAllVariants(sessionId)
 
           console.log('='.repeat(80))
-          console.log('DATA PREFETCH COMPLETE - All data ready for instant rendering')
-          console.log('  - Variants by gene: cached')
-          console.log('  - Variant statistics: cached')
+          console.log('DATA STREAMING COMPLETE - All data loaded to context')
+          console.log('  - Variants: loaded to VariantsResultsContext')
           console.log('  - Phenotype results: already in context')
           console.log('  - Screening results: already in context')
           console.log('  - Literature results: already in context')
           console.log('='.repeat(80))
 
-          updateStageStatus('prefetch', 'completed')
-          toast.success('Data prefetch complete - ready for instant analysis')
+          updateStageStatus('streaming', 'completed')
+          toast.success('Data streaming complete - ready for instant analysis')
         } catch (error) {
-          console.error('Data prefetch failed:', error)
-          updateStageStatus('prefetch', 'failed')
-          toast.warning('Data prefetch failed - views may load slowly')
+          console.error('Data streaming failed:', error)
+          updateStageStatus('streaming', 'failed')
+          toast.warning('Data streaming failed - views may load slowly')
           // Don't throw - continue anyway, views will load data on demand
         }
 
@@ -311,7 +303,7 @@ export function ClinicalAnalysis({
         console.log('='.repeat(80))
         console.log('PIPELINE COMPLETE - Navigating to split view')
         console.log('Clinical interpretation will start in ChatPanel')
-        console.log('All view data is pre-loaded for instant rendering')
+        console.log('All view data is loaded locally for instant access')
         console.log('='.repeat(80))
 
         toast.success('Analysis pipeline complete')
@@ -328,13 +320,13 @@ export function ClinicalAnalysis({
     runAnalyses()
   }, [
     sessionId,
-    queryClient,
     getCompleteProfile,
     hpoTerms,
     runPhenotypeMatching,
     screeningMutation,
     literatureSearchMutation,
     setScreeningResponse,
+    loadAllVariants,
     updateStageStatus,
     nextStep,
     onComplete,
@@ -349,7 +341,7 @@ export function ClinicalAnalysis({
       phenotype: 'Running Phenotype Matching',
       screening: 'Running Clinical Screening',
       literature: 'Searching Literature',
-      prefetch: 'Pre-loading Analysis Data',
+      streaming: 'Streaming Analysis Data',
     }
     return stageNames[currentStage] || 'Processing...'
   }, [currentStage])
@@ -393,7 +385,7 @@ export function ClinicalAnalysis({
               <div>
                 <h3 className="text-lg font-semibold mb-2">Pipeline Complete</h3>
                 <p className="text-md text-muted-foreground">
-                  All data pre-loaded - launching analysis view
+                  All data loaded - launching analysis view
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3">
@@ -425,6 +417,11 @@ export function ClinicalAnalysis({
             <div className="space-y-6">
               <div className="text-center">
                 <p className="text-lg font-medium capitalize">{getStageName()}</p>
+                {currentStage === 'streaming' && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {streamingProgress}% loaded
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -488,7 +485,7 @@ export function ClinicalAnalysis({
 
         <Alert>
           <AlertDescription className="text-base">
-            Pipeline: phenotype → screening → literature → data prefetch → AI interpretation
+            Pipeline: phenotype → screening → literature → data streaming → AI interpretation
           </AlertDescription>
         </Alert>
       </div>

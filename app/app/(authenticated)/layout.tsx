@@ -1,4 +1,5 @@
 "use client"
+
 /**
  * Authenticated Layout
  * Two modes:
@@ -10,6 +11,7 @@
  * - ClinicalProfileProvider: Complete patient clinical profile
  * - ScreeningResultsProvider: Clinical screening analysis results
  * - PhenotypeResultsProvider: Phenotype matching results
+ * - VariantsResultsProvider: ALL variants (streaming, local filtering)
  * - LiteratureResultsProvider: Clinical literature search results
  *
  * SESSION MANAGEMENT:
@@ -18,6 +20,7 @@
  * - Session in URL = continue existing session
  * - All providers receive sessionId and auto-cleanup when it changes
  */
+
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
@@ -27,6 +30,7 @@ import {
   ClinicalProfileProvider,
   ScreeningResultsProvider,
   PhenotypeResultsProvider,
+  VariantsResultsProvider,
   LiteratureResultsProvider
 } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -59,7 +63,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   // Sync sessionId from URL to SessionContext
   useEffect(() => {
     const sessionFromUrl = searchParams.get('session')
-    
+
     // Update context if URL has changed
     if (sessionFromUrl !== currentSessionId) {
       setCurrentSessionId(sessionFromUrl)
@@ -75,29 +79,31 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
       <ClinicalProfileProvider sessionId={currentSessionId}>
         <ScreeningResultsProvider sessionId={currentSessionId}>
           <PhenotypeResultsProvider sessionId={currentSessionId}>
-            <LiteratureResultsProvider>
-              <div className="h-screen flex flex-col">
-                {/* Header - Journey Panel with Logo */}
-                <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">
-                  <JourneyPanel />
-                </header>
+            <VariantsResultsProvider sessionId={currentSessionId}>
+              <LiteratureResultsProvider>
+                <div className="h-screen flex flex-col">
+                  {/* Header - Journey Panel with Logo */}
+                  <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">
+                    <JourneyPanel />
+                  </header>
 
-                {/* Main area */}
-                <div className="flex-1 min-h-0">
-                  {isAnalysisComplete ? (
-                    // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
-                    <SplitView>
-                      {children}
-                    </SplitView>
-                  ) : (
-                    // Full Width: Pre-analysis workflow
-                    <main className="h-full overflow-auto bg-background">
-                      {children}
-                    </main>
-                  )}
+                  {/* Main area */}
+                  <div className="flex-1 min-h-0">
+                    {isAnalysisComplete ? (
+                      // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
+                      <SplitView>
+                        {children}
+                      </SplitView>
+                    ) : (
+                      // Full Width: Pre-analysis workflow
+                      <main className="h-full overflow-auto bg-background">
+                        {children}
+                      </main>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </LiteratureResultsProvider>
+              </LiteratureResultsProvider>
+            </VariantsResultsProvider>
           </PhenotypeResultsProvider>
         </ScreeningResultsProvider>
       </ClinicalProfileProvider>
