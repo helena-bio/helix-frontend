@@ -354,6 +354,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     allGenes,
     totalVariants,
     isLoading,
+    loadAllVariants,
     pathogenicCount,
     likelyPathogenicCount,
     vusCount,
@@ -365,6 +366,14 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
+
+  // AUTO-LOAD variants on mount
+  useEffect(() => {
+    if (sessionId && !isLoading && allGenes.length === 0) {
+      console.log('[VariantAnalysisView] Auto-loading variants for session:', sessionId)
+      loadAllVariants(sessionId)
+    }
+  }, [sessionId, isLoading, allGenes.length, loadAllVariants])
 
   // Intersection Observer for lazy loading VISUALIZATION (not data)
   const observerRef = useRef<IntersectionObserver | null>(null)
