@@ -116,9 +116,10 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
         contentEncoding: response.headers.get('content-encoding'),
       })
 
-      // Stream reader with decompression
+      // CRITICAL: Browser automatically decompresses based on Content-Encoding header!
+      // Do NOT use DecompressionStream - it fails with our zlib streaming format.
+      // Just read the body as text - browser handles decompression transparently.
       const reader = response.body
-        .pipeThrough(new DecompressionStream('gzip'))
         .pipeThrough(new TextDecoderStream())
         .getReader()
 
