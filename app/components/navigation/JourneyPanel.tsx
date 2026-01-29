@@ -5,7 +5,6 @@
 
 'use client'
 
-import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -59,7 +58,7 @@ export function JourneyPanel() {
   const router = useRouter()
   const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
   const { currentSessionId, setCurrentSessionId } = useSession()
-  const { interpretation, isGenerating, hasInterpretation, isComplete } = useClinicalInterpretation()
+  const { interpretation, hasInterpretation, isComplete } = useClinicalInterpretation()
 
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {
@@ -76,27 +75,19 @@ export function JourneyPanel() {
   const handleClearFile = () => {
     // Clear session - this will trigger cleanup in all providers
     setCurrentSessionId(null)
-    
+
     // Reset journey to upload step
     resetJourney()
-    
+
     // Navigate to clean /analysis page - REPLACE URL to clear query params
     router.replace('/analysis')
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
-    console.log('[JourneyPanel] Download report requested:', format)
-
     if (!interpretation || !hasInterpretation()) {
       console.error('[JourneyPanel] No clinical interpretation available')
       return
     }
-
-    console.log('[JourneyPanel] Downloading report:', {
-      format,
-      sessionId: currentSessionId,
-      interpretationLength: interpretation.length,
-    })
 
     try {
       downloadClinicalReport(interpretation, format, currentSessionId || 'report')
@@ -106,21 +97,8 @@ export function JourneyPanel() {
     }
   }
 
-  // Debug logging for Download Report visibility
-  useEffect(() => {
-    console.log('[JourneyPanel] Download Report Status Check:', {
-      currentStep,
-      hasInterpretation: hasInterpretation(),
-      isGenerating,
-      isComplete: isComplete(),
-      interpretationLength: interpretation?.length || 0,
-    })
-  }, [currentStep, hasInterpretation, isGenerating, isComplete, interpretation])
-
   // Show Download Report button only in Analysis step when interpretation is complete
   const showDownloadReport = currentStep === 'analysis' && isComplete()
-
-  console.log('[JourneyPanel] showDownloadReport:', showDownloadReport)
 
   return (
     <div className="h-full flex items-center gap-6 overflow-hidden">
