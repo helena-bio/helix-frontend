@@ -16,7 +16,7 @@
  * - Real-time polling of task status
  * - Visual progress indicator with pipeline stages
  * - Error handling with retry
- * - Success state: streams variants THEN advances to analysis
+ * - Success: streams variants silently in background then advances
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -99,13 +99,12 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
-  const [isStreaming, setIsStreaming] = useState(false)
   const startedRef = useRef(false)
   const streamingStartedRef = useRef(false)
 
   const { nextStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
-  const { loadAllVariants, loadProgress, isLoading: isStreamLoading } = useVariantsResults()
+  const { loadAllVariants } = useVariantsResults()
 
   // Get session for vcf_file_path
   const { data: session } = useSession(sessionId)
@@ -140,20 +139,19 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     startProcessing()
   }, [session?.vcf_file_path, sessionId, startProcessingMutation, onError])
 
-  // Handle task completion → Stream variants → Advance
+  // Handle task completion → Stream variants silently → Advance
   useEffect(() => {
     if (!taskStatus?.ready) return
     if (streamingStartedRef.current) return // Don't run twice
 
     if (taskStatus.successful) {
       streamingStartedRef.current = true
-      setIsStreaming(true)
 
       const streamAndAdvance = async () => {
         try {
-          console.log('[ProcessingFlow] Pipeline complete - streaming variants from Redis cache...')
+          console.log('[ProcessingFlow] Pipeline complete - streaming variants silently...')
           
-          // Stream ALL variants from Redis cache (instant since it's already cached!)
+          // Stream ALL variants from Redis cache in background (no UI)
           await loadAllVariants(sessionId)
           
           console.log('[ProcessingFlow] Streaming complete - advancing to analysis')
@@ -205,10 +203,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
-    if (isStreaming) {
-      return `Streaming variants data (${loadProgress}%)`
-    }
-
     if (!taskStatus?.info?.stage) {
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
@@ -230,7 +224,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     }
 
     return stageNames[stage] || stage
-  }, [taskStatus, hasStarted, isStreaming, loadProgress])
+  }, [taskStatus, hasStarted])
 
   // Check if a stage is complete based on completed_stages from backend
   const isStageComplete = useCallback((stageId: string): boolean => {
@@ -240,13 +234,10 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Check if a stage is current
   const isStageActive = useCallback((stageId: string): boolean => {
-    // Export stage is active during streaming
-    if (stageId === 'export' && isStreaming) return true
-
     const currentStage = taskStatus?.info?.stage as string | undefined
     if (!currentStage) return false
     return currentStage === stageId
-  }, [taskStatus, isStreaming])
+  }, [taskStatus])
 
   // Retry handler
   const handleRetry = useCallback(async () => {
@@ -254,7 +245,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
     setErrorMessage(null)
     setTaskId(null)
-    setIsStreaming(false)
     streamingStartedRef.current = false
 
     try {
@@ -273,7 +263,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   const progress = getProgress()
   const currentStage = getCurrentStage()
-  const isProcessing = !errorMessage && (!taskStatus?.successful || isStreaming)
 
   // Error State
   if (errorMessage) {
@@ -312,73 +301,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     )
   }
 
-  // Success + Streaming State
-  if (taskStatus?.successful && isStreaming) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px] p-8">
-        <Card className="w-full max-w-md border-green-500">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center p-4 rounded-full bg-green-100 dark:bg-green-950">
-                <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Processing Complete</h3>
-                <p className="text-md text-muted-foreground">
-                  Streaming variants data from cache
-                </p>
-              </div>
-
-              {taskStatus.result && (
-                <div className="p-4 bg-muted rounded-lg text-left">
-                  <p className="text-base font-medium mb-2">Summary</p>
-                  <div className="space-y-1 text-base">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Variants Processed</span>
-                      <span className="font-medium">
-                        {taskStatus.result.variants_parsed?.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Variants Classified</span>
-                      <span className="font-medium">
-                        {taskStatus.result.variants_stored?.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Processing Time</span>
-                      <span className="font-medium">
-                        {taskStatus.result.processing_time_seconds?.toFixed(1)}s
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Streaming Progress */}
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Progress value={loadProgress} className="h-2" />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Loading variants</span>
-                    <span>{Math.round(loadProgress)}%</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-center gap-3">
-                  <HelixLoader size="xs" speed={2} />
-                  <span className="text-md text-muted-foreground">Streaming from cache...</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // Processing State
+  // Processing State (including silent streaming after success)
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-4">
