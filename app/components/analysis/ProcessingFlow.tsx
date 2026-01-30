@@ -183,26 +183,21 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
           console.log('[ProcessingFlow] 2. Starting loadAllVariants...')
           await loadAllVariants(sessionId)
           
-          console.log('[ProcessingFlow] 3. loadAllVariants complete, setting isStreaming = false')
-          setIsStreaming(false)
+          console.log('[ProcessingFlow] 3. loadAllVariants complete')
 
-          console.log('[ProcessingFlow] 4. Waiting 500ms to show 100%...')
-          await new Promise(resolve => setTimeout(resolve, 500))
-
-          console.log('[ProcessingFlow] 5. Showing success toast')
           toast.success('Processing complete', {
             description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
           })
 
-          console.log('[ProcessingFlow] 6. Calling nextStep() with flushSync')
+          console.log('[ProcessingFlow] 4. Calling nextStep() with flushSync')
           flushSync(() => {
             nextStep() // processing -> profile (FORCE SYNC)
           })
           
-          console.log('[ProcessingFlow] 7. Calling onComplete()')
+          console.log('[ProcessingFlow] 5. Calling onComplete()')
           onComplete?.()
           
-          console.log('[ProcessingFlow] 8. streamAndAdvance complete!')
+          console.log('[ProcessingFlow] 6. streamAndAdvance complete!')
         } catch (error) {
           console.error('[ProcessingFlow] Streaming failed:', error)
           setIsStreaming(false)
