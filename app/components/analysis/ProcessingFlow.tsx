@@ -154,11 +154,14 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
           setIsStreaming(true)
           console.log('[ProcessingFlow] Pipeline complete - streaming variants...')
 
-          // Stream ALL variants from Redis cache (stay on Export & Caching step)
+          // Stream ALL variants from Redis cache (stay on Export & Caching step at 95%)
           await loadAllVariants(sessionId)
 
-          console.log('[ProcessingFlow] Streaming complete - advancing to profile')
+          console.log('[ProcessingFlow] Streaming complete - showing 100% before advancing')
           setIsStreaming(false)
+
+          // Wait 500ms to show 100% progress before advancing
+          await new Promise(resolve => setTimeout(resolve, 500))
 
           toast.success('Processing complete', {
             description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
@@ -194,6 +197,11 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get progress from backend
   const getProgress = useCallback((): number => {
+    // If streaming, show 95% (indicates still working, not stuck at 100%)
+    if (isStreaming) {
+      return 95
+    }
+
     if (!taskStatus?.info) return hasStarted ? 5 : 0
 
     // Use progress from backend if available
@@ -203,7 +211,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     }
 
     return 10
-  }, [taskStatus, hasStarted])
+  }, [taskStatus, hasStarted, isStreaming])
 
   // Get completed stages from backend
   const getCompletedStages = useCallback((): string[] => {
@@ -213,11 +221,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
-    // If streaming, override stage name
-    if (isStreaming) {
-      return 'Loading variants into memory...'
-    }
-
     if (!taskStatus?.info?.stage) {
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
@@ -239,7 +242,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     }
 
     return stageNames[stage] || stage
-  }, [taskStatus, hasStarted, isStreaming])
+  }, [taskStatus, hasStarted])
 
   // Check if a stage is complete based on completed_stages from backend
   const isStageComplete = useCallback((stageId: string): boolean => {
