@@ -121,6 +121,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // LOCAL STATE - Clinical notes (synced with context)
   const [localClinicalNotes, setLocalClinicalNotes] = useState(clinicalNotes)
 
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const debouncedQuery = useDebounce(searchQuery, 300)
 
   const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
@@ -157,7 +158,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     }
   }, [enablePhenotypeMatching])
 
-  // Auto-open popover when search query has results
+  // Auto-open popover when search query has results (but don't steal focus)
   useEffect(() => {
     if (searchQuery.length >= 2 && filteredSuggestions.length > 0) {
       setShowSearchPopover(true)
@@ -177,8 +178,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       try {
         await addHPOTerm(term)
         toast.success('Added: ' + term.name)
-        setSearchQuery('')
-        setShowSearchPopover(false)
+        // DON'T close popover - allow multiple selections
+        // DON'T clear search - user might want to refine search
+        // Refocus input so user can continue typing
+        searchInputRef.current?.focus()
       } catch (error) {
         console.error('Failed to add term:', error)
         toast.error('Failed to add term')
@@ -702,11 +705,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   {/* Search Phenotypes with Popover dropdown */}
                   <div>
                     <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
-                    <Popover open={showSearchPopover} onOpenChange={setShowSearchPopover}>
+                    <Popover open={showSearchPopover} onOpenChange={setShowSearchPopover} modal={false}>
                       <PopoverTrigger asChild>
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
+                            ref={searchInputRef}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search phenotype or HPO term..."
@@ -726,10 +730,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         </div>
                       </PopoverTrigger>
                       {filteredSuggestions.length > 0 && (
-                        <PopoverContent 
+                        <PopoverContent
                           className="p-2 max-h-80 overflow-y-auto"
-                          style={{ width: "var(--radix-popover-trigger-width)" }}
                           align="start"
+                          style={{ width: 'var(--radix-popover-trigger-width)' }}
+                          onOpenAutoFocus={(e) => e.preventDefault()}
                         >
                           <div className="space-y-1">
                             {filteredSuggestions.map((term) => (
