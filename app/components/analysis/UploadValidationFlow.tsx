@@ -3,6 +3,11 @@
 /**
  * UploadValidationFlow Component - Unified Upload + Validation + QC Experience
  *
+ * AUTO-COMPRESSION: Files are automatically compressed before upload for faster speeds
+ * - Happens transparently in background
+ * - No additional UI needed
+ * - User sees only upload progress
+ *
  * Typography Scale:
  * - text-3xl: Page titles
  * - text-lg: Section headers, card titles
@@ -21,7 +26,7 @@
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
 import { flushSync } from 'react-dom'
-import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna, Loader2 } from 'lucide-react'
+import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna, Loader2, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -31,10 +36,11 @@ import { HelixLoader } from '@/components/ui/helix-loader'
 import { useUploadVCF, useStartValidation } from '@/hooks/mutations'
 import { useTaskStatus } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
+import { useFileCompression } from '@/hooks/useFileCompression'
 import { toast } from 'sonner'
 
 // Constants
-const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
+const MAX_FILE_SIZE = 20 * 1024 * 1024 * 1024 // 20GB (increased for nuclear server optimizations)
 const ALLOWED_EXTENSIONS = ['.vcf', '.vcf.gz']
 
 // Flow phases
@@ -65,6 +71,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const [validationError, setValidationError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [validationProgress, setValidationProgress] = useState(0)
+  const [wasCompressed, setWasCompressed] = useState(false) // Track if file was auto-compressed
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -73,6 +80,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Mutations
   const uploadMutation = useUploadVCF()
   const startValidationMutation = useStartValidation()
+
+  // Compression hook (invisible to user - transparent optimization)
+  const { compress, shouldCompress, isSupported: isCompressionSupported } = useFileCompression()
 
   // Journey context
   const { nextStep } = useJourney()
@@ -117,9 +127,15 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const fileSize = useMemo(() => {
     if (!selectedFile) return null
     const mb = selectedFile.size / (1024 * 1024)
-    return mb < 1
-      ? `${(selectedFile.size / 1024).toFixed(1)} KB`
-      : `${mb.toFixed(2)} MB`
+    const gb = selectedFile.size / (1024 * 1024 * 1024)
+    
+    if (gb >= 1) {
+      return `${gb.toFixed(2)} GB`
+    } else if (mb < 1) {
+      return `${(selectedFile.size / 1024).toFixed(1)} KB`
+    } else {
+      return `${mb.toFixed(2)} MB`
+    }
   }, [selectedFile])
 
   const canSubmit = useMemo(() => {
@@ -151,7 +167,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return `File too large. Maximum size is 2GB.`
+      return `File too large. Maximum size is 20GB.`
     }
 
     if (file.size === 0) {
@@ -235,12 +251,13 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setSelectedFile(null)
     setValidationError(null)
     setUploadProgress(0)
+    setWasCompressed(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }, [])
 
-  // Submit handler - starts the full flow
+  // Submit handler - AUTO-COMPRESS then upload (transparent optimization)
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !selectedFile) return
 
@@ -249,9 +266,30 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setPhase('uploading')
 
     try {
-      // Phase 1: Upload
+      let fileToUpload = selectedFile
+
+      // AUTO-COMPRESS if beneficial (invisible to user - transparent optimization)
+      // User sees "Uploading..." not "Compressing..." - compression happens in background
+      if (isCompressionSupported && shouldCompress(selectedFile)) {
+        try {
+          // Compress file in background (typically 20-30 seconds for 4GB VCF)
+          fileToUpload = await compress(selectedFile)
+          setWasCompressed(true)
+          
+          // Silent optimization - no toast, only console log for debugging
+          console.log(`[OPTIMIZATION] File compressed: ${selectedFile.size} → ${fileToUpload.size} bytes (${(selectedFile.size / fileToUpload.size).toFixed(1)}x)`)
+        } catch (compressionError) {
+          // Compression failed - fallback to original file silently
+          // User experience is unaffected - upload continues normally
+          console.warn('[OPTIMIZATION] Compression failed, uploading original:', compressionError)
+          fileToUpload = selectedFile
+          setWasCompressed(false)
+        }
+      }
+
+      // Phase 1: Upload (compressed or original file)
       const uploadResult = await uploadMutation.mutateAsync({
-        file: selectedFile,
+        file: fileToUpload,
         analysisType: 'germline',
         genomeBuild: 'GRCh38',
         onProgress: setUploadProgress,
@@ -259,7 +297,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
       setSessionId(uploadResult.id)
       setUploadProgress(100)
-
 
       // Phase 2: Start validation
       setPhase('validating')
@@ -283,7 +320,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       toast.error('Process failed', { description: err.message })
       onError?.(err)
     }
-  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, nextStep, onComplete, onError])
+  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, nextStep, onComplete, onError, compress, shouldCompress, isCompressionSupported])
 
   // Reset handler
   const handleReset = useCallback(() => {
@@ -296,6 +333,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setQcResults(null)
     setUploadProgress(0)
     setValidationProgress(0)
+    setWasCompressed(false)
     uploadMutation.reset()
     startValidationMutation.reset()
     if (fileInputRef.current) {
@@ -362,6 +400,19 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                     <p className="text-base font-medium">{selectedFile?.name}</p>
                     <span className="text-muted-foreground">-</span>
                     <p className="text-sm text-muted-foreground">{fileSize}</p>
+                    {/* Subtle indicator that file was auto-compressed (only visible after QC) */}
+                    {wasCompressed && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Zap className="h-3 w-3 text-blue-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-sm">Auto-compressed for faster upload</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </div>
                 </div>
               </div>
@@ -615,7 +666,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                     or click to browse
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Supports .vcf and .vcf.gz files (max 2GB)
+                    Supports .vcf and .vcf.gz files (max 20GB)
                   </p>
                 </div>
                 <Button size="lg" onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}>
