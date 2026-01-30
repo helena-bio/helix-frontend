@@ -123,16 +123,19 @@ export function ScreeningResultsProvider({ sessionId, children }: ScreeningResul
             if (parsed.type === 'metadata') {
               summary = parsed.summary
               cacheHit = parsed.cache_hit || false
-              totalExpected = summary.tier1_count + summary.tier2_count + summary.tier3_count + summary.tier4_count
+              
+              if (summary) {
+                totalExpected = summary.tier1_count + summary.tier2_count + summary.tier3_count + summary.tier4_count
 
-              console.log('[ScreeningResultsContext] Metadata received:', {
-                total: totalExpected,
-                cacheHit,
-                tier1: summary.tier1_count,
-                tier2: summary.tier2_count,
-                tier3: summary.tier3_count,
-                tier4: summary.tier4_count,
-              })
+                console.log('[ScreeningResultsContext] Metadata received:', {
+                  total: totalExpected,
+                  cacheHit,
+                  tier1: summary.tier1_count,
+                  tier2: summary.tier2_count,
+                  tier3: summary.tier3_count,
+                  tier4: summary.tier4_count,
+                })
+              }
             } else if (parsed.type === 'tier1') {
               tier1Results.push(parsed.data)
               totalLoaded++
