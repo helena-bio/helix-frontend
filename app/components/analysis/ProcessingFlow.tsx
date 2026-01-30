@@ -97,6 +97,8 @@ const PIPELINE_STAGES: PipelineStage[] = [
 ]
 
 export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlowProps) {
+  console.log('[ProcessingFlow] RENDER - sessionId:', sessionId)
+  
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
@@ -116,8 +118,20 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     enabled: !!taskId,
   })
 
+  console.log('[ProcessingFlow] State:', {
+    taskId,
+    hasStarted,
+    isStreaming,
+    startedRef: startedRef.current,
+    streamingStartedRef: streamingStartedRef.current,
+    taskReady: taskStatus?.ready,
+    taskSuccessful: taskStatus?.successful,
+  })
+
   // Start processing on mount (only once)
   useEffect(() => {
+    console.log('[ProcessingFlow] Start processing effect - vcf_file_path:', session?.vcf_file_path, 'startedRef:', startedRef.current)
+    
     if (!session?.vcf_file_path || startedRef.current) return
 
     startedRef.current = true
@@ -125,13 +139,16 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
     const startProcessing = async () => {
       try {
+        console.log('[ProcessingFlow] Starting processing mutation...')
         const result = await startProcessingMutation.mutateAsync({
           sessionId,
           vcfFilePath: session.vcf_file_path!,
         })
+        console.log('[ProcessingFlow] Processing started, taskId:', result.task_id)
         setTaskId(result.task_id)
       } catch (error) {
         const err = error as Error
+        console.error('[ProcessingFlow] Start processing error:', err)
         setErrorMessage(err.message)
         toast.error('Failed to start processing', { description: err.message })
         onError?.(err)
@@ -143,35 +160,46 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Handle task completion → Wait for streaming → Advance
   useEffect(() => {
+    console.log('[ProcessingFlow] Task completion effect - ready:', taskStatus?.ready, 'streamingStartedRef:', streamingStartedRef.current)
+    
     if (!taskStatus?.ready) return
-    if (streamingStartedRef.current) return // Don't run twice
+    if (streamingStartedRef.current) {
+      console.log('[ProcessingFlow] Already started streaming, skipping')
+      return
+    }
 
     if (taskStatus.successful) {
+      console.log('[ProcessingFlow] Task successful, starting streaming...')
       streamingStartedRef.current = true
 
       const streamAndAdvance = async () => {
         try {
+          console.log('[ProcessingFlow] 1. Setting isStreaming = true')
           setIsStreaming(true)
-          console.log('[ProcessingFlow] Pipeline complete - streaming variants...')
-
-          // Stream ALL variants from Redis cache (stay on Export & Caching step at 95%)
+          
+          console.log('[ProcessingFlow] 2. Starting loadAllVariants...')
           await loadAllVariants(sessionId)
-
-          console.log('[ProcessingFlow] Streaming complete - showing 100% before advancing')
+          
+          console.log('[ProcessingFlow] 3. loadAllVariants complete, setting isStreaming = false')
           setIsStreaming(false)
 
-          // Wait 500ms to show 100% progress before advancing
+          console.log('[ProcessingFlow] 4. Waiting 500ms to show 100%...')
           await new Promise(resolve => setTimeout(resolve, 500))
 
+          console.log('[ProcessingFlow] 5. Showing success toast')
           toast.success('Processing complete', {
             description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
           })
 
-          // FORCE SYNC: Update journey state BEFORE URL update
+          console.log('[ProcessingFlow] 6. Calling nextStep() with flushSync')
           flushSync(() => {
             nextStep() // processing -> profile (FORCE SYNC)
           })
+          
+          console.log('[ProcessingFlow] 7. Calling onComplete()')
           onComplete?.()
+          
+          console.log('[ProcessingFlow] 8. streamAndAdvance complete!')
         } catch (error) {
           console.error('[ProcessingFlow] Streaming failed:', error)
           setIsStreaming(false)
@@ -189,6 +217,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       streamAndAdvance()
     } else if (taskStatus.failed) {
       const error = taskStatus.info?.error || 'Processing failed'
+      console.error('[ProcessingFlow] Task failed:', error)
       setErrorMessage(error)
       toast.error('Processing failed', { description: error })
       onError?.(new Error(error))
