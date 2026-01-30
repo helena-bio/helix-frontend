@@ -16,7 +16,7 @@
  * - Real-time polling of task status
  * - Visual progress indicator with pipeline stages
  * - Error handling with retry
- * - Success: advances immediately, streams variants in background
+ * - Success: waits for streaming to complete before advancing
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -100,8 +100,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
   const startedRef = useRef(false)
-  const advancedRef = useRef(false)
+  const streamingStartedRef = useRef(false)
 
   const { nextStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
@@ -140,35 +141,49 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     startProcessing()
   }, [session?.vcf_file_path, sessionId, startProcessingMutation, onError])
 
-  // Handle task completion → Advance immediately → Stream in background
+  // Handle task completion → Wait for streaming → Advance
   useEffect(() => {
     if (!taskStatus?.ready) return
-    if (advancedRef.current) return // Don't run twice
+    if (streamingStartedRef.current) return // Don't run twice
 
     if (taskStatus.successful) {
-      advancedRef.current = true
+      streamingStartedRef.current = true
 
-      toast.success('Processing complete', {
-        description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants analyzed`,
-      })
+      const streamAndAdvance = async () => {
+        try {
+          setIsStreaming(true)
+          console.log('[ProcessingFlow] Pipeline complete - streaming variants...')
 
-      // ADVANCE IMMEDIATELY (no await!)
-      flushSync(() => {
-        nextStep() // processing -> profile (FORCE SYNC)
-      })
-      onComplete?.()
+          // Stream ALL variants from Redis cache (stay on Export & Caching step)
+          await loadAllVariants(sessionId)
 
-      // Stream variants in background (fire and forget)
-      console.log('[ProcessingFlow] Advancing to profile, streaming variants in background...')
-      loadAllVariants(sessionId)
-        .then(() => {
-          console.log('[ProcessingFlow] Background streaming complete')
-        })
-        .catch((error) => {
-          console.error('[ProcessingFlow] Background streaming failed:', error)
-          // Don't show error - data will load on demand
-        })
+          console.log('[ProcessingFlow] Streaming complete - advancing to profile')
+          setIsStreaming(false)
 
+          toast.success('Processing complete', {
+            description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
+          })
+
+          // FORCE SYNC: Update journey state BEFORE URL update
+          flushSync(() => {
+            nextStep() // processing -> profile (FORCE SYNC)
+          })
+          onComplete?.()
+        } catch (error) {
+          console.error('[ProcessingFlow] Streaming failed:', error)
+          setIsStreaming(false)
+          toast.error('Failed to load variants', {
+            description: 'Continuing anyway - data will load on demand'
+          })
+          // Don't block - advance anyway, views will load data on demand
+          flushSync(() => {
+            nextStep() // processing -> profile (FORCE SYNC)
+          })
+          onComplete?.()
+        }
+      }
+
+      streamAndAdvance()
     } else if (taskStatus.failed) {
       const error = taskStatus.info?.error || 'Processing failed'
       setErrorMessage(error)
@@ -198,6 +213,11 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
+    // If streaming, override stage name
+    if (isStreaming) {
+      return 'Loading variants into memory...'
+    }
+
     if (!taskStatus?.info?.stage) {
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
@@ -219,7 +239,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     }
 
     return stageNames[stage] || stage
-  }, [taskStatus, hasStarted])
+  }, [taskStatus, hasStarted, isStreaming])
 
   // Check if a stage is complete based on completed_stages from backend
   const isStageComplete = useCallback((stageId: string): boolean => {
@@ -229,10 +249,15 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Check if a stage is current
   const isStageActive = useCallback((stageId: string): boolean => {
+    // If streaming, export stage is active
+    if (isStreaming && stageId === 'export') {
+      return true
+    }
+
     const currentStage = taskStatus?.info?.stage as string | undefined
     if (!currentStage) return false
     return currentStage === stageId
-  }, [taskStatus])
+  }, [taskStatus, isStreaming])
 
   // Retry handler
   const handleRetry = useCallback(async () => {
@@ -240,7 +265,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
     setErrorMessage(null)
     setTaskId(null)
-    advancedRef.current = false
+    setIsStreaming(false)
+    streamingStartedRef.current = false
 
     try {
       const result = await startProcessingMutation.mutateAsync({
@@ -296,7 +322,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     )
   }
 
-  // Processing State
+  // Processing State (including streaming on export step)
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-4">
