@@ -5,12 +5,18 @@
  *
  * Collects patient data and saves to context (LOCAL STATE + HPO in backend)
  * Shows ClinicalAnalysis after successful save
+ *
+ * STRUCTURE:
+ * 1. Demographics (Required) - age, sex
+ * 2. Clinical Information (Recommended) - ethnicity, indication, family history, sample info
+ * 3. Phenotype Information (Optional) - HPO terms
+ * 4. Result Preferences (Optional) - consent options
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, Globe, Settings
+  ArrowRight, Loader2, User, Stethoscope, Settings
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,9 +77,9 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // UI state
   const [searchQuery, setSearchQuery] = useState('')
   const [showAIAssist, setShowAIAssist] = useState(false)
-  const [showRecommended, setShowRecommended] = useState(false)
+  const [showClinicalInfo, setShowClinicalInfo] = useState(false)
   const [showPhenotype, setShowPhenotype] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showPreferences, setShowPreferences] = useState(false)
   const [aiInput, setAiInput] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [showAnalysis, setShowAnalysis] = useState(false)
@@ -83,28 +89,24 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [ageDays, setAgeDays] = useState<string>('')
   const [sex, setSex] = useState<Sex>('female')
 
-  // LOCAL STATE - Ethnicity
+  // LOCAL STATE - Clinical Info
   const [ethnicity, setEthnicityLocal] = useState<Ethnicity | undefined>(undefined)
   const [ethnicityNote, setEthnicityNote] = useState('')
-
-  // LOCAL STATE - Clinical context
   const [indication, setIndication] = useState<Indication | undefined>(undefined)
   const [indicationDetails, setIndicationDetails] = useState('')
   const [hasFamilyHistory, setHasFamilyHistory] = useState(false)
   const [hasConsanguinity, setHasConsanguinity] = useState(false)
   const [familyHistoryDetails, setFamilyHistoryDetails] = useState('')
-
-  // LOCAL STATE - Reproductive
-  const [isPregnant, setIsPregnant] = useState(false)
-  const [gestationalAge, setGestationalAge] = useState<string>('')
-  const [familyPlanning, setFamilyPlanning] = useState(false)
-
-  // LOCAL STATE - Sample info
   const [sampleType, setSampleTypeLocal] = useState<SampleType | undefined>(undefined)
   const [hasParentalSamples, setHasParentalSamples] = useState(false)
   const [hasAffectedSibling, setHasAffectedSibling] = useState(false)
 
-  // LOCAL STATE - Consent
+  // LOCAL STATE - Reproductive (in Clinical Info if female)
+  const [isPregnant, setIsPregnant] = useState(false)
+  const [gestationalAge, setGestationalAge] = useState<string>('')
+  const [familyPlanning, setFamilyPlanning] = useState(false)
+
+  // LOCAL STATE - Preferences
   const [consentSecondaryFindings, setConsentSecondaryFindings] = useState(true)
   const [consentCarrierResults, setConsentCarrierResults] = useState(true)
   const [consentPharmacogenomics, setConsentPharmacogenomics] = useState(false)
@@ -282,53 +284,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       }
 
       toast.success('Clinical profile saved')
-
-      // DEBUG: Log complete clinical profile context
-      console.log('='.repeat(80))
-      console.log('CLINICAL PROFILE CONTEXT - COMPLETE SNAPSHOT')
-      console.log('='.repeat(80))
-      console.log(JSON.stringify({
-        session_id: sessionId,
-        demographics: {
-          sex,
-          age_years: ageY,
-          age_days: ageD,
-        },
-        ethnicity: ethnicity ? {
-          primary: ethnicity,
-          note: ethnicityNote || undefined,
-        } : undefined,
-        clinical_context: indication ? {
-          indication,
-          indication_details: indicationDetails || undefined,
-          family_history: {
-            has_affected_relatives: hasFamilyHistory,
-            consanguinity: hasConsanguinity,
-            details: familyHistoryDetails || undefined,
-          }
-        } : undefined,
-        reproductive: {
-          is_pregnant: isPregnant,
-          gestational_age_weeks: gestationalAge ? parseInt(gestationalAge, 10) : undefined,
-          family_planning: familyPlanning,
-        },
-        sample_info: sampleType ? {
-          sample_type: sampleType,
-          has_parental_samples: hasParentalSamples,
-          has_affected_sibling: hasAffectedSibling,
-        } : undefined,
-        consent: {
-          secondary_findings: consentSecondaryFindings,
-          carrier_results: consentCarrierResults,
-          pharmacogenomics: consentPharmacogenomics,
-        },
-        phenotype: {
-          hpo_terms: hpoTerms,
-          clinical_notes: localClinicalNotes,
-        }
-      }, null, 2))
-      console.log('='.repeat(80))
-
       setShowAnalysis(true)
 
     } catch (error) {
@@ -461,32 +416,33 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           </CardContent>
         </Card>
 
-        {/* RECOMMENDED: Ethnicity & Clinical Context */}
+        {/* RECOMMENDED: Clinical Information */}
         <Card>
-          <Collapsible open={showRecommended} onOpenChange={setShowRecommended}>
+          <Collapsible open={showClinicalInfo} onOpenChange={setShowClinicalInfo}>
             <CollapsibleTrigger asChild>
               <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
                 <CardTitle className="text-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    <span>Additional Information</span>
+                    <Stethoscope className="h-4 w-4" />
+                    <span>Clinical Information</span>
                     <Badge variant="outline" className="ml-2 text-xs">Recommended</Badge>
                   </div>
-                  {showRecommended ? (
+                  {showClinicalInfo ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
                     <ChevronDown className="h-4 w-4" />
                   )}
                 </CardTitle>
-                {!showRecommended && (
+                {!showClinicalInfo && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    Ethnicity improves variant frequency filtering. Family history boosts relevant gene prioritization.
+                    Ethnicity, clinical context, family history, and sample information improve analysis accuracy.
                   </p>
                 )}
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="pt-0 space-y-6">
+                {/* Ethnicity */}
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Ethnicity & Ancestry</Label>
                   <Select value={ethnicity} onValueChange={(val) => setEthnicityLocal(val as Ethnicity)}>
@@ -510,11 +466,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   />
                 </div>
 
+                {/* Clinical Context */}
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Clinical Context</Label>
                   <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select indication (optional)" />
+                      <SelectValue placeholder="Proactive Health Screening" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(INDICATION_LABELS).map(([key, label]) => (
@@ -533,6 +490,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   />
                 </div>
 
+                {/* Family History */}
                 <div className="space-y-3">
                   <Label className="text-base font-medium">Family History</Label>
                   <div className="space-y-2">
@@ -565,6 +523,81 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     />
                   )}
                 </div>
+
+                {/* Sample Information */}
+                <div className="space-y-3">
+                  <Label className="text-base font-medium">Sample Information</Label>
+                  <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sample type (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hasParentalSamples}
+                        onChange={(e) => setHasParentalSamples(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Parental samples available</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={hasAffectedSibling}
+                        onChange={(e) => setHasAffectedSibling(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Affected sibling available</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Reproductive Context (only if female) */}
+                {sex === 'female' && (
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Reproductive Context</Label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isPregnant}
+                          onChange={(e) => setIsPregnant(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Patient is pregnant</span>
+                      </label>
+                      {isPregnant && (
+                        <Input
+                          type="number"
+                          min="0"
+                          max="42"
+                          value={gestationalAge}
+                          onChange={(e) => setGestationalAge(e.target.value)}
+                          placeholder="Gestational age (weeks)"
+                          className="text-base ml-6"
+                        />
+                      )}
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={familyPlanning}
+                          onChange={(e) => setFamilyPlanning(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Family planning considerations</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </CollapsibleContent>
           </Collapsible>
@@ -728,135 +761,60 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           </Collapsible>
         </Card>
 
-        {/* ADVANCED OPTIONS */}
+        {/* OPTIONAL: Result Preferences */}
         <Card>
-          <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+          <Collapsible open={showPreferences} onOpenChange={setShowPreferences}>
             <CollapsibleTrigger asChild>
               <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
                 <CardTitle className="text-lg flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
-                    <span>Advanced Options</span>
+                    <span>Result Preferences</span>
                     <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
                   </div>
-                  {showAdvanced ? (
+                  {showPreferences ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
                     <ChevronDown className="h-4 w-4" />
                   )}
                 </CardTitle>
-                {!showAdvanced && (
+                {!showPreferences && (
                   <p className="text-sm text-muted-foreground mt-1">
-                    Reproductive context, sample information, and result reporting preferences.
+                    Configure which types of findings to include in your report.
                   </p>
                 )}
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <CardContent className="pt-0 space-y-6">
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Reproductive Context</Label>
-                  <div className="space-y-2">
-                    <label className={`flex items-center gap-2 ${sex === 'male' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-                      <input
-                        type="checkbox"
-                        checked={isPregnant}
-                        onChange={(e) => setIsPregnant(e.target.checked)}
-                        disabled={sex === 'male'}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Patient is pregnant</span>
-                    </label>
-                    {isPregnant && (
-                      <Input
-                        type="number"
-                        min="0"
-                        max="42"
-                        value={gestationalAge}
-                        onChange={(e) => setGestationalAge(e.target.value)}
-                        placeholder="Gestational age (weeks)"
-                        className="text-base ml-6"
-                      />
-                    )}
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={familyPlanning}
-                        onChange={(e) => setFamilyPlanning(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Family planning considerations</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Sample Information</Label>
-                  <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sample type (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasParentalSamples}
-                        onChange={(e) => setHasParentalSamples(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Parental samples available</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasAffectedSibling}
-                        onChange={(e) => setHasAffectedSibling(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Affected sibling available</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Result Preferences</Label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={consentSecondaryFindings}
-                        onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Report ACMG Secondary Findings</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={consentCarrierResults}
-                        onChange={(e) => setConsentCarrierResults(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Report carrier status for recessive conditions</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={consentPharmacogenomics}
-                        onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Include pharmacogenomics results</span>
-                    </label>
-                  </div>
+              <CardContent className="pt-0 space-y-3">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentSecondaryFindings}
+                      onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-base">Report ACMG Secondary Findings</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentCarrierResults}
+                      onChange={(e) => setConsentCarrierResults(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-base">Report carrier status for recessive conditions</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentPharmacogenomics}
+                      onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-base">Include pharmacogenomics results</span>
+                  </label>
                 </div>
               </CardContent>
             </CollapsibleContent>
