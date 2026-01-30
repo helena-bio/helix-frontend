@@ -75,7 +75,7 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
                 'bg-gray-100 text-gray-700 border-gray-300'
               }`}
             >
-              {variant.clinical_actionability.toUpperCase()}
+              {variant.clinical_actionability?.toUpperCase() || 'UNKNOWN'}
             </Badge>
           </div>
 
@@ -106,19 +106,19 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <p className="text-md text-muted-foreground">Constraint</p>
-                <p className="text-base font-mono">{variant.constraint_score.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.constraint_score?.toFixed(2) || '0.00'}</p>
               </div>
               <div>
                 <p className="text-md text-muted-foreground">Deleteriousness</p>
-                <p className="text-base font-mono">{variant.deleteriousness_score.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.deleteriousness_score?.toFixed(2) || '0.00'}</p>
               </div>
               <div>
                 <p className="text-md text-muted-foreground">Phenotype</p>
-                <p className="text-base font-mono">{variant.phenotype_score.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.phenotype_score?.toFixed(2) || '0.00'}</p>
               </div>
               <div>
                 <p className="text-md text-muted-foreground">Age Relevance</p>
-                <p className="text-base font-mono">{variant.age_relevance_score.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.age_relevance_score?.toFixed(2) || '0.00'}</p>
               </div>
             </div>
           </div>
@@ -129,19 +129,19 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
                 <p className="text-md text-muted-foreground">ACMG</p>
-                <p className="text-base font-mono">{variant.acmg_boost.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.acmg_boost?.toFixed(2) || '0.00'}</p>
               </div>
               <div>
                 <p className="text-md text-muted-foreground">Ethnicity</p>
-                <p className="text-base font-mono">{variant.ethnicity_boost.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.ethnicity_boost?.toFixed(2) || '0.00'}</p>
               </div>
               <div>
                 <p className="text-md text-muted-foreground">Family History</p>
-                <p className="text-base font-mono">{variant.family_history_boost.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.family_history_boost?.toFixed(2) || '0.00'}</p>
               </div>
               <div>
                 <p className="text-md text-muted-foreground">De Novo</p>
-                <p className="text-base font-mono">{variant.de_novo_boost.toFixed(2)}</p>
+                <p className="text-base font-mono">{variant.de_novo_boost?.toFixed(2) || '0.00'}</p>
               </div>
             </div>
           </div>
@@ -158,11 +158,11 @@ function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <p className="text-sm text-muted-foreground">Age Group</p>
-              <p className="text-base">{variant.age_group}</p>
+              <p className="text-base">{variant.age_group || 'Unknown'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Screening Mode</p>
-              <p className="text-base">{variant.screening_mode.replace(/_/g, ' ')}</p>
+              <p className="text-base">{variant.screening_mode?.replace(/_/g, ' ') || 'Unknown'}</p>
             </div>
           </div>
 
@@ -231,7 +231,7 @@ function TierCard({ count, label, tooltip, isSelected, onClick, colorClasses }: 
 
 export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps) {
   const { screeningResponse } = useScreeningResults()
-  const { hpoTerms, demographics, ethnicity } = useClinicalProfileContext()
+  const { hpoTerms } = useClinicalProfileContext()
   const [geneFilter, setGeneFilter] = useState('')
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
@@ -317,7 +317,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
 
         {/* Status Badge */}
         <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-300">
-          {summary.total_variants_analyzed.toLocaleString()} Variants Screened
+          {summary.total_variants_analyzed?.toLocaleString() || 0} Variants Screened
         </Badge>
       </div>
 
@@ -332,7 +332,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
           colorClasses=""
         />
         <TierCard
-          count={summary.tier1_count}
+          count={summary.tier1_count || 0}
           label="Tier 1"
           tooltip="Highest priority - immediate clinical action recommended"
           isSelected={tierFilter === 'TIER_1'}
@@ -340,7 +340,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
           colorClasses="border-red-200 bg-red-50 text-red-900"
         />
         <TierCard
-          count={summary.tier2_count}
+          count={summary.tier2_count || 0}
           label="Tier 2"
           tooltip="High priority - monitoring and follow-up recommended"
           isSelected={tierFilter === 'TIER_2'}
@@ -348,7 +348,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
           colorClasses="border-orange-200 bg-orange-50 text-orange-900"
         />
         <TierCard
-          count={summary.tier3_count}
+          count={summary.tier3_count || 0}
           label="Tier 3"
           tooltip="Moderate priority - future clinical relevance possible"
           isSelected={tierFilter === 'TIER_3'}
@@ -356,7 +356,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
           colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900"
         />
         <TierCard
-          count={summary.tier4_count}
+          count={summary.tier4_count || 0}
           label="Tier 4"
           tooltip="Lower priority - research or uncertain significance"
           isSelected={tierFilter === 'TIER_4'}
@@ -373,11 +373,11 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Age Group</p>
-                <p className="text-base font-semibold">{summary.age_group}</p>
+                <p className="text-base font-semibold">{summary.age_group || 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Sex</p>
-                <p className="text-base font-semibold">{summary.sex}</p>
+                <p className="text-base font-semibold">{summary.sex || 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Ethnicity</p>
@@ -385,11 +385,11 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Screening Mode</p>
-                <p className="text-base font-semibold">{summary.screening_mode.replace(/_/g, ' ')}</p>
+                <p className="text-base font-semibold">{summary.screening_mode?.replace(/_/g, ' ') || 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Processing Time</p>
-                <p className="text-base font-semibold">{summary.processing_time_seconds.toFixed(1)}s</p>
+                <p className="text-base font-semibold">{summary.processing_time_seconds?.toFixed(1) || '0.0'}s</p>
               </div>
             </div>
 
