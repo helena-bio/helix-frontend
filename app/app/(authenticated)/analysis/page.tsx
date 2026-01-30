@@ -15,7 +15,6 @@
 import { useRouter } from 'next/navigation'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
-import { ClinicalProfileProvider } from '@/contexts/ClinicalProfileContext'
 import {
   UploadValidationFlow,
   ClinicalProfileEntry,
@@ -60,7 +59,7 @@ export default function AnalysisPage() {
     )
   }
 
-  // Step 3: Clinical Profile Entry & Phenotype Matching (optional)
+  // Step 3: Clinical Profile Entry
   if (currentStep === 'profile') {
     if (!currentSessionId) {
       return (
@@ -70,14 +69,11 @@ export default function AnalysisPage() {
       )
     }
 
-    return (
-      <ClinicalProfileProvider sessionId={currentSessionId}>
-        <ClinicalProfileEntry sessionId={currentSessionId} />
-      </ClinicalProfileProvider>
-    )
+    // ClinicalProfileProvider already in layout.tsx - no need to wrap again!
+    return <ClinicalProfileEntry sessionId={currentSessionId} />
   }
 
-  // Step 4: Analysis View - wrap with ClinicalProfileProvider
+  // Step 4: Analysis View
   if (currentStep === 'analysis') {
     if (!currentSessionId) {
       return (
@@ -87,11 +83,8 @@ export default function AnalysisPage() {
       )
     }
 
-    return (
-      <ClinicalProfileProvider sessionId={currentSessionId}>
-        <ModuleRouter sessionId={currentSessionId} />
-      </ClinicalProfileProvider>
-    )
+    // ClinicalProfileProvider already in layout.tsx - no need to wrap again!
+    return <ModuleRouter sessionId={currentSessionId} />
   }
 
   return null
