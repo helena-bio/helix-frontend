@@ -5,9 +5,12 @@
  * Two states:
  * - Expanded (256px): Full text labels
  * - Collapsed (64px): Icon-only mode
+ *
+ * Module enablement:
+ * - Modules are enabled based on ClinicalProfileContext flags
+ * - Disabled modules show opacity-50 and are not clickable
  */
 
-import Link from 'next/link'
 import {
   ChevronLeft,
   ChevronRight,
@@ -15,10 +18,7 @@ import {
   Microscope,
   Shield,
   Dna,
-  FlaskConical,
   BookOpen,
-  Filter,
-  Settings,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -28,36 +28,15 @@ import {
   TooltipTrigger,
 } from '@helix/shared/components/ui/tooltip'
 import { useSession } from '@/contexts/SessionContext'
+import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { cn } from '@helix/shared/lib/utils'
 
 interface Module {
   id: string
   name: string
   icon: typeof Microscope
+  checkEnabled?: () => boolean
 }
-
-const MODULES: Module[] = [
-  {
-    id: 'analysis',
-    name: 'Variant Analysis',
-    icon: Microscope,
-  },
-  {
-    id: 'vus',
-    name: 'Clinical Screening',
-    icon: Shield,
-  },
-  {
-    id: 'phenotype',
-    name: 'Phenotype Matching',
-    icon: Dna,
-  },
-  {
-    id: 'literature',
-    name: 'Literature Analysis',
-    icon: BookOpen,
-  },
-]
 
 export function Sidebar() {
   const {
@@ -67,7 +46,37 @@ export function Sidebar() {
     setSelectedModule,
   } = useSession()
 
-  const handleModuleClick = (moduleId: string) => {
+  const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
+
+  const MODULES: Module[] = [
+    {
+      id: 'analysis',
+      name: 'Variant Analysis',
+      icon: Microscope,
+      checkEnabled: () => true, // Always enabled
+    },
+    {
+      id: 'vus',
+      name: 'Clinical Screening',
+      icon: Shield,
+      checkEnabled: () => enableScreening,
+    },
+    {
+      id: 'phenotype',
+      name: 'Phenotype Matching',
+      icon: Dna,
+      checkEnabled: () => enablePhenotypeMatching,
+    },
+    {
+      id: 'literature',
+      name: 'Literature Analysis',
+      icon: BookOpen,
+      checkEnabled: () => enablePhenotypeMatching, // Literature depends on phenotype
+    },
+  ]
+
+  const handleModuleClick = (moduleId: string, isEnabled: boolean) => {
+    if (!isEnabled) return
     setSelectedModule(moduleId)
   }
 
@@ -131,6 +140,7 @@ export function Sidebar() {
         {/* Module Items */}
         {MODULES.map((module) => {
           const Icon = module.icon
+          const isEnabled = module.checkEnabled ? module.checkEnabled() : true
           const isSelected = selectedModule === module.id
 
           return (
@@ -141,9 +151,11 @@ export function Sidebar() {
                     variant={isSelected ? 'secondary' : 'ghost'}
                     className={cn(
                       "w-full",
-                      isSidebarOpen ? "justify-start" : "justify-center px-2"
+                      isSidebarOpen ? "justify-start" : "justify-center px-2",
+                      !isEnabled && "opacity-50 cursor-not-allowed"
                     )}
-                    onClick={() => handleModuleClick(module.id)}
+                    onClick={() => handleModuleClick(module.id, isEnabled)}
+                    disabled={!isEnabled}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
                     {isSidebarOpen && <span className="ml-3 text-base">{module.name}</span>}
@@ -152,6 +164,7 @@ export function Sidebar() {
                 {!isSidebarOpen && (
                   <TooltipContent side="right">
                     <p className="text-sm">{module.name}</p>
+                    {!isEnabled && <p className="text-xs text-muted-foreground">(Not enabled)</p>}
                   </TooltipContent>
                 )}
               </Tooltip>
