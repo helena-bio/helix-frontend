@@ -8,6 +8,8 @@
  * - No additional UI needed
  * - User sees only upload progress
  *
+ * PERFORMANCE LOGGING: Detailed console logs for debugging upload performance
+ *
  * Typography Scale:
  * - text-3xl: Page titles
  * - text-lg: Section headers, card titles
@@ -261,44 +263,112 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !selectedFile) return
 
+    const totalStartTime = performance.now()
+
     setUploadProgress(0)
     setValidationProgress(0)
     setPhase('uploading')
 
+    console.log('='.repeat(80))
+    console.log('[FRONTEND UPLOAD] START')
+    console.log('='.repeat(80))
+    console.log(`[FILE INFO] Name: ${selectedFile.name}`)
+    console.log(`[FILE INFO] Size: ${(selectedFile.size / (1024**2)).toFixed(2)} MB (${selectedFile.size.toLocaleString()} bytes)`)
+    console.log(`[FILE INFO] Type: ${selectedFile.type}`)
+    console.log(`[COMPRESSION] Supported: ${isCompressionSupported}`)
+
     try {
       let fileToUpload = selectedFile
+      let compressionTime = 0
+      let compressionRatio = 1
 
       // AUTO-COMPRESS if beneficial (invisible to user - transparent optimization)
       // User sees "Uploading..." not "Compressing..." - compression happens in background
       if (isCompressionSupported && shouldCompress(selectedFile)) {
         try {
+          console.log('[COMPRESSION] Starting compression...')
+          const compressionStart = performance.now()
+          
           // Compress file in background (typically 20-30 seconds for 4GB VCF)
           fileToUpload = await compress(selectedFile)
+          
+          compressionTime = (performance.now() - compressionStart) / 1000
+          compressionRatio = selectedFile.size / fileToUpload.size
           setWasCompressed(true)
           
-          // Silent optimization - no toast, only console log for debugging
-          console.log(`[OPTIMIZATION] File compressed: ${selectedFile.size} → ${fileToUpload.size} bytes (${(selectedFile.size / fileToUpload.size).toFixed(1)}x)`)
+          console.log(`[COMPRESSION] Complete in ${compressionTime.toFixed(2)}s`)
+          console.log(`[COMPRESSION] Original: ${(selectedFile.size / (1024**2)).toFixed(2)} MB`)
+          console.log(`[COMPRESSION] Compressed: ${(fileToUpload.size / (1024**2)).toFixed(2)} MB`)
+          console.log(`[COMPRESSION] Ratio: ${compressionRatio.toFixed(2)}x (${((1 - 1/compressionRatio) * 100).toFixed(1)}% smaller)`)
+          
         } catch (compressionError) {
           // Compression failed - fallback to original file silently
           // User experience is unaffected - upload continues normally
-          console.warn('[OPTIMIZATION] Compression failed, uploading original:', compressionError)
+          console.warn('[COMPRESSION] Failed, uploading original file:', compressionError)
           fileToUpload = selectedFile
           setWasCompressed(false)
+        }
+      } else {
+        if (!isCompressionSupported) {
+          console.log('[COMPRESSION] Not supported in this browser')
+        } else {
+          console.log('[COMPRESSION] Skipped (file already compressed or not beneficial)')
         }
       }
 
       // Phase 1: Upload (compressed or original file)
+      console.log('-'.repeat(80))
+      console.log('[UPLOAD] Starting upload...')
+      console.log(`[UPLOAD] File to upload: ${(fileToUpload.size / (1024**2)).toFixed(2)} MB`)
+      
+      const uploadStart = performance.now()
+      let lastProgressTime = uploadStart
+      let lastProgressBytes = 0
+
       const uploadResult = await uploadMutation.mutateAsync({
         file: fileToUpload,
         analysisType: 'germline',
         genomeBuild: 'GRCh38',
-        onProgress: setUploadProgress,
+        onProgress: (progress) => {
+          setUploadProgress(progress)
+          
+          // Log progress every 10% or every 5 seconds
+          if (progress % 10 === 0 || performance.now() - lastProgressTime > 5000) {
+            const currentTime = performance.now()
+            const uploadedBytes = (fileToUpload.size * progress) / 100
+            const elapsedTime = (currentTime - uploadStart) / 1000
+            
+            // Instant throughput
+            const instantBytes = uploadedBytes - lastProgressBytes
+            const instantTime = (currentTime - lastProgressTime) / 1000
+            const instantThroughput = instantTime > 0 ? (instantBytes / (1024**2)) / instantTime : 0
+            
+            // Average throughput
+            const avgThroughput = elapsedTime > 0 ? (uploadedBytes / (1024**2)) / elapsedTime : 0
+            
+            console.log(`[UPLOAD PROGRESS] ${progress}% - ${(uploadedBytes / (1024**2)).toFixed(1)} MB ` +
+                       `(${avgThroughput.toFixed(1)} MB/s avg, ${instantThroughput.toFixed(1)} MB/s now)`)
+            
+            lastProgressTime = currentTime
+            lastProgressBytes = uploadedBytes
+          }
+        },
       })
+
+      const uploadTime = (performance.now() - uploadStart) / 1000
+      const uploadThroughput = (fileToUpload.size / (1024**2)) / uploadTime
+      
+      console.log(`[UPLOAD] Complete in ${uploadTime.toFixed(2)}s`)
+      console.log(`[UPLOAD] Average throughput: ${uploadThroughput.toFixed(2)} MB/s`)
+      console.log(`[UPLOAD] Session ID: ${uploadResult.id}`)
 
       setSessionId(uploadResult.id)
       setUploadProgress(100)
 
       // Phase 2: Start validation
+      console.log('-'.repeat(80))
+      console.log('[VALIDATION] Starting validation...')
+      
       setPhase('validating')
       flushSync(() => {
         nextStep() // upload -> validation (FORCE SYNC - no batching)
@@ -308,13 +378,43 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       // THEN notify parent to update URL (after journey is synced)
       onComplete?.(uploadResult.id)
 
+      const validationStart = performance.now()
       const validationResult = await startValidationMutation.mutateAsync(uploadResult.id)
+      const validationTime = (performance.now() - validationStart) / 1000
+      
       setTaskId(validationResult.task_id)
+      
+      console.log(`[VALIDATION] Task started in ${validationTime.toFixed(2)}s`)
+      console.log(`[VALIDATION] Task ID: ${validationResult.task_id}`)
 
       // Task polling will be handled by useTaskStatus hook
+      
+      // Final summary
+      const totalTime = (performance.now() - totalStartTime) / 1000
+      console.log('='.repeat(80))
+      console.log('[FRONTEND UPLOAD] COMPLETE')
+      console.log(`[TIMING] Total: ${totalTime.toFixed(2)}s`)
+      console.log(`[TIMING]   - Compression: ${compressionTime.toFixed(2)}s`)
+      console.log(`[TIMING]   - Upload: ${uploadTime.toFixed(2)}s`)
+      console.log(`[TIMING]   - Validation init: ${validationTime.toFixed(2)}s`)
+      if (wasCompressed) {
+        const effectiveSize = selectedFile.size / compressionRatio
+        const effectiveThroughput = (selectedFile.size / (1024**2)) / uploadTime
+        console.log(`[EFFECTIVE] Original file uploaded at ${effectiveThroughput.toFixed(2)} MB/s (equivalent)`)
+        console.log(`[EFFECTIVE] Time saved by compression: ${(selectedFile.size / effectiveSize * uploadTime - uploadTime).toFixed(2)}s`)
+      }
+      console.log('='.repeat(80))
 
     } catch (error) {
       const err = error as Error
+      const errorTime = (performance.now() - totalStartTime) / 1000
+      
+      console.error('='.repeat(80))
+      console.error('[FRONTEND UPLOAD] FAILED')
+      console.error(`[ERROR] After ${errorTime.toFixed(2)}s`)
+      console.error(`[ERROR] ${err.message}`)
+      console.error('='.repeat(80))
+      
       setPhase('error')
       setErrorMessage(err.message)
       toast.error('Process failed', { description: err.message })
