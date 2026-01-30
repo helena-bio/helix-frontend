@@ -1,108 +1,134 @@
 /**
- * File Compression Utilities
+ * File Compression Utilities with Inline Web Worker
  * 
- * Native browser compression using CompressionStream API
- * Supports: Chrome 80+, Firefox 113+, Safari 16.4+
+ * Worker code is inlined - no external files needed
+ * Keeps UI responsive during compression
  */
 
 /**
- * Check if compression is supported in current browser
+ * Check if compression is supported
  */
 export function isCompressionSupported(): boolean {
-  return typeof CompressionStream !== 'undefined'
+  return typeof CompressionStream !== 'undefined' && typeof Worker !== 'undefined'
 }
 
 /**
- * Compress file using native browser CompressionStream
- * 
- * @param file - File to compress
- * @param onProgress - Optional progress callback (0-100)
- * @returns Compressed file as .gz
+ * Create inline compression worker
+ */
+function createCompressionWorker(): Worker {
+  const workerCode = `
+    self.onmessage = async function(e) {
+      const { file } = e.data
+      
+      try {
+        const compressionStream = new CompressionStream('gzip')
+        const fileStream = file.stream()
+        const compressedStream = fileStream.pipeThrough(compressionStream)
+        
+        const reader = compressedStream.getReader()
+        const chunks = []
+        let totalSize = 0
+        
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          if (value) {
+            chunks.push(value)
+            totalSize += value.length
+            
+            const estimatedCompressed = file.size / 10
+            const progress = Math.min(95, Math.round((totalSize / estimatedCompressed) * 100))
+            
+            self.postMessage({ type: 'progress', progress })
+          }
+        }
+        
+        const compressedBlob = new Blob(chunks, { type: 'application/gzip' })
+        
+        self.postMessage({
+          type: 'complete',
+          progress: 100,
+          blob: compressedBlob,
+          originalSize: file.size,
+          compressedSize: compressedBlob.size
+        })
+        
+      } catch (error) {
+        self.postMessage({ type: 'error', error: error.message })
+      }
+    }
+  `
+  
+  const blob = new Blob([workerCode], { type: 'application/javascript' })
+  const workerUrl = URL.createObjectURL(blob)
+  return new Worker(workerUrl)
+}
+
+/**
+ * Compress file using inline Web Worker (non-blocking)
  */
 export async function compressFile(
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<File> {
   if (!isCompressionSupported()) {
-    throw new Error('CompressionStream not supported in this browser')
+    throw new Error('CompressionStream or Web Workers not supported')
   }
 
   const startTime = performance.now()
 
-  // Create compression stream
-  const compressionStream = new CompressionStream('gzip')
-  
-  // Stream file through compression
-  const fileStream = file.stream()
-  const compressedStream = fileStream.pipeThrough(compressionStream)
-  
-  // Read compressed data
-  const reader = compressedStream.getReader()
-  const chunks: Uint8Array[] = []
-  let totalSize = 0
-  
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
+  return new Promise((resolve, reject) => {
+    const worker = createCompressionWorker()
+    
+    worker.onmessage = (e) => {
+      const { type, progress, blob, originalSize, compressedSize, error } = e.data
       
-      if (done) break
-      
-      if (value) {
-        chunks.push(value)
-        totalSize += value.length
-        
-        // Estimate progress (compressed size is unknown upfront)
-        // Use heuristic: assume 10:1 compression ratio
-        const estimatedCompressed = file.size / 10
-        const progress = Math.min(95, Math.round((totalSize / estimatedCompressed) * 100))
-        onProgress?.(progress)
+      switch (type) {
+        case 'progress':
+          onProgress?.(progress)
+          break
+          
+        case 'complete':
+          const compressionTime = performance.now() - startTime
+          console.log(`[COMPRESSION] ${file.name}: ${originalSize} → ${compressedSize} bytes in ${compressionTime.toFixed(0)}ms`)
+          
+          const compressedFileName = file.name.endsWith('.gz') 
+            ? file.name 
+            : `${file.name}.gz`
+          
+          const compressedFile = new File([blob], compressedFileName, {
+            type: 'application/gzip',
+            lastModified: Date.now()
+          })
+          
+          worker.terminate()
+          resolve(compressedFile)
+          break
+          
+        case 'error':
+          worker.terminate()
+          reject(new Error(error))
+          break
       }
     }
-  } finally {
-    reader.releaseLock()
-  }
-  
-  onProgress?.(100)
-
-  // Combine chunks into single blob - FIX TypeScript issue
-  const compressedBlob = new Blob(chunks as BlobPart[], { type: 'application/gzip' })
-  const compressedSize = compressedBlob.size
-
-  const compressionTime = performance.now() - startTime
-  
-  console.log(`[COMPRESSION] ${file.name}: ${file.size} → ${compressedSize} bytes in ${compressionTime.toFixed(0)}ms`)
-  
-  // Create new file with .gz extension
-  const compressedFileName = file.name.endsWith('.gz') 
-    ? file.name 
-    : `${file.name}.gz`
-  
-  return new File([compressedBlob], compressedFileName, {
-    type: 'application/gzip',
-    lastModified: Date.now()
+    
+    worker.onerror = (error) => {
+      worker.terminate()
+      reject(error)
+    }
+    
+    worker.postMessage({ file })
   })
 }
 
 /**
- * Estimate if compression would be beneficial
- * 
- * CRITICAL: Only compress uncompressed .vcf files!
- * User can upload .vcf.gz if they want - we accept both.
- * 
- * Rules:
- * - .vcf.gz files: NO (already compressed, user chose this)
- * - .vcf files >10MB: YES (auto-compress for faster upload)
- * - .vcf files <10MB: NO (overhead not worth it)
- * 
- * @param file - File to check
- * @returns True if compression recommended
+ * Should compress? (ONLY .vcf files >10MB)
  */
 export function shouldCompress(file: File): boolean {
   const fileName = file.name.toLowerCase()
   const fileSizeMB = file.size / (1024 * 1024)
   
-  // ONLY compress uncompressed .vcf files
-  // If user uploads .vcf.gz, respect their choice - don't re-compress!
   if (fileName.endsWith('.vcf.gz') || 
       fileName.endsWith('.gz') ||
       fileName.endsWith('.zip') || 
@@ -111,17 +137,14 @@ export function shouldCompress(file: File): boolean {
     return false
   }
   
-  // Only compress .vcf files (not .txt, .csv, etc)
   if (!fileName.endsWith('.vcf')) {
     return false
   }
   
-  // Too small (overhead > benefit)
   if (fileSizeMB < 10) {
     return false
   }
   
-  // Large uncompressed .vcf file - compress it!
   return true
 }
 
@@ -137,35 +160,20 @@ export function isCompressed(file: File): boolean {
 }
 
 /**
- * Estimate compression benefit (time saved vs time spent)
- * 
- * Factors:
- * - Compression time: ~1s per 100MB
- * - Network speed: estimate from file size
- * - Compression ratio: assume 10:1 for VCF
- * 
- * @param file - File to analyze
- * @param networkSpeedMbps - Network speed in Mbps (default: 100)
- * @returns Estimated time saved in seconds (positive = worth it)
+ * Estimate compression benefit
  */
 export function estimateCompressionBenefit(
   file: File,
   networkSpeedMbps: number = 100
 ): number {
   const fileSizeMB = file.size / (1024 * 1024)
-  const networkSpeedMBps = networkSpeedMbps / 8 // Convert Mbps to MB/s
+  const networkSpeedMBps = networkSpeedMbps / 8
   
-  // Estimate compression time (empirical: ~1s per 100MB)
   const compressionTimeSec = fileSizeMB / 100
-  
-  // Estimate upload time without compression
   const uploadTimeOriginal = fileSizeMB / networkSpeedMBps
-  
-  // Estimate upload time with compression (assume 10:1 ratio)
   const compressedSizeMB = fileSizeMB / 10
   const uploadTimeCompressed = compressedSizeMB / networkSpeedMBps
   
-  // Time saved = (original upload - compressed upload) - compression overhead
   const timeSaved = (uploadTimeOriginal - uploadTimeCompressed) - compressionTimeSec
   
   return timeSaved
