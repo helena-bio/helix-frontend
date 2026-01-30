@@ -25,7 +25,10 @@ export function useFileCompression() {
     error: null
   })
 
-  const compress = useCallback(async (file: File): Promise<File> => {
+  const compress = useCallback(async (
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<File> => {
     setState({ isCompressing: true, progress: 0, error: null })
 
     try {
@@ -35,9 +38,10 @@ export function useFileCompression() {
         return file
       }
 
-      // Compress file
+      // Compress file with progress tracking
       const compressedFile = await compressFileUtil(file, (progress) => {
         setState(prev => ({ ...prev, progress }))
+        onProgress?.(progress) // Forward to external callback
       })
 
       setState({ isCompressing: false, progress: 100, error: null })
