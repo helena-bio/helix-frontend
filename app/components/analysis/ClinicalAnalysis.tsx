@@ -3,12 +3,10 @@
 /**
  * ClinicalAnalysis - Clinical Analysis Pipeline Progress
  *
- * NEW WORKFLOW - Complete clinical pipeline:
- * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
- * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
- *    - Run computation (POST /screen)
- *    - Stream results (GET /stream) for progressive loading
- * 3. Literature Search (for key genes) - AUTOMATIC
+ * Opt-in pipeline based on user selection:
+ * 1. Phenotype Matching (if enabled + HPO terms) - runs FIRST
+ * 2. Screening Analysis (if enabled) - age-aware prioritization
+ * 3. Literature Search (if phenotype enabled) - for top genes
  * 4. Navigate to split view → Clinical Interpretation starts in ChatPanel
  *
  * NOTE: Variants streaming already done in ProcessingFlow!
@@ -51,7 +49,7 @@ interface AnalysisStage {
   required: boolean
 }
 
-const ANALYSIS_STAGES: AnalysisStage[] = [
+const ALL_STAGES: AnalysisStage[] = [
   {
     id: 'phenotype',
     name: 'Phenotype Matching',
@@ -63,8 +61,8 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
     id: 'screening',
     name: 'Clinical Screening',
     icon: <Filter className="h-4 w-4" />,
-    description: 'Enhanced prioritization with phenotype context',
-    required: true,
+    description: 'Age-aware variant prioritization',
+    required: false,
   },
   {
     id: 'literature',
@@ -92,27 +90,40 @@ export function ClinicalAnalysis({
   const startedRef = useRef(false)
 
   const { nextStep } = useJourney()
-  const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
+  const { 
+    enableScreening,
+    enablePhenotypeMatching,
+    getCompleteProfile, 
+    hpoTerms 
+  } = useClinicalProfileContext()
   const { loadScreeningResults, loadProgress: screeningProgress } = useScreeningResults()
   const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults, aggregatedResults: phenotypeResults } = usePhenotypeResults()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
 
+  // Filter stages based on enabled modules
+  const activeStages = ALL_STAGES.filter(stage => {
+    if (stage.id === 'phenotype') return enablePhenotypeMatching
+    if (stage.id === 'screening') return enableScreening
+    if (stage.id === 'literature') return enablePhenotypeMatching // Literature depends on phenotype
+    return false
+  })
+
   const calculateProgress = useCallback((): number => {
-    const statuses = Object.values(stageStatuses)
-    const completed = statuses.filter(s => s === 'completed' || s === 'skipped').length
-    const running = statuses.filter(s => s === 'running').length
+    if (activeStages.length === 0) return 100 // No modules enabled, instant complete
+
+    const activeStatuses = activeStages.map(s => stageStatuses[s.id])
+    const completed = activeStatuses.filter(s => s === 'completed' || s === 'skipped').length
 
     // If screening is running, factor in its streaming progress
     if (currentStage === 'screening' && screeningProgress > 0) {
-      const baseProgress = (completed / statuses.length) * 100
-      const screeningContribution = (screeningProgress / statuses.length)
+      const baseProgress = (completed / activeStages.length) * 100
+      const screeningContribution = (screeningProgress / activeStages.length)
       return Math.round(baseProgress + screeningContribution)
     }
 
-    const total = statuses.length
-    return Math.round((completed / total) * 100)
-  }, [stageStatuses, currentStage, screeningProgress])
+    return Math.round((completed / activeStages.length) * 100)
+  }, [stageStatuses, currentStage, screeningProgress, activeStages])
 
   const updateStageStatus = useCallback((stageId: string, status: StageStatus) => {
     setStageStatuses(prev => ({ ...prev, [stageId]: status }))
@@ -127,7 +138,11 @@ export function ClinicalAnalysis({
         const profile = getCompleteProfile()
 
         console.log('='.repeat(80))
-        console.log('CLINICAL ANALYSIS - PIPELINE (Stages 1-3)')
+        console.log('CLINICAL ANALYSIS - PIPELINE')
+        console.log('Enabled Modules:')
+        console.log('  - Phenotype Matching:', enablePhenotypeMatching)
+        console.log('  - Clinical Screening:', enableScreening)
+        console.log('  - Literature Search:', enablePhenotypeMatching && hpoTerms.length > 0)
         console.log('='.repeat(80))
         console.log(JSON.stringify(profile, null, 2))
         console.log('='.repeat(80))
@@ -136,8 +151,8 @@ export function ClinicalAnalysis({
           throw new Error('Demographics data is required')
         }
 
-        // Stage 1: Phenotype Matching (OPTIONAL - but runs FIRST if HPO terms exist)
-        if (hpoTerms.length > 0) {
+        // Stage 1: Phenotype Matching (if enabled and HPO terms exist)
+        if (enablePhenotypeMatching && hpoTerms.length > 0) {
           setCurrentStage('phenotype')
           updateStageStatus('phenotype', 'running')
 
@@ -154,7 +169,6 @@ export function ClinicalAnalysis({
             // Step 2: Stream aggregated results
             await loadAllPhenotypeResults(sessionId)
 
-            // phenotypeResults now available from context via aggregatedResults
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING COMPLETE')
             console.log('  Total genes:', phenotypeResults?.length || 0)
@@ -171,107 +185,120 @@ export function ClinicalAnalysis({
             updateStageStatus('phenotype', 'failed')
             toast.warning('Phenotype matching failed - continuing without phenotype boost')
           }
+        } else if (enablePhenotypeMatching) {
+          console.log('Phenotype matching enabled but no HPO terms - skipping')
+          updateStageStatus('phenotype', 'skipped')
         } else {
-          console.log('No HPO terms - skipping phenotype matching')
+          console.log('Phenotype matching disabled - skipping')
           updateStageStatus('phenotype', 'skipped')
         }
 
-        // Stage 2: Screening Analysis (REQUIRED - enhanced with phenotype tiers)
-        setCurrentStage('screening')
-        updateStageStatus('screening', 'running')
+        // Stage 2: Screening Analysis (if enabled)
+        if (enableScreening) {
+          setCurrentStage('screening')
+          updateStageStatus('screening', 'running')
 
-        try {
-          const screeningPayload = {
-            session_id: sessionId,
-            age_years: profile.demographics.age_years,
-            age_days: profile.demographics.age_days,
-            sex: profile.demographics.sex,
-            ethnicity: profile.ethnicity?.primary,
-            indication: profile.clinical_context?.indication,
-            has_family_history: profile.clinical_context?.family_history?.has_affected_relatives || false,
-            consanguinity: profile.clinical_context?.family_history?.consanguinity || false,
-            screening_mode: 'proactive_adult',
-            patient_hpo_terms: profile.phenotype?.hpo_terms?.map(t => t.hpo_id) || [],
-            sample_type: profile.sample_info?.sample_type,
-            is_pregnant: profile.reproductive?.is_pregnant || false,
-            has_parental_samples: profile.sample_info?.has_parental_samples || false,
-            has_affected_sibling: profile.sample_info?.has_affected_sibling || false,
+          try {
+            const screeningPayload = {
+              session_id: sessionId,
+              age_years: profile.demographics.age_years,
+              age_days: profile.demographics.age_days,
+              sex: profile.demographics.sex,
+              ethnicity: profile.ethnicity?.primary,
+              indication: profile.clinical_context?.indication,
+              has_family_history: profile.clinical_context?.family_history?.has_affected_relatives || false,
+              consanguinity: profile.clinical_context?.family_history?.consanguinity || false,
+              screening_mode: 'proactive_adult',
+              patient_hpo_terms: profile.phenotype?.hpo_terms?.map(t => t.hpo_id) || [],
+              sample_type: profile.sample_info?.sample_type,
+              is_pregnant: profile.reproductive?.is_pregnant || false,
+              has_parental_samples: profile.sample_info?.has_parental_samples || false,
+              has_affected_sibling: profile.sample_info?.has_affected_sibling || false,
+            }
+
+            console.log('='.repeat(80))
+            console.log('SCREENING ANALYSIS - Step 1: Computing scores')
+            console.log('='.repeat(80))
+
+            // Step 1: Run screening computation (saves to DuckDB + Redis cache)
+            await screeningMutation.mutateAsync(screeningPayload)
+
+            console.log('='.repeat(80))
+            console.log('SCREENING ANALYSIS - Step 2: Streaming results')
+            console.log('='.repeat(80))
+
+            // Step 2: Stream results from backend (instant if Redis cache hit!)
+            await loadScreeningResults(sessionId)
+
+            updateStageStatus('screening', 'completed')
+            toast.success('Clinical screening complete')
+          } catch (error) {
+            console.error('Screening failed:', error)
+            updateStageStatus('screening', 'failed')
+            throw new Error('Clinical screening failed')
           }
-
-          console.log('='.repeat(80))
-          console.log('SCREENING ANALYSIS - Step 1: Computing scores')
-          console.log('='.repeat(80))
-
-          // Step 1: Run screening computation (saves to DuckDB + Redis cache)
-          await screeningMutation.mutateAsync(screeningPayload)
-
-          console.log('='.repeat(80))
-          console.log('SCREENING ANALYSIS - Step 2: Streaming results')
-          console.log('='.repeat(80))
-
-          // Step 2: Stream results from backend (instant if Redis cache hit!)
-          await loadScreeningResults(sessionId)
-
-          updateStageStatus('screening', 'completed')
-          toast.success('Clinical screening complete')
-        } catch (error) {
-          console.error('Screening failed:', error)
-          updateStageStatus('screening', 'failed')
-          throw new Error('Clinical screening failed')
+        } else {
+          console.log('Clinical screening disabled - skipping')
+          updateStageStatus('screening', 'skipped')
         }
 
-        // Stage 3: Literature Search (for key genes from phenotype results)
-        setCurrentStage('literature')
-        updateStageStatus('literature', 'running')
+        // Stage 3: Literature Search (if phenotype enabled and has results)
+        if (enablePhenotypeMatching) {
+          setCurrentStage('literature')
+          updateStageStatus('literature', 'running')
 
-        try {
-          console.log('='.repeat(80))
-          console.log('LITERATURE SEARCH - Checking for top genes')
-          console.log('  phenotypeResults length:', phenotypeResults?.length || 0)
-          console.log('='.repeat(80))
+          try {
+            console.log('='.repeat(80))
+            console.log('LITERATURE SEARCH - Checking for top genes')
+            console.log('  phenotypeResults length:', phenotypeResults?.length || 0)
+            console.log('='.repeat(80))
 
-          const topGenes: string[] = []
-          if (phenotypeResults && phenotypeResults.length > 0) {
-            const tier1Genes = phenotypeResults
-              .filter(r => isTier1(r.best_tier))
-              .map(r => r.gene_symbol)
+            const topGenes: string[] = []
+            if (phenotypeResults && phenotypeResults.length > 0) {
+              const tier1Genes = phenotypeResults
+                .filter(r => isTier1(r.best_tier))
+                .map(r => r.gene_symbol)
 
-            const tier2Genes = phenotypeResults
-              .filter(r => isTier2(r.best_tier))
-              .map(r => r.gene_symbol)
+              const tier2Genes = phenotypeResults
+                .filter(r => isTier2(r.best_tier))
+                .map(r => r.gene_symbol)
 
-            console.log('  Found Tier 1 genes:', tier1Genes)
-            console.log('  Found Tier 2 genes:', tier2Genes)
+              console.log('  Found Tier 1 genes:', tier1Genes)
+              console.log('  Found Tier 2 genes:', tier2Genes)
 
-            topGenes.push(...tier1Genes, ...tier2Genes.slice(0, 10))
+              topGenes.push(...tier1Genes, ...tier2Genes.slice(0, 10))
+            }
+
+            console.log('  Final topGenes list:', topGenes)
+
+            if (topGenes.length > 0) {
+              console.log('='.repeat(80))
+              console.log(`LITERATURE SEARCH - Searching for ${topGenes.length} top genes`)
+              console.log(`Genes: ${topGenes.join(', ')}`)
+              console.log('='.repeat(80))
+
+              await literatureSearchMutation.mutateAsync({
+                genes: topGenes,
+                hpoTerms: hpoTerms,
+                limit: 50,
+              })
+
+              updateStageStatus('literature', 'completed')
+              toast.success('Literature search complete')
+            } else {
+              console.log('='.repeat(80))
+              console.log('No top genes for literature search - skipping')
+              console.log('='.repeat(80))
+              updateStageStatus('literature', 'skipped')
+            }
+          } catch (error) {
+            console.error('Literature search failed:', error)
+            updateStageStatus('literature', 'failed')
+            toast.warning('Literature search failed - continuing without literature context')
           }
-
-          console.log('  Final topGenes list:', topGenes)
-
-          if (topGenes.length > 0) {
-            console.log('='.repeat(80))
-            console.log(`LITERATURE SEARCH - Searching for ${topGenes.length} top genes`)
-            console.log(`Genes: ${topGenes.join(', ')}`)
-            console.log('='.repeat(80))
-
-            await literatureSearchMutation.mutateAsync({
-              genes: topGenes,
-              hpoTerms: hpoTerms,
-              limit: 50,
-            })
-
-            updateStageStatus('literature', 'completed')
-            toast.success('Literature search complete')
-          } else {
-            console.log('='.repeat(80))
-            console.log('No top genes for literature search - skipping')
-            console.log('='.repeat(80))
-            updateStageStatus('literature', 'skipped')
-          }
-        } catch (error) {
-          console.error('Literature search failed:', error)
-          updateStageStatus('literature', 'failed')
-          toast.warning('Literature search failed - continuing without literature context')
+        } else {
+          console.log('Literature search disabled (phenotype matching disabled) - skipping')
+          updateStageStatus('literature', 'skipped')
         }
 
         // Pipeline complete - navigate to split view for clinical interpretation
@@ -279,12 +306,10 @@ export function ClinicalAnalysis({
 
         console.log('='.repeat(80))
         console.log('PIPELINE COMPLETE - Navigating to split view')
+        console.log('Enabled modules completed:')
+        if (enablePhenotypeMatching) console.log('  ✓ Phenotype results loaded')
+        if (enableScreening) console.log('  ✓ Screening results loaded')
         console.log('Clinical interpretation will start in ChatPanel')
-        console.log('All view data is loaded locally for instant access')
-        console.log('  - Variants: already loaded in ProcessingFlow')
-        console.log('  - Phenotype results: loaded to PhenotypeResultsContext')
-        console.log('  - Screening results: streamed to ScreeningResultsContext')
-        console.log('  - Literature results: loaded to LiteratureResultsContext')
         console.log('='.repeat(80))
 
         toast.success('Analysis pipeline complete')
@@ -301,6 +326,8 @@ export function ClinicalAnalysis({
     runAnalyses()
   }, [
     sessionId,
+    enableScreening,
+    enablePhenotypeMatching,
     getCompleteProfile,
     hpoTerms,
     runPhenotypeMatching,
@@ -321,8 +348,8 @@ export function ClinicalAnalysis({
     if (!currentStage) return 'Initializing...'
     const stageNames: Record<string, string> = {
       phenotype: 'Running Phenotype Matching',
-      screening: screeningProgress > 0 
-        ? `Streaming Screening Results (${screeningProgress}%)` 
+      screening: screeningProgress > 0
+        ? `Streaming Screening Results (${screeningProgress}%)`
         : 'Running Clinical Screening',
       literature: 'Searching Literature',
     }
@@ -390,7 +417,7 @@ export function ClinicalAnalysis({
           <div>
             <h1 className="text-3xl font-bold">Clinical Analysis</h1>
             <p className="text-base text-muted-foreground">
-              Preparing data for AI interpretation
+              Running selected analysis modules
             </p>
           </div>
         </div>
@@ -410,62 +437,72 @@ export function ClinicalAnalysis({
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {ANALYSIS_STAGES.map((stage) => {
-                  const status = stageStatuses[stage.id]
-                  const isComplete = status === 'completed'
-                  const isSkipped = status === 'skipped'
-                  const isCurrent = currentStage === stage.id
-                  const isFailed = status === 'failed'
+              {activeStages.length > 0 ? (
+                <div className="space-y-3">
+                  {activeStages.map((stage) => {
+                    const status = stageStatuses[stage.id]
+                    const isComplete = status === 'completed'
+                    const isSkipped = status === 'skipped'
+                    const isCurrent = currentStage === stage.id
+                    const isFailed = status === 'failed'
 
-                  return (
-                    <div
-                      key={stage.id}
-                      className={`
-                        flex items-start gap-3 p-3 rounded-lg border transition-all
-                        ${isCurrent ? 'bg-primary/5 border-primary/50' : 'bg-background'}
-                        ${isSkipped ? 'opacity-50' : ''}
-                      `}
-                    >
-                      <div className={`
-                        flex-shrink-0 p-2 rounded-full
-                        ${isComplete ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-muted'}
-                        ${isCurrent ? 'bg-primary/10 text-primary' : ''}
-                        ${isFailed ? 'bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400' : ''}
-                        ${isSkipped ? 'bg-muted/50 text-muted-foreground' : ''}
-                      `}>
-                        {isComplete && !isCurrent ? (
-                          <CheckCircle2 className="h-4 w-4" />
-                        ) : isFailed ? (
-                          <AlertCircle className="h-4 w-4" />
-                        ) : (
-                          stage.icon
+                    return (
+                      <div
+                        key={stage.id}
+                        className={`
+                          flex items-start gap-3 p-3 rounded-lg border transition-all
+                          ${isCurrent ? 'bg-primary/5 border-primary/50' : 'bg-background'}
+                          ${isSkipped ? 'opacity-50' : ''}
+                        `}
+                      >
+                        <div className={`
+                          flex-shrink-0 p-2 rounded-full
+                          ${isComplete ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-muted'}
+                          ${isCurrent ? 'bg-primary/10 text-primary' : ''}
+                          ${isFailed ? 'bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400' : ''}
+                          ${isSkipped ? 'bg-muted/50 text-muted-foreground' : ''}
+                        `}>
+                          {isComplete && !isCurrent ? (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ) : isFailed ? (
+                            <AlertCircle className="h-4 w-4" />
+                          ) : (
+                            stage.icon
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-medium">
+                            {stage.name}
+                            {isSkipped && <span className="text-xs text-muted-foreground ml-2">(skipped)</span>}
+                            {isFailed && <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">(warning)</span>}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{stage.description}</p>
+                        </div>
+                        {isCurrent && (
+                          <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-base font-medium">
-                          {stage.name}
-                          {isSkipped && <span className="text-xs text-muted-foreground ml-2">(skipped)</span>}
-                          {isFailed && <span className="text-xs text-orange-600 dark:text-orange-400 ml-2">(warning)</span>}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{stage.description}</p>
-                      </div>
-                      {isCurrent && (
-                        <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-md text-muted-foreground">
+                    No analysis modules selected - proceeding to variant view
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        <Alert>
-          <AlertDescription className="text-base">
-            Pipeline: phenotype → screening (streaming) → literature → AI interpretation
-          </AlertDescription>
-        </Alert>
+        {activeStages.length > 0 && (
+          <Alert>
+            <AlertDescription className="text-base">
+              {activeStages.map(s => s.name).join(' → ')} → AI interpretation
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     </div>
   )

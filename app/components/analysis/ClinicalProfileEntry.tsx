@@ -8,15 +8,16 @@
  *
  * STRUCTURE:
  * 1. Demographics (Required) - age, sex
- * 2. Clinical Information (Recommended) - ethnicity, indication, family history, sample info
- * 3. Phenotype Information (Optional) - HPO terms
- * 4. Result Preferences (Optional) - consent options
+ * 2. Analysis Modules (Opt-in) - enable screening, enable phenotype matching
+ * 3. Clinical Information (For Screening) - shown if screening enabled
+ * 4. Phenotype Information (For Phenotype Matching) - shown if phenotype enabled
+ * 5. Result Preferences (Optional) - consent options
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, Stethoscope, Settings
+  ArrowRight, Loader2, User, Stethoscope, Settings, Filter
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,6 +61,10 @@ interface ClinicalProfileEntryProps {
 
 export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileEntryProps) {
   const {
+    enableScreening,
+    enablePhenotypeMatching,
+    setEnableScreening,
+    setEnablePhenotypeMatching,
     hpoTerms,
     clinicalNotes,
     addHPOTerm,
@@ -89,7 +94,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [ageDays, setAgeDays] = useState<string>('')
   const [sex, setSex] = useState<Sex>('female')
 
-  // LOCAL STATE - Clinical Info
+  // LOCAL STATE - Clinical Info (for screening)
   const [ethnicity, setEthnicityLocal] = useState<Ethnicity | undefined>(undefined)
   const [ethnicityNote, setEthnicityNote] = useState('')
   const [indication, setIndication] = useState<Indication | undefined>(undefined)
@@ -136,6 +141,20 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       setGestationalAge('')
     }
   }, [sex])
+
+  // Auto-open Clinical Info if screening enabled
+  useEffect(() => {
+    if (enableScreening) {
+      setShowClinicalInfo(true)
+    }
+  }, [enableScreening])
+
+  // Auto-open Phenotype if phenotype matching enabled
+  useEffect(() => {
+    if (enablePhenotypeMatching) {
+      setShowPhenotype(true)
+    }
+  }, [enablePhenotypeMatching])
 
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !hpoTerms.find((t) => t.hpo_id === term.hpo_id)
@@ -231,54 +250,57 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       }
       setDemographics(demographics)
 
-      if (ethnicity) {
-        const ethnicityData: EthnicityData = {
-          primary: ethnicity,
-          note: ethnicityNote || undefined,
-        }
-        setEthnicity(ethnicityData)
-      }
-
-      if (indication) {
-        const familyHistory: FamilyHistory = {
-          has_affected_relatives: hasFamilyHistory,
-          consanguinity: hasConsanguinity,
-          details: familyHistoryDetails || undefined,
+      // Only save clinical info if screening is enabled
+      if (enableScreening) {
+        if (ethnicity) {
+          const ethnicityData: EthnicityData = {
+            primary: ethnicity,
+            note: ethnicityNote || undefined,
+          }
+          setEthnicity(ethnicityData)
         }
 
-        const clinicalContextData: ClinicalContext = {
-          indication,
-          indication_details: indicationDetails || undefined,
-          family_history: familyHistory,
+        if (indication) {
+          const familyHistory: FamilyHistory = {
+            has_affected_relatives: hasFamilyHistory,
+            consanguinity: hasConsanguinity,
+            details: familyHistoryDetails || undefined,
+          }
+
+          const clinicalContextData: ClinicalContext = {
+            indication,
+            indication_details: indicationDetails || undefined,
+            family_history: familyHistory,
+          }
+          setClinicalContext(clinicalContextData)
         }
-        setClinicalContext(clinicalContextData)
-      }
 
-      const reproductiveData: ReproductiveContext = {
-        is_pregnant: isPregnant,
-        gestational_age_weeks: gestationalAge ? parseInt(gestationalAge, 10) : undefined,
-        family_planning: familyPlanning,
-      }
-      setReproductive(reproductiveData)
-
-      if (sampleType) {
-        const sampleInfoData: SampleInfo = {
-          sample_type: sampleType,
-          has_parental_samples: hasParentalSamples,
-          has_affected_sibling: hasAffectedSibling,
+        const reproductiveData: ReproductiveContext = {
+          is_pregnant: isPregnant,
+          gestational_age_weeks: gestationalAge ? parseInt(gestationalAge, 10) : undefined,
+          family_planning: familyPlanning,
         }
-        setSampleInfo(sampleInfoData)
+        setReproductive(reproductiveData)
+
+        if (sampleType) {
+          const sampleInfoData: SampleInfo = {
+            sample_type: sampleType,
+            has_parental_samples: hasParentalSamples,
+            has_affected_sibling: hasAffectedSibling,
+          }
+          setSampleInfo(sampleInfoData)
+        }
+
+        const consentData: ConsentPreferences = {
+          secondary_findings: consentSecondaryFindings,
+          carrier_results: consentCarrierResults,
+          pharmacogenomics: consentPharmacogenomics,
+        }
+        setConsent(consentData)
       }
 
-      const consentData: ConsentPreferences = {
-        secondary_findings: consentSecondaryFindings,
-        carrier_results: consentCarrierResults,
-        pharmacogenomics: consentPharmacogenomics,
-      }
-      setConsent(consentData)
-
-      // Save HPO terms to backend
-      if (hpoTerms.length > 0 || localClinicalNotes) {
+      // Only save HPO terms if phenotype matching is enabled
+      if (enablePhenotypeMatching && (hpoTerms.length > 0 || localClinicalNotes)) {
         setClinicalNotes(localClinicalNotes)
         await savePhenotype()
       }
@@ -297,6 +319,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     ageYears,
     ageDays,
     sex,
+    enableScreening,
+    enablePhenotypeMatching,
     ethnicity,
     ethnicityNote,
     indication,
@@ -416,410 +440,465 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           </CardContent>
         </Card>
 
-        {/* RECOMMENDED: Clinical Information */}
-        <Card>
-          <Collapsible open={showClinicalInfo} onOpenChange={setShowClinicalInfo}>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4" />
-                    <span>Clinical Information</span>
-                    <Badge variant="outline" className="ml-2 text-xs">Recommended</Badge>
-                  </div>
-                  {showClinicalInfo ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
+        {/* Analysis Modules Selection */}
+        <Card className="border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Analysis Modules</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Select which analysis modules to run
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={enableScreening}
+                onChange={(e) => setEnableScreening(e.target.checked)}
+                className="w-5 h-5 mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <span className="text-base font-medium">Clinical Screening</span>
+                  <Badge variant="outline" className="text-xs">Recommended</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Age-aware variant prioritization with clinical actionability tiers
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={enablePhenotypeMatching}
+                onChange={(e) => setEnablePhenotypeMatching(e.target.checked)}
+                className="w-5 h-5 mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Dna className="h-4 w-4" />
+                  <span className="text-base font-medium">Phenotype Matching</span>
+                  <Badge variant="outline" className="text-xs">Optional</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Match variants to patient symptoms using HPO terms
+                </p>
+              </div>
+            </label>
+          </CardContent>
+        </Card>
+
+        {/* Clinical Information (shown only if screening enabled) */}
+        {enableScreening && (
+          <Card>
+            <Collapsible open={showClinicalInfo} onOpenChange={setShowClinicalInfo}>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Stethoscope className="h-4 w-4" />
+                      <span>Clinical Information</span>
+                      <Badge variant="outline" className="ml-2 text-xs">For Screening</Badge>
+                    </div>
+                    {showClinicalInfo ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </CardTitle>
+                  {!showClinicalInfo && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Ethnicity, clinical context, and family history improve screening accuracy
+                    </p>
                   )}
-                </CardTitle>
-                {!showClinicalInfo && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Ethnicity, clinical context, family history, and sample information improve analysis accuracy.
-                  </p>
-                )}
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0 space-y-6">
-                {/* Ethnicity */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Ethnicity & Ancestry</Label>
-                  <Select value={ethnicity} onValueChange={(val) => setEthnicityLocal(val as Ethnicity)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select ethnicity (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(ETHNICITY_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Textarea
-                    value={ethnicityNote}
-                    onChange={(e) => setEthnicityNote(e.target.value)}
-                    placeholder="Additional ancestry notes (optional)"
-                    className="text-base"
-                    rows={2}
-                  />
-                </div>
-
-                {/* Clinical Context */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Clinical Context</Label>
-                  <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Proactive Health Screening" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(INDICATION_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Textarea
-                    value={indicationDetails}
-                    onChange={(e) => setIndicationDetails(e.target.value)}
-                    placeholder="Additional details (optional)"
-                    className="text-base"
-                    rows={2}
-                  />
-                </div>
-
-                {/* Family History */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Family History</Label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasFamilyHistory}
-                        onChange={(e) => setHasFamilyHistory(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Known family history of genetic conditions</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasConsanguinity}
-                        onChange={(e) => setHasConsanguinity(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Consanguineous parents</span>
-                    </label>
-                  </div>
-                  {(hasFamilyHistory || hasConsanguinity) && (
-                    <Textarea
-                      value={familyHistoryDetails}
-                      onChange={(e) => setFamilyHistoryDetails(e.target.value)}
-                      placeholder="Family history details..."
-                      className="text-base"
-                      rows={3}
-                    />
-                  )}
-                </div>
-
-                {/* Sample Information */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Sample Information</Label>
-                  <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sample type (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasParentalSamples}
-                        onChange={(e) => setHasParentalSamples(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Parental samples available</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasAffectedSibling}
-                        onChange={(e) => setHasAffectedSibling(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Affected sibling available</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Reproductive Context (only if female) */}
-                {sex === 'female' && (
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-6">
+                  {/* Ethnicity */}
                   <div className="space-y-3">
-                    <Label className="text-base font-medium">Reproductive Context</Label>
+                    <Label className="text-base font-medium">Ethnicity & Ancestry</Label>
+                    <Select value={ethnicity} onValueChange={(val) => setEthnicityLocal(val as Ethnicity)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ethnicity (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(ETHNICITY_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Textarea
+                      value={ethnicityNote}
+                      onChange={(e) => setEthnicityNote(e.target.value)}
+                      placeholder="Additional ancestry notes (optional)"
+                      className="text-base"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Clinical Context */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Clinical Context</Label>
+                    <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Proactive Health Screening" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(INDICATION_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Textarea
+                      value={indicationDetails}
+                      onChange={(e) => setIndicationDetails(e.target.value)}
+                      placeholder="Additional details (optional)"
+                      className="text-base"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Family History */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Family History</Label>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={isPregnant}
-                          onChange={(e) => setIsPregnant(e.target.checked)}
+                          checked={hasFamilyHistory}
+                          onChange={(e) => setHasFamilyHistory(e.target.checked)}
                           className="w-4 h-4"
                         />
-                        <span className="text-base">Patient is pregnant</span>
+                        <span className="text-base">Known family history of genetic conditions</span>
                       </label>
-                      {isPregnant && (
-                        <Input
-                          type="number"
-                          min="0"
-                          max="42"
-                          value={gestationalAge}
-                          onChange={(e) => setGestationalAge(e.target.value)}
-                          placeholder="Gestational age (weeks)"
-                          className="text-base ml-6"
-                        />
-                      )}
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={familyPlanning}
-                          onChange={(e) => setFamilyPlanning(e.target.checked)}
+                          checked={hasConsanguinity}
+                          onChange={(e) => setHasConsanguinity(e.target.checked)}
                           className="w-4 h-4"
                         />
-                        <span className="text-base">Family planning considerations</span>
+                        <span className="text-base">Consanguineous parents</span>
+                      </label>
+                    </div>
+                    {(hasFamilyHistory || hasConsanguinity) && (
+                      <Textarea
+                        value={familyHistoryDetails}
+                        onChange={(e) => setFamilyHistoryDetails(e.target.value)}
+                        placeholder="Family history details..."
+                        className="text-base"
+                        rows={3}
+                      />
+                    )}
+                  </div>
+
+                  {/* Sample Information */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Sample Information</Label>
+                    <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select sample type (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasParentalSamples}
+                          onChange={(e) => setHasParentalSamples(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Parental samples available</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasAffectedSibling}
+                          onChange={(e) => setHasAffectedSibling(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Affected sibling available</span>
                       </label>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
 
-        {/* OPTIONAL: Phenotype Section */}
-        <Card>
-          <Collapsible open={showPhenotype} onOpenChange={setShowPhenotype}>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Dna className="h-4 w-4" />
-                    <span>Phenotype Information</span>
-                    <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
-                  </div>
-                  {showPhenotype ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </CardTitle>
-                {!showPhenotype && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Adding patient symptoms (HPO terms) enables phenotype-based variant matching and prioritization.
-                  </p>
-                )}
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0 space-y-4">
-                <div ref={searchContainerRef}>
-                  <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search phenotype or HPO term..."
-                      className="pl-9 pr-9 text-base"
-                    />
-                    {isSearching && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
-                    {searchQuery && !isSearching && (
-                      <button
-                        onClick={clearSearch}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {showSuggestions && (
-                    <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
-                      {filteredSuggestions.map((term) => (
-                        <button
-                          key={term.hpo_id}
-                          onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
-                          className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-base font-medium">{term.name}</span>
-                              <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
-                            </div>
-                            {term.definition && (
-                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                {term.definition.replace(/^"/, '').replace(/".*$/, '')}
-                              </p>
-                            )}
-                          </div>
-                          <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
-                        </button>
-                      ))}
+                  {/* Reproductive Context (only if female) */}
+                  {sex === 'female' && (
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium">Reproductive Context</Label>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isPregnant}
+                            onChange={(e) => setIsPregnant(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Patient is pregnant</span>
+                        </label>
+                        {isPregnant && (
+                          <Input
+                            type="number"
+                            min="0"
+                            max="42"
+                            value={gestationalAge}
+                            onChange={(e) => setGestationalAge(e.target.value)}
+                            placeholder="Gestational age (weeks)"
+                            className="text-base ml-6"
+                          />
+                        )}
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={familyPlanning}
+                            onChange={(e) => setFamilyPlanning(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Family planning considerations</span>
+                        </label>
+                      </div>
                     </div>
                   )}
-                </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        )}
 
-                <Card className="border-primary/20 bg-primary/5">
-                  <Collapsible open={showAIAssist} onOpenChange={setShowAIAssist}>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between p-3 h-auto hover:bg-primary/10"
-                      >
-                        <div className="flex items-center gap-2 text-primary">
-                          <Sparkles className="h-4 w-4" />
-                          <span className="text-base font-medium">Suggest HPO terms from free text</span>
-                        </div>
-                        {showAIAssist ? (
-                          <ChevronUp className="h-4 w-4 text-primary" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-primary" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-3 pb-3 space-y-3">
-                        <Textarea
-                          value={aiInput}
-                          onChange={(e) => setAiInput(e.target.value)}
-                          placeholder="Example: Child with epilepsy, developmental delay and hypotonia"
-                          className="min-h-[80px] bg-background text-base"
-                        />
-                        <Button
-                          onClick={handleGenerateSuggestions}
-                          disabled={!aiInput.trim() || extractMutation.isPending}
-                          size="sm"
-                          className="w-full"
+        {/* Phenotype Information (shown only if phenotype matching enabled) */}
+        {enablePhenotypeMatching && (
+          <Card>
+            <Collapsible open={showPhenotype} onOpenChange={setShowPhenotype}>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Dna className="h-4 w-4" />
+                      <span>Phenotype Information</span>
+                      <Badge variant="outline" className="ml-2 text-xs">For Phenotype Matching</Badge>
+                    </div>
+                    {showPhenotype ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </CardTitle>
+                  {!showPhenotype && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Add patient symptoms (HPO terms) for phenotype-based variant matching
+                    </p>
+                  )}
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-4">
+                  <div ref={searchContainerRef}>
+                    <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search phenotype or HPO term..."
+                        className="pl-9 pr-9 text-base"
+                      />
+                      {isSearching && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                      {searchQuery && !isSearching && (
+                        <button
+                          onClick={clearSearch}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
-                          {extractMutation.isPending ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              <span className="text-base">Extracting...</span>
-                            </>
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {showSuggestions && (
+                      <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
+                        {filteredSuggestions.map((term) => (
+                          <button
+                            key={term.hpo_id}
+                            onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
+                            className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base font-medium">{term.name}</span>
+                                <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
+                              </div>
+                              {term.definition && (
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                  {term.definition.replace(/^"/, '').replace(/".*$/, '')}
+                                </p>
+                              )}
+                            </div>
+                            <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <Card className="border-primary/20 bg-primary/5">
+                    <Collapsible open={showAIAssist} onOpenChange={setShowAIAssist}>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-between p-3 h-auto hover:bg-primary/10"
+                        >
+                          <div className="flex items-center gap-2 text-primary">
+                            <Sparkles className="h-4 w-4" />
+                            <span className="text-base font-medium">Suggest HPO terms from free text</span>
+                          </div>
+                          {showAIAssist ? (
+                            <ChevronUp className="h-4 w-4 text-primary" />
                           ) : (
-                            <>
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              <span className="text-base">Generate Suggestions</span>
-                            </>
+                            <ChevronDown className="h-4 w-4 text-primary" />
                           )}
                         </Button>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </Card>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="px-3 pb-3 space-y-3">
+                          <Textarea
+                            value={aiInput}
+                            onChange={(e) => setAiInput(e.target.value)}
+                            placeholder="Example: Child with epilepsy, developmental delay and hypotonia"
+                            className="min-h-[80px] bg-background text-base"
+                          />
+                          <Button
+                            onClick={handleGenerateSuggestions}
+                            disabled={!aiInput.trim() || extractMutation.isPending}
+                            size="sm"
+                            className="w-full"
+                          >
+                            {extractMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                <span className="text-base">Extracting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                <span className="text-base">Generate Suggestions</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium">Additional Clinical Notes</Label>
-                  <Textarea
-                    value={localClinicalNotes}
-                    onChange={(e) => setLocalClinicalNotes(e.target.value)}
-                    placeholder="e.g. Patient has recurrent febrile seizures..."
-                    className="min-h-[100px] text-base bg-background"
-                  />
-                </div>
-
-                {hpoTerms.length > 0 ? (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Selected Phenotypes ({hpoTerms.length})</p>
-                    {hpoTerms.map((term) => (
-                      <HPOTermCard
-                        key={term.hpo_id}
-                        hpoId={term.hpo_id}
-                        name={term.name}
-                        definition={term.definition}
-                        onRemove={handleRemoveTerm}
-                      />
-                    ))}
+                    <Label className="text-base font-medium">Additional Clinical Notes</Label>
+                    <Textarea
+                      value={localClinicalNotes}
+                      onChange={(e) => setLocalClinicalNotes(e.target.value)}
+                      placeholder="e.g. Patient has recurrent febrile seizures..."
+                      className="min-h-[100px] text-base bg-background"
+                    />
                   </div>
-                ) : (
-                  <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-sm text-muted-foreground">No phenotypes selected</p>
-                    <p className="text-xs text-muted-foreground mt-1">Search and add HPO terms above</p>
-                  </div>
-                )}
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
 
-        {/* OPTIONAL: Result Preferences */}
-        <Card>
-          <Collapsible open={showPreferences} onOpenChange={setShowPreferences}>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span>Result Preferences</span>
-                    <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
-                  </div>
-                  {showPreferences ? (
-                    <ChevronUp className="h-4 w-4" />
+                  {hpoTerms.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Selected Phenotypes ({hpoTerms.length})</p>
+                      {hpoTerms.map((term) => (
+                        <HPOTermCard
+                          key={term.hpo_id}
+                          hpoId={term.hpo_id}
+                          name={term.name}
+                          definition={term.definition}
+                          onRemove={handleRemoveTerm}
+                        />
+                      ))}
+                    </div>
                   ) : (
-                    <ChevronDown className="h-4 w-4" />
+                    <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                      <p className="text-sm text-muted-foreground">No phenotypes selected</p>
+                      <p className="text-xs text-muted-foreground mt-1">Search and add HPO terms above</p>
+                    </div>
                   )}
-                </CardTitle>
-                {!showPreferences && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Configure which types of findings to include in your report.
-                  </p>
-                )}
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0 space-y-3">
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={consentSecondaryFindings}
-                      onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-base">Report ACMG Secondary Findings</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={consentCarrierResults}
-                      onChange={(e) => setConsentCarrierResults(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-base">Report carrier status for recessive conditions</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={consentPharmacogenomics}
-                      onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-base">Include pharmacogenomics results</span>
-                  </label>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        )}
+
+        {/* Result Preferences (only if screening enabled) */}
+        {enableScreening && (
+          <Card>
+            <Collapsible open={showPreferences} onOpenChange={setShowPreferences}>
+              <CollapsibleTrigger asChild>
+                <CardHeader className="pb-3 cursor-pointer hover:bg-accent/50">
+                  <CardTitle className="text-lg flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span>Result Preferences</span>
+                      <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
+                    </div>
+                    {showPreferences ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </CardTitle>
+                  {!showPreferences && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Configure which types of findings to include in your report
+                    </p>
+                  )}
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 space-y-3">
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consentSecondaryFindings}
+                        onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Report ACMG Secondary Findings</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consentCarrierResults}
+                        onChange={(e) => setConsentCarrierResults(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Report carrier status for recessive conditions</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consentPharmacogenomics}
+                        onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Include pharmacogenomics results</span>
+                    </label>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end">

@@ -3,7 +3,8 @@
  *
  * Manages patient clinical profile as LOCAL STATE:
  * - Demographics (age, sex) - LOCAL ONLY
- * - Ethnicity & ancestry - LOCAL ONLY  
+ * - Module Enablement (screening, phenotype) - LOCAL ONLY
+ * - Ethnicity & ancestry - LOCAL ONLY
  * - Family history - LOCAL ONLY
  * - Clinical context - LOCAL ONLY
  * - Reproductive context - LOCAL ONLY
@@ -30,6 +31,12 @@ import type {
 } from '@/types/clinical-profile.types'
 
 interface ClinicalProfileContextValue {
+  // Module enablement
+  enableScreening: boolean
+  enablePhenotypeMatching: boolean
+  setEnableScreening: (enabled: boolean) => void
+  setEnablePhenotypeMatching: (enabled: boolean) => void
+
   // Local state
   demographics: Demographics
   ethnicity?: EthnicityData
@@ -75,6 +82,10 @@ interface ClinicalProfileProviderProps {
 }
 
 export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfileProviderProps) {
+  // Module enablement (default: both enabled)
+  const [enableScreening, setEnableScreening] = useState(true)
+  const [enablePhenotypeMatching, setEnablePhenotypeMatching] = useState(true)
+
   // Local state - NO backend storage
   const [demographics, setDemographics] = useState<Demographics>({ sex: 'female' })
   const [ethnicity, setEthnicity] = useState<EthnicityData | undefined>(undefined)
@@ -177,6 +188,10 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   }, [sessionId, demographics, ethnicity, clinicalContext, localHPOTerms, localClinicalNotes, reproductive, sampleInfo, consent])
 
   const value: ClinicalProfileContextValue = {
+    enableScreening,
+    enablePhenotypeMatching,
+    setEnableScreening,
+    setEnablePhenotypeMatching,
     demographics,
     ethnicity,
     clinicalContext,
