@@ -28,6 +28,8 @@ export default function AnalysisPage() {
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { currentStep } = useJourney()
 
+  console.log('[AnalysisPage] RENDER - currentStep:', currentStep, 'sessionId:', currentSessionId)
+
   // Handle upload+validation complete - add sessionId to URL
   const handleUploadValidationComplete = (sessionId: string) => {
     setCurrentSessionId(sessionId)
@@ -37,6 +39,7 @@ export default function AnalysisPage() {
 
   // Step 1: Upload & Validation
   if (currentStep === 'upload' || currentStep === 'validation') {
+    console.log('[AnalysisPage] Rendering UploadValidationFlow')
     return (
       <UploadValidationFlow
         onComplete={handleUploadValidationComplete}
@@ -46,6 +49,7 @@ export default function AnalysisPage() {
 
   // Step 2: Processing (ACMG classification)
   if (currentStep === 'processing') {
+    console.log('[AnalysisPage] Rendering ProcessingFlow')
     if (!currentSessionId) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -61,6 +65,7 @@ export default function AnalysisPage() {
 
   // Step 3: Clinical Profile Entry
   if (currentStep === 'profile') {
+    console.log('[AnalysisPage] Rendering ClinicalProfileEntry')
     if (!currentSessionId) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -75,6 +80,7 @@ export default function AnalysisPage() {
 
   // Step 4: Analysis View
   if (currentStep === 'analysis') {
+    console.log('[AnalysisPage] Rendering ModuleRouter')
     if (!currentSessionId) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -87,5 +93,6 @@ export default function AnalysisPage() {
     return <ModuleRouter sessionId={currentSessionId} />
   }
 
+  console.log('[AnalysisPage] No matching step, returning null')
   return null
 }

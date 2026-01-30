@@ -106,7 +106,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   const startedRef = useRef(false)
   const streamingStartedRef = useRef(false)
 
-  const { nextStep } = useJourney()
+  const { nextStep, currentStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
   const { loadAllVariants } = useVariantsResults()
 
@@ -122,10 +122,13 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     taskId,
     hasStarted,
     isStreaming,
+    currentStep,
     startedRef: startedRef.current,
     streamingStartedRef: streamingStartedRef.current,
     taskReady: taskStatus?.ready,
     taskSuccessful: taskStatus?.successful,
+    taskStatusExists: !!taskStatus,
+    taskStatusInfo: taskStatus?.info,
   })
 
   // Start processing on mount (only once)
@@ -160,7 +163,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Handle task completion → Wait for streaming → Advance
   useEffect(() => {
-    console.log('[ProcessingFlow] Task completion effect - ready:', taskStatus?.ready, 'streamingStartedRef:', streamingStartedRef.current)
+    console.log('[ProcessingFlow] Task completion effect - ready:', taskStatus?.ready, 'streamingStartedRef:', streamingStartedRef.current, 'currentStep:', currentStep)
     
     if (!taskStatus?.ready) return
     if (streamingStartedRef.current) {
@@ -222,10 +225,13 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       toast.error('Processing failed', { description: error })
       onError?.(new Error(error))
     }
-  }, [taskStatus, sessionId, loadAllVariants, nextStep, onComplete, onError])
+  }, [taskStatus, sessionId, loadAllVariants, nextStep, onComplete, onError, currentStep])
 
   // Get progress from backend
   const getProgress = useCallback((): number => {
+    const progress = isStreaming ? 95 : (taskStatus?.info?.progress as number | undefined) || (hasStarted ? 5 : 0)
+    console.log('[ProcessingFlow] getProgress - isStreaming:', isStreaming, 'progress:', progress)
+    
     // If streaming, show 95% (indicates still working, not stuck at 100%)
     if (isStreaming) {
       return 95
@@ -234,9 +240,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     if (!taskStatus?.info) return hasStarted ? 5 : 0
 
     // Use progress from backend if available
-    const progress = taskStatus.info.progress as number | undefined
-    if (typeof progress === 'number') {
-      return progress
+    const backendProgress = taskStatus.info.progress as number | undefined
+    if (typeof backendProgress === 'number') {
+      return backendProgress
     }
 
     return 10
@@ -250,12 +256,16 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
+    console.log('[ProcessingFlow] getCurrentStage - taskStatus exists:', !!taskStatus, 'taskStatus.info:', taskStatus?.info, 'hasStarted:', hasStarted, 'isStreaming:', isStreaming)
+    
     if (!taskStatus?.info?.stage) {
+      console.log('[ProcessingFlow] ⚠️ NO STAGE - hasStarted:', hasStarted, 'returning:', hasStarted ? 'Initializing pipeline...' : 'Starting...')
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
     }
 
     const stage = taskStatus.info.stage as string
+    console.log('[ProcessingFlow] ✓ Stage from backend:', stage)
 
     // Format stage name for display
     const stageNames: Record<string, string> = {
@@ -271,7 +281,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     }
 
     return stageNames[stage] || stage
-  }, [taskStatus, hasStarted])
+  }, [taskStatus, hasStarted, isStreaming])
 
   // Check if a stage is complete based on completed_stages from backend
   const isStageComplete = useCallback((stageId: string): boolean => {
@@ -316,6 +326,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   const progress = getProgress()
   const currentStage = getCurrentStage()
+
+  console.log('[ProcessingFlow] Render values - progress:', progress, 'currentStage:', currentStage)
 
   // Error State
   if (errorMessage) {
