@@ -5,10 +5,6 @@
  * Two states:
  * - Expanded (256px): Full text labels
  * - Collapsed (64px): Icon-only mode
- *
- * Module states:
- * - Disabled: Module not enabled in clinical profile
- * - Active: Available for use
  */
 
 import Link from 'next/link'
@@ -23,7 +19,6 @@ import {
   BookOpen,
   Filter,
   Settings,
-  XCircle,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -33,14 +28,12 @@ import {
   TooltipTrigger,
 } from '@helix/shared/components/ui/tooltip'
 import { useSession } from '@/contexts/SessionContext'
-import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { cn } from '@helix/shared/lib/utils'
 
 interface Module {
   id: string
   name: string
   icon: typeof Microscope
-  requiresEnablement?: 'screening' | 'phenotype' // Which clinical profile flag it depends on
 }
 
 const MODULES: Module[] = [
@@ -53,19 +46,16 @@ const MODULES: Module[] = [
     id: 'vus',
     name: 'Clinical Screening',
     icon: Shield,
-    requiresEnablement: 'screening',
   },
   {
     id: 'phenotype',
     name: 'Phenotype Matching',
     icon: Dna,
-    requiresEnablement: 'phenotype',
   },
   {
     id: 'literature',
     name: 'Literature Analysis',
     icon: BookOpen,
-    requiresEnablement: 'phenotype', // Literature depends on phenotype
   },
 ]
 
@@ -77,17 +67,7 @@ export function Sidebar() {
     setSelectedModule,
   } = useSession()
 
-  const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
-
-  const isModuleEnabled = (module: Module): boolean => {
-    if (!module.requiresEnablement) return true
-    if (module.requiresEnablement === 'screening') return enableScreening
-    if (module.requiresEnablement === 'phenotype') return enablePhenotypeMatching
-    return true
-  }
-
-  const handleModuleClick = (moduleId: string, enabled: boolean) => {
-    if (!enabled) return
+  const handleModuleClick = (moduleId: string) => {
     setSelectedModule(moduleId)
   }
 
@@ -151,46 +131,8 @@ export function Sidebar() {
         {/* Module Items */}
         {MODULES.map((module) => {
           const Icon = module.icon
-          const isEnabled = isModuleEnabled(module)
           const isSelected = selectedModule === module.id
 
-          // Disabled state (not enabled in clinical profile)
-          if (!isEnabled) {
-            return (
-              <TooltipProvider key={module.id}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-md opacity-40 cursor-not-allowed",
-                        !isSidebarOpen && "justify-center px-2"
-                      )}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" />
-                      {isSidebarOpen && (
-                        <>
-                          <span className="flex-1 text-base text-left line-through">
-                            {module.name}
-                          </span>
-                          <XCircle className="h-3 w-3 text-muted-foreground shrink-0" />
-                        </>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p className="text-sm">
-                      {isSidebarOpen
-                        ? 'Module not enabled in clinical profile'
-                        : `${module.name} (disabled)`
-                      }
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )
-          }
-
-          // Active state
           return (
             <TooltipProvider key={module.id}>
               <Tooltip>
@@ -201,7 +143,7 @@ export function Sidebar() {
                       "w-full",
                       isSidebarOpen ? "justify-start" : "justify-center px-2"
                     )}
-                    onClick={() => handleModuleClick(module.id, isEnabled)}
+                    onClick={() => handleModuleClick(module.id)}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
                     {isSidebarOpen && <span className="ml-3 text-base">{module.name}</span>}
