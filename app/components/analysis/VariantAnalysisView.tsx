@@ -349,7 +349,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
 // ============================================================================
 
 export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
-  // Get data from context (pre-loaded in ClinicalAnalysis Stage 4)
+  // Get data from context (pre-loaded in ProcessingFlow Export phase)
   const {
     allGenes,
     totalVariants,
