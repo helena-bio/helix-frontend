@@ -86,11 +86,13 @@ export async function compressFile(
 /**
  * Estimate if compression would be beneficial
  * 
+ * CRITICAL: Only compress uncompressed .vcf files!
+ * User can upload .vcf.gz if they want - we accept both.
+ * 
  * Rules:
- * - Already compressed files (.gz, .zip, .bz2): NO
- * - Small files (<10MB): NO (overhead not worth it)
- * - Text-based files (.vcf, .txt, .csv): YES
- * - Large files (>10MB): YES
+ * - .vcf.gz files: NO (already compressed, user chose this)
+ * - .vcf files >10MB: YES (auto-compress for faster upload)
+ * - .vcf files <10MB: NO (overhead not worth it)
  * 
  * @param file - File to check
  * @returns True if compression recommended
@@ -99,11 +101,18 @@ export function shouldCompress(file: File): boolean {
   const fileName = file.name.toLowerCase()
   const fileSizeMB = file.size / (1024 * 1024)
   
-  // Already compressed
-  if (fileName.endsWith('.gz') || 
+  // ONLY compress uncompressed .vcf files
+  // If user uploads .vcf.gz, respect their choice - don't re-compress!
+  if (fileName.endsWith('.vcf.gz') || 
+      fileName.endsWith('.gz') ||
       fileName.endsWith('.zip') || 
       fileName.endsWith('.bz2') ||
       fileName.endsWith('.bgz')) {
+    return false
+  }
+  
+  // Only compress .vcf files (not .txt, .csv, etc)
+  if (!fileName.endsWith('.vcf')) {
     return false
   }
   
@@ -112,16 +121,8 @@ export function shouldCompress(file: File): boolean {
     return false
   }
   
-  // Text-based genomics files (high compression ratio expected)
-  if (fileName.endsWith('.vcf') || 
-      fileName.endsWith('.txt') ||
-      fileName.endsWith('.csv') ||
-      fileName.endsWith('.tsv') ||
-      fileName.endsWith('.bed')) {
-    return true
-  }
-  
-  return false
+  // Large uncompressed .vcf file - compress it!
+  return true
 }
 
 /**

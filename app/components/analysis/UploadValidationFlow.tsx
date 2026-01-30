@@ -4,9 +4,10 @@
  * UploadValidationFlow Component - Unified Upload + Validation + QC Experience
  *
  * AUTO-COMPRESSION: Files are automatically compressed before upload for faster speeds
- * - Happens transparently in background
- * - No additional UI needed
- * - User sees only upload progress
+ * - Happens transparently with visible progress
+ * - Shows "Auto-compressing..." during compression
+ * - Shows "Uploading..." during upload
+ * - User can upload .vcf.gz if they want (no re-compression)
  *
  * PERFORMANCE LOGGING: Detailed console logs for debugging upload performance
  *
@@ -20,10 +21,11 @@
  *
  * Seamless flow:
  * 1. File Selection (drag & drop or browse) - Journey: upload
- * 2. Upload Progress - Journey: upload
- * 3. Validation Progress - Journey: validation (direct advance)
- * 4. QC Results display - Journey: validation
- * 5. User clicks "Start Processing" -> Journey: processing
+ * 2. Compression (if .vcf) - Shows progress
+ * 3. Upload Progress - Journey: upload
+ * 4. Validation Progress - Journey: validation (direct advance)
+ * 5. QC Results display - Journey: validation
+ * 6. User clicks "Start Processing" -> Journey: processing
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
@@ -46,7 +48,7 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024 * 1024 // 20GB (increased for nuclear ser
 const ALLOWED_EXTENSIONS = ['.vcf', '.vcf.gz']
 
 // Flow phases
-type FlowPhase = 'selection' | 'uploading' | 'validating' | 'qc_results' | 'error'
+type FlowPhase = 'selection' | 'compressing' | 'uploading' | 'validating' | 'qc_results' | 'error'
 
 interface QCResults {
   totalVariants: number
@@ -71,6 +73,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [compressionProgress, setCompressionProgress] = useState(0)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [validationProgress, setValidationProgress] = useState(0)
   const [wasCompressed, setWasCompressed] = useState(false) // Track if file was auto-compressed
@@ -83,7 +86,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const uploadMutation = useUploadVCF()
   const startValidationMutation = useStartValidation()
 
-  // Compression hook (invisible to user - transparent optimization)
+  // Compression hook
   const { compress, shouldCompress, isSupported: isCompressionSupported } = useFileCompression()
 
   // Journey context
@@ -144,12 +147,14 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     return !!(selectedFile && phase === 'selection' && !validationError)
   }, [selectedFile, phase, validationError])
 
-  // Is processing (uploading or validating)
-  const isProcessing = phase === 'uploading' || phase === 'validating'
+  // Is processing (compressing, uploading or validating)
+  const isProcessing = phase === 'compressing' || phase === 'uploading' || phase === 'validating'
 
   // Get button text based on phase
   const getButtonText = () => {
     switch (phase) {
+      case 'compressing':
+        return 'Auto-compressing...'
       case 'uploading':
         return 'Uploading...'
       case 'validating':
@@ -158,6 +163,20 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         return 'Upload & Analyze'
     }
   }
+
+  // Get current progress based on phase
+  const currentProgress = useMemo(() => {
+    switch (phase) {
+      case 'compressing':
+        return compressionProgress
+      case 'uploading':
+        return uploadProgress
+      case 'validating':
+        return validationProgress || 10
+      default:
+        return 0
+    }
+  }, [phase, compressionProgress, uploadProgress, validationProgress])
 
   // File validation
   const validateFile = useCallback((file: File): string | null => {
@@ -252,6 +271,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const handleRemoveFile = useCallback(() => {
     setSelectedFile(null)
     setValidationError(null)
+    setCompressionProgress(0)
     setUploadProgress(0)
     setWasCompressed(false)
     if (fileInputRef.current) {
@@ -259,15 +279,15 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     }
   }, [])
 
-  // Submit handler - AUTO-COMPRESS then upload (transparent optimization)
+  // Submit handler - AUTO-COMPRESS then upload
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !selectedFile) return
 
     const totalStartTime = performance.now()
 
+    setCompressionProgress(0)
     setUploadProgress(0)
     setValidationProgress(0)
-    setPhase('uploading')
 
     console.log('='.repeat(80))
     console.log('[FRONTEND UPLOAD] START')
@@ -282,28 +302,30 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       let compressionTime = 0
       let compressionRatio = 1
 
-      // AUTO-COMPRESS if beneficial (invisible to user - transparent optimization)
-      // User sees "Uploading..." not "Compressing..." - compression happens in background
+      // AUTO-COMPRESS if beneficial (ONLY .vcf files, NOT .vcf.gz)
       if (isCompressionSupported && shouldCompress(selectedFile)) {
         try {
           console.log('[COMPRESSION] Starting compression...')
+          setPhase('compressing')
+          
           const compressionStart = performance.now()
           
-          // Compress file in background (typically 20-30 seconds for 4GB VCF)
-          fileToUpload = await compress(selectedFile)
-          
+          // Compress file with progress tracking
+          fileToUpload = await compress(selectedFile, (progress) => {
+            setCompressionProgress(progress)
+          })
+
           compressionTime = (performance.now() - compressionStart) / 1000
           compressionRatio = selectedFile.size / fileToUpload.size
           setWasCompressed(true)
-          
+
           console.log(`[COMPRESSION] Complete in ${compressionTime.toFixed(2)}s`)
           console.log(`[COMPRESSION] Original: ${(selectedFile.size / (1024**2)).toFixed(2)} MB`)
           console.log(`[COMPRESSION] Compressed: ${(fileToUpload.size / (1024**2)).toFixed(2)} MB`)
           console.log(`[COMPRESSION] Ratio: ${compressionRatio.toFixed(2)}x (${((1 - 1/compressionRatio) * 100).toFixed(1)}% smaller)`)
-          
+
         } catch (compressionError) {
           // Compression failed - fallback to original file silently
-          // User experience is unaffected - upload continues normally
           console.warn('[COMPRESSION] Failed, uploading original file:', compressionError)
           fileToUpload = selectedFile
           setWasCompressed(false)
@@ -321,6 +343,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       console.log('[UPLOAD] Starting upload...')
       console.log(`[UPLOAD] File to upload: ${(fileToUpload.size / (1024**2)).toFixed(2)} MB`)
       
+      setPhase('uploading')
+      setUploadProgress(0) // Reset progress for upload phase
+
       const uploadStart = performance.now()
       let lastProgressTime = uploadStart
       let lastProgressBytes = 0
@@ -331,24 +356,24 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         genomeBuild: 'GRCh38',
         onProgress: (progress) => {
           setUploadProgress(progress)
-          
+
           // Log progress every 10% or every 5 seconds
           if (progress % 10 === 0 || performance.now() - lastProgressTime > 5000) {
             const currentTime = performance.now()
             const uploadedBytes = (fileToUpload.size * progress) / 100
             const elapsedTime = (currentTime - uploadStart) / 1000
-            
+
             // Instant throughput
             const instantBytes = uploadedBytes - lastProgressBytes
             const instantTime = (currentTime - lastProgressTime) / 1000
             const instantThroughput = instantTime > 0 ? (instantBytes / (1024**2)) / instantTime : 0
-            
+
             // Average throughput
             const avgThroughput = elapsedTime > 0 ? (uploadedBytes / (1024**2)) / elapsedTime : 0
-            
+
             console.log(`[UPLOAD PROGRESS] ${progress}% - ${(uploadedBytes / (1024**2)).toFixed(1)} MB ` +
                        `(${avgThroughput.toFixed(1)} MB/s avg, ${instantThroughput.toFixed(1)} MB/s now)`)
-            
+
             lastProgressTime = currentTime
             lastProgressBytes = uploadedBytes
           }
@@ -357,7 +382,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
       const uploadTime = (performance.now() - uploadStart) / 1000
       const uploadThroughput = (fileToUpload.size / (1024**2)) / uploadTime
-      
+
       console.log(`[UPLOAD] Complete in ${uploadTime.toFixed(2)}s`)
       console.log(`[UPLOAD] Average throughput: ${uploadThroughput.toFixed(2)} MB/s`)
       console.log(`[UPLOAD] Session ID: ${uploadResult.id}`)
@@ -368,7 +393,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       // Phase 2: Start validation
       console.log('-'.repeat(80))
       console.log('[VALIDATION] Starting validation...')
-      
+
       setPhase('validating')
       flushSync(() => {
         nextStep() // upload -> validation (FORCE SYNC - no batching)
@@ -381,14 +406,14 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       const validationStart = performance.now()
       const validationResult = await startValidationMutation.mutateAsync(uploadResult.id)
       const validationTime = (performance.now() - validationStart) / 1000
-      
+
       setTaskId(validationResult.task_id)
-      
+
       console.log(`[VALIDATION] Task started in ${validationTime.toFixed(2)}s`)
       console.log(`[VALIDATION] Task ID: ${validationResult.task_id}`)
 
       // Task polling will be handled by useTaskStatus hook
-      
+
       // Final summary
       const totalTime = (performance.now() - totalStartTime) / 1000
       console.log('='.repeat(80))
@@ -408,13 +433,13 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     } catch (error) {
       const err = error as Error
       const errorTime = (performance.now() - totalStartTime) / 1000
-      
+
       console.error('='.repeat(80))
       console.error('[FRONTEND UPLOAD] FAILED')
       console.error(`[ERROR] After ${errorTime.toFixed(2)}s`)
       console.error(`[ERROR] ${err.message}`)
       console.error('='.repeat(80))
-      
+
       setPhase('error')
       setErrorMessage(err.message)
       toast.error('Process failed', { description: err.message })
@@ -431,6 +456,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setErrorMessage(null)
     setValidationError(null)
     setQcResults(null)
+    setCompressionProgress(0)
     setUploadProgress(0)
     setValidationProgress(0)
     setWasCompressed(false)
@@ -469,9 +495,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     a.click()
     URL.revokeObjectURL(url)
   }, [qcResults, selectedFile])
-
-  // Get current progress
-  const currentProgress = phase === 'uploading' ? uploadProgress : validationProgress || 10
 
   // Render - QC Results State
   if (phase === 'qc_results' && qcResults) {
