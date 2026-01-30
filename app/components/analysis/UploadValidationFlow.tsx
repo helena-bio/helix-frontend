@@ -20,6 +20,7 @@
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -262,7 +263,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
       // Phase 2: Start validation
       setPhase('validating')
-      nextStep() // upload -> validation (FIRST - update journey state)
+      flushSync(() => {
+        nextStep() // upload -> validation (FORCE SYNC - no batching)
+      })
       setValidationProgress(0)
 
       // THEN notify parent to update URL (after journey is synced)
