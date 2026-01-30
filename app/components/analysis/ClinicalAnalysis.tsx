@@ -6,6 +6,8 @@
  * NEW WORKFLOW - Complete clinical pipeline:
  * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
  * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
+ *    - Run computation (POST /screen)
+ *    - Stream results (GET /stream) for progressive loading
  * 3. Literature Search (for key genes) - AUTOMATIC
  * 4. Navigate to split view → Clinical Interpretation starts in ChatPanel
  *
@@ -91,7 +93,7 @@ export function ClinicalAnalysis({
 
   const { nextStep } = useJourney()
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
-  const { setScreeningResponse } = useScreeningResults()
+  const { loadScreeningResults, loadProgress: screeningProgress } = useScreeningResults()
   const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults, aggregatedResults: phenotypeResults } = usePhenotypeResults()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
@@ -99,10 +101,18 @@ export function ClinicalAnalysis({
   const calculateProgress = useCallback((): number => {
     const statuses = Object.values(stageStatuses)
     const completed = statuses.filter(s => s === 'completed' || s === 'skipped').length
-    const total = statuses.length
+    const running = statuses.filter(s => s === 'running').length
 
+    // If screening is running, factor in its streaming progress
+    if (currentStage === 'screening' && screeningProgress > 0) {
+      const baseProgress = (completed / statuses.length) * 100
+      const screeningContribution = (screeningProgress / statuses.length)
+      return Math.round(baseProgress + screeningContribution)
+    }
+
+    const total = statuses.length
     return Math.round((completed / total) * 100)
-  }, [stageStatuses])
+  }, [stageStatuses, currentStage, screeningProgress])
 
   const updateStageStatus = useCallback((stageId: string, status: StageStatus) => {
     setStageStatuses(prev => ({ ...prev, [stageId]: status }))
@@ -189,11 +199,18 @@ export function ClinicalAnalysis({
           }
 
           console.log('='.repeat(80))
-          console.log('SCREENING ANALYSIS - Enhanced with phenotype tiers')
+          console.log('SCREENING ANALYSIS - Step 1: Computing scores')
           console.log('='.repeat(80))
 
-          const screeningResponse = await screeningMutation.mutateAsync(screeningPayload)
-          setScreeningResponse(screeningResponse)
+          // Step 1: Run screening computation (saves to DuckDB + Redis cache)
+          await screeningMutation.mutateAsync(screeningPayload)
+
+          console.log('='.repeat(80))
+          console.log('SCREENING ANALYSIS - Step 2: Streaming results')
+          console.log('='.repeat(80))
+
+          // Step 2: Stream results from backend (instant if Redis cache hit!)
+          await loadScreeningResults(sessionId)
 
           updateStageStatus('screening', 'completed')
           toast.success('Clinical screening complete')
@@ -266,7 +283,7 @@ export function ClinicalAnalysis({
         console.log('All view data is loaded locally for instant access')
         console.log('  - Variants: already loaded in ProcessingFlow')
         console.log('  - Phenotype results: loaded to PhenotypeResultsContext')
-        console.log('  - Screening results: loaded to ScreeningResultsContext')
+        console.log('  - Screening results: streamed to ScreeningResultsContext')
         console.log('  - Literature results: loaded to LiteratureResultsContext')
         console.log('='.repeat(80))
 
@@ -290,8 +307,8 @@ export function ClinicalAnalysis({
     loadAllPhenotypeResults,
     phenotypeResults,
     screeningMutation,
+    loadScreeningResults,
     literatureSearchMutation,
-    setScreeningResponse,
     updateStageStatus,
     nextStep,
     onComplete,
@@ -304,11 +321,13 @@ export function ClinicalAnalysis({
     if (!currentStage) return 'Initializing...'
     const stageNames: Record<string, string> = {
       phenotype: 'Running Phenotype Matching',
-      screening: 'Running Clinical Screening',
+      screening: screeningProgress > 0 
+        ? `Streaming Screening Results (${screeningProgress}%)` 
+        : 'Running Clinical Screening',
       literature: 'Searching Literature',
     }
     return stageNames[currentStage] || 'Processing...'
-  }, [currentStage])
+  }, [currentStage, screeningProgress])
 
   const handleRetry = useCallback(() => {
     window.location.reload()
@@ -444,7 +463,7 @@ export function ClinicalAnalysis({
 
         <Alert>
           <AlertDescription className="text-base">
-            Pipeline: phenotype → screening → literature → AI interpretation
+            Pipeline: phenotype → screening (streaming) → literature → AI interpretation
           </AlertDescription>
         </Alert>
       </div>
