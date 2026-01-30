@@ -20,6 +20,7 @@
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { useStartProcessing } from '@/hooks/mutations'
 import { useTaskStatus, useSession } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -150,26 +151,31 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       const streamAndAdvance = async () => {
         try {
           console.log('[ProcessingFlow] Pipeline complete - streaming variants silently...')
-          
+
           // Stream ALL variants from Redis cache in background (no UI)
           await loadAllVariants(sessionId)
-          
-          console.log('[ProcessingFlow] Streaming complete - advancing to analysis')
-          
+
+          console.log('[ProcessingFlow] Streaming complete - advancing to profile')
+
           toast.success('Processing complete', {
             description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
           })
-          
+
+          // FORCE SYNC: Update journey state BEFORE URL update
+          flushSync(() => {
+            nextStep() // processing -> profile (FORCE SYNC)
+          })
           onComplete?.()
-          nextStep() // processing -> analysis
         } catch (error) {
           console.error('[ProcessingFlow] Streaming failed:', error)
           toast.error('Failed to load variants', {
             description: 'Continuing anyway - data will load on demand'
           })
           // Don't block - advance anyway, views will load data on demand
+          flushSync(() => {
+            nextStep() // processing -> profile (FORCE SYNC)
+          })
           onComplete?.()
-          nextStep()
         }
       }
 
