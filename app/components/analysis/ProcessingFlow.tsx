@@ -256,7 +256,13 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
-    console.log('[ProcessingFlow] getCurrentStage - taskStatus exists:', !!taskStatus, 'taskStatus.info:', taskStatus?.info, 'hasStarted:', hasStarted, 'isStreaming:', isStreaming)
+    console.log('[ProcessingFlow] getCurrentStage - isStreaming:', isStreaming, 'taskStatus exists:', !!taskStatus, 'taskStatus.info:', taskStatus?.info, 'hasStarted:', hasStarted)
+    
+    // IMPORTANT: Check isStreaming FIRST before checking taskStatus
+    if (isStreaming) {
+      console.log('[ProcessingFlow] ✓ STREAMING - returning "Exporting results"')
+      return 'Exporting results'
+    }
     
     if (!taskStatus?.info?.stage) {
       console.log('[ProcessingFlow] ⚠️ NO STAGE - hasStarted:', hasStarted, 'returning:', hasStarted ? 'Initializing pipeline...' : 'Starting...')
