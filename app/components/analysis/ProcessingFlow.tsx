@@ -97,8 +97,6 @@ const PIPELINE_STAGES: PipelineStage[] = [
 ]
 
 export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlowProps) {
-  console.log('[ProcessingFlow] RENDER - sessionId:', sessionId)
-  
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
@@ -118,23 +116,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     enabled: !!taskId,
   })
 
-  console.log('[ProcessingFlow] State:', {
-    taskId,
-    hasStarted,
-    isStreaming,
-    currentStep,
-    startedRef: startedRef.current,
-    streamingStartedRef: streamingStartedRef.current,
-    taskReady: taskStatus?.ready,
-    taskSuccessful: taskStatus?.successful,
-    taskStatusExists: !!taskStatus,
-    taskStatusInfo: taskStatus?.info,
-  })
-
   // Start processing on mount (only once)
   useEffect(() => {
-    console.log('[ProcessingFlow] Start processing effect - vcf_file_path:', session?.vcf_file_path, 'startedRef:', startedRef.current)
-    
     if (!session?.vcf_file_path || startedRef.current) return
 
     startedRef.current = true
@@ -142,16 +125,13 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
     const startProcessing = async () => {
       try {
-        console.log('[ProcessingFlow] Starting processing mutation...')
         const result = await startProcessingMutation.mutateAsync({
           sessionId,
           vcfFilePath: session.vcf_file_path!,
         })
-        console.log('[ProcessingFlow] Processing started, taskId:', result.task_id)
         setTaskId(result.task_id)
       } catch (error) {
         const err = error as Error
-        console.error('[ProcessingFlow] Start processing error:', err)
         setErrorMessage(err.message)
         toast.error('Failed to start processing', { description: err.message })
         onError?.(err)
@@ -163,41 +143,26 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Handle task completion → Wait for streaming → Advance
   useEffect(() => {
-    console.log('[ProcessingFlow] Task completion effect - ready:', taskStatus?.ready, 'streamingStartedRef:', streamingStartedRef.current, 'currentStep:', currentStep)
-    
     if (!taskStatus?.ready) return
-    if (streamingStartedRef.current) {
-      console.log('[ProcessingFlow] Already started streaming, skipping')
-      return
-    }
+    if (streamingStartedRef.current) return
 
     if (taskStatus.successful) {
-      console.log('[ProcessingFlow] Task successful, starting streaming...')
       streamingStartedRef.current = true
 
       const streamAndAdvance = async () => {
         try {
-          console.log('[ProcessingFlow] 1. Setting isStreaming = true')
           setIsStreaming(true)
-          
-          console.log('[ProcessingFlow] 2. Starting loadAllVariants...')
           await loadAllVariants(sessionId)
-          
-          console.log('[ProcessingFlow] 3. loadAllVariants complete')
 
           toast.success('Processing complete', {
             description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
           })
 
-          console.log('[ProcessingFlow] 4. Calling nextStep() with flushSync')
           flushSync(() => {
             nextStep() // processing -> profile (FORCE SYNC)
           })
           
-          console.log('[ProcessingFlow] 5. Calling onComplete()')
           onComplete?.()
-          
-          console.log('[ProcessingFlow] 6. streamAndAdvance complete!')
         } catch (error) {
           console.error('[ProcessingFlow] Streaming failed:', error)
           setIsStreaming(false)
@@ -215,7 +180,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       streamAndAdvance()
     } else if (taskStatus.failed) {
       const error = taskStatus.info?.error || 'Processing failed'
-      console.error('[ProcessingFlow] Task failed:', error)
       setErrorMessage(error)
       toast.error('Processing failed', { description: error })
       onError?.(new Error(error))
@@ -224,9 +188,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get progress from backend
   const getProgress = useCallback((): number => {
-    const progress = isStreaming ? 95 : (taskStatus?.info?.progress as number | undefined) || (hasStarted ? 5 : 0)
-    console.log('[ProcessingFlow] getProgress - isStreaming:', isStreaming, 'progress:', progress)
-    
     // If streaming, show 95% (indicates still working, not stuck at 100%)
     if (isStreaming) {
       return 95
@@ -251,22 +212,17 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
-    console.log('[ProcessingFlow] getCurrentStage - isStreaming:', isStreaming, 'taskStatus exists:', !!taskStatus, 'taskStatus.info:', taskStatus?.info, 'hasStarted:', hasStarted)
-    
     // IMPORTANT: Check isStreaming FIRST before checking taskStatus
     if (isStreaming) {
-      console.log('[ProcessingFlow] ✓ STREAMING - returning "Exporting results"')
       return 'Exporting results'
     }
     
     if (!taskStatus?.info?.stage) {
-      console.log('[ProcessingFlow] ⚠️ NO STAGE - hasStarted:', hasStarted, 'returning:', hasStarted ? 'Initializing pipeline...' : 'Starting...')
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
     }
 
     const stage = taskStatus.info.stage as string
-    console.log('[ProcessingFlow] ✓ Stage from backend:', stage)
 
     // Format stage name for display
     const stageNames: Record<string, string> = {
@@ -327,8 +283,6 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   const progress = getProgress()
   const currentStage = getCurrentStage()
-
-  console.log('[ProcessingFlow] Render values - progress:', progress, 'currentStage:', currentStage)
 
   // Error State
   if (errorMessage) {
