@@ -727,7 +727,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       </PopoverTrigger>
                       {filteredSuggestions.length > 0 && (
                         <PopoverContent 
-                          className="w-[--radix-popover-trigger-width] p-2 max-h-80 overflow-y-auto"
+                          className="p-2 max-h-80 overflow-y-auto"
+                          style={{ width: "var(--radix-popover-trigger-width)" }}
                           align="start"
                         >
                           <div className="space-y-1">
