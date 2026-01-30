@@ -7,8 +7,9 @@
  * 1. Phenotype Matching (if HPO terms provided) - OPTIONAL BUT FIRST
  * 2. Screening Analysis (enhanced with phenotype tiers) - REQUIRED
  * 3. Literature Search (for key genes) - AUTOMATIC
- * 4. Data Streaming (stream all variants to context) - REQUIRED
- * 5. Navigate to split view → Clinical Interpretation starts in ChatPanel
+ * 4. Navigate to split view → Clinical Interpretation starts in ChatPanel
+ *
+ * NOTE: Variants streaming already done in ProcessingFlow!
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -16,7 +17,6 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
-import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
 import { isTier1, isTier2 } from '@/types/tiers.types'
@@ -32,7 +32,6 @@ import {
   Dna,
   Filter,
   BookOpen,
-  Download,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -72,13 +71,6 @@ const ANALYSIS_STAGES: AnalysisStage[] = [
     description: 'Searching publications for key genes',
     required: false,
   },
-  {
-    id: 'streaming',
-    name: 'Data Streaming',
-    icon: <Download className="h-4 w-4" />,
-    description: 'Streaming all variants for instant visualization',
-    required: true,
-  },
 ]
 
 type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed'
@@ -92,7 +84,6 @@ export function ClinicalAnalysis({
     phenotype: 'pending',
     screening: 'pending',
     literature: 'pending',
-    streaming: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -102,7 +93,6 @@ export function ClinicalAnalysis({
   const { getCompleteProfile, hpoTerms } = useClinicalProfileContext()
   const { setScreeningResponse } = useScreeningResults()
   const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults, aggregatedResults: phenotypeResults } = usePhenotypeResults()
-  const { loadAllVariants, loadProgress: streamingProgress } = useVariantsResults()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
 
@@ -111,15 +101,8 @@ export function ClinicalAnalysis({
     const completed = statuses.filter(s => s === 'completed' || s === 'skipped').length
     const total = statuses.length
 
-    // If currently streaming, factor in streaming progress
-    if (currentStage === 'streaming' && stageStatuses.streaming === 'running') {
-      const baseProgress = (completed / total) * 100
-      const streamingWeight = (1 / total) * 100
-      return Math.round(baseProgress + (streamingProgress / 100) * streamingWeight)
-    }
-
     return Math.round((completed / total) * 100)
-  }, [stageStatuses, currentStage, streamingProgress])
+  }, [stageStatuses])
 
   const updateStageStatus = useCallback((stageId: string, status: StageStatus) => {
     setStageStatuses(prev => ({ ...prev, [stageId]: status }))
@@ -134,7 +117,7 @@ export function ClinicalAnalysis({
         const profile = getCompleteProfile()
 
         console.log('='.repeat(80))
-        console.log('CLINICAL ANALYSIS - PIPELINE (Stages 1-4)')
+        console.log('CLINICAL ANALYSIS - PIPELINE (Stages 1-3)')
         console.log('='.repeat(80))
         console.log(JSON.stringify(profile, null, 2))
         console.log('='.repeat(80))
@@ -274,40 +257,6 @@ export function ClinicalAnalysis({
           toast.warning('Literature search failed - continuing without literature context')
         }
 
-        // Stage 4: Data Streaming (stream ALL variants to context)
-        setCurrentStage('streaming')
-        updateStageStatus('streaming', 'running')
-
-        try {
-          console.log('='.repeat(80))
-          console.log('DATA STREAMING - Streaming all variants to context')
-          console.log('  sessionId:', sessionId)
-          console.log('  loadAllVariants function:', typeof loadAllVariants)
-          console.log('='.repeat(80))
-
-          console.log('[ClinicalAnalysis] Calling loadAllVariants...')
-
-          // Stream all variants directly to VariantsResultsContext
-          await loadAllVariants(sessionId)
-
-          console.log('[ClinicalAnalysis] loadAllVariants completed!')
-          console.log('='.repeat(80))
-          console.log('DATA STREAMING COMPLETE - All data loaded to context')
-          console.log('  - Variants: loaded to VariantsResultsContext')
-          console.log('  - Phenotype results: loaded to PhenotypeResultsContext')
-          console.log('  - Screening results: already in context')
-          console.log('  - Literature results: already in context')
-          console.log('='.repeat(80))
-
-          updateStageStatus('streaming', 'completed')
-          toast.success('Data streaming complete - ready for instant analysis')
-        } catch (error) {
-          console.error('[ClinicalAnalysis] Data streaming failed:', error)
-          updateStageStatus('streaming', 'failed')
-          toast.warning('Data streaming failed - views may load slowly')
-          // Don't throw - continue anyway, views will load data on demand
-        }
-
         // Pipeline complete - navigate to split view for clinical interpretation
         setCurrentStage(null)
 
@@ -315,6 +264,10 @@ export function ClinicalAnalysis({
         console.log('PIPELINE COMPLETE - Navigating to split view')
         console.log('Clinical interpretation will start in ChatPanel')
         console.log('All view data is loaded locally for instant access')
+        console.log('  - Variants: already loaded in ProcessingFlow')
+        console.log('  - Phenotype results: loaded to PhenotypeResultsContext')
+        console.log('  - Screening results: loaded to ScreeningResultsContext')
+        console.log('  - Literature results: loaded to LiteratureResultsContext')
         console.log('='.repeat(80))
 
         toast.success('Analysis pipeline complete')
@@ -339,7 +292,6 @@ export function ClinicalAnalysis({
     screeningMutation,
     literatureSearchMutation,
     setScreeningResponse,
-    loadAllVariants,
     updateStageStatus,
     nextStep,
     onComplete,
@@ -354,7 +306,6 @@ export function ClinicalAnalysis({
       phenotype: 'Running Phenotype Matching',
       screening: 'Running Clinical Screening',
       literature: 'Searching Literature',
-      streaming: 'Streaming Analysis Data',
     }
     return stageNames[currentStage] || 'Processing...'
   }, [currentStage])
@@ -430,11 +381,6 @@ export function ClinicalAnalysis({
             <div className="space-y-6">
               <div className="text-center">
                 <p className="text-lg font-medium capitalize">{getStageName()}</p>
-                {currentStage === 'streaming' && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {streamingProgress}% loaded
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -498,7 +444,7 @@ export function ClinicalAnalysis({
 
         <Alert>
           <AlertDescription className="text-base">
-            Pipeline: phenotype → screening → literature → data streaming → AI interpretation
+            Pipeline: phenotype → screening → literature → AI interpretation
           </AlertDescription>
         </Alert>
       </div>

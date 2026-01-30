@@ -16,13 +16,14 @@
  * - Real-time polling of task status
  * - Visual progress indicator with pipeline stages
  * - Error handling with retry
- * - Success state advances to analysis
+ * - Success state: streams variants THEN advances to analysis
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { useStartProcessing } from '@/hooks/mutations'
 import { useTaskStatus, useSession } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
+import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -88,9 +89,9 @@ const PIPELINE_STAGES: PipelineStage[] = [
   },
   {
     id: 'export',
-    name: 'Export',
+    name: 'Export & Caching',
     icon: <Download className="h-4 w-4" />,
-    description: 'Saving results to database',
+    description: 'Saving results and streaming data',
   },
 ]
 
@@ -98,10 +99,13 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
   const startedRef = useRef(false)
+  const streamingStartedRef = useRef(false)
 
   const { nextStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
+  const { loadAllVariants, loadProgress, isLoading: isStreamLoading } = useVariantsResults()
 
   // Get session for vcf_file_path
   const { data: session } = useSession(sessionId)
@@ -136,23 +140,49 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     startProcessing()
   }, [session?.vcf_file_path, sessionId, startProcessingMutation, onError])
 
-  // Handle task completion
+  // Handle task completion → Stream variants → Advance
   useEffect(() => {
     if (!taskStatus?.ready) return
+    if (streamingStartedRef.current) return // Don't run twice
 
     if (taskStatus.successful) {
-      toast.success('Processing complete', {
-        description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants analyzed`,
-      })
-      onComplete?.()
-      nextStep() // processing -> analysis
+      streamingStartedRef.current = true
+      setIsStreaming(true)
+
+      const streamAndAdvance = async () => {
+        try {
+          console.log('[ProcessingFlow] Pipeline complete - streaming variants from Redis cache...')
+          
+          // Stream ALL variants from Redis cache (instant since it's already cached!)
+          await loadAllVariants(sessionId)
+          
+          console.log('[ProcessingFlow] Streaming complete - advancing to analysis')
+          
+          toast.success('Processing complete', {
+            description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
+          })
+          
+          onComplete?.()
+          nextStep() // processing -> analysis
+        } catch (error) {
+          console.error('[ProcessingFlow] Streaming failed:', error)
+          toast.error('Failed to load variants', {
+            description: 'Continuing anyway - data will load on demand'
+          })
+          // Don't block - advance anyway, views will load data on demand
+          onComplete?.()
+          nextStep()
+        }
+      }
+
+      streamAndAdvance()
     } else if (taskStatus.failed) {
       const error = taskStatus.info?.error || 'Processing failed'
       setErrorMessage(error)
       toast.error('Processing failed', { description: error })
       onError?.(new Error(error))
     }
-  }, [taskStatus, nextStep, onComplete, onError])
+  }, [taskStatus, sessionId, loadAllVariants, nextStep, onComplete, onError])
 
   // Get progress from backend
   const getProgress = useCallback((): number => {
@@ -175,6 +205,10 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
+    if (isStreaming) {
+      return `Streaming variants data (${loadProgress}%)`
+    }
+
     if (!taskStatus?.info?.stage) {
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
@@ -191,11 +225,12 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       'reference_annotation': 'Adding reference data',
       'classification': 'Classifying variants',
       'export': 'Exporting results',
+      'caching': 'Caching results',
       'completed': 'Processing complete'
     }
 
     return stageNames[stage] || stage
-  }, [taskStatus, hasStarted])
+  }, [taskStatus, hasStarted, isStreaming, loadProgress])
 
   // Check if a stage is complete based on completed_stages from backend
   const isStageComplete = useCallback((stageId: string): boolean => {
@@ -205,10 +240,13 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Check if a stage is current
   const isStageActive = useCallback((stageId: string): boolean => {
+    // Export stage is active during streaming
+    if (stageId === 'export' && isStreaming) return true
+
     const currentStage = taskStatus?.info?.stage as string | undefined
     if (!currentStage) return false
     return currentStage === stageId
-  }, [taskStatus])
+  }, [taskStatus, isStreaming])
 
   // Retry handler
   const handleRetry = useCallback(async () => {
@@ -216,6 +254,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
     setErrorMessage(null)
     setTaskId(null)
+    setIsStreaming(false)
+    streamingStartedRef.current = false
 
     try {
       const result = await startProcessingMutation.mutateAsync({
@@ -233,7 +273,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   const progress = getProgress()
   const currentStage = getCurrentStage()
-  const isProcessing = !errorMessage && !taskStatus?.successful
+  const isProcessing = !errorMessage && (!taskStatus?.successful || isStreaming)
 
   // Error State
   if (errorMessage) {
@@ -272,8 +312,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     )
   }
 
-  // Success State (brief, before auto-advance)
-  if (taskStatus?.successful) {
+  // Success + Streaming State
+  if (taskStatus?.successful && isStreaming) {
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
         <Card className="w-full max-w-md border-green-500">
@@ -286,7 +326,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
               <div>
                 <h3 className="text-lg font-semibold mb-2">Processing Complete</h3>
                 <p className="text-md text-muted-foreground">
-                  Your variants have been analyzed and classified
+                  Streaming variants data from cache
                 </p>
               </div>
 
@@ -316,9 +356,20 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
                 </div>
               )}
 
-              <div className="flex items-center justify-center gap-3">
-                <HelixLoader size="xs" speed={2} />
-                <span className="text-md text-muted-foreground">Loading results...</span>
+              {/* Streaming Progress */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Progress value={loadProgress} className="h-2" />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Loading variants</span>
+                    <span>{Math.round(loadProgress)}%</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-3">
+                  <HelixLoader size="xs" speed={2} />
+                  <span className="text-md text-muted-foreground">Streaming from cache...</span>
+                </div>
               </div>
             </div>
           </CardContent>
