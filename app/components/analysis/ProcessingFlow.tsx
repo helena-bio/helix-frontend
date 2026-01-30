@@ -16,7 +16,7 @@
  * - Real-time polling of task status
  * - Visual progress indicator with pipeline stages
  * - Error handling with retry
- * - Success: streams variants silently in background then advances
+ * - Success: advances immediately, streams variants in background
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -101,7 +101,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
   const startedRef = useRef(false)
-  const streamingStartedRef = useRef(false)
+  const advancedRef = useRef(false)
 
   const { nextStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
@@ -140,46 +140,35 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     startProcessing()
   }, [session?.vcf_file_path, sessionId, startProcessingMutation, onError])
 
-  // Handle task completion → Stream variants silently → Advance
+  // Handle task completion → Advance immediately → Stream in background
   useEffect(() => {
     if (!taskStatus?.ready) return
-    if (streamingStartedRef.current) return // Don't run twice
+    if (advancedRef.current) return // Don't run twice
 
     if (taskStatus.successful) {
-      streamingStartedRef.current = true
+      advancedRef.current = true
 
-      const streamAndAdvance = async () => {
-        try {
-          console.log('[ProcessingFlow] Pipeline complete - streaming variants silently...')
+      toast.success('Processing complete', {
+        description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants analyzed`,
+      })
 
-          // Stream ALL variants from Redis cache in background (no UI)
-          await loadAllVariants(sessionId)
+      // ADVANCE IMMEDIATELY (no await!)
+      flushSync(() => {
+        nextStep() // processing -> profile (FORCE SYNC)
+      })
+      onComplete?.()
 
-          console.log('[ProcessingFlow] Streaming complete - advancing to profile')
+      // Stream variants in background (fire and forget)
+      console.log('[ProcessingFlow] Advancing to profile, streaming variants in background...')
+      loadAllVariants(sessionId)
+        .then(() => {
+          console.log('[ProcessingFlow] Background streaming complete')
+        })
+        .catch((error) => {
+          console.error('[ProcessingFlow] Background streaming failed:', error)
+          // Don't show error - data will load on demand
+        })
 
-          toast.success('Processing complete', {
-            description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
-          })
-
-          // FORCE SYNC: Update journey state BEFORE URL update
-          flushSync(() => {
-            nextStep() // processing -> profile (FORCE SYNC)
-          })
-          onComplete?.()
-        } catch (error) {
-          console.error('[ProcessingFlow] Streaming failed:', error)
-          toast.error('Failed to load variants', {
-            description: 'Continuing anyway - data will load on demand'
-          })
-          // Don't block - advance anyway, views will load data on demand
-          flushSync(() => {
-            nextStep() // processing -> profile (FORCE SYNC)
-          })
-          onComplete?.()
-        }
-      }
-
-      streamAndAdvance()
     } else if (taskStatus.failed) {
       const error = taskStatus.info?.error || 'Processing failed'
       setErrorMessage(error)
@@ -251,7 +240,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
     setErrorMessage(null)
     setTaskId(null)
-    streamingStartedRef.current = false
+    advancedRef.current = false
 
     try {
       const result = await startProcessingMutation.mutateAsync({
@@ -307,7 +296,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     )
   }
 
-  // Processing State (including silent streaming after success)
+  // Processing State
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-4">
