@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Popover, PopoverContent, PopoverTrigger } from '@helix/shared/components/ui/popover'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { HPOTermCard } from './HPOTermCard'
@@ -81,6 +82,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   // UI state
   const [searchQuery, setSearchQuery] = useState('')
+  const [showSearchPopover, setShowSearchPopover] = useState(false)
   const [showAIAssist, setShowAIAssist] = useState(false)
   const [showClinicalInfo, setShowClinicalInfo] = useState(false)
   const [showPhenotype, setShowPhenotype] = useState(false)
@@ -119,7 +121,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // LOCAL STATE - Clinical notes (synced with context)
   const [localClinicalNotes, setLocalClinicalNotes] = useState(clinicalNotes)
 
-  const searchContainerRef = useRef<HTMLDivElement>(null)
   const debouncedQuery = useDebounce(searchQuery, 300)
 
   const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
@@ -156,34 +157,28 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     }
   }, [enablePhenotypeMatching])
 
+  // Auto-open popover when search query has results
+  useEffect(() => {
+    if (searchQuery.length >= 2 && filteredSuggestions.length > 0) {
+      setShowSearchPopover(true)
+    } else {
+      setShowSearchPopover(false)
+    }
+  }, [searchQuery])
+
   const filteredSuggestions = searchResults?.terms.filter(
     (term) => !hpoTerms.find((t) => t.hpo_id === term.hpo_id)
   ) || []
 
   const hasRequiredFormData = !!(sex && (ageYears || ageDays))
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node) &&
-        searchQuery.length > 0
-      ) {
-        setSearchQuery('')
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [searchQuery])
-
   const handleAddTerm = useCallback(async (term: HPOTerm) => {
     if (!hpoTerms.find((t) => t.hpo_id === term.hpo_id)) {
       try {
         await addHPOTerm(term)
         toast.success('Added: ' + term.name)
+        setSearchQuery('')
+        setShowSearchPopover(false)
       } catch (error) {
         console.error('Failed to add term:', error)
         toast.error('Failed to add term')
@@ -351,9 +346,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   const clearSearch = useCallback(() => {
     setSearchQuery('')
+    setShowSearchPopover(false)
   }, [])
-
-  const showSuggestions = searchQuery.length >= 2 && filteredSuggestions.length > 0
 
   // Show ClinicalAnalysis after successful save
   if (showAnalysis) {
@@ -705,55 +699,65 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 space-y-4">
-                  <div ref={searchContainerRef}>
+                  {/* Search Phenotypes with Popover dropdown */}
+                  <div>
                     <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search phenotype or HPO term..."
-                        className="pl-9 pr-9 text-base"
-                      />
-                      {isSearching && (
-                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                      )}
-                      {searchQuery && !isSearching && (
-                        <button
-                          onClick={clearSearch}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    <Popover open={showSearchPopover} onOpenChange={setShowSearchPopover}>
+                      <PopoverTrigger asChild>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search phenotype or HPO term..."
+                            className="pl-9 pr-9 text-base"
+                          />
+                          {isSearching && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                          {searchQuery && !isSearching && (
+                            <button
+                              onClick={clearSearch}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </PopoverTrigger>
+                      {filteredSuggestions.length > 0 && (
+                        <PopoverContent 
+                          className="w-[--radix-popover-trigger-width] p-2 max-h-80 overflow-y-auto"
+                          align="start"
                         >
-                          <X className="h-4 w-4" />
-                        </button>
+                          <div className="space-y-1">
+                            {filteredSuggestions.map((term) => (
+                              <button
+                                key={term.hpo_id}
+                                onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
+                                className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-base font-medium">{term.name}</span>
+                                    <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
+                                  </div>
+                                  {term.definition && (
+                                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                      {term.definition.replace(/^"/, '').replace(/".*$/, '')}
+                                    </p>
+                                  )}
+                                </div>
+                                <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
                       )}
-                    </div>
-
-                    {showSuggestions && (
-                      <div className="mt-2 p-2 bg-card border border-border rounded-lg max-h-64 overflow-y-auto">
-                        {filteredSuggestions.map((term) => (
-                          <button
-                            key={term.hpo_id}
-                            onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
-                            className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-base font-medium">{term.name}</span>
-                                <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
-                              </div>
-                              {term.definition && (
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {term.definition.replace(/^"/, '').replace(/".*$/, '')}
-                                </p>
-                              )}
-                            </div>
-                            <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    </Popover>
                   </div>
 
+                  {/* AI Assist */}
                   <Card className="border-primary/20 bg-primary/5">
                     <Collapsible open={showAIAssist} onOpenChange={setShowAIAssist}>
                       <CollapsibleTrigger asChild>
@@ -803,6 +807,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     </Collapsible>
                   </Card>
 
+                  {/* Clinical Notes */}
                   <div className="space-y-2">
                     <Label className="text-base font-medium">Additional Clinical Notes</Label>
                     <Textarea
@@ -813,6 +818,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     />
                   </div>
 
+                  {/* Selected HPO Terms */}
                   {hpoTerms.length > 0 ? (
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Selected Phenotypes ({hpoTerms.length})</p>
