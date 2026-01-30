@@ -3,7 +3,7 @@
  *
  * Manages patient clinical profile as LOCAL STATE:
  * - Demographics (age, sex) - LOCAL ONLY
- * - Module Enablement (screening, phenotype) - LOCAL ONLY
+ * - Module Enablement (screening, phenotype) - LOCAL ONLY - DEFAULT: DISABLED
  * - Ethnicity & ancestry - LOCAL ONLY
  * - Family history - LOCAL ONLY
  * - Clinical context - LOCAL ONLY
@@ -82,9 +82,9 @@ interface ClinicalProfileProviderProps {
 }
 
 export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfileProviderProps) {
-  // Module enablement (default: both enabled)
-  const [enableScreening, setEnableScreening] = useState(true)
-  const [enablePhenotypeMatching, setEnablePhenotypeMatching] = useState(true)
+  // Module enablement (default: both disabled - user must opt-in)
+  const [enableScreening, setEnableScreening] = useState(false)
+  const [enablePhenotypeMatching, setEnablePhenotypeMatching] = useState(false)
 
   // Local state - NO backend storage
   const [demographics, setDemographics] = useState<Demographics>({ sex: 'female' })
