@@ -259,13 +259,14 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       setSessionId(uploadResult.id)
       setUploadProgress(100)
 
-      // CRITICAL: Notify parent of sessionId to add to URL
-      onComplete?.(uploadResult.id)
 
       // Phase 2: Start validation
       setPhase('validating')
-      nextStep() // upload -> validation (DIRECT CALL - no useEffect race condition)
+      nextStep() // upload -> validation (FIRST - update journey state)
       setValidationProgress(0)
+
+      // THEN notify parent to update URL (after journey is synced)
+      onComplete?.(uploadResult.id)
 
       const validationResult = await startValidationMutation.mutateAsync(uploadResult.id)
       setTaskId(validationResult.task_id)
