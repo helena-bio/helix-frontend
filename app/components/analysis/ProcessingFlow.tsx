@@ -90,9 +90,15 @@ const PIPELINE_STAGES: PipelineStage[] = [
   },
   {
     id: 'export',
-    name: 'Export & Caching',
+    name: 'Export',
     icon: <Download className="h-4 w-4" />,
-    description: 'Saving results and streaming data',
+    description: 'Saving results to database',
+  },
+  {
+    id: 'streaming',
+    name: 'Preparing Data',
+    icon: <Dna className="h-4 w-4" />,
+    description: 'Aggregating variants by gene for streaming',
   },
 ]
 
@@ -161,7 +167,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
           flushSync(() => {
             nextStep() // processing -> profile (FORCE SYNC)
           })
-          
+
           onComplete?.()
         } catch (error) {
           console.error('[ProcessingFlow] Streaming failed:', error)
@@ -188,9 +194,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get progress from backend
   const getProgress = useCallback((): number => {
-    // If streaming, show 95% (indicates still working, not stuck at 100%)
+    // If frontend is streaming, show 98% (almost done!)
     if (isStreaming) {
-      return 95
+      return 98
     }
 
     if (!taskStatus?.info) return hasStarted ? 5 : 0
@@ -214,9 +220,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   const getCurrentStage = useCallback((): string => {
     // IMPORTANT: Check isStreaming FIRST before checking taskStatus
     if (isStreaming) {
-      return 'Exporting results'
+      return 'Loading variants into memory'
     }
-    
+
     if (!taskStatus?.info?.stage) {
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
@@ -233,7 +239,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       'reference_annotation': 'Adding reference data',
       'classification': 'Classifying variants',
       'export': 'Exporting results',
-      'caching': 'Caching results',
+      'summary': 'Generating summary',
+      'streaming': 'Preparing data for streaming',
       'completed': 'Processing complete'
     }
 
@@ -248,9 +255,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Check if a stage is current
   const isStageActive = useCallback((stageId: string): boolean => {
-    // If streaming, export stage is active
-    if (isStreaming && stageId === 'export') {
-      return true
+    // If frontend streaming, no backend stage is active
+    if (isStreaming) {
+      return false
     }
 
     const currentStage = taskStatus?.info?.stage as string | undefined
@@ -321,7 +328,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     )
   }
 
-  // Processing State (including streaming on export step)
+  // Processing State (including frontend streaming)
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
       <div className="w-full max-w-2xl space-y-4">
