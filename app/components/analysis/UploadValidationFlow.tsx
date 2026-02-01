@@ -394,11 +394,12 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       console.log('-'.repeat(80))
       console.log('[VALIDATION] Starting validation...')
 
-      setPhase('validating')
       flushSync(() => {
         nextStep() // upload -> validation (FORCE SYNC - no batching)
       })
       setValidationProgress(0)
+
+      setPhase('validating')
 
       // THEN notify parent to update URL (after journey is synced)
       onComplete?.(uploadResult.id)
