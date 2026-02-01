@@ -249,9 +249,15 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Check if a stage is complete based on completed_stages from backend
   const isStageComplete = useCallback((stageId: string): boolean => {
+    // CRITICAL FIX: When frontend is streaming, ALL backend stages are complete
+    // Frontend streaming happens AFTER backend completes all stages
+    if (isStreaming) {
+      return true
+    }
+    
     const completedStages = getCompletedStages()
     return completedStages.includes(stageId)
-  }, [getCompletedStages])
+  }, [getCompletedStages, isStreaming])
 
   // Check if a stage is current
   const isStageActive = useCallback((stageId: string): boolean => {
