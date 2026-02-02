@@ -23,9 +23,9 @@
  * 1. File Selection (drag & drop or browse)
  * 2. Compression (if .vcf) - Shows progress
  * 3. Upload Progress
- * 4. Validation Progress - Part of upload step
- * 5. QC Results display - Part of upload step
- * 6. User clicks "Start Processing" -> Advances to processing journey step
+ * 4. Validation Progress
+ * 5. QC Results display - Upload shows completed (visual override in JourneyPanel)
+ * 6. User clicks "Start Processing" -> Advances journey to processing
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
