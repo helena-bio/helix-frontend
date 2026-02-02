@@ -67,6 +67,23 @@ export function JourneyPanel() {
   }
 
   /**
+   * Get visual status for a step
+   * Override: Upload shows as 'completed' if sessionId exists (validation complete)
+   * even if currentStep is still 'upload' (showing QC results)
+   */
+  const getVisualStatus = (stepId: typeof JOURNEY_STEPS[number]['id']): StepStatus => {
+    const baseStatus = getStepStatus(stepId)
+    
+    // VISUAL OVERRIDE: Upload is completed if validation finished (sessionId exists)
+    // This shows green checkmark on Upload while QC Results are displayed
+    if (stepId === 'upload' && currentSessionId && baseStatus === 'current') {
+      return 'completed'
+    }
+    
+    return baseStatus
+  }
+
+  /**
    * Clear File - Complete Reset
    * 1. Clear sessionId (triggers auto-cleanup in providers via useEffect)
    * 2. Reset journey to upload
@@ -123,7 +140,7 @@ export function JourneyPanel() {
       {/* Workflow progress - Center, scrollable if needed */}
       <div className="flex-1 flex items-center justify-center gap-3 overflow-x-auto px-4">
         {JOURNEY_STEPS.map((step, index) => {
-          const status = getStepStatus(step.id)
+          const status = getVisualStatus(step.id)
           const Icon = getStepIcon(status)
           const isClickable = canNavigateTo(step.id)
 
