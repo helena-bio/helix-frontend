@@ -2,11 +2,13 @@
  * Journey Context - Workflow Step Management
  *
  * Manages the current step in the analysis workflow:
- * Upload -> Validation -> Processing -> Profile -> Analysis
+ * Upload -> Processing -> Profile -> Analysis
+ *
+ * Upload includes: file selection, compression, upload, validation, and QC results
  *
  * Following Lumiere pattern: UI state only, no server data
  * IMPORTANT: currentStep is persisted to localStorage to survive page refresh
- * 
+ *
  * SESSION INTEGRATION:
  * Journey resets to 'upload' when sessionId becomes null (multi-tab isolation)
  */
@@ -29,7 +31,7 @@ const STORAGE_KEY = 'helix_journey_step'
 /**
  * Workflow steps in order
  */
-export type JourneyStep = 'upload' | 'validation' | 'processing' | 'profile' | 'analysis'
+export type JourneyStep = 'upload' | 'processing' | 'profile' | 'analysis'
 
 /**
  * Step status for UI rendering
@@ -48,8 +50,9 @@ export interface StepInfo {
 
 /**
  * All steps with metadata
- * Order: Upload -> Validation -> Processing -> Profile -> Analysis
+ * Order: Upload -> Processing -> Profile -> Analysis
  *
+ * Upload includes validation automatically
  * Profile is AFTER Processing because:
  * 1. We need variants in DuckDB to run phenotype matching
  * 2. User can skip profile and go directly to analysis
@@ -59,32 +62,26 @@ export const JOURNEY_STEPS: readonly StepInfo[] = [
   {
     id: 'upload',
     label: 'Upload',
-    description: 'Upload VCF file for analysis',
+    description: 'Upload and validate VCF file',
     order: 0,
-  },
-  {
-    id: 'validation',
-    label: 'Validation',
-    description: 'Quality control and validation',
-    order: 1,
   },
   {
     id: 'processing',
     label: 'Processing',
     description: 'Analyzing variants with ACMG classification',
-    order: 2,
+    order: 1,
   },
   {
     id: 'profile',
     label: 'Profile',
     description: 'Patient clinical profile and phenotype matching',
-    order: 3,
+    order: 2,
   },
   {
     id: 'analysis',
     label: 'Analysis',
     description: 'View and analyze variants',
-    order: 4,
+    order: 3,
   },
 ] as const
 
@@ -138,12 +135,7 @@ export function JourneyProvider({
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        let step = parsed.step
-
-        // Migration: phenotype -> profile
-        if (step === 'phenotype') {
-          step = 'profile'
-        }
+        const step = parsed.step
 
         if (step && JOURNEY_STEPS.some(s => s.id === step)) {
           setCurrentStepState(step)

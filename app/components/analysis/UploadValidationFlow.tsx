@@ -20,16 +20,15 @@
  * - text-xs: Technical metadata
  *
  * Seamless flow:
- * 1. File Selection (drag & drop or browse) - Journey: upload
+ * 1. File Selection (drag & drop or browse)
  * 2. Compression (if .vcf) - Shows progress
- * 3. Upload Progress - Journey: upload
- * 4. Validation Progress - Journey: validation (direct advance)
- * 5. QC Results display - Journey: validation
- * 6. User clicks "Start Processing" -> Journey: processing
+ * 3. Upload Progress
+ * 4. Validation Progress - Part of upload step
+ * 5. QC Results display - Part of upload step
+ * 6. User clicks "Start Processing" -> Advances to processing journey step
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
-import { flushSync } from 'react-dom'
 import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna, Loader2, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -133,7 +132,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     if (!selectedFile) return null
     const mb = selectedFile.size / (1024 * 1024)
     const gb = selectedFile.size / (1024 * 1024 * 1024)
-    
+
     if (gb >= 1) {
       return `${gb.toFixed(2)} GB`
     } else if (mb < 1) {
@@ -307,9 +306,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         try {
           console.log('[COMPRESSION] Starting compression...')
           setPhase('compressing')
-          
+
           const compressionStart = performance.now()
-          
+
           // Compress file with progress tracking
           fileToUpload = await compress(selectedFile, (progress) => {
             setCompressionProgress(progress)
@@ -342,7 +341,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       console.log('-'.repeat(80))
       console.log('[UPLOAD] Starting upload...')
       console.log(`[UPLOAD] File to upload: ${(fileToUpload.size / (1024**2)).toFixed(2)} MB`)
-      
+
       setPhase('uploading')
       setUploadProgress(0) // Reset progress for upload phase
 
@@ -394,14 +393,10 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       console.log('-'.repeat(80))
       console.log('[VALIDATION] Starting validation...')
 
-      flushSync(() => {
-        nextStep() // upload -> validation (FORCE SYNC - no batching)
-      })
       setValidationProgress(0)
-
       setPhase('validating')
 
-      // THEN notify parent to update URL (after journey is synced)
+      // Notify parent to update URL
       onComplete?.(uploadResult.id)
 
       const validationStart = performance.now()
@@ -446,7 +441,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       toast.error('Process failed', { description: err.message })
       onError?.(err)
     }
-  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, nextStep, onComplete, onError, compress, shouldCompress, isCompressionSupported])
+  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, onComplete, onError, compress, shouldCompress, isCompressionSupported])
 
   // Reset handler
   const handleReset = useCallback(() => {
@@ -471,7 +466,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // Handle processing button click
   const handleProcessingClick = useCallback(() => {
     if (sessionId) {
-      nextStep() // validation -> processing
+      nextStep() // upload -> processing
     }
   }, [sessionId, nextStep])
 

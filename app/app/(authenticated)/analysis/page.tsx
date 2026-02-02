@@ -3,7 +3,7 @@
  * Analysis Page - Main Variant Analysis Workflow
  *
  * Journey Order:
- * 1. Upload/Validation - Upload VCF file and validate
+ * 1. Upload - Upload VCF file and validate (includes QC)
  * 2. Processing - Run ACMG classification pipeline
  * 3. Profile - Enter clinical profile and run phenotype matching (optional)
  * 4. Analysis - View and analyze variants
@@ -28,18 +28,18 @@ export default function AnalysisPage() {
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { currentStep } = useJourney()
 
-  // Handle upload+validation complete - add sessionId to URL
-  const handleUploadValidationComplete = (sessionId: string) => {
+  // Handle upload complete - add sessionId to URL
+  const handleUploadComplete = (sessionId: string) => {
     setCurrentSessionId(sessionId)
     // Add sessionId to URL
     router.push(`/analysis?session=${sessionId}`)
   }
 
-  // Step 1: Upload & Validation
-  if (currentStep === 'upload' || currentStep === 'validation') {
+  // Step 1: Upload (includes validation and QC)
+  if (currentStep === 'upload') {
     return (
       <UploadValidationFlow
-        onComplete={handleUploadValidationComplete}
+        onComplete={handleUploadComplete}
       />
     )
   }
