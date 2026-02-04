@@ -9,7 +9,7 @@
  * 3. Progressive loading with progress tracking
  *
  * Flow:
- * - ClinicalAnalysis Stage 2: Auto-triggers after phenotype matching completes
+ * - ClinicalAnalysis Stage 3: Explicitly called after phenotype matching
  * - runSearch(genes, hpoTerms) → loadAllLiteratureResults(sessionId)
  * - Results stream directly to context
  * - Combined scoring with phenotype clinical priority (60% clinical + 40% literature)
@@ -31,7 +31,6 @@ import {
   buildLiteratureSearchRequest,
 } from '@/lib/api/literature'
 import { usePhenotypeResults } from './PhenotypeResultsContext'
-import { useClinicalProfileContext } from './ClinicalProfileContext'
 import type {
   ClinicalSearchResponse,
   PublicationResult,
@@ -205,14 +204,12 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
   const [searchedGenes, setSearchedGenes] = useState<string[]>([])
   const [searchedHpoTerms, setSearchedHpoTerms] = useState<LiteratureHPOTerm[]>([])
 
-  // Track what we've already searched to prevent duplicate searches
-  const lastSearchKey = useRef<string>('')
+  // Refs for tracking
   const isSearching = useRef<boolean>(false)
   const currentSessionId = useRef<string | null>(null)
 
-  // Get phenotype matching results and patient HPO terms
-  const { status: matchingStatus, aggregatedResults } = usePhenotypeResults()
-  const { hpoTerms } = useClinicalProfileContext()
+  // Get phenotype matching results for combined scoring
+  const { aggregatedResults } = usePhenotypeResults()
 
   // Build clinical data map from phenotype matching results
   const clinicalDataMap = useMemo(() => {
@@ -242,7 +239,6 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
       setQuerySummary(null)
       setSearchedGenes([])
       setSearchedHpoTerms([])
-      lastSearchKey.current = ''
       return
     }
 
@@ -259,7 +255,6 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
     setQuerySummary(null)
     setSearchedGenes([])
     setSearchedHpoTerms([])
-    lastSearchKey.current = ''
   }, [sessionId])
 
   // Run literature search (trigger backend computation only)
@@ -436,64 +431,7 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
     setSearchedGenes([])
     setSearchedHpoTerms([])
     setLoadProgress(0)
-    lastSearchKey.current = ''
   }, [])
-
-  // Auto-trigger literature search when phenotype matching completes
-  useEffect(() => {
-    // Only trigger when matching is successful and we have results
-    if (matchingStatus !== 'success' || !aggregatedResults || aggregatedResults.length === 0) {
-      return
-    }
-
-    if (!sessionId) {
-      console.log('[LiteratureResultsContext] No session, skipping auto-search')
-      return
-    }
-
-    // Get patient HPO terms
-    const patientHpoTerms = hpoTerms
-    if (patientHpoTerms.length === 0) {
-      console.log('[LiteratureResultsContext] No patient HPO terms, skipping auto-search')
-      return
-    }
-
-    // Extract top genes from matching results (limit to top 10 by clinical score)
-    const topGenes = aggregatedResults
-      .slice(0, 10)
-      .map(r => r.gene_symbol)
-
-    // Create a key to detect if we need to search again
-    const searchKey = `${topGenes.join(',')}_${patientHpoTerms.map(t => t.hpo_id).join(',')}`
-
-    // Skip if we already searched with these parameters
-    if (searchKey === lastSearchKey.current) {
-      console.log('[LiteratureResultsContext] Already searched with these parameters, skipping')
-      return
-    }
-
-    console.log('[LiteratureResultsContext] Auto-triggering literature search after phenotype matching')
-    console.log('  Genes:', topGenes)
-    console.log('  HPO terms:', patientHpoTerms.length)
-
-    lastSearchKey.current = searchKey
-
-    // Format HPO terms for the search
-    const hpoTermsForSearch = patientHpoTerms.map(t => ({
-      hpo_id: t.hpo_id,
-      name: t.name,
-    }))
-
-    // Trigger search + streaming load (two-step process like phenotype matching)
-    ;(async () => {
-      try {
-        await runSearch(topGenes, hpoTermsForSearch, undefined, 50)
-        await loadAllLiteratureResults(sessionId)
-      } catch (err) {
-        console.error('[LiteratureResultsContext] Auto-search failed:', err)
-      }
-    })()
-  }, [matchingStatus, aggregatedResults, sessionId, hpoTerms, runSearch, loadAllLiteratureResults])
 
   // Computed values - apply combined scoring
   const groupedByGene = useMemo(
