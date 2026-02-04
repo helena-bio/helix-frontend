@@ -17,6 +17,7 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
+import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
 import { isTier1, isTier2 } from '@/types/tiers.types'
@@ -98,6 +99,7 @@ export function ClinicalAnalysis({
   } = useClinicalProfileContext()
   const { loadScreeningResults, loadProgress: screeningProgress } = useScreeningResults()
   const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults } = usePhenotypeResults()
+  const { loadAllLiteratureResults } = useLiteratureResults()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
 
@@ -276,16 +278,28 @@ export function ClinicalAnalysis({
 
             if (topGenes.length > 0) {
               console.log('='.repeat(80))
-              console.log(`LITERATURE SEARCH - Searching for ${topGenes.length} top genes`)
+              console.log(`LITERATURE SEARCH - Step 1: Running search for ${topGenes.length} top genes`)
               console.log(`Genes: ${topGenes.join(', ')}`)
               console.log('='.repeat(80))
 
+              // Step 1: Trigger backend search (saves to DuckDB + exports NDJSON.gz)
               await literatureSearchMutation.mutateAsync({
                 sessionId: sessionId,
                 genes: topGenes,
                 hpoTerms: hpoTerms,
                 limit: 50,
               })
+
+              console.log('='.repeat(80))
+              console.log('LITERATURE SEARCH - Step 2: Streaming results')
+              console.log('='.repeat(80))
+
+              // Step 2: Stream literature results from pre-generated file
+              await loadAllLiteratureResults(sessionId)
+
+              console.log('='.repeat(80))
+              console.log('LITERATURE SEARCH COMPLETE')
+              console.log('='.repeat(80))
 
               updateStageStatus('literature', 'completed')
               toast.success('Literature search complete')
@@ -336,6 +350,7 @@ export function ClinicalAnalysis({
     hpoTerms,
     runPhenotypeMatching,
     loadAllPhenotypeResults,
+    loadAllLiteratureResults,
     screeningMutation,
     loadScreeningResults,
     literatureSearchMutation,
