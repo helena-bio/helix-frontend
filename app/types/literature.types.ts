@@ -24,6 +24,7 @@ export interface ClinicalSearchRequest {
   variants?: LiteratureVariant[]
   limit?: number
   min_year?: number
+  include_evidence_details?: boolean
 }
 
 // ============================================================================

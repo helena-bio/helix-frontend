@@ -278,6 +278,7 @@ export function ClinicalAnalysis({
               console.log('='.repeat(80))
 
               await literatureSearchMutation.mutateAsync({
+                sessionId: sessionId,
                 genes: topGenes,
                 hpoTerms: hpoTerms,
                 limit: 50,
