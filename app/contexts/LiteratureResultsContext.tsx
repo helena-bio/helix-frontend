@@ -388,7 +388,7 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
             const parsed = JSON.parse(line)
 
             if (parsed.type === 'metadata') {
-              totalCount = parsed.total_results
+              totalCount = parsed.summary.total_results
               console.log(`[LiteratureResultsContext] Streaming ${totalCount} publications...`)
             } else if (parsed.type === 'result') {
               loadedResults.push(parsed.data)
@@ -404,7 +404,7 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
                 setResults([...loadedResults])
               }
             } else if (parsed.type === 'complete') {
-              console.log(`[LiteratureResultsContext] Streaming complete: ${parsed.total_results} publications loaded`)
+              console.log(`[LiteratureResultsContext] Streaming complete: ${parsed.total_streamed} publications loaded`)
             }
           } catch (e) {
             console.warn('[LiteratureResultsContext] Failed to parse line:', e)
