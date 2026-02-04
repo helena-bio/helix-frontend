@@ -80,7 +80,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
         <ScreeningResultsProvider sessionId={currentSessionId}>
           <PhenotypeResultsProvider sessionId={currentSessionId}>
             <VariantsResultsProvider sessionId={currentSessionId}>
-              <LiteratureResultsProvider>
+              <LiteratureResultsProvider sessionId={currentSessionId}>
                 <div className="h-screen flex flex-col">
                   {/* Header - Journey Panel with Logo */}
                   <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">

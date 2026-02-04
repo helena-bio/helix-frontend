@@ -1,22 +1,20 @@
+'use client'
+
 /**
- * Literature Context - Clinical Literature Search Results
+ * Literature Context - Session-Based Streaming Architecture
  *
- * Automatically triggers literature search after phenotype matching completes.
- * Implements combined scoring that integrates clinical priority from phenotype matching.
- *
- * Combined Score Formula:
- * combined = (literature_relevance * 0.4) + (clinical_priority_normalized * 0.6)
- *
- * This ensures T1/T2 genes rank higher than T4 genes even with lower literature scores.
+ * NEW WORKFLOW (matching Phenotype pattern):
+ * 1. runSearch() - triggers backend computation, saves to DuckDB + exports NDJSON.gz
+ * 2. loadAllLiteratureResults() - streams results from pre-generated file
+ * 3. Progressive loading with progress tracking
  *
  * Flow:
- * 1. MatchedPhenotypeContext completes matching (status='success')
- * 2. LiteratureResultsContext detects change and extracts genes from results
- * 3. Auto-triggers literature search with genes + patient HPO terms
- * 4. Results grouped by gene with combined scoring applied
- * 5. Results available for display and AI context
+ * - ClinicalAnalysis Stage 2: Auto-triggers after phenotype matching completes
+ * - runSearch(genes, hpoTerms) → loadAllLiteratureResults(sessionId)
+ * - Results stream directly to context
+ * - Combined scoring with phenotype clinical priority (60% clinical + 40% literature)
+ * - Auto-cleanup when session becomes null
  */
-'use client'
 
 import {
   createContext,
@@ -43,6 +41,8 @@ import type {
   GeneClinicalData,
 } from '@/types/literature.types'
 
+const LITERATURE_API_URL = process.env.NEXT_PUBLIC_LITERATURE_API_URL || 'http://localhost:9004'
+
 // ============================================================================
 // SCORING WEIGHTS
 // ============================================================================
@@ -66,6 +66,7 @@ interface LiteratureResultsContextValue {
   // Status
   status: LiteratureStatus
   isLoading: boolean
+  loadProgress: number
   error: Error | null
 
   // Search parameters (what was searched)
@@ -93,6 +94,7 @@ interface LiteratureResultsContextValue {
     variants?: Array<{ gene_symbol: string; hgvs_protein?: string; hgvs_cdna?: string }>,
     limit?: number
   ) => Promise<void>
+  loadAllLiteratureResults: (sessionId: string) => Promise<void>
   clearResults: () => void
 
   // For AI context - formatted summary
@@ -189,12 +191,14 @@ function countByStrength(results: PublicationResult[]): {
 const LiteratureResultsContext = createContext<LiteratureResultsContextValue | undefined>(undefined)
 
 interface LiteratureResultsProviderProps {
+  sessionId: string | null
   children: ReactNode
 }
 
-export function LiteratureResultsProvider({ children }: LiteratureResultsProviderProps) {
+export function LiteratureResultsProvider({ sessionId, children }: LiteratureResultsProviderProps) {
   // State
   const [status, setStatus] = useState<LiteratureStatus>('idle')
+  const [loadProgress, setLoadProgress] = useState(0)
   const [error, setError] = useState<Error | null>(null)
   const [results, setResults] = useState<PublicationResult[]>([])
   const [querySummary, setQuerySummary] = useState<ClinicalSearchResponse['query_summary'] | null>(null)
@@ -204,10 +208,12 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
   // Track what we've already searched to prevent duplicate searches
   const lastSearchKey = useRef<string>('')
   const isSearching = useRef<boolean>(false)
+  const currentSessionId = useRef<string | null>(null)
 
   // Get phenotype matching results and patient HPO terms
   const { status: matchingStatus, aggregatedResults } = usePhenotypeResults()
   const { hpoTerms } = useClinicalProfileContext()
+
   // Build clinical data map from phenotype matching results
   const clinicalDataMap = useMemo(() => {
     const map = new Map<string, GeneClinicalData>()
@@ -223,13 +229,56 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
     return map
   }, [aggregatedResults])
 
-  // Run literature search
+  // Auto-cleanup when session changes or becomes null
+  useEffect(() => {
+    // Case 1: Session cleared - cleanup all data
+    if (sessionId === null) {
+      console.log('[LiteratureResultsContext] Session cleared - resetting literature results')
+      currentSessionId.current = null
+      setResults([])
+      setStatus('idle')
+      setError(null)
+      setLoadProgress(0)
+      setQuerySummary(null)
+      setSearchedGenes([])
+      setSearchedHpoTerms([])
+      lastSearchKey.current = ''
+      return
+    }
+
+    // Case 2: Same session - do nothing
+    if (sessionId === currentSessionId.current) return
+
+    // Case 3: New session - clear old data
+    console.log('[LiteratureResultsContext] Session changed - clearing old data')
+    currentSessionId.current = sessionId
+    setResults([])
+    setStatus('idle')
+    setError(null)
+    setLoadProgress(0)
+    setQuerySummary(null)
+    setSearchedGenes([])
+    setSearchedHpoTerms([])
+    lastSearchKey.current = ''
+  }, [sessionId])
+
+  // Run literature search (trigger backend computation only)
   const runSearch = useCallback(async (
     genes: string[],
     hpoTerms: Array<{ hpo_id: string; name: string }>,
     variants?: Array<{ gene_symbol: string; hgvs_protein?: string; hgvs_cdna?: string }>,
     limit: number = 50
   ) => {
+    console.log('[LiteratureResultsContext] runSearch called')
+    console.log('  sessionId:', sessionId)
+    console.log('  genes:', genes.length)
+    console.log('  hpoTerms:', hpoTerms.length)
+
+    if (!sessionId) {
+      console.warn('[LiteratureResultsContext] Cannot run search - no session')
+      return
+    }
+
     if (genes.length === 0) {
       console.log('[LiteratureResultsContext] No genes provided, skipping search')
       setStatus('no_data')
@@ -258,28 +307,123 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
       const request = buildLiteratureSearchRequest(genes, hpoTerms, variants)
       request.limit = limit
 
-      console.log('[LiteratureResultsContext] Searching literature:', {
-        genes: genes.length,
-        hpoTerms: hpoTerms.length,
-        variants: variants?.length || 0,
-      })
-
-      const response = await searchClinicalLiterature(request)
+      console.log('[LiteratureResultsContext] Calling session literature search API...')
+      const response = await searchClinicalLiterature(sessionId, request)
 
       console.log('[LiteratureResultsContext] Search complete:', {
         totalResults: response.total_results,
         searchTimeMs: response.query_summary.search_time_ms,
       })
 
-      setResults(response.results)
       setQuerySummary(response.query_summary)
-      setStatus(response.results.length > 0 ? 'success' : 'no_data')
+
+      if (response.results.length === 0) {
+        console.warn('[LiteratureResultsContext] No publications found')
+        setStatus('no_data')
+        setResults([])
+        return
+      }
+
+      // NOTE: Don't set results here - caller will call loadAllLiteratureResults()
+      setStatus('success')
     } catch (err) {
       console.error('[LiteratureResultsContext] Search failed:', err)
       setError(err as Error)
       setStatus('error')
+      throw err
     } finally {
       isSearching.current = false
+    }
+  }, [sessionId])
+
+  // Load all literature results via streaming (like phenotype matching!)
+  const loadAllLiteratureResults = useCallback(async (sessionId: string) => {
+    setStatus('loading')
+    setLoadProgress(0)
+    setError(null)
+    setResults([])
+
+    try {
+      console.log('[LiteratureResultsContext] Starting streaming load...')
+
+      const response = await fetch(
+        `${LITERATURE_API_URL}/api/v1/sessions/${sessionId}/literature/stream`
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      if (!response.body) {
+        throw new Error('No response body')
+      }
+
+      console.log('[LiteratureResultsContext] Response headers:', {
+        contentType: response.headers.get('content-type'),
+        contentEncoding: response.headers.get('content-encoding'),
+      })
+
+      // Browser automatically decompresses based on Content-Encoding header
+      const reader = response.body
+        .pipeThrough(new TextDecoderStream())
+        .getReader()
+
+      let buffer = ''
+      let loadedResults: PublicationResult[] = []
+      let totalCount = 0
+
+      while (true) {
+        const { value, done } = await reader.read()
+
+        if (done) break
+
+        buffer += value
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+
+          try {
+            const parsed = JSON.parse(line)
+
+            if (parsed.type === 'metadata') {
+              totalCount = parsed.total_results
+              console.log(`[LiteratureResultsContext] Streaming ${totalCount} publications...`)
+            } else if (parsed.type === 'result') {
+              loadedResults.push(parsed.data)
+
+              // Update progress every 10 results
+              if (loadedResults.length % 10 === 0) {
+                const progress = totalCount > 0
+                  ? Math.round((loadedResults.length / totalCount) * 100)
+                  : 0
+                setLoadProgress(progress)
+
+                // Update state in batches for performance
+                setResults([...loadedResults])
+              }
+            } else if (parsed.type === 'complete') {
+              console.log(`[LiteratureResultsContext] Streaming complete: ${parsed.total_results} publications loaded`)
+            }
+          } catch (e) {
+            console.warn('[LiteratureResultsContext] Failed to parse line:', e)
+          }
+        }
+      }
+
+      // Final update
+      setResults(loadedResults)
+      setLoadProgress(100)
+      setStatus('success')
+
+      console.log(`[LiteratureResultsContext] All data loaded: ${loadedResults.length} publications`)
+
+    } catch (err) {
+      console.error('[LiteratureResultsContext] Streaming failed:', err)
+      setError(err instanceof Error ? err : new Error('Unknown error'))
+      setStatus('error')
+      throw err
     }
   }, [])
 
@@ -291,6 +435,7 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
     setQuerySummary(null)
     setSearchedGenes([])
     setSearchedHpoTerms([])
+    setLoadProgress(0)
     lastSearchKey.current = ''
   }, [])
 
@@ -298,6 +443,11 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
   useEffect(() => {
     // Only trigger when matching is successful and we have results
     if (matchingStatus !== 'success' || !aggregatedResults || aggregatedResults.length === 0) {
+      return
+    }
+
+    if (!sessionId) {
+      console.log('[LiteratureResultsContext] No session, skipping auto-search')
       return
     }
 
@@ -334,9 +484,16 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
       name: t.name,
     }))
 
-    // Trigger search (without variants for now - simpler)
-    runSearch(topGenes, hpoTermsForSearch, undefined, 50)
-  }, [matchingStatus, aggregatedResults, runSearch])
+    // Trigger search + streaming load (two-step process like phenotype matching)
+    ;(async () => {
+      try {
+        await runSearch(topGenes, hpoTermsForSearch, undefined, 50)
+        await loadAllLiteratureResults(sessionId)
+      } catch (err) {
+        console.error('[LiteratureResultsContext] Auto-search failed:', err)
+      }
+    })()
+  }, [matchingStatus, aggregatedResults, sessionId, hpoTerms, runSearch, loadAllLiteratureResults])
 
   // Computed values - apply combined scoring
   const groupedByGene = useMemo(
@@ -382,6 +539,7 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
   const value = useMemo<LiteratureResultsContextValue>(() => ({
     status,
     isLoading: status === 'loading',
+    loadProgress,
     error,
     searchedGenes,
     searchedHpoTerms,
@@ -394,10 +552,12 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
     supportingCount: counts.supporting,
     weakCount: counts.weak,
     runSearch,
+    loadAllLiteratureResults,
     clearResults,
     getAISummary,
   }), [
     status,
+    loadProgress,
     error,
     searchedGenes,
     searchedHpoTerms,
@@ -406,6 +566,7 @@ export function LiteratureResultsProvider({ children }: LiteratureResultsProvide
     groupedByGene,
     counts,
     runSearch,
+    loadAllLiteratureResults,
     clearResults,
     getAISummary,
   ])

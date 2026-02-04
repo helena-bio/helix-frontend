@@ -1,8 +1,8 @@
 /**
  * Literature Mining Service API Client
  *
- * Functions for clinical literature search from Literature Mining Service.
- * Endpoint: POST /api/v1/clinical/search
+ * Session-based clinical literature search with streaming support.
+ * Follows phenotype matching pattern: session-based computation + streaming results.
  */
 import type {
   ClinicalSearchRequest,
@@ -16,13 +16,16 @@ const LITERATURE_API_URL = process.env.NEXT_PUBLIC_LITERATURE_API_URL || 'http:/
 const AI_SERVICE_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 
 /**
- * Search clinical literature for genes and phenotypes
+ * Search clinical literature for a session.
+ * Triggers backend computation and saves results to DuckDB + exports to NDJSON.gz.
+ * Session ID is path parameter, not in body.
  */
 export async function searchClinicalLiterature(
+  sessionId: string,
   request: ClinicalSearchRequest
 ): Promise<ClinicalSearchResponse> {
-  const url = `${LITERATURE_API_URL}/api/v1/clinical/search`
-
+  const url = `${LITERATURE_API_URL}/api/v1/sessions/${sessionId}/search`
+  
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -32,8 +35,9 @@ export async function searchClinicalLiterature(
       patient_hpo_terms: request.patient_hpo_terms,
       genes: request.genes,
       variants: request.variants || [],
-      limit: request.limit || 20,
+      limit: request.limit || 50,
       min_year: request.min_year,
+      include_evidence_details: request.include_evidence_details ?? true,
     }),
   })
 
@@ -50,7 +54,7 @@ export async function searchClinicalLiterature(
  */
 export async function getPublication(pmid: string): Promise<Publication> {
   const url = `${AI_SERVICE_URL}/api/v1/literature/publication/${pmid}`
-
+  
   const response = await fetch(url, {
     method: 'GET',
     headers: {
@@ -121,11 +125,12 @@ export function getDOIUrl(doi: string | null): string | null {
  */
 export function formatAuthors(authors: string | null, maxDisplay: number = 3): string {
   if (!authors) return 'Unknown authors'
-
+  
   const authorList = authors.split('|')
+  
   if (authorList.length <= maxDisplay) {
     return authorList.join(', ')
   }
-
+  
   return `${authorList.slice(0, maxDisplay).join(', ')} et al.`
 }

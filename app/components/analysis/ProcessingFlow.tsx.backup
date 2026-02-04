@@ -16,13 +16,15 @@
  * - Real-time polling of task status
  * - Visual progress indicator with pipeline stages
  * - Error handling with retry
- * - Success state advances to analysis
+ * - Success: waits for streaming to complete before advancing
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
+import { flushSync } from 'react-dom'
 import { useStartProcessing } from '@/hooks/mutations'
 import { useTaskStatus, useSession } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
+import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -92,16 +94,25 @@ const PIPELINE_STAGES: PipelineStage[] = [
     icon: <Download className="h-4 w-4" />,
     description: 'Saving results to database',
   },
+  {
+    id: 'streaming',
+    name: 'Preparing Data',
+    icon: <Dna className="h-4 w-4" />,
+    description: 'Aggregating variants by gene for streaming',
+  },
 ]
 
 export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlowProps) {
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
   const startedRef = useRef(false)
+  const streamingStartedRef = useRef(false)
 
-  const { nextStep } = useJourney()
+  const { nextStep, currentStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
+  const { loadAllVariants } = useVariantsResults()
 
   // Get session for vcf_file_path
   const { data: session } = useSession(sessionId)
@@ -136,36 +147,68 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     startProcessing()
   }, [session?.vcf_file_path, sessionId, startProcessingMutation, onError])
 
-  // Handle task completion
+  // Handle task completion → Wait for streaming → Advance
   useEffect(() => {
     if (!taskStatus?.ready) return
+    if (streamingStartedRef.current) return
 
     if (taskStatus.successful) {
-      toast.success('Processing complete', {
-        description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants analyzed`,
-      })
-      onComplete?.()
-      nextStep() // processing -> analysis
+      streamingStartedRef.current = true
+
+      const streamAndAdvance = async () => {
+        try {
+          setIsStreaming(true)
+          await loadAllVariants(sessionId)
+
+          toast.success('Processing complete', {
+            description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants loaded`,
+          })
+
+          flushSync(() => {
+            nextStep() // processing -> profile (FORCE SYNC)
+          })
+
+          onComplete?.()
+        } catch (error) {
+          console.error('[ProcessingFlow] Streaming failed:', error)
+          setIsStreaming(false)
+          toast.error('Failed to load variants', {
+            description: 'Continuing anyway - data will load on demand'
+          })
+          // Don't block - advance anyway, views will load data on demand
+          flushSync(() => {
+            nextStep() // processing -> profile (FORCE SYNC)
+          })
+          onComplete?.()
+        }
+      }
+
+      streamAndAdvance()
     } else if (taskStatus.failed) {
       const error = taskStatus.info?.error || 'Processing failed'
       setErrorMessage(error)
       toast.error('Processing failed', { description: error })
       onError?.(new Error(error))
     }
-  }, [taskStatus, nextStep, onComplete, onError])
+  }, [taskStatus, sessionId, loadAllVariants, nextStep, onComplete, onError, currentStep])
 
   // Get progress from backend
   const getProgress = useCallback((): number => {
+    // If frontend is streaming, show 98% (almost done!)
+    if (isStreaming) {
+      return 98
+    }
+
     if (!taskStatus?.info) return hasStarted ? 5 : 0
 
     // Use progress from backend if available
-    const progress = taskStatus.info.progress as number | undefined
-    if (typeof progress === 'number') {
-      return progress
+    const backendProgress = taskStatus.info.progress as number | undefined
+    if (typeof backendProgress === 'number') {
+      return backendProgress
     }
 
     return 10
-  }, [taskStatus, hasStarted])
+  }, [taskStatus, hasStarted, isStreaming])
 
   // Get completed stages from backend
   const getCompletedStages = useCallback((): string[] => {
@@ -175,6 +218,11 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
   // Get current stage name
   const getCurrentStage = useCallback((): string => {
+    // IMPORTANT: Check isStreaming FIRST before checking taskStatus
+    if (isStreaming) {
+      return 'Loading variants into memory'
+    }
+
     if (!taskStatus?.info?.stage) {
       if (hasStarted) return 'Initializing pipeline...'
       return 'Starting...'
@@ -191,24 +239,37 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       'reference_annotation': 'Adding reference data',
       'classification': 'Classifying variants',
       'export': 'Exporting results',
+      'summary': 'Generating summary',
+      'streaming': 'Preparing data for streaming',
       'completed': 'Processing complete'
     }
 
     return stageNames[stage] || stage
-  }, [taskStatus, hasStarted])
+  }, [taskStatus, hasStarted, isStreaming])
 
   // Check if a stage is complete based on completed_stages from backend
   const isStageComplete = useCallback((stageId: string): boolean => {
+    // CRITICAL FIX: When frontend is streaming, ALL backend stages are complete
+    // Frontend streaming happens AFTER backend completes all stages
+    if (isStreaming) {
+      return true
+    }
+    
     const completedStages = getCompletedStages()
     return completedStages.includes(stageId)
-  }, [getCompletedStages])
+  }, [getCompletedStages, isStreaming])
 
   // Check if a stage is current
   const isStageActive = useCallback((stageId: string): boolean => {
+    // If frontend streaming, no backend stage is active
+    if (isStreaming) {
+      return false
+    }
+
     const currentStage = taskStatus?.info?.stage as string | undefined
     if (!currentStage) return false
     return currentStage === stageId
-  }, [taskStatus])
+  }, [taskStatus, isStreaming])
 
   // Retry handler
   const handleRetry = useCallback(async () => {
@@ -216,6 +277,8 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
 
     setErrorMessage(null)
     setTaskId(null)
+    setIsStreaming(false)
+    streamingStartedRef.current = false
 
     try {
       const result = await startProcessingMutation.mutateAsync({
@@ -271,73 +334,16 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     )
   }
 
-  // Success State (brief, before auto-advance)
-  if (taskStatus?.successful) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px] p-8">
-        <Card className="w-full max-w-md border-green-500">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-6">
-              <div className="inline-flex items-center justify-center p-4 rounded-full bg-green-100 dark:bg-green-950">
-                <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Processing Complete</h3>
-                <p className="text-md text-muted-foreground">
-                  Your variants have been analyzed and classified
-                </p>
-              </div>
-
-              {taskStatus.result && (
-                <div className="p-4 bg-muted rounded-lg text-left">
-                  <p className="text-base font-medium mb-2">Summary</p>
-                  <div className="space-y-1 text-base">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Variants Processed</span>
-                      <span className="font-medium">
-                        {taskStatus.result.variants_parsed?.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Variants Classified</span>
-                      <span className="font-medium">
-                        {taskStatus.result.variants_stored?.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Processing Time</span>
-                      <span className="font-medium">
-                        {taskStatus.result.processing_time_seconds?.toFixed(1)}s
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center justify-center gap-3">
-                <HelixLoader size="sm" speed={2} />
-                <span className="text-md text-muted-foreground">Loading results...</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // Processing State
+  // Processing State (including frontend streaming)
   return (
     <div className="flex items-center justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-2xl space-y-6">
-        {/* Header with Helix Loader */}
-        <div className="flex items-start gap-4">
-          <div className="flex items-center justify-center">
-            <HelixLoader size="md" speed={3} />
-          </div>
+      <div className="w-full max-w-2xl space-y-4">
+        {/* Header - Loader + Title side by side, centered */}
+        <div className="flex items-center justify-center gap-4">
+          <HelixLoader size="xs" speed={3} />
           <div>
             <h1 className="text-3xl font-bold">Analyzing Variants</h1>
-            <p className="text-base text-muted-foreground mt-1">
+            <p className="text-base text-muted-foreground">
               Running ACMG classification pipeline
             </p>
           </div>
