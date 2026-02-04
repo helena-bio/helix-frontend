@@ -5,7 +5,7 @@
  *
  * NEW WORKFLOW (matching Variants streaming):
  * 1. runMatching() - triggers backend computation, saves to DuckDB
- * 2. loadAllPhenotypeResults() - streams aggregated results by gene
+ * 2. loadAllPhenotypeResults() - streams aggregated results by gene and RETURNS them
  * 3. Backend does aggregation (not frontend!)
  * 4. Progressive loading with progress tracking
  *
@@ -14,6 +14,8 @@
  * - Results stream directly to context (pre-aggregated by gene)
  * - Views read from pre-loaded context data
  * - Auto-cleanup when session becomes null
+ *
+ * IMPORTANT: loadAllPhenotypeResults RETURNS the loaded data to avoid React state race conditions
  */
 
 import {
@@ -62,7 +64,7 @@ interface PhenotypeResultsContextValue {
 
   // Actions
   runMatching: (patientHpoIds: string[]) => Promise<void>
-  loadAllPhenotypeResults: (sessionId: string) => Promise<void>
+  loadAllPhenotypeResults: (sessionId: string) => Promise<GeneAggregatedResult[]>
   clearResults: () => void
 
   // Computed
@@ -187,8 +189,8 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     }
   }, [sessionId])
 
-  // Load all phenotype results via streaming (like variants!)
-  const loadAllPhenotypeResults = useCallback(async (sessionId: string) => {
+  // Load all phenotype results via streaming - RETURNS loaded data to avoid race conditions
+  const loadAllPhenotypeResults = useCallback(async (sessionId: string): Promise<GeneAggregatedResult[]> => {
     setStatus('loading')
     setLoadProgress(0)
     setError(null)
@@ -241,7 +243,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
             if (parsed.type === 'metadata') {
               totalGenesCount = parsed.total_genes
               console.log(`[PhenotypeResultsContext] Streaming ${totalGenesCount} genes...`)
-              
+
               // Store tier counts from metadata
               setTier1Count(parsed.tier_1_count)
               setTier2Count(parsed.tier_2_count)
@@ -276,6 +278,9 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       setStatus('success')
 
       console.log(`[PhenotypeResultsContext] All data loaded: ${loadedGenes.length} genes`)
+
+      // RETURN the loaded data to avoid React state race conditions
+      return loadedGenes
 
     } catch (err) {
       console.error('[PhenotypeResultsContext] Streaming failed:', err)

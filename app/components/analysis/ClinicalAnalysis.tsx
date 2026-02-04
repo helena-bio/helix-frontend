@@ -90,14 +90,14 @@ export function ClinicalAnalysis({
   const startedRef = useRef(false)
 
   const { nextStep } = useJourney()
-  const { 
+  const {
     enableScreening,
     enablePhenotypeMatching,
-    getCompleteProfile, 
-    hpoTerms 
+    getCompleteProfile,
+    hpoTerms
   } = useClinicalProfileContext()
   const { loadScreeningResults, loadProgress: screeningProgress } = useScreeningResults()
-  const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults, aggregatedResults: phenotypeResults } = usePhenotypeResults()
+  const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults } = usePhenotypeResults()
   const screeningMutation = useRunScreening()
   const literatureSearchMutation = useRunLiteratureSearch()
 
@@ -151,6 +151,9 @@ export function ClinicalAnalysis({
           throw new Error('Demographics data is required')
         }
 
+        // Variable to store phenotype results for literature search
+        let loadedPhenotypeResults = null
+
         // Stage 1: Phenotype Matching (if enabled and HPO terms exist)
         if (enablePhenotypeMatching && hpoTerms.length > 0) {
           setCurrentStage('phenotype')
@@ -166,15 +169,15 @@ export function ClinicalAnalysis({
             // Step 1: Trigger backend computation
             await runPhenotypeMatching(hpoIds)
 
-            // Step 2: Stream aggregated results
-            await loadAllPhenotypeResults(sessionId)
+            // Step 2: Stream aggregated results and capture returned data
+            loadedPhenotypeResults = await loadAllPhenotypeResults(sessionId)
 
             console.log('='.repeat(80))
             console.log('PHENOTYPE MATCHING COMPLETE')
-            console.log('  Total genes:', phenotypeResults?.length || 0)
-            if (phenotypeResults) {
-              console.log('  Tier 1 genes:', phenotypeResults.filter(r => isTier1(r.best_tier)).map(r => r.gene_symbol))
-              console.log('  Tier 2 genes:', phenotypeResults.filter(r => isTier2(r.best_tier)).map(r => r.gene_symbol))
+            console.log('  Total genes:', loadedPhenotypeResults?.length || 0)
+            if (loadedPhenotypeResults) {
+              console.log('  Tier 1 genes:', loadedPhenotypeResults.filter(r => isTier1(r.best_tier)).map(r => r.gene_symbol))
+              console.log('  Tier 2 genes:', loadedPhenotypeResults.filter(r => isTier2(r.best_tier)).map(r => r.gene_symbol))
             }
             console.log('='.repeat(80))
 
@@ -250,16 +253,16 @@ export function ClinicalAnalysis({
           try {
             console.log('='.repeat(80))
             console.log('LITERATURE SEARCH - Checking for top genes')
-            console.log('  phenotypeResults length:', phenotypeResults?.length || 0)
+            console.log('  loadedPhenotypeResults length:', loadedPhenotypeResults?.length || 0)
             console.log('='.repeat(80))
 
             const topGenes: string[] = []
-            if (phenotypeResults && phenotypeResults.length > 0) {
-              const tier1Genes = phenotypeResults
+            if (loadedPhenotypeResults && loadedPhenotypeResults.length > 0) {
+              const tier1Genes = loadedPhenotypeResults
                 .filter(r => isTier1(r.best_tier))
                 .map(r => r.gene_symbol)
 
-              const tier2Genes = phenotypeResults
+              const tier2Genes = loadedPhenotypeResults
                 .filter(r => isTier2(r.best_tier))
                 .map(r => r.gene_symbol)
 
@@ -333,7 +336,6 @@ export function ClinicalAnalysis({
     hpoTerms,
     runPhenotypeMatching,
     loadAllPhenotypeResults,
-    phenotypeResults,
     screeningMutation,
     loadScreeningResults,
     literatureSearchMutation,
