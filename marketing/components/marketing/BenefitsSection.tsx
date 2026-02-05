@@ -44,10 +44,10 @@ export function BenefitsSection() {
     <section className="py-16 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 space-y-4">
-          <h2 className="text-4xl font-bold text-primary">
+          <h2 className="text-3xl font-bold text-primary">
             Built for Clinical Genetics Laboratories
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             Transform your variant analysis operation with AI-powered infrastructure that scales with demand
           </p>
         </div>
@@ -58,18 +58,18 @@ export function BenefitsSection() {
             return (
               <div
                 key={benefit.title}
-                className="bg-card border border-border rounded-lg p-6 space-y-4"
+                className="bg-card border border-border rounded-lg p-8 space-y-5"
               >
-                <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                  <Icon className="w-6 h-6 text-primary-foreground" />
+                <div className="w-14 h-14 bg-primary rounded-lg flex items-center justify-center">
+                  <Icon className="w-7 h-7 text-primary-foreground" />
                 </div>
-                <h3 className="text-base font-medium font-bold text-foreground">
+                <h3 className="text-lg font-semibold text-foreground">
                   {benefit.title}
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {benefit.items.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2 text-md text-muted-foreground">
-                      <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                    <li key={index} className="flex items-start gap-3 text-base text-muted-foreground">
+                      <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </li>
                   ))}
