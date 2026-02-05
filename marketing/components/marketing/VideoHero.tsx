@@ -11,18 +11,17 @@ export function VideoHero() {
           AI-Powered Genetic Variant Analysis
         </p>
       </div>
-
+      
       <div className="w-full max-w-4xl aspect-video bg-card border border-border rounded-lg overflow-hidden shadow-lg">
         <video
           className="w-full h-full"
           controls
-          poster="/video/thumbnail.jpg"
         >
-          <source src="/video/helix-demo.mp4" type="video/mp4" />
+          <source src="/video/helixinsight_preview.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
-
+      
       <button className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md">
         Request a Demo
       </button>
