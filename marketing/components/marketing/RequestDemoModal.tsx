@@ -71,7 +71,7 @@ export function RequestDemoModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={handleClose} />
-      
+
       <div className="relative bg-card border border-border rounded-lg shadow-lg max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         {isSuccess ? (
           // Success State
@@ -90,7 +90,7 @@ export function RequestDemoModal() {
             </div>
             <button
               onClick={handleClose}
-              className="px-8 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors"
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
             >
               Close
             </button>
@@ -110,7 +110,7 @@ export function RequestDemoModal() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="fullName" className="block text-base font-medium text-foreground mb-1">
                   Full Name *
                 </label>
                 <input
@@ -120,12 +120,12 @@ export function RequestDemoModal() {
                   required
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="email" className="block text-base font-medium text-foreground mb-1">
                   Email *
                 </label>
                 <input
@@ -135,12 +135,12 @@ export function RequestDemoModal() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="organization" className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="organization" className="block text-base font-medium text-foreground mb-1">
                   Organization/Lab Name *
                 </label>
                 <input
@@ -150,12 +150,12 @@ export function RequestDemoModal() {
                   required
                   value={formData.organization}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="phone" className="block text-base font-medium text-foreground mb-1">
                   Phone Number
                 </label>
                 <input
@@ -164,12 +164,12 @@ export function RequestDemoModal() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-foreground mb-1">
+                <label htmlFor="message" className="block text-base font-medium text-foreground mb-1">
                   Message / Use Case
                 </label>
                 <textarea
@@ -178,7 +178,7 @@ export function RequestDemoModal() {
                   rows={4}
                   value={formData.message}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
 
@@ -192,7 +192,7 @@ export function RequestDemoModal() {
                   onChange={handleChange}
                   className="mt-1"
                 />
-                <label htmlFor="gdprConsent" className="text-sm text-muted-foreground">
+                <label htmlFor="gdprConsent" className="text-md text-muted-foreground">
                   I agree to the processing of my personal data in accordance with GDPR regulations. *
                 </label>
               </div>
@@ -201,7 +201,7 @@ export function RequestDemoModal() {
                 <button
                   type="submit"
                   disabled={!formData.gdprConsent || isSubmitting}
-                  className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Sending...' : 'Submit Request'}
                 </button>
@@ -209,7 +209,7 @@ export function RequestDemoModal() {
                   type="button"
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="px-6 py-3 border border-border text-foreground rounded-md font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                  className="px-6 py-3 border border-border text-foreground rounded-md text-base font-medium hover:bg-muted transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
