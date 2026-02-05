@@ -60,12 +60,14 @@ export function BenefitsSection() {
                 key={benefit.title}
                 className="bg-card border border-border rounded-lg p-8 space-y-5"
               >
-                <div className="w-14 h-14 bg-primary rounded-lg flex items-center justify-center">
-                  <Icon className="w-7 h-7 text-primary-foreground" />
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                    <Icon className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {benefit.title}
+                  </h3>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  {benefit.title}
-                </h3>
                 <ul className="space-y-4">
                   {benefit.items.map((item, index) => (
                     <li key={index} className="flex items-start gap-3 text-base text-muted-foreground">
