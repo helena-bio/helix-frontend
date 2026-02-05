@@ -33,7 +33,7 @@ export function Header() {
           <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
             Contact
           </Link>
-          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
+          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors">
             Request Demo
           </button>
         </nav>
