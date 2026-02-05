@@ -111,7 +111,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         setQcResults({
           totalVariants: taskStatus.result?.total_variants || 0,
           sampleCount: taskStatus.result?.sample_count || 1,
-          genomeBuild: 'GRCh38',
+          genomeBuild: taskStatus.result?.genome_build || 'Unknown',
         })
         setPhase('qc_results')
 
@@ -494,6 +494,10 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
   // Render - QC Results State
   if (phase === 'qc_results' && qcResults) {
+    // Check if genome build is supported
+    const isGRCh37 = qcResults.genomeBuild === 'GRCh37'
+    const isSupported = qcResults.genomeBuild === 'GRCh38'
+
     return (
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
@@ -576,44 +580,73 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">Status</p>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    <p className="text-lg font-semibold text-green-600">Valid</p>
-                  </div>
+                  {isSupported ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <p className="text-lg font-semibold text-green-600">Valid</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-destructive" />
+                      <p className="text-lg font-semibold text-destructive">Not Supported</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* GRCh37 Warning */}
+              {isGRCh37 && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-base">
+                    GRCh37 genome build is not supported. This system requires GRCh38 (hg38) VCF files.
+                    Please convert your VCF to GRCh38 using tools like Picard LiftoverVcf or CrossMap.
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
 
-          {/* Next Step CTA */}
-          <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Next: Start variant processing</h3>
-                  <p className="text-md text-muted-foreground">
-                    Process variants with ACMG classification, annotation, and filtering to identify clinically relevant findings.
-                  </p>
+          {/* Next Step CTA - only show if GRCh38 */}
+          {isSupported && (
+            <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start gap-3">
+                  <Dna className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Next: Start variant processing</h3>
+                    <p className="text-md text-muted-foreground">
+                      Process variants with ACMG classification, annotation, and filtering to identify clinically relevant findings.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button onClick={handleProcessingClick} className="flex-shrink-0">
+                          <PlayCircle className="h-4 w-4 mr-2" />
+                          <span className="text-base">Start Processing</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-sm">Begin variant annotation and ACMG classification</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
-              <div className="flex justify-end">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button onClick={handleProcessingClick} className="flex-shrink-0">
-                        <PlayCircle className="h-4 w-4 mr-2" />
-                        <span className="text-base">Start Processing</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-sm">Begin variant annotation and ACMG classification</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
             </div>
-          </div>
+          )}
+
+          {/* Reset button for unsupported builds */}
+          {!isSupported && (
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={handleReset}>
+                <span className="text-base">Upload Different File</span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     )
