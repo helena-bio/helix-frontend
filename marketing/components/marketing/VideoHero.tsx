@@ -1,6 +1,10 @@
 "use client"
 
+import { useDemoModal } from '@/contexts'
+
 export function VideoHero() {
+  const { openModal } = useDemoModal()
+
   return (
     <div className="flex flex-col items-center justify-center space-y-8">
       <div className="text-center space-y-4 max-w-4xl">
@@ -23,7 +27,10 @@ export function VideoHero() {
         </video>
       </div>
 
-      <button className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md">
+      <button 
+        onClick={openModal}
+        className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md"
+      >
         Request a Demo
       </button>
     </div>

@@ -1,4 +1,7 @@
+"use client"
+
 import { Shield, Lock, Zap } from 'lucide-react'
+import { useDemoModal } from '@/contexts'
 
 const trustBadges = [
   { icon: Shield, text: 'GDPR Compliant' },
@@ -7,6 +10,8 @@ const trustBadges = [
 ]
 
 export function FinalCTASection() {
+  const { openModal } = useDemoModal()
+
   return (
     <section className="py-20 px-6">
       <div className="max-w-4xl mx-auto">
@@ -21,7 +26,10 @@ export function FinalCTASection() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md w-full sm:w-auto">
+            <button 
+              onClick={openModal}
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md w-full sm:w-auto"
+            >
               Request a Demo
             </button>
             <button className="px-8 py-3 bg-card border-2 border-border text-foreground rounded-lg text-lg font-medium hover:bg-muted transition-colors w-full sm:w-auto">

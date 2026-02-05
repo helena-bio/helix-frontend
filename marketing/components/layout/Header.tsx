@@ -2,8 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useDemoModal } from '@/contexts'
 
 export function Header() {
+  const { openModal } = useDemoModal()
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-card">
       <div className="h-full flex items-center gap-6 overflow-hidden">
@@ -33,7 +36,10 @@ export function Header() {
           <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
             Contact
           </Link>
-          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors">
+          <button 
+            onClick={openModal}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
+          >
             Request Demo
           </button>
         </nav>

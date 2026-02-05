@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Inter } from 'next/font/google'
 import '../styles/globals.css'
+import { DemoModalProvider } from '@/contexts'
+import { RequestDemoModal } from '@/components'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -19,7 +21,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <DemoModalProvider>
+          {children}
+          <RequestDemoModal />
+        </DemoModalProvider>
+      </body>
     </html>
   )
 }
