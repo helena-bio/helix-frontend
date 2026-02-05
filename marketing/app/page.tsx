@@ -1,4 +1,4 @@
-import { Header, Footer, VideoHero, BenefitsSection, FeaturesSection, HowItWorksSection } from '@/components'
+import { Header, Footer, VideoHero, BenefitsSection, FeaturesSection, HowItWorksSection, FinalCTASection } from '@/components'
 
 export default function MarketingPage() {
   return (
@@ -11,6 +11,7 @@ export default function MarketingPage() {
         <BenefitsSection />
         <FeaturesSection />
         <HowItWorksSection />
+        <FinalCTASection />
       </main>
       <Footer />
     </div>
