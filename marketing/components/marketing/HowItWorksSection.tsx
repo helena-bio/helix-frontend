@@ -34,31 +34,37 @@ export function HowItWorksSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start relative">
           {steps.map((step, index) => {
             const Icon = step.icon
             return (
-              <div key={step.number} className="flex flex-col items-center text-center space-y-4">
-                <div className="relative">
-                  <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
-                    <Icon className="w-10 h-10 text-primary-foreground" />
+              <>
+                <div key={step.number} className="flex flex-col items-center text-center space-y-4">
+                  <div className="relative">
+                    <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+                      <Icon className="w-10 h-10 text-primary-foreground" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-primary rounded-full flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">{step.number}</span>
+                    </div>
                   </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-card border-2 border-primary rounded-full flex items-center justify-center">
-                    <span className="text-sm font-bold text-primary">{step.number}</span>
-                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {step.title}
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    {step.description}
+                  </p>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  {step.title}
-                </h3>
-                <p className="text-base text-muted-foreground">
-                  {step.description}
-                </p>
                 {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-10 left-[calc(50%+120px)] w-[calc(33.333%-240px)]">
+                  <div className="hidden md:flex absolute items-center justify-center" style={{
+                    left: `${(index + 1) * 33.333 - 16.666}%`,
+                    top: '40px',
+                    width: '0',
+                  }}>
                     <ArrowRight className="w-8 h-8 text-muted-foreground/50" />
                   </div>
                 )}
-              </div>
+              </>
             )
           })}
         </div>
