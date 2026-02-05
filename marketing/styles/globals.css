@@ -1,1 +1,8 @@
 @import '@helix/shared/styles/globals.css';
+
+/* Marketing site overrides - allow scrolling */
+@layer base {
+  html, body {
+    overflow: auto !important;
+  }
+}

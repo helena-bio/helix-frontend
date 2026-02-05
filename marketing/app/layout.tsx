@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
-import '@helix/shared/styles/globals.css'
+import '../styles/globals.css'
 
 export const metadata: Metadata = {
   title: "Helix Insight | AI-Powered Genetic Variant Analysis",
-  description: "Transform genetic variant analysis from days to hours",
+  description: "Transform genetic variant analysis from days to hours with AI-powered VUS prioritization and automated clinical interpretation.",
 }
 
 export default function RootLayout({
