@@ -1,1 +1,2 @@
-export { DemoModalProvider, useDemoModal } from './DemoModalContext'
+export * from './DemoModalContext';
+export * from './AuthContext';

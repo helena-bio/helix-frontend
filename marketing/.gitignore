@@ -1,1 +1,6 @@
 .env.local
+
+# Environment variables
+.env.local
+.env.production.local
+.env.development.local

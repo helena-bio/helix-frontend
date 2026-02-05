@@ -1,8 +1,8 @@
-export { Header } from './layout/Header'
-export { Footer } from './layout/Footer'
-export { VideoHero } from './marketing/VideoHero'
-export { BenefitsSection } from './marketing/BenefitsSection'
-export { FeaturesSection } from './marketing/FeaturesSection'
-export { HowItWorksSection } from './marketing/HowItWorksSection'
-export { FinalCTASection } from './marketing/FinalCTASection'
-export { RequestDemoModal } from './marketing/RequestDemoModal'
+// Layout
+export * from './layout';
+
+// Marketing
+export * from './marketing';
+
+// Auth
+export * from './auth';
