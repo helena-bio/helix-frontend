@@ -1,8 +1,8 @@
-// Layout
+// Layout components
 export * from './layout';
 
-// Marketing
+// Marketing components
 export * from './marketing';
 
-// Auth
+// Auth components
 export * from './auth';
