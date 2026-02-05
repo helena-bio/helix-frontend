@@ -41,9 +41,9 @@ const benefits = [
 
 export function BenefitsSection() {
   return (
-    <section className="py-24 px-6">
+    <section className="py-16 px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16 space-y-4">
+        <div className="text-center mb-12 space-y-4">
           <h2 className="text-4xl font-bold text-primary">
             Built for Clinical Genetics Laboratories
           </h2>
@@ -63,12 +63,12 @@ export function BenefitsSection() {
                 <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
                   <Icon className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">
+                <h3 className="text-base font-medium font-bold text-foreground">
                   {benefit.title}
                 </h3>
                 <ul className="space-y-3">
                   {benefit.items.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <li key={index} className="flex items-start gap-2 text-md text-muted-foreground">
                       <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </li>
