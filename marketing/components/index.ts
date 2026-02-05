@@ -1,2 +1,4 @@
-export * from './layout'
-export * from './marketing'
+export { Header } from './layout/Header'
+export { Footer } from './layout/Footer'
+export { VideoHero } from './marketing/VideoHero'
+export { BenefitsSection } from './marketing/BenefitsSection'
