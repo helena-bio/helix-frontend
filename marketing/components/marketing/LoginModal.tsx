@@ -70,7 +70,7 @@ export function LoginModal() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
+            <label htmlFor="email" className="block text-base font-medium text-foreground mb-1">
               Email address *
             </label>
             <input
@@ -81,13 +81,12 @@ export function LoginModal() {
               value={formData.email}
               onChange={handleChange}
               disabled={isLoading}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-              placeholder="ivan.petrov@cellgenetics.bg"
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
+            <label htmlFor="password" className="block text-base font-medium text-foreground mb-1">
               Password *
             </label>
             <input
@@ -98,8 +97,7 @@ export function LoginModal() {
               value={formData.password}
               onChange={handleChange}
               disabled={isLoading}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-              placeholder="••••••••"
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
 
@@ -107,7 +105,7 @@ export function LoginModal() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -115,13 +113,13 @@ export function LoginModal() {
               type="button"
               onClick={handleClose}
               disabled={isLoading}
-              className="px-6 py-3 border border-border text-foreground rounded-md font-medium hover:bg-muted transition-colors disabled:opacity-50"
+              className="px-6 py-3 border border-border text-foreground rounded-md text-base font-medium hover:bg-muted transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
           </div>
 
-          <p className="text-center text-sm text-muted-foreground pt-2">
+          <p className="text-center text-md text-muted-foreground pt-2">
             Need access?{' '}
             <button
               type="button"
