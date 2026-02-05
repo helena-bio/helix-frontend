@@ -3,7 +3,6 @@ import { Resend } from 'resend'
 
 export async function POST(request: Request) {
   try {
-    // Initialize Resend inside the function
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey) {
       console.error('RESEND_API_KEY is not configured')
@@ -17,9 +16,8 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { fullName, email, organization, phone, message } = body
 
-    // Send email via Resend
     const { data, error } = await resend.emails.send({
-      from: 'Helix Insight <demo@helixinsight.bio>',
+      from: 'Helix Insight <dev@helixinsight.bio>',
       to: 'demo@helixinsight.bio',
       replyTo: email,
       subject: `Demo Request from ${fullName} - ${organization}`,
