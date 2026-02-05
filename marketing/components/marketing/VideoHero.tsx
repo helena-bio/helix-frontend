@@ -18,7 +18,7 @@ export function VideoHero() {
           controls
           preload="metadata"
         >
-          <source src="/video/helixinsight_preview.mp4#t=1" type="video/mp4" />
+          <source src="/video/helixinsight_preview.mp4#t=2" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
