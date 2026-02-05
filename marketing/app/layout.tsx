@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
 import '../styles/globals.css'
-import { DemoModalProvider, AuthProvider } from '@/contexts'
-import { RequestDemoModal } from '@/components'
+import { DemoModalProvider, AuthProvider, LoginModalProvider } from '@/contexts'
+import { RequestDemoModal, LoginModal } from '@/components'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,8 +26,11 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light">
           <AuthProvider>
             <DemoModalProvider>
-              {children}
-              <RequestDemoModal />
+              <LoginModalProvider>
+                {children}
+                <RequestDemoModal />
+                <LoginModal />
+              </LoginModalProvider>
             </DemoModalProvider>
           </AuthProvider>
         </ThemeProvider>

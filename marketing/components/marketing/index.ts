@@ -4,3 +4,4 @@ export { FeaturesSection } from './FeaturesSection';
 export { HowItWorksSection } from './HowItWorksSection';
 export { FinalCTASection } from './FinalCTASection';
 export { RequestDemoModal } from './RequestDemoModal';
+export { LoginModal } from './LoginModal';

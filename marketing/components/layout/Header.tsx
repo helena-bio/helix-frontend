@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useDemoModal } from '@/contexts'
+import { useDemoModal, useLoginModal } from '@/contexts'
 
 export function Header() {
   const { openModal } = useDemoModal()
+  const { openModal: openLoginModal } = useLoginModal()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-card">
@@ -36,9 +37,12 @@ export function Header() {
           <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
             Contact
           </Link>
-          <Link href="/partners/login" className="text-base text-foreground hover:text-primary transition-colors">
+          <button
+            onClick={openLoginModal}
+            className="text-base text-foreground hover:text-primary transition-colors"
+          >
             Partner Login
-          </Link>
+          </button>
           <button
             onClick={openModal}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
