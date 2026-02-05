@@ -5,9 +5,9 @@ import Image from 'next/image'
 
 export function Header() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-6 h-16 flex items-center justify-between max-w-7xl">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-card">
+      <div className="h-full flex items-center gap-6 overflow-hidden">
+        <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
           <Image
             src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
             alt="Helix Insight"
@@ -26,7 +26,7 @@ export function Header() {
           />
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="flex-1 flex items-center justify-end gap-8 mr-6">
           <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors">
             About
           </Link>
