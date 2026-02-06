@@ -30,8 +30,8 @@ export default function ContactPage() {
                 <Mail className="w-5 h-5 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">General Inquiries</h3>
-              <p className="text-md text-muted-foreground">Questions about Helix Insight, pricing, or partnerships.</p>
-              <a href="mailto:contact@helena.bio" className="text-md text-primary hover:underline block">contact@helena.bio</a>
+              <p className="text-base text-muted-foreground">Questions about Helix Insight, pricing, or partnerships.</p>
+              <a href="mailto:contact@helena.bio" className="text-base text-primary hover:underline block">contact@helena.bio</a>
             </div>
 
             <div className="bg-card border border-border rounded-lg p-6 space-y-3 text-center">
@@ -39,8 +39,8 @@ export default function ContactPage() {
                 <Building2 className="w-5 h-5 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">Company</h3>
-              <p className="text-md text-muted-foreground">Helena Bioinformatics</p>
-              <p className="text-md text-muted-foreground">Sofia, Bulgaria</p>
+              <p className="text-base text-muted-foreground">Helena Bioinformatics</p>
+              <p className="text-base text-muted-foreground">Sofia, Bulgaria</p>
             </div>
 
             <div className="bg-card border border-border rounded-lg p-6 space-y-3 text-center">
@@ -48,8 +48,8 @@ export default function ContactPage() {
                 <Shield className="w-5 h-5 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">Data Protection</h3>
-              <p className="text-md text-muted-foreground">GDPR, DPA, and privacy-related inquiries.</p>
-              <a href="mailto:privacy@helena.bio" className="text-md text-primary hover:underline block">privacy@helena.bio</a>
+              <p className="text-base text-muted-foreground">GDPR, DPA, and privacy-related inquiries.</p>
+              <a href="mailto:privacy@helena.bio" className="text-base text-primary hover:underline block">privacy@helena.bio</a>
             </div>
           </section>
 
