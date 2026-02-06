@@ -65,7 +65,7 @@ export function FeaturesSection() {
                   {feature.highlights.map((highlight) => (
                     <span
                       key={highlight}
-                      className="px-3 py-1 bg-primary/5 text-primary text-sm rounded-full"
+                      className="px-3 py-1 bg-primary/5 text-primary text-md rounded-full"
                     >
                       {highlight}
                     </span>
