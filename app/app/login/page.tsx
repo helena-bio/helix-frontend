@@ -3,12 +3,14 @@
  *
  * Authenticates against User Management Service (port 9008).
  * Stores JWT in cookie for cross-subdomain compatibility.
+ * Uses same visual header/footer as marketing site.
  */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AlertCircle } from 'lucide-react';
 import { tokenUtils } from '@/lib/auth/token';
 
@@ -74,14 +76,31 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border/40 bg-background/95">
-        <div className="container flex h-16 items-center">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-foreground">Helix Insight</span>
+      {/* Header - same as marketing site */}
+      <header className="h-14 border-b border-border bg-card shrink-0">
+        <div className="h-full flex items-center gap-6 overflow-hidden">
+          <Link href="https://helixinsight.bio" className="flex items-center gap-2 shrink-0 pl-6">
+            <Image
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
+              alt="Helix Insight"
+              width={160}
+              height={48}
+              className="h-10 w-auto"
+              priority
+            />
+            <Image
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
+              alt=""
+              width={32}
+              height={40}
+              className="h-9 w-auto"
+              priority
+            />
           </Link>
         </div>
       </header>
 
+      {/* Main content */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
@@ -150,9 +169,22 @@ export default function LoginPage() {
         </div>
       </main>
 
-      <footer className="border-t border-border/40 py-6">
-        <div className="container text-center text-sm text-foreground/60">
-          2025 Helena Bioinformatics
+      {/* Footer - same as marketing site */}
+      <footer className="border-t border-border bg-card">
+        <div className="px-6 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              2026 Helena Bioinformatics. All rights reserved.
+            </p>
+            <div className="flex items-center gap-6 text-sm">
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                Privacy Policy
+              </a>
+              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+                Terms of Service
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
