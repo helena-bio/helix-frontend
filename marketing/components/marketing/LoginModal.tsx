@@ -48,6 +48,15 @@ export function LoginModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <style>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+          -webkit-text-fill-color: hsl(var(--foreground)) !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+      `}</style>
       <div className="fixed inset-0 bg-black/50" onClick={handleClose} />
 
       <div className="relative bg-card border border-border rounded-lg shadow-lg max-w-md w-full mx-4">
@@ -65,7 +74,7 @@ export function LoginModal() {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 p-4">
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-base text-destructive">{error}</p>
             </div>
           )}
 
@@ -119,7 +128,7 @@ export function LoginModal() {
             </button>
           </div>
 
-          <p className="text-center text-md text-muted-foreground pt-2">
+          <p className="text-center text-base text-muted-foreground pt-2">
             Need access?{' '}
             <button
               type="button"
