@@ -52,8 +52,8 @@ export function DatabaseIntegrationsSection() {
           {databases.map((db) => (
             <a key={db.name} href={db.url} target="_blank" rel="noopener noreferrer" className="group bg-card border border-border rounded-lg p-4 flex flex-col items-center text-center space-y-2 hover:border-primary/40 hover:shadow-sm transition-all">
               <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{db.name}</span>
-              <span className="text-xs text-muted-foreground leading-tight">{db.org}</span>
-              <span className="text-xs text-muted-foreground leading-tight opacity-70">{db.description}</span>
+              <span className="text-sm text-muted-foreground leading-tight">{db.org}</span>
+              <span className="text-sm text-muted-foreground leading-tight opacity-70">{db.description}</span>
             </a>
           ))}
         </div>
