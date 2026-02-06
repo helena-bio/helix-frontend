@@ -259,7 +259,7 @@ export function JourneyPanel() {
                 onClick={logout}
                 className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>

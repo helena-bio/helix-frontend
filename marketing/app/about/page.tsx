@@ -33,9 +33,9 @@ export default function AboutPage() {
 
               {/* Vladimir Mitev */}
               <div className="bg-card border border-border rounded-lg p-8 space-y-5">
-                <div className="flex items-start gap-5">
-                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-2xl font-bold text-muted-foreground">VM</span>
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-xl font-bold text-muted-foreground">VM</span>
                   </div>
                   <div className="space-y-1">
                     <h3 className="text-lg font-semibold text-foreground">Vladimir Mitev</h3>
@@ -43,19 +43,12 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <p className="text-base text-muted-foreground leading-relaxed">
-                  20 years in the technology industry, specializing in  high-throughput data processing systems in the telecommunications sector across EMEA and North America. Background in building and managing enterprise-grade infrastructure where millisecond latency, data integrity, and zero-downtime reliability are non-negotiable.
+                  Founded Helena Bioinformatics to solve a problem that costs lives through delay: geneticists spending days on variant interpretation that technology should handle in minutes. Every hour a laboratory spends on manual classification is an hour a patient waits for answers.
                 </p>
                 <p className="text-base text-muted-foreground leading-relaxed">
-                  Founded Helena Bioinformatics to bring the same engineering discipline to clinical genomics -- where laboratories still rely on manual workflows and fragmented tools. Responsible for platform architecture, infrastructure, and product strategy.
-                </p>
-		<p className="text-base text-muted-foreground leading-relaxed">
-                  Specialized in distributed systems, data pipeline architecture, high-availability infrastructure, and building automated frameworks for processing and validating large-scale datasets under strict quality requirements.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  B.Sc. Computer Systems and Technologies, Technical University of Sofia
+                  Helix Insight is built on that urgency -- engineering infrastructure where clinical accuracy and speed are not trade-offs, but requirements. The mission is straightforward: give every genetics laboratory, regardless of size, access to interpretation tools that were previously only available to the largest institutions.
                 </p>
               </div>
-
               {/* Acad. Draga Toncheva */}
               <div className="bg-card border border-border rounded-lg p-8 space-y-5">
                 <div className="flex items-start gap-5">
