@@ -6,17 +6,12 @@
  * Auth guard reads JWT from cookie (not localStorage).
  * Compatible with marketing site SSO via shared cookie domain.
  *
- * Two modes:
- * 1. Pre-analysis: Full width workflow (upload, validation, profile, processing)
- * 2. Post-analysis: Split view (45% Chat/Sidebar + 55% View Panel)
- *
- * Providers hierarchy (both modes):
- * - ClinicalInterpretationProvider: Clinical interpretation (per-session)
- * - ClinicalProfileProvider: Complete patient clinical profile
- * - ScreeningResultsProvider: Clinical screening analysis results
- * - PhenotypeResultsProvider: Phenotype matching results
- * - VariantsResultsProvider: ALL variants (streaming, local filtering)
- * - LiteratureResultsProvider: Clinical literature search results
+ * Layout structure:
+ * - Header: JourneyPanel (always visible)
+ * - Sidebar: Always visible (modules disabled until analysis complete)
+ * - Content area:
+ *   - Pre-analysis: Full width workflow (upload, validation, profile, processing)
+ *   - Post-analysis: SplitView (Chat + View Panel)
  *
  * SESSION MANAGEMENT:
  * - URL is source of truth: /analysis?session=<uuid>
@@ -28,6 +23,7 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { JourneyPanel } from '@/components/navigation/JourneyPanel'
+import { Sidebar } from '@/components/navigation/Sidebar'
 import { SplitView } from '@/components/layout/SplitView'
 import {
   ClinicalInterpretationProvider,
@@ -92,16 +88,18 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
                     <JourneyPanel />
                   </header>
 
-                  {/* Main area */}
-                  <div className="flex-1 min-h-0">
+                  {/* Main area: Sidebar + Content */}
+                  <div className="flex-1 min-h-0 flex">
+                    {/* Sidebar - Always visible */}
+                    <Sidebar />
+
+                    {/* Content area */}
                     {isAnalysisComplete ? (
-                      // Split View: 45% (Sidebar+Chat) + 55% (View Panel)
                       <SplitView>
                         {children}
                       </SplitView>
                     ) : (
-                      // Full Width: Pre-analysis workflow
-                      <main className="h-full overflow-auto bg-background">
+                      <main className="flex-1 h-full overflow-auto bg-background">
                         {children}
                       </main>
                     )}

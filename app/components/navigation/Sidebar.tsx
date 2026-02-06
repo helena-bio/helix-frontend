@@ -2,13 +2,15 @@
 
 /**
  * Sidebar Navigation Component
- * Two states:
+ *
+ * Always visible in authenticated layout.
+ * Two visual states:
  * - Expanded (256px): Full text labels
  * - Collapsed (64px): Icon-only mode
  *
  * Module enablement:
- * - Modules are enabled based on ClinicalProfileContext flags
- * - Disabled modules show opacity-50 and are not clickable
+ * - Pre-analysis: All modules disabled (grayed out)
+ * - Post-analysis: Modules enabled based on ClinicalProfileContext flags
  */
 
 import {
@@ -28,6 +30,7 @@ import {
   TooltipTrigger,
 } from '@helix/shared/components/ui/tooltip'
 import { useSession } from '@/contexts/SessionContext'
+import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { cn } from '@helix/shared/lib/utils'
 
@@ -46,32 +49,36 @@ export function Sidebar() {
     setSelectedModule,
   } = useSession()
 
+  const { currentStep } = useJourney()
   const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
+
+  // Analysis must be complete before any module is accessible
+  const isAnalysisComplete = currentStep === 'analysis'
 
   const MODULES: Module[] = [
     {
       id: 'analysis',
       name: 'Variant Analysis',
       icon: Microscope,
-      checkEnabled: () => true, // Always enabled
+      checkEnabled: () => isAnalysisComplete,
     },
     {
       id: 'vus',
       name: 'Clinical Screening',
       icon: Shield,
-      checkEnabled: () => enableScreening,
+      checkEnabled: () => isAnalysisComplete && enableScreening,
     },
     {
       id: 'phenotype',
       name: 'Phenotype Matching',
       icon: Dna,
-      checkEnabled: () => enablePhenotypeMatching,
+      checkEnabled: () => isAnalysisComplete && enablePhenotypeMatching,
     },
     {
       id: 'literature',
       name: 'Literature Analysis',
       icon: BookOpen,
-      checkEnabled: () => enablePhenotypeMatching, // Literature depends on phenotype
+      checkEnabled: () => isAnalysisComplete && enablePhenotypeMatching,
     },
   ]
 
@@ -82,7 +89,7 @@ export function Sidebar() {
 
   return (
     <aside className={cn(
-      "h-full flex flex-col bg-card transition-all duration-300 border-r border-border",
+      "h-full flex flex-col bg-card transition-all duration-300 border-r border-border shrink-0",
       isSidebarOpen ? "w-64" : "w-16"
     )}>
       {/* Header: Home button + Toggle button */}
@@ -164,7 +171,11 @@ export function Sidebar() {
                 {!isSidebarOpen && (
                   <TooltipContent side="right">
                     <p className="text-sm">{module.name}</p>
-                    {!isEnabled && <p className="text-xs text-muted-foreground">(Not enabled)</p>}
+                    {!isEnabled && (
+                      <p className="text-xs text-muted-foreground">
+                        {isAnalysisComplete ? '(Not enabled)' : '(Analysis required)'}
+                      </p>
+                    )}
                   </TooltipContent>
                 )}
               </Tooltip>
