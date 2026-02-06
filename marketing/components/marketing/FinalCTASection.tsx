@@ -1,6 +1,7 @@
 "use client"
 
 import { Shield, Lock, Zap } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useDemoModal } from '@/contexts'
 
 const trustBadges = [
@@ -11,13 +12,10 @@ const trustBadges = [
 
 export function FinalCTASection() {
   const { openModal } = useDemoModal()
+  const router = useRouter()
 
   const handleContactClick = () => {
-    // Scroll to footer
-    const footer = document.querySelector('footer')
-    if (footer) {
-      footer.scrollIntoView({ behavior: 'smooth' })
-    }
+    router.push("/contact")
   }
 
   return (
