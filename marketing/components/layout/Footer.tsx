@@ -1,14 +1,14 @@
 import Link from 'next/link'
-
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="px-6 py-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            &copy; 2026 Helena Bioinformatics. All rights reserved.
+          <p className="text-md text-muted-foreground">
+            <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>{' '}
+            &copy; 2026. All rights reserved.
           </p>
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-6 text-md">
             <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
               Privacy Policy
             </Link>

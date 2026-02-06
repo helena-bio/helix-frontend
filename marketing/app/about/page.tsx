@@ -17,10 +17,10 @@ export default function AboutPage() {
           {/* Mission */}
           <section className="text-center space-y-4 max-w-3xl mx-auto">
             <h1 className="text-3xl font-bold text-primary">About Helix Insight</h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
               Clinical genetics laboratories spend days manually interpreting genetic variants -- cross-referencing databases, reviewing literature, and applying classification guidelines. We are building the infrastructure to reduce that to minutes, without compromising clinical accuracy.
             </p>
-            <p className="text-base text-muted-foreground leading-relaxed">
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
               Helix Insight brings enterprise-grade engineering to clinical genomics. Built on dedicated EU infrastructure, following ACMG/AMP standards, and designed from the ground up for the rigorous demands of clinical genetics workflows.
             </p>
           </section>
@@ -29,7 +29,7 @@ export default function AboutPage() {
           <section className="space-y-10">
             <h2 className="text-3xl font-bold text-primary text-center">Leadership</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-8 max-w-3xl mx-auto">
 
               {/* Vladimir Mitev */}
               <div className="bg-card border border-border rounded-lg p-8 space-y-5">
@@ -44,18 +44,20 @@ export default function AboutPage() {
                       <a href="https://www.linkedin.com/in/vmitev/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                       <Linkedin className="w-4 h-4" />
                       LinkedIn
                     </a>
                   </div>
                 </div>
                 <p className="text-base text-muted-foreground leading-relaxed">
-                  18 years in the technology industry, from C++ game engine development to leading regional support operations at Nokia across EMEA and North America. Background in building and managing enterprise-grade systems that process millions of transactions with zero tolerance for failure.
+                  20 years in the technology industry, specializing in  high-throughput data processing systems in the telecommunications sector across EMEA and North America. Background in building and managing enterprise-grade infrastructure where millisecond latency, data integrity, and zero-downtime reliability are non-negotiable.
                 </p>
                 <p className="text-base text-muted-foreground leading-relaxed">
                   Founded Helena Bioinformatics to bring the same engineering discipline to clinical genomics -- where laboratories still rely on manual workflows and fragmented tools. Responsible for platform architecture, infrastructure, and product strategy.
+                </p>
+		<p className="text-base text-muted-foreground leading-relaxed">
+                  Specialized in distributed systems, data pipeline architecture, high-availability infrastructure, and building automated frameworks for processing and validating large-scale datasets under strict quality requirements.
                 </p>
                 <p className="text-sm text-muted-foreground">
                   B.Sc. Computer Systems and Technologies, Technical University of Sofia
@@ -77,13 +79,13 @@ export default function AboutPage() {
                   Academician of the Bulgarian Academy of Sciences and one of the foremost authorities in medical genetics in Southeast Europe. Over 40 years of scientific and clinical experience in human genetics and genomics.
                 </p>
                 <p className="text-base text-muted-foreground leading-relaxed">
-                  Head of the Department of Medical Genetics at the Medical University of Sofia (2000-present) and Director of the National Genomic Center for Socially Significant Diseases. Author of 170+ peer-reviewed publications, 14 monographs, and supervisor of 40 doctoral candidates. National Consultant in Medical Genetics at the Bulgarian Ministry of Health.
+                  Former Head of the Department of Medical Genetics at the Medical University of Sofia and Director of the National Genomic Center for Socially Significant Diseases. Author of 300+ scientific publications, 14 monographs, and supervisor of 40 doctoral candidates. National Consultant in Medical Genetics at the Bulgarian Ministry of Health.
                 </p>
                 <p className="text-base text-muted-foreground leading-relaxed">
                   President of the Bulgarian Society of Human Genetics and Genomics. Member of the European Society of Human Genetics (ESHG) Scientific Program Committee and the European Cytogeneticists Association (ECA) European Council. Specialized at institutions including Oxford, London, Naples, and the Tokyo Human Genome Center.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Recipient of the Order of Saints Cyril and Methodius -- the highest state distinction for contributions to science and education in Bulgaria (2025).
+                  Nominated for the Order of Saints Cyril and Methodius -- the highest state distinction for contributions to science and education in Bulgaria (2026).
                 </p>
               </div>
 

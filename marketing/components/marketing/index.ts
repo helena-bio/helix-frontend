@@ -6,3 +6,4 @@ export { FinalCTASection } from './FinalCTASection';
 export { SecurityComplianceSection } from './SecurityComplianceSection';
 export { RequestDemoModal } from './RequestDemoModal';
 export { LoginModal } from './LoginModal';
+export { DatabaseIntegrationsSection } from './DatabaseIntegrationsSection';

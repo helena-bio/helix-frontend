@@ -48,7 +48,7 @@ export function LoginModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={handleClose} />
+      <div className="fixed inset-0 bg-black/50" onClick={handleClose} />
 
       <div className="relative bg-card border border-border rounded-lg shadow-lg max-w-md w-full mx-4">
         <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
