@@ -76,7 +76,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header - same as marketing site */}
+      {/* Autofill override */}
+      <style>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+          -webkit-text-fill-color: hsl(var(--foreground)) !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+      `}</style>
+
+      {/* Header */}
       <header className="h-14 border-b border-border bg-card shrink-0">
         <div className="h-full flex items-center gap-6 overflow-hidden">
           <Link href="https://helixinsight.bio" className="flex items-center gap-2 shrink-0 pl-6">
@@ -107,7 +118,7 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
               Sign in to continue your analysis
             </h1>
-            <p className="text-sm text-foreground/60">
+            <p className="text-base text-muted-foreground">
               Secure access to AI-powered variant interpretation
             </p>
           </div>
@@ -117,12 +128,12 @@ export default function LoginPage() {
               {error && (
                 <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
                   <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
-                  <p className="text-sm text-destructive">{error}</p>
+                  <p className="text-base text-destructive">{error}</p>
                 </div>
               )}
 
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                <label htmlFor="email" className="block text-base font-medium text-foreground">
                   Email address
                 </label>
                 <input
@@ -135,12 +146,12 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   placeholder="Enter your email"
-                  className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-foreground">
+                <label htmlFor="password" className="block text-base font-medium text-foreground">
                   Password
                 </label>
                 <input
@@ -153,14 +164,14 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                   placeholder="Enter your password"
-                  className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </button>
@@ -169,18 +180,19 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer - same as marketing site */}
+      {/* Footer */}
       <footer className="border-t border-border bg-card">
         <div className="px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              2026 Helena Bioinformatics. All rights reserved.
+            <p className="text-md text-muted-foreground">
+              <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>{' '}
+              &copy; 2026. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-sm">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+            <div className="flex items-center gap-6 text-md">
+              <a href="https://helixinsight.bio/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="https://helixinsight.bio/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                 Terms of Service
               </a>
             </div>
