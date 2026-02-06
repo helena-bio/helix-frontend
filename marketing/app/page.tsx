@@ -1,5 +1,4 @@
-import { Header, Footer, VideoHero, BenefitsSection, FeaturesSection, HowItWorksSection, FinalCTASection } from '@/components'
-
+import { Header, Footer, VideoHero, BenefitsSection, FeaturesSection, HowItWorksSection, SecurityComplianceSection, FinalCTASection } from '@/components'
 export default function MarketingPage() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -11,6 +10,7 @@ export default function MarketingPage() {
         <BenefitsSection />
         <FeaturesSection />
         <HowItWorksSection />
+        <SecurityComplianceSection />
         <FinalCTASection />
       </main>
       <Footer />
