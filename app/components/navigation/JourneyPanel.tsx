@@ -8,7 +8,7 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, X, Download, ChevronDown } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, X, Download, ChevronDown, LogOut } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -25,6 +25,7 @@ import {
 import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@helix/shared/lib/utils'
 import { downloadClinicalReport } from '@/lib/utils/download-report'
 
@@ -59,6 +60,7 @@ export function JourneyPanel() {
   const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { interpretation, hasInterpretation, isComplete } = useClinicalInterpretation()
+  const { logout } = useAuth()
 
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {
@@ -73,13 +75,13 @@ export function JourneyPanel() {
    */
   const getVisualStatus = (stepId: typeof JOURNEY_STEPS[number]['id']): StepStatus => {
     const baseStatus = getStepStatus(stepId)
-    
+
     // VISUAL OVERRIDE: Upload is completed if validation finished (sessionId exists)
     // This shows green checkmark on Upload while QC Results are displayed
     if (stepId === 'upload' && currentSessionId && baseStatus === 'current') {
       return 'completed'
     }
-    
+
     return baseStatus
   }
 
@@ -246,6 +248,25 @@ export function JourneyPanel() {
             Clear File
           </Button>
         )}
+
+        {/* Logout button */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-sm">Sign out</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   )
