@@ -154,7 +154,7 @@ export function ContactForm() {
           onChange={handleChange}
           className="mt-1"
         />
-        <label htmlFor="gdprConsent" className="text-sm text-muted-foreground">
+        <label htmlFor="gdprConsent" className="text-base text-muted-foreground">
           I agree to the processing of my personal data in accordance with the{' '}
           <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>. *
         </label>
