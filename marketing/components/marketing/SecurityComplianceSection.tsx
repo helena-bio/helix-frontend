@@ -69,7 +69,7 @@ export function SecurityComplianceSection() {
                     {feature.title}
                   </h3>
                 </div>
-                <p className="text-md text-muted-foreground leading-relaxed">
+                <p className="text-base text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
               </div>
@@ -84,7 +84,7 @@ export function SecurityComplianceSection() {
               <h3 className="text-lg font-semibold text-foreground">
                 Compliance Documentation
               </h3>
-              <p className="text-md text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 Full transparency. All compliance documents are available for review.
               </p>
             </div>
