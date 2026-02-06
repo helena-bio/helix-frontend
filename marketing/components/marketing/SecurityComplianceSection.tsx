@@ -91,7 +91,7 @@ export function SecurityComplianceSection() {
             <div className="flex flex-wrap gap-3">
               {complianceDocuments.map((doc) => (
                 
-                  key={doc.name}
+                  <a key={doc.name}
                   href={doc.href}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-md text-sm font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                 >
