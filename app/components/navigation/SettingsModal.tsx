@@ -158,7 +158,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative bg-card border border-border rounded-lg shadow-lg w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden">
+      <div className="relative bg-card border border-border rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-foreground">Settings</h2>
@@ -171,7 +171,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Body: Left nav + Right content */}
-        <div className="flex min-h-[400px]">
+        <div className="flex h-[520px]">
           {/* Left navigation */}
           <nav className="w-48 border-r border-border p-3 space-y-1 shrink-0">
             {sections.map((section) => (
@@ -333,12 +333,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-md font-medium text-muted-foreground mb-1">Organization ID</label>
-                    <div className="px-3 py-2 border border-border rounded-md bg-muted/30 text-md text-muted-foreground font-mono">
-                      {user?.organization_id || '-'}
-                    </div>
-                  </div>
+
                 </div>
               </div>
             )}
