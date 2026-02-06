@@ -2,6 +2,10 @@
 
 /**
  * Authenticated Layout
+ *
+ * Auth guard reads JWT from cookie (not localStorage).
+ * Compatible with marketing site SSO via shared cookie domain.
+ *
  * Two modes:
  * 1. Pre-analysis: Full width workflow (upload, validation, profile, processing)
  * 2. Post-analysis: Split view (45% Chat/Sidebar + 55% View Panel)
@@ -35,6 +39,7 @@ import {
 } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
+import { tokenUtils } from '@/lib/auth/token'
 
 interface AuthenticatedLayoutProps {
   children: ReactNode
@@ -50,10 +55,10 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   // Check if analysis is complete (show split view)
   const isAnalysisComplete = currentStep === 'analysis'
 
-  // Auth check
+  // Auth check -- cookie-based JWT validation
   useEffect(() => {
-    const token = localStorage.getItem('helix_auth_token')
-    if (!token) {
+    if (!tokenUtils.isValid()) {
+      tokenUtils.remove()
       router.push('/login')
     } else {
       setIsChecking(false)

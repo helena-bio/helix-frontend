@@ -1,7 +1,12 @@
 /**
  * Base HTTP Client for Helix Insight API
  * Follows Lumiere pattern with proper error handling
+ *
+ * Reads JWT from cookie (shared with marketing site).
+ * On 401 response, clears cookie and redirects to /login.
  */
+
+import { tokenUtils } from '@/lib/auth/token'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
 const DEFAULT_TIMEOUT = 30000
@@ -25,22 +30,16 @@ export class TimeoutError extends Error {
 }
 
 function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null
-  try {
-    return localStorage.getItem('helix_auth_token')
-  } catch (error) {
-    console.error('Failed to read auth token:', error)
-    return null
-  }
+  return tokenUtils.get()
 }
 
 function getHeaders(additionalHeaders?: HeadersInit): HeadersInit {
-  const token = getAuthToken()
+  const token = tokenUtils.get()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
 
-  if (token) {
+  if (token && tokenUtils.isValid()) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
@@ -77,6 +76,14 @@ async function fetchWithTimeout(
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
+    // Handle 401 -- token expired or invalid
+    if (response.status === 401) {
+      tokenUtils.remove()
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
+    }
+
     let errorMessage = `HTTP ${response.status}`
     let errorCode: string | undefined
 
@@ -239,6 +246,14 @@ export async function uploadFileWithProgress<T>(
           reject(new ApiError('Invalid JSON response', xhr.status))
         }
       } else {
+        // Handle 401 in upload
+        if (xhr.status === 401) {
+          tokenUtils.remove()
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login'
+          }
+        }
+
         try {
           const errorData = JSON.parse(xhr.responseText)
           reject(

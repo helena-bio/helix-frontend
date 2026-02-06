@@ -1,3 +1,4 @@
+export { AuthProvider, useAuth } from './AuthContext'
 export { JourneyProvider, useJourney } from './JourneyContext'
 export { SessionProvider, useSession } from './SessionContext'
 export { ClinicalProfileProvider, useClinicalProfileContext } from './ClinicalProfileContext'
