@@ -41,7 +41,7 @@ export default function AboutPage() {
                     <h3 className="text-lg font-semibold text-foreground">Vladimir Mitev</h3>
                     <p className="text-base text-primary font-medium">Founder &amp; CEO</p>
                     
-                      href="https://www.linkedin.com/in/vmitev/"
+                      <a href="https://www.linkedin.com/in/vmitev/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
