@@ -35,6 +35,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008';
 
+/**
+ * Build User object from JWT payload.
+ * All identity fields are now embedded in the token.
+ */
+function userFromPayload(payload: JWTPayload): User {
+  return {
+    id: payload.sub,
+    email: payload.email || '',
+    full_name: payload.full_name || '',
+    organization_name: '',
+    organization_id: payload.org_id,
+    role: payload.role || '',
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [authState, setAuthState] = useState<AuthState>({
@@ -51,14 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const payload = tokenUtils.decode();
 
       setAuthState({
-        user: payload ? {
-          id: payload.sub,
-          email: '',
-          full_name: '',
-          organization_name: '',
-          organization_id: payload.org_id,
-          role: '',
-        } : null,
+        user: payload ? userFromPayload(payload) : null,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -107,15 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshAuth = useCallback(() => {
     if (tokenUtils.isValid()) {
       const payload = tokenUtils.decode();
-      setAuthState(prev => ({
-        ...prev,
+      setAuthState({
+        user: payload ? userFromPayload(payload) : null,
         isAuthenticated: true,
-        user: payload ? {
-          ...prev.user,
-          id: payload.sub,
-          organization_id: payload.org_id,
-        } as User : prev.user,
-      }));
+        isLoading: false,
+      });
     } else {
       tokenUtils.remove();
       setAuthState({

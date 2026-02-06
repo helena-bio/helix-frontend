@@ -14,6 +14,9 @@ const TOKEN_EXPIRY_KEY = 'helix_token_expiry';
 export interface JWTPayload {
   sub: string;
   org_id: string;
+  email: string;
+  full_name: string;
+  role: string;
   exp: number;
   iat: number;
   type: string;
