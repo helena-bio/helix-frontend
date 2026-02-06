@@ -59,7 +59,7 @@ export function ContactForm() {
         </div>
         <div className="space-y-2">
           <h3 className="text-2xl font-semibold text-foreground">Message Sent</h3>
-          <p className="text-base text-muted-foreground">
+          <p className="text-md text-muted-foreground">
             Thank you for reaching out. We will respond to{' '}
             <span className="font-medium text-foreground">{formData.email}</span>{' '}
             as soon as possible.
@@ -154,7 +154,7 @@ export function ContactForm() {
           onChange={handleChange}
           className="mt-1"
         />
-        <label htmlFor="gdprConsent" className="text-base text-muted-foreground">
+        <label htmlFor="gdprConsent" className="text-md text-muted-foreground">
           I agree to the processing of my personal data in accordance with the{' '}
           <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>. *
         </label>
