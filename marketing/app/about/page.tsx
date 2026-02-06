@@ -1,5 +1,5 @@
 import { Header, Footer } from '@/components'
-import { Linkedin } from 'lucide-react'
+
 import Link from 'next/link'
 
 export const metadata = {
@@ -40,14 +40,6 @@ export default function AboutPage() {
                   <div className="space-y-1">
                     <h3 className="text-lg font-semibold text-foreground">Vladimir Mitev</h3>
                     <p className="text-base text-primary font-medium">Founder &amp; CEO</p>
-                    
-                      <a href="https://www.linkedin.com/in/vmitev/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      <Linkedin className="w-4 h-4" />
-                      LinkedIn
-                    </a>
                   </div>
                 </div>
                 <p className="text-base text-muted-foreground leading-relaxed">
