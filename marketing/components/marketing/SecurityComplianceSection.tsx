@@ -93,7 +93,7 @@ export function SecurityComplianceSection() {
                 
                   <a key={doc.name}
                   href={doc.href}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-md text-sm font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-md text-md font-medium text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                 >
                   <FileText className="w-4 h-4" />
                   {doc.name}
