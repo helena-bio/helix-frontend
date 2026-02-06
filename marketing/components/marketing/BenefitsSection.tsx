@@ -70,7 +70,7 @@ export function BenefitsSection() {
                 </div>
                 <ul className="space-y-4">
                   {benefit.items.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3 text-md text-muted-foreground">
+                    <li key={index} className="flex items-start gap-3 text-base text-muted-foreground">
                       <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </li>
