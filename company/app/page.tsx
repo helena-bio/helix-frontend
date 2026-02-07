@@ -1,4 +1,4 @@
-import { Header, Footer, HeroSection, MissionSection, ProductSection, TeamSection, ContactCTASection } from '@/components'
+import { Header, Footer, HeroSection, MissionSection, ProductSection, ContactCTASection } from '@/components'
 
 export default function HomePage() {
   return (
@@ -8,7 +8,6 @@ export default function HomePage() {
         <HeroSection />
         <MissionSection />
         <ProductSection />
-        <TeamSection />
         <ContactCTASection />
       </main>
       <Footer />

@@ -9,8 +9,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Helena Bioinformatics | Advancing Clinical Genomics Through AI",
-  description: "Helena Bioinformatics develops AI-powered tools for clinical genetics laboratories, including Helix Insight for automated variant interpretation.",
+  title: "Helena Bioinformatics | Intelligence for Genomics",
+  description: "Software company integrating artificial intelligence into bioinformatics research and clinical genomics.",
 }
 
 export default function RootLayout({

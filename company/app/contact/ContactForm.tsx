@@ -91,11 +91,8 @@ export function ContactForm() {
           <select id="subject" name="subject" required value={formData.subject} onChange={handleChange} className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
             <option value="" disabled>Select a topic</option>
             <option value="Laboratory Partnership">Laboratory Partnership</option>
-            <option value="Clinical Validation">Clinical Validation</option>
+            <option value="Research Collaboration">Research Collaboration</option>
             <option value="Investment Inquiry">Investment Inquiry</option>
-            <option value="Helix Insight Demo">Helix Insight Demo</option>
-            <option value="Academic Collaboration">Academic Collaboration</option>
-            <option value="Data Protection">Data Protection</option>
             <option value="General Inquiry">General Inquiry</option>
           </select>
         </div>
@@ -110,7 +107,7 @@ export function ContactForm() {
         <input type="checkbox" id="gdprConsent" name="gdprConsent" required checked={formData.gdprConsent} onChange={handleChange} className="mt-1" />
         <label htmlFor="gdprConsent" className="text-md text-muted-foreground">
           I agree to the processing of my personal data in accordance with the{' '}
-          <a href="https://helixinsight.bio/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Privacy Policy</a>. *
+          <a href="https://helixinsight.bio/privacy" target="_blank" rel="noopener noreferrer" className="text-foreground hover:text-primary transition-colors">Privacy Policy</a>. *
         </label>
       </div>
 
