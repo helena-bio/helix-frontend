@@ -19,6 +19,9 @@ export function Header() {
           <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors">
             About
           </Link>
+          <Link href="/partners" className="text-base text-foreground hover:text-primary transition-colors">
+            Partners
+          </Link>
           <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
             Contact
           </Link>
@@ -29,11 +32,7 @@ export function Header() {
         </nav>
 
         <div className="flex md:hidden flex-1 justify-end mr-4">
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 text-foreground hover:text-primary transition-colors"
-            aria-label="Toggle menu"
-          >
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-foreground hover:text-primary transition-colors" aria-label="Toggle menu">
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
@@ -42,12 +41,9 @@ export function Header() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-card border-b border-border shadow-lg">
           <nav className="flex flex-col px-6 py-4 space-y-4">
-            <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors py-2" onClick={closeMobileMenu}>
-              About
-            </Link>
-            <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors py-2" onClick={closeMobileMenu}>
-              Contact
-            </Link>
+            <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors py-2" onClick={closeMobileMenu}>About</Link>
+            <Link href="/partners" className="text-base text-foreground hover:text-primary transition-colors py-2" onClick={closeMobileMenu}>Partners</Link>
+            <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors py-2" onClick={closeMobileMenu}>Contact</Link>
             <a href="https://helixinsight.bio" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 w-full px-4 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors text-center" onClick={closeMobileMenu}>
               Helix Insight
               <ExternalLink className="w-4 h-4" />

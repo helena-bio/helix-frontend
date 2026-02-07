@@ -73,97 +73,48 @@ export function ContactForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="space-y-1.5">
           <label htmlFor="name" className="text-base font-medium text-foreground">Full Name *</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            required
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <input type="text" id="name" name="name" required value={formData.name} onChange={handleChange} className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
         <div className="space-y-1.5">
           <label htmlFor="email" className="text-base font-medium text-foreground">Email *</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            required
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <input type="email" id="email" name="email" required value={formData.email} onChange={handleChange} className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="space-y-1.5">
           <label htmlFor="organization" className="text-base font-medium text-foreground">Organization</label>
-          <input
-            type="text"
-            id="organization"
-            name="organization"
-            value={formData.organization}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <input type="text" id="organization" name="organization" value={formData.organization} onChange={handleChange} className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary" />
         </div>
         <div className="space-y-1.5">
           <label htmlFor="subject" className="text-base font-medium text-foreground">Subject *</label>
-          <select
-            id="subject"
-            name="subject"
-            required
-            value={formData.subject}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          >
+          <select id="subject" name="subject" required value={formData.subject} onChange={handleChange} className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
             <option value="" disabled>Select a topic</option>
-            <option value="General Inquiry">General Inquiry</option>
-            <option value="Partnership">Partnership</option>
-            <option value="Investment">Investment</option>
-            <option value="Helix Insight">Helix Insight</option>
+            <option value="Laboratory Partnership">Laboratory Partnership</option>
+            <option value="Clinical Validation">Clinical Validation</option>
+            <option value="Investment Inquiry">Investment Inquiry</option>
+            <option value="Helix Insight Demo">Helix Insight Demo</option>
+            <option value="Academic Collaboration">Academic Collaboration</option>
             <option value="Data Protection">Data Protection</option>
-            <option value="Other">Other</option>
+            <option value="General Inquiry">General Inquiry</option>
           </select>
         </div>
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="message" className="text-base font-medium text-foreground">Message *</label>
-        <textarea
-          id="message"
-          name="message"
-          required
-          rows={5}
-          value={formData.message}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-        />
+        <textarea id="message" name="message" required rows={5} value={formData.message} onChange={handleChange} className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none" />
       </div>
 
       <div className="flex items-start gap-2">
-        <input
-          type="checkbox"
-          id="gdprConsent"
-          name="gdprConsent"
-          required
-          checked={formData.gdprConsent}
-          onChange={handleChange}
-          className="mt-1"
-        />
+        <input type="checkbox" id="gdprConsent" name="gdprConsent" required checked={formData.gdprConsent} onChange={handleChange} className="mt-1" />
         <label htmlFor="gdprConsent" className="text-md text-muted-foreground">
           I agree to the processing of my personal data in accordance with the{' '}
           <a href="https://helixinsight.bio/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Privacy Policy</a>. *
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={!formData.gdprConsent || isSubmitting}
-        className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <button type="submit" disabled={!formData.gdprConsent || isSubmitting} className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
         {isSubmitting ? 'Sending...' : 'Send Message'}
       </button>
     </form>
