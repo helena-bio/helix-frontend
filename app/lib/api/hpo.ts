@@ -159,6 +159,7 @@ export interface RunSessionMatchingResponse {
   tier_2_count: number
   tier_3_count: number
   tier_4_count: number
+  incidental_findings_count: number
   saved_to_duckdb: boolean
   message: string
 }
@@ -170,6 +171,7 @@ export interface MatchSummaryResponse {
   tier_1_count?: number
   tier_2_count?: number
   tier_3_count?: number
+  incidental_findings_count?: number
   tier_4_count?: number
 }
 
@@ -203,6 +205,7 @@ export interface SessionMatchResultsResponse {
   variants_analyzed: number
   tier_1_count: number
   tier_2_count: number
+  incidental_findings_count: number
   tier_3_count: number
   tier_4_count: number
   results: SessionMatchResult[]

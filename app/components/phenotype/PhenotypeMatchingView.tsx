@@ -13,6 +13,7 @@
  * - Clickable tier cards with filtering
  * - Filter by gene name AND tier (both genes and variants within genes)
  * - Aligned columns across all gene cards
+ * - 5-tier system: T1, T2, IF (Incidental Findings), T3, T4
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
@@ -55,23 +56,27 @@ interface PhenotypeMatchingViewProps {
 const INITIAL_LOAD = 15
 const LOAD_MORE_COUNT = 15
 
-// Tier filter type
-type TierFilter = 'all' | 'T1' | 'T2' | 'T3' | 'T4'
+// Tier filter type - includes IF for Incidental Findings
+type TierFilter = 'all' | 'T1' | 'T2' | 'IF' | 'T3' | 'T4'
 
 /**
  * Get short tier from best_tier string
  * Uses regex with word boundary for exact matching
+ * IF is checked BEFORE tier numbers to avoid false matching
  */
 const getShortTier = (tier: string): TierFilter => {
   const tierLower = tier.toLowerCase()
-  
+
+  // IF must be checked BEFORE tier numbers to avoid false matching
+  if (tierLower.startsWith('if') || tierLower.includes('incidental')) return 'IF'
+
   // Use regex with word boundaries to match exact tier numbers
   // \b ensures we match "tier 1" but NOT "tier 14"
   if (/tier\s*1\b/.test(tierLower)) return 'T1'
   if (/tier\s*2\b/.test(tierLower) || tierLower.includes('potentially')) return 'T2'
   if (/tier\s*3\b/.test(tierLower) || tierLower.includes('uncertain')) return 'T3'
   if (/tier\s*4\b/.test(tierLower) || tierLower.includes('unlikely')) return 'T4'
-  
+
   return 'T4'
 }
 
@@ -218,7 +223,7 @@ function GeneSection({ geneResult, rank, onViewVariantDetails, tierFilter }: Gen
     if (tierFilter === 'all') {
       return geneResult.variants
     }
-    
+
     // Filter variants to show only those matching the selected tier
     return geneResult.variants.filter(v => getShortTier(v.clinical_tier) === tierFilter)
   }, [geneResult.variants, tierFilter])
@@ -386,6 +391,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     aggregatedResults,
     tier1Count,
     tier2Count,
+    incidentalFindingsCount,
     tier3Count,
     tier4Count,
     variantsAnalyzed,
@@ -393,7 +399,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   } = usePhenotypeResults()
 
   const selectedTerms = hpoTerms
-  
+
   // Handle tier card click
   const handleTierClick = (tier: TierFilter) => {
     setTierFilter(prev => prev === tier ? 'all' : tier)
@@ -409,7 +415,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
     // Filter by tier - gene must have at least one variant of this tier
     if (tierFilter !== 'all') {
-      filtered = filtered.filter(g => 
+      filtered = filtered.filter(g =>
         g.variants.some(v => getShortTier(v.clinical_tier) === tierFilter)
       )
     }
@@ -476,9 +482,9 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         )}
       </div>
 
-      {/* Tier Summary Cards - Clickable */}
+      {/* Tier Summary Cards - Clickable - 6 columns with IF */}
       {hasResults && (
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-6 gap-4">
           <TierCard
             count={variantsAnalyzed}
             tier="all"
@@ -492,7 +498,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             count={tier1Count}
             tier="T1"
             label="Tier 1"
-            tooltip="Tier 1 - Actionable: Strong evidence of pathogenicity with clinical actionability"
+            tooltip="Tier 1 - Actionable: P/LP variants WITH phenotype match - confirmed relevant to this patient"
             isSelected={tierFilter === 'T1'}
             onClick={() => handleTierClick('T1')}
             colorClasses="border-red-200 bg-red-50 text-red-900"
@@ -501,10 +507,19 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             count={tier2Count}
             tier="T2"
             label="Tier 2"
-            tooltip="Tier 2 - Potentially Actionable: Moderate evidence, may require additional validation"
+            tooltip="Tier 2 - Potentially Actionable: VUS with strong evidence (high impact, phenotype match, rare)"
             isSelected={tierFilter === 'T2'}
             onClick={() => handleTierClick('T2')}
             colorClasses="border-orange-200 bg-orange-50 text-orange-900"
+          />
+          <TierCard
+            count={incidentalFindingsCount}
+            tier="IF"
+            label="IF"
+            tooltip="Incidental Findings: P/LP variants WITHOUT phenotype match - pathogenic for other conditions (ACMG secondary findings)"
+            isSelected={tierFilter === 'IF'}
+            onClick={() => handleTierClick('IF')}
+            colorClasses="border-purple-200 bg-purple-50 text-purple-900"
           />
           <TierCard
             count={tier3Count}

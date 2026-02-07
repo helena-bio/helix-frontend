@@ -416,6 +416,7 @@ export function ChatPanel() {
           variants_analyzed: phenotypeResults.variantsAnalyzed,
           tier_1_count: phenotypeResults.tier1Count,
           tier_2_count: phenotypeResults.tier2Count,
+          incidental_findings_count: phenotypeResults.incidentalFindingsCount,
           tier_3_count: phenotypeResults.tier3Count,
           tier_4_count: phenotypeResults.tier4Count,
           top_matched_genes: phenotypeResults.aggregatedResults.slice(0, 20).map(g => ({

@@ -34,6 +34,8 @@ export const getImpactColor = (impact: string | null | undefined) => {
 export const getTierColor = (tier: string | number | null | undefined) => {
   if (!tier) return 'bg-gray-100 text-gray-600 border-gray-300'
   const tierStr = String(tier).toLowerCase()
+  // IF must be checked BEFORE tier numbers to avoid false match on "incidental finding" containing no digits
+  if (tierStr.startsWith('if') || tierStr.includes('incidental')) return 'bg-purple-100 text-purple-900 border-purple-300'
   if (tierStr.includes('1')) return 'bg-red-100 text-red-900 border-red-300'
   if (tierStr.includes('2') || tierStr.includes('potentially')) return 'bg-orange-100 text-orange-900 border-orange-300'
   if (tierStr.includes('3') || tierStr.includes('uncertain')) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
@@ -78,6 +80,8 @@ export const formatACMGDisplay = (acmg: string | null | undefined): string => {
 export const formatTierDisplay = (tier: string | number | null | undefined): string => {
   if (!tier) return '-'
   const tierStr = String(tier).toLowerCase()
+  // IF must be checked BEFORE tier numbers
+  if (tierStr.startsWith('if') || tierStr.includes('incidental')) return 'IF'
   if (tierStr.includes('1')) return 'T1'
   if (tierStr.includes('2') || tierStr.includes('potentially')) return 'T2'
   if (tierStr.includes('3') || tierStr.includes('uncertain')) return 'T3'
@@ -112,26 +116,26 @@ export const parseConsequences = (consequence: string | null | undefined): strin
  */
 export const getConsequenceColor = (consequence: string): string => {
   const c = consequence.toLowerCase()
-  
+
   // High impact (red)
-  if (c.includes('frameshift') || c.includes('stop gained') || c.includes('stop lost') || 
+  if (c.includes('frameshift') || c.includes('stop gained') || c.includes('stop lost') ||
       c.includes('start lost') || c.includes('splice donor') || c.includes('splice acceptor') ||
       c.includes('transcript ablation')) {
     return 'bg-red-50 text-red-700 border-red-200'
   }
-  
+
   // Moderate impact (orange)
   if (c.includes('missense') || c.includes('inframe') || c.includes('protein altering') ||
       c.includes('regulatory region') || c.includes('coding sequence')) {
     return 'bg-orange-50 text-orange-700 border-orange-200'
   }
-  
+
   // Low impact (yellow)
   if (c.includes('synonymous') || c.includes('splice region') || c.includes('stop retained') ||
       c.includes('start retained') || c.includes('incomplete terminal')) {
     return 'bg-yellow-50 text-yellow-700 border-yellow-200'
   }
-  
+
   // Modifier (gray)
   return 'bg-gray-50 text-gray-600 border-gray-200'
 }
@@ -154,9 +158,9 @@ export function ConsequenceBadges({ consequence, maxBadges = 3, className = '' }
   return (
     <div className={`flex flex-wrap gap-1 ${className}`}>
       {displayConsequences.map((c, idx) => (
-        <Badge 
-          key={idx} 
-          variant="outline" 
+        <Badge
+          key={idx}
+          variant="outline"
           className={`text-sm ${getConsequenceColor(c)}`}
         >
           {c}

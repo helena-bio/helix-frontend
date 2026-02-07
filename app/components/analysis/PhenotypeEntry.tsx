@@ -52,6 +52,7 @@ interface MatchingResult {
   tier_2_count: number
   tier_3_count: number
   tier_4_count: number
+  incidental_findings_count: number
   saved_to_duckdb: boolean
   message: string
 }
@@ -197,7 +198,7 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
       setMatchingResult(result)
 
       toast.success('Phenotype matching complete', {
-        description: `${result.tier_1_count + result.tier_2_count} high-priority variants found`,
+        description: `${result.tier_1_count + result.tier_2_count} high-priority variants found${result.incidental_findings_count > 0 ? `, ${result.incidental_findings_count} incidental findings` : ''}`,
       })
     } catch (error) {
       toast.error('Matching failed', {
@@ -465,6 +466,18 @@ export function PhenotypeEntry({ sessionId, onComplete, onSkip }: PhenotypeEntry
                     <span className="font-medium">{matchingResult.tier_2_count}</span>
                   </div>
                   <Progress value={getTierPercentage(matchingResult.tier_2_count)} className="h-2 bg-orange-100" />
+                </div>
+
+                {/* IF - Incidental Findings */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+                      IF - Incidental Findings
+                    </span>
+                    <span className="font-medium">{matchingResult.incidental_findings_count}</span>
+                  </div>
+                  <Progress value={getTierPercentage(matchingResult.incidental_findings_count)} className="h-2 bg-purple-100" />
                 </div>
 
                 {/* Tier 3 */}

@@ -10,12 +10,19 @@
  * 4. Progressive loading with progress tracking
  *
  * Flow:
- * - ClinicalAnalysis Stage 1: runMatching() → loadAllPhenotypeResults()
+ * - ClinicalAnalysis Stage 1: runMatching() -> loadAllPhenotypeResults()
  * - Results stream directly to context (pre-aggregated by gene)
  * - Views read from pre-loaded context data
  * - Auto-cleanup when session becomes null
  *
  * IMPORTANT: loadAllPhenotypeResults RETURNS the loaded data to avoid React state race conditions
+ *
+ * 5-tier system with Incidental Findings:
+ * - Tier 1: P/LP with phenotype match (confirmed relevant)
+ * - Tier 2: VUS with strong evidence
+ * - IF: P/LP without phenotype match (incidental/secondary finding)
+ * - Tier 3: Uncertain
+ * - Tier 4: Unlikely
  */
 
 import {
@@ -71,6 +78,7 @@ interface PhenotypeResultsContextValue {
   totalGenes: number
   tier1Count: number
   tier2Count: number
+  incidentalFindingsCount: number
   tier3Count: number
   tier4Count: number
   variantsAnalyzed: number
@@ -95,6 +103,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   const [aggregatedResults, setAggregatedResults] = useState<GeneAggregatedResult[] | null>(null)
   const [tier1Count, setTier1Count] = useState(0)
   const [tier2Count, setTier2Count] = useState(0)
+  const [incidentalFindingsCount, setIncidentalFindingsCount] = useState(0)
   const [tier3Count, setTier3Count] = useState(0)
   const [tier4Count, setTier4Count] = useState(0)
   const [variantsAnalyzed, setVariantsAnalyzed] = useState(0)
@@ -114,6 +123,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       setLoadProgress(0)
       setTier1Count(0)
       setTier2Count(0)
+      setIncidentalFindingsCount(0)
       setTier3Count(0)
       setTier4Count(0)
       setVariantsAnalyzed(0)
@@ -132,6 +142,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     setLoadProgress(0)
     setTier1Count(0)
     setTier2Count(0)
+    setIncidentalFindingsCount(0)
     setTier3Count(0)
     setTier4Count(0)
     setVariantsAnalyzed(0)
@@ -173,6 +184,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
         setAggregatedResults(null)
         setTier1Count(0)
         setTier2Count(0)
+        setIncidentalFindingsCount(0)
         setTier3Count(0)
         setTier4Count(0)
         setVariantsAnalyzed(0)
@@ -247,6 +259,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
               // Store tier counts from metadata
               setTier1Count(parsed.tier_1_count)
               setTier2Count(parsed.tier_2_count)
+              setIncidentalFindingsCount(parsed.incidental_findings_count || 0)
               setTier3Count(parsed.tier_3_count)
               setTier4Count(parsed.tier_4_count)
               setVariantsAnalyzed(parsed.total_variants)
@@ -298,6 +311,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     setLoadProgress(0)
     setTier1Count(0)
     setTier2Count(0)
+    setIncidentalFindingsCount(0)
     setTier3Count(0)
     setTier4Count(0)
     setVariantsAnalyzed(0)
@@ -316,6 +330,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     totalGenes: aggregatedResults?.length || 0,
     tier1Count,
     tier2Count,
+    incidentalFindingsCount,
     tier3Count,
     tier4Count,
     variantsAnalyzed,
@@ -329,6 +344,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     clearResults,
     tier1Count,
     tier2Count,
+    incidentalFindingsCount,
     tier3Count,
     tier4Count,
     variantsAnalyzed,

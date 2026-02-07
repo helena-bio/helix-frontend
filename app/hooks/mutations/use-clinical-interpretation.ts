@@ -19,7 +19,16 @@ const AI_API_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9
 export function useClinicalInterpretation() {
   const { currentSessionId } = useSession()
   const { getCompleteProfile } = useClinicalProfileContext()
-  const { aggregatedResults, tier1Count, tier2Count, tier3Count, tier4Count, variantsAnalyzed, totalGenes } = usePhenotypeResults()
+  const {
+    aggregatedResults,
+    tier1Count,
+    tier2Count,
+    incidentalFindingsCount,
+    tier3Count,
+    tier4Count,
+    variantsAnalyzed,
+    totalGenes,
+  } = usePhenotypeResults()
   const { screeningResponse } = useScreeningResults()
   const { groupedByGene, totalResults } = useLiteratureResults()
 
@@ -44,6 +53,7 @@ export function useClinicalInterpretation() {
           total_genes: totalGenes,
           tier_1_count: tier1Count,
           tier_2_count: tier2Count,
+          incidental_findings_count: incidentalFindingsCount,
           tier_3_count: tier3Count,
           tier_4_count: tier4Count,
           variants_analyzed: variantsAnalyzed,
