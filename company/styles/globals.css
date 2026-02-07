@@ -2,3 +2,10 @@
 
 @source "../components";
 @source "../app";
+
+/* Company site overrides - allow scrolling */
+@layer base {
+  html, body {
+    overflow: auto !important;
+  }
+}
