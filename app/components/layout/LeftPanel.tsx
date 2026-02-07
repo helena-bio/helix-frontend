@@ -8,7 +8,7 @@ import { ChatPanel } from '@/components/chat/ChatPanel'
 
 export function LeftPanel() {
   return (
-    <div className="w-[45%] h-full flex bg-background">
+    <div className="flex-[45_0_0%] h-full flex min-w-0 bg-background">
       <div className="flex-1 h-full">
         <ChatPanel />
       </div>
