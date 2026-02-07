@@ -16,16 +16,10 @@ export function ContactCTASection() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/contact"
-              className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md w-full sm:w-auto"
-            >
+            <Link href="/contact" className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md w-full sm:w-auto">
               Contact Us
             </Link>
-            
-              href="mailto:contact@helena.bio"
-              className="px-8 py-3 bg-card border-2 border-border text-foreground rounded-lg text-lg font-medium hover:bg-muted transition-colors w-full sm:w-auto"
-            >
+            <a href="mailto:contact@helena.bio" className="px-8 py-3 bg-card border-2 border-border text-foreground rounded-lg text-lg font-medium hover:bg-muted transition-colors w-full sm:w-auto">
               contact@helena.bio
             </a>
           </div>

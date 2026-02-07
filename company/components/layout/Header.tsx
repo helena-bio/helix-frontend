@@ -22,12 +22,7 @@ export function Header() {
           <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
             Contact
           </Link>
-          
-            href="https://helixinsight.bio"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
-          >
+          <a href="https://helixinsight.bio" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors">
             Helix Insight
             <ExternalLink className="w-4 h-4" />
           </a>
@@ -53,13 +48,7 @@ export function Header() {
             <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors py-2" onClick={closeMobileMenu}>
               Contact
             </Link>
-            
-              href="https://helixinsight.bio"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 w-full px-4 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors text-center"
-              onClick={closeMobileMenu}
-            >
+            <a href="https://helixinsight.bio" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 w-full px-4 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors text-center" onClick={closeMobileMenu}>
               Helix Insight
               <ExternalLink className="w-4 h-4" />
             </a>

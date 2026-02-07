@@ -18,19 +18,11 @@ export function HeroSection() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          
-            href="https://helixinsight.bio"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md"
-          >
+          <a href="https://helixinsight.bio" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-lg text-lg font-medium hover:bg-primary/90 transition-colors shadow-md">
             Explore Helix Insight
             <ArrowRight className="w-5 h-5" />
           </a>
-          <Link
-            href="/contact"
-            className="px-8 py-3 bg-card border-2 border-border text-foreground rounded-lg text-lg font-medium hover:bg-muted transition-colors"
-          >
+          <Link href="/contact" className="px-8 py-3 bg-card border-2 border-border text-foreground rounded-lg text-lg font-medium hover:bg-muted transition-colors">
             Get in Touch
           </Link>
         </div>
