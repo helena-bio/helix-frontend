@@ -2,21 +2,24 @@
   "name": "helix-insight-frontend",
   "version": "1.0.0",
   "private": true,
-  "description": "Helix Insight Frontend - Monorepo with marketing site, app, and shared components",
+  "description": "Helix Insight Frontend - Monorepo with marketing site, company site, app, and shared components",
   "workspaces": [
     "marketing",
+    "company",
     "app",
     "shared"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=app",
     "dev:marketing": "npm run dev --workspace=marketing",
+    "dev:company": "npm run dev --workspace=company",
     "dev:app": "npm run dev --workspace=app",
     "build": "npm run build --workspace=app",
     "build:marketing": "npm run build --workspace=marketing",
+    "build:company": "npm run build --workspace=company",
     "build:app": "npm run build --workspace=app",
     "lint": "npm run lint --workspaces",
-    "clean": "rm -rf node_modules marketing/node_modules app/node_modules shared/node_modules marketing/.next app/.next"
+    "clean": "rm -rf node_modules marketing/node_modules company/node_modules app/node_modules shared/node_modules marketing/.next company/.next app/.next"
   },
   "engines": {
     "node": ">=20.9.0",
@@ -30,4 +33,3 @@
     "@types/dompurify": "^3.0.5"
   }
 }
-
