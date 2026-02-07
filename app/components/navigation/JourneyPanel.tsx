@@ -8,7 +8,7 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, X, Download, ChevronDown, LogOut } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, X, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -20,14 +20,17 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@helix/shared/components/ui/dropdown-menu'
 import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
+import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@helix/shared/lib/utils'
-import { downloadClinicalReport } from '@/lib/utils/download-report'
+import { downloadClinicalReport, downloadPhenotypeFindingsReport } from '@/lib/utils/download-report'
 
 function getStepIcon(status: StepStatus) {
   switch (status) {
@@ -60,6 +63,7 @@ export function JourneyPanel() {
   const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { interpretation, hasInterpretation, isComplete } = useClinicalInterpretation()
+  const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { logout } = useAuth()
 
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
@@ -116,8 +120,26 @@ export function JourneyPanel() {
     }
   }
 
-  // Show Download Report button only in Analysis step when interpretation is complete
-  const showDownloadReport = currentStep === 'analysis' && isComplete()
+  const handleDownloadPhenotypeFindings = async () => {
+    if (!currentSessionId) {
+      console.error('[JourneyPanel] No session for phenotype report')
+      return
+    }
+
+    try {
+      await downloadPhenotypeFindingsReport(currentSessionId)
+    } catch (error) {
+      console.error('[JourneyPanel] Phenotype findings download failed:', error)
+      alert('Phenotype findings download failed. Please try again.')
+    }
+  }
+
+  // Show conditions for each report type
+  const hasClinicalInterpretation = currentStep === 'analysis' && isComplete()
+  const hasPhenotypeResults = phenotypeStatus === 'success' && aggregatedResults !== null
+
+  // Show dropdown if ANY report is available
+  const showDownloadReport = hasClinicalInterpretation || hasPhenotypeResults
 
   return (
     <div className="h-full flex items-center gap-6 overflow-hidden">
@@ -196,7 +218,7 @@ export function JourneyPanel() {
 
       {/* Right side buttons */}
       <div className="flex items-center gap-3 shrink-0 mr-6">
-        {/* Download Report button - Only in Analysis step when interpretation is complete */}
+        {/* Download Report dropdown - visible when ANY report is available */}
         {showDownloadReport && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -210,28 +232,57 @@ export function JourneyPanel() {
                 <ChevronDown className="h-3 w-3 ml-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => handleDownloadReport('pdf')}
-                className="cursor-pointer"
-              >
-                <Download className="h-3 w-3 mr-2" />
-                Download as PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDownloadReport('docx')}
-                className="cursor-pointer"
-              >
-                <Download className="h-3 w-3 mr-2" />
-                Download as DOCX
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDownloadReport('md')}
-                className="cursor-pointer"
-              >
-                <Download className="h-3 w-3 mr-2" />
-                Download as Markdown
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-60">
+              {/* Clinical Interpretation section */}
+              {hasClinicalInterpretation && (
+                <>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Clinical Interpretation
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => handleDownloadReport('pdf')}
+                    className="cursor-pointer"
+                  >
+                    <Download className="h-3 w-3 mr-2" />
+                    PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDownloadReport('docx')}
+                    className="cursor-pointer"
+                  >
+                    <Download className="h-3 w-3 mr-2" />
+                    DOCX
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDownloadReport('md')}
+                    className="cursor-pointer"
+                  >
+                    <Download className="h-3 w-3 mr-2" />
+                    Markdown
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {/* Separator between sections */}
+              {hasClinicalInterpretation && hasPhenotypeResults && (
+                <DropdownMenuSeparator />
+              )}
+
+              {/* Phenotype Findings section */}
+              {hasPhenotypeResults && (
+                <>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Phenotype Findings
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={handleDownloadPhenotypeFindings}
+                    className="cursor-pointer"
+                  >
+                    <FileText className="h-3 w-3 mr-2" />
+                    PDF
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
