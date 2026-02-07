@@ -18,19 +18,19 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
           <Image
-            src="/images/logos/logo_helix.svg"
-            alt="Helix Insight"
-            width={160}
-            height={48}
-            className="h-10 w-auto"
-            priority
-          />
-          <Image
             src="/images/logos/logo_bulb.svg"
             alt=""
             width={32}
             height={40}
             className="h-9 w-auto"
+            priority
+          />
+          <Image
+            src="/images/logos/logo_helix.svg"
+            alt="Helix Insight"
+            width={160}
+            height={48}
+            className="h-10 w-auto"
             priority
           />
         </Link>
