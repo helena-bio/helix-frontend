@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'Partners | Helena Bioinformatics',
-  description: 'Clinical validation partners, scientific advisors, and infrastructure supporting Helix Insight.',
+  description: 'Scientific advisors, clinical validation program, and infrastructure supporting Helix Insight.',
 }
 
 export default function PartnersPage() {
@@ -21,7 +21,7 @@ export default function PartnersPage() {
             </p>
           </section>
 
-          {/* Clinical Validation */}
+          {/* Clinical Validation Program */}
           <section className="space-y-6">
             <div className="flex items-center gap-3 max-w-3xl mx-auto">
               <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
@@ -32,17 +32,17 @@ export default function PartnersPage() {
 
             <div className="bg-card border border-border rounded-lg p-8 space-y-5 max-w-3xl mx-auto">
               <div className="space-y-1">
-                <h3 className="text-lg font-semibold text-foreground">Cell Genetics Medical Center</h3>
-                <p className="text-base text-primary font-medium">Clinical Validation Partner</p>
+                <h3 className="text-lg font-semibold text-foreground">Clinical Validation Program</h3>
+                <p className="text-base text-primary font-medium">Active -- EU-based diagnostic laboratories</p>
               </div>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Cell Genetics Medical Center is a licensed clinical genetics laboratory in Sofia, Bulgaria, performing diagnostic whole-exome and whole-genome sequencing for patients with rare genetic diseases, neurological conditions, and hereditary cancer predisposition.
+                Helix Insight is undergoing clinical validation with licensed genetics laboratories performing diagnostic whole-exome and whole-genome sequencing for patients with rare genetic diseases, neurological conditions, and hereditary cancer predisposition.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                As our primary clinical validation partner, Cell Genetics provides real-world genomic datasets for platform validation, including a backlog of 200+ whole-genome cases requiring interpretation. Their clinical geneticists evaluate Helix Insight outputs against established manual workflows, ensuring that the platform meets the accuracy and completeness standards required for clinical reporting.
+                The validation program includes real-world genomic datasets from 200+ cases, benchmarking platform outputs against established manual interpretation workflows. Clinical geneticists evaluate every stage of the analysis pipeline -- from VCF ingestion and variant annotation through ACMG classification and phenotype matching -- against cases with known clinical outcomes.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                This partnership validates every stage of the analysis pipeline -- from VCF ingestion and variant annotation through ACMG classification and phenotype matching -- against cases with known clinical outcomes.
+                Laboratories interested in joining the validation program as early partners receive priority access and dedicated onboarding support.
               </p>
             </div>
           </section>
