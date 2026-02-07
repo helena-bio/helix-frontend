@@ -24,12 +24,12 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   animated = true  // Default to animated for backwards compatibility
 }) => {
   const { width, height } = sizeMap[size];
-  
+
   const clipTop = 0.20;
   const clipBottom = 0.76;
   const clipHeight = (clipBottom - clipTop) * height;
   const clipTopPx = clipTop * height;
-  
+
   // Helix sizing (same ratios as before)
   const helixWidthRatio = 205 / 598;
   const helixAspect = 205 / 475;
@@ -45,9 +45,9 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
       style={{ width: `${width}px`, height: `${height}px` }}
     >
       {/* Helix animation container */}
-      <div 
+      <div
         className="absolute overflow-hidden"
-        style={{ 
+        style={{
           top: `${clipTopPx}px`,
           height: `${clipHeight}px`,
           width: `${helixWidth}px`,
@@ -67,7 +67,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
           {[0, 1, 2, 3].map((i) => (
             <img
               key={i}
-              src="/images/bulb_helix.svg"
+              src="/images/logos/loader_helix.svg"
               alt=""
               style={{
                 width: `${helixWidth}px`,
@@ -78,10 +78,10 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
           ))}
         </div>
       </div>
-      
+
       {/* Bulb overlay */}
       <img
-        src="/images/bulb.svg"
+        src="/images/logos/loader_bulb.svg"
         alt="Loading"
         className="absolute inset-0 w-full h-full pointer-events-none z-10"
       />

@@ -1,6 +1,7 @@
 "use client"
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Menu, X, ExternalLink } from 'lucide-react'
 
 export function Header() {
@@ -10,9 +11,15 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-card">
       <div className="h-full flex items-center gap-6 overflow-hidden">
-        <Link href="/" className="flex items-center gap-1.5 shrink-0 pl-6">
-          <span className="text-xl font-bold text-foreground tracking-tight">Helena</span>
-          <span className="text-xl text-muted-foreground tracking-tight">Bioinformatics</span>
+        <Link href="/" className="flex items-center shrink-0 pl-6">
+          <Image
+            src="/images/logos/logo_helena.svg"
+            alt="Helena Bioinformatics"
+            width={200}
+            height={48}
+            className="h-10 w-auto"
+            priority
+          />
         </Link>
 
         <nav className="hidden md:flex flex-1 items-center justify-end gap-8 mr-6">

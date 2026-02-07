@@ -18,7 +18,7 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
           <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
+            src="/images/logos/logo_helix.svg"
             alt="Helix Insight"
             width={160}
             height={48}
@@ -26,7 +26,7 @@ export function Header() {
             priority
           />
           <Image
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
+            src="/images/logos/logo_bulb.svg"
             alt=""
             width={32}
             height={40}
