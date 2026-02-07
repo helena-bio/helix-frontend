@@ -87,27 +87,36 @@ export default function LoginPage() {
         }
       `}</style>
 
-      {/* Header */}
+      {/* Header - matches marketing site, without Partner Login */}
       <header className="h-14 border-b border-border bg-card shrink-0">
         <div className="h-full flex items-center gap-6 overflow-hidden">
           <Link href="https://helixinsight.bio" className="flex items-center gap-2 shrink-0 pl-6">
             <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/helix%20logo-W2SpmbzgUEDwJyPjRhIvWwSfESe6Aq.png"
+              src="/images/logos/logo_bulb.svg"
+              alt=""
+              width={32}
+              height={40}
+              className="h-11 w-auto"
+              priority
+            />
+            <Image
+              src="/images/logos/logo_helix.svg"
               alt="Helix Insight"
               width={160}
               height={48}
               className="h-10 w-auto"
               priority
             />
-            <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bulb-KpLU35CozLLzkwRErx9HXQNX4gHefR.png"
-              alt=""
-              width={32}
-              height={40}
-              className="h-9 w-auto"
-              priority
-            />
           </Link>
+
+          <nav className="hidden md:flex flex-1 items-center justify-end gap-8 mr-6">
+            <a href="https://helixinsight.bio/about" className="text-base text-foreground hover:text-primary transition-colors">
+              About
+            </a>
+            <a href="https://helixinsight.bio/contact" className="text-base text-foreground hover:text-primary transition-colors">
+              Contact
+            </a>
+          </nav>
         </div>
       </header>
 
@@ -180,7 +189,7 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer */}
+      {/* Footer - matches marketing site */}
       <footer className="border-t border-border bg-card">
         <div className="px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -188,12 +197,18 @@ export default function LoginPage() {
               <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>{' '}
               &copy; 2026. All rights reserved.
             </p>
-            <div className="flex items-center gap-6 text-md">
-              <a href="https://helixinsight.bio/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-md">
+              <a href="https://helixinsight.bio/privacy" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 Privacy Policy
               </a>
-              <a href="https://helixinsight.bio/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="https://helixinsight.bio/terms" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 Terms of Service
+              </a>
+              <a href="https://helixinsight.bio/dpa" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+                DPA
+              </a>
+              <a href="https://helixinsight.bio/dpia" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+                DPIA
               </a>
             </div>
           </div>
