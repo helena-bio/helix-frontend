@@ -18,7 +18,7 @@ interface SplitViewProps {
 
 export function SplitView({ children }: SplitViewProps) {
   return (
-    <div className="flex h-full">
+    <div className="flex h-full flex-1 min-w-0">
       {/* Left Panel - Sidebar + Chat (45%) */}
       <LeftPanel />
 
