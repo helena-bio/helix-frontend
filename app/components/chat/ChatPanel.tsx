@@ -675,7 +675,7 @@ export function ChatPanel() {
         <div className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 text-primary shrink-0" />
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold">AI Assistant</h2>
+            <h2 className="text-lg font-semibold">Helix AI</h2>
             <p className="text-sm text-muted-foreground truncate">
               {isGeneratingInterpretation ? 'Generating clinical interpretation...' : 'Clinical Interpretation'}
             </p>
