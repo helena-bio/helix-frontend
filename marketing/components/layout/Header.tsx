@@ -22,7 +22,7 @@ export function Header() {
             alt=""
             width={32}
             height={40}
-            className="h-9 w-auto"
+            className="h-11 w-auto"
             priority
           />
           <Image
