@@ -1,11 +1,17 @@
-import Link from 'next/link'
-
+import Image from 'next/image'
 export function HeroSection() {
   return (
     <section className="flex items-center justify-center px-6 pt-32 pb-20">
       <div className="flex flex-col items-center justify-center space-y-8 max-w-3xl">
         <div className="text-center space-y-6">
-          <h1 className="text-5xl font-bold text-primary">Helena Bioinformatics</h1>
+          <Image
+            src="/images/logos/logo_helena.svg"
+            alt="Helena Bioinformatics"
+            width={500}
+            height={80}
+            className="h-16 w-auto mx-auto"
+            priority
+          />
           <p className="text-xl text-foreground font-medium">Intelligence for genomics.</p>
           <p className="text-lg text-muted-foreground">
             Software company integrating artificial intelligence into bioinformatics research and clinical genomics.
