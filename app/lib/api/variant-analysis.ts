@@ -36,6 +36,7 @@ export async function uploadVCFFile(
   file: File,
   analysisType: string = 'germline',
   genomeBuild: string = 'GRCh38',
+  caseLabel: string = '',
   onProgress?: (progress: number) => void
 ): Promise<AnalysisSession> {
   const response = await uploadFileWithProgress<UploadVCFBackendResponse>(
@@ -44,6 +45,7 @@ export async function uploadVCFFile(
     {
       analysis_type: analysisType,
       genome_build: genomeBuild,
+      case_label: caseLabel,
     },
     onProgress
   )
@@ -51,9 +53,13 @@ export async function uploadVCFFile(
   // Transform backend response to AnalysisSession
   return {
     id: response.session_id,
+    user_id: '',
+    case_label: caseLabel || file.name.replace(/\.vcf(\.gz)?$/, ''),
     analysis_type: response.analysis_type,
     status: response.status as AnalysisSession['status'],
     vcf_file_path: response.file_path,
+    original_filename: file.name,
+    genome_build: response.genome_build,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     completed_at: null,

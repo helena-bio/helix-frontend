@@ -71,6 +71,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   // File selection state
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [caseName, setCaseName] = useState<string>('')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [compressionProgress, setCompressionProgress] = useState(0)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -239,6 +240,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       }
 
       setSelectedFile(file)
+      setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
       setValidationError(null)
       toast.success('File selected', { description: file.name })
     }
@@ -258,6 +260,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       }
 
       setSelectedFile(file)
+      setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
       setValidationError(null)
       toast.success('File selected', { description: file.name })
     }
@@ -269,6 +272,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
   const handleRemoveFile = useCallback(() => {
     setSelectedFile(null)
+    setCaseName('')
     setValidationError(null)
     setCompressionProgress(0)
     setUploadProgress(0)
@@ -353,6 +357,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
         file: fileToUpload,
         analysisType: 'germline',
         genomeBuild: 'GRCh38',
+        caseLabel: caseName,
         onProgress: (progress) => {
           setUploadProgress(progress)
 
@@ -441,12 +446,13 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       toast.error('Process failed', { description: err.message })
       onError?.(err)
     }
-  }, [canSubmit, selectedFile, uploadMutation, startValidationMutation, onComplete, onError, compress, shouldCompress, isCompressionSupported])
+  }, [canSubmit, selectedFile, caseName, uploadMutation, startValidationMutation, onComplete, onError, compress, shouldCompress, isCompressionSupported])
 
   // Reset handler
   const handleReset = useCallback(() => {
     setPhase('selection')
     setSelectedFile(null)
+    setCaseName('')
     setSessionId(null)
     setTaskId(null)
     setErrorMessage(null)
@@ -777,6 +783,25 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                   </div>
                   <p className="text-base text-muted-foreground">{fileSize}</p>
                 </div>
+
+                {/* Case Name input */}
+                {!isProcessing && (
+                  <div className="w-full max-w-sm">
+                    <label htmlFor="case-name" className="text-sm text-muted-foreground mb-1 block text-left">
+                      Case Name
+                    </label>
+                    <input
+                      id="case-name"
+                      type="text"
+                      value={caseName}
+                      onChange={(e) => setCaseName(e.target.value)}
+                      placeholder="e.g. Patient 001"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      onClick={(e) => e.stopPropagation()}
+                      maxLength={200}
+                    />
+                  </div>
+                )}
 
                 {/* Progress bar - only during processing */}
                 {isProcessing && (

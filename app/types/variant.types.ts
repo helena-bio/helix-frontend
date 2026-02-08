@@ -92,9 +92,13 @@ export interface QCMetrics {
 
 export interface AnalysisSession {
   id: string
+  user_id: string
+  case_label: string | null
   analysis_type: string
   status: 'pending' | 'validated' | 'processing' | 'completed' | 'failed'
   vcf_file_path: string | null
+  original_filename: string | null
+  genome_build: string | null
   created_at: string
   updated_at: string
   completed_at: string | null
