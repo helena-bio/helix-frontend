@@ -1,33 +1,12 @@
 "use client"
-import Image from 'next/image'
 import { useDemoModal } from '@/contexts'
 export function VideoHero() {
   const { openModal } = useDemoModal()
   return (
     <div className="flex flex-col items-center justify-center space-y-8">
-      <div className="text-center space-y-4 max-w-4xl">
-        <div className="flex items-center justify-center gap-3">
-          <Image
-            src="/images/logos/logo_bulb.svg"
-            alt=""
-            width={48}
-            height={60}
-            className="h-14 w-auto"
-            priority
-          />
-          <Image
-            src="/images/logos/logo_helix.svg"
-            alt="Helix Insight"
-            width={280}
-            height={80}
-            className="h-16 w-auto"
-            priority
-          />
-        </div>
-        <p className="text-xl text-muted-foreground">
-          AI-Powered Genetic Variant Analysis
-        </p>
-      </div>
+      <p className="text-xl text-muted-foreground">
+        AI-Powered Genetic Variant Analysis
+      </p>
       <div className="w-full max-w-4xl aspect-video bg-muted/30 border border-border rounded-lg overflow-hidden shadow-lg">
         <video
           className="w-full h-full object-cover"
