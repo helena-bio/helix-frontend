@@ -200,7 +200,7 @@ export function Header() {
                     <TooltipContent>
                       <p className="text-sm">{step.description}</p>
                       {!isClickable && (
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-background/70 mt-1">
                           Complete previous steps first
                         </p>
                       )}
