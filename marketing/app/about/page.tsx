@@ -1,6 +1,7 @@
 import { Header, Footer } from '@/components'
 
 import Link from 'next/link'
+import Image from 'next/image'
 
 export const metadata = {
   title: 'About | Helix Insight',
@@ -32,22 +33,28 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 gap-8 max-w-3xl mx-auto">
 
               {/* Vladimir Mitev */}
-              <div className="bg-card border border-border rounded-lg p-8 space-y-5">
-                <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-xl font-bold text-muted-foreground">VM</span>
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-semibold text-foreground">Vladimir Mitev</h3>
-                    <p className="text-base text-primary font-medium">Founder &amp; CEO</p>
+              <div className="bg-card border border-border rounded-lg p-8">
+                <div className="flex gap-8 items-start">
+                  <Image
+                    src="/images/team/vladimir-mitev.png"
+                    alt=""
+                    width={200}
+                    height={300}
+                    className="w-44 rounded-lg object-cover object-top shrink-0"
+                  />
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">Vladimir Mitev</h3>
+                      <p className="text-base text-primary font-medium">Founder &amp; CEO</p>
+                    </div>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      Founded Helena Bioinformatics to solve a problem that costs lives through delay: geneticists spending days on variant interpretation that technology should handle in minutes. Every hour a laboratory spends on manual classification is an hour a patient waits for answers.
+                    </p>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      Helix Insight is built on that urgency -- engineering infrastructure where clinical accuracy and speed are not trade-offs, but requirements. The mission is straightforward: give every genetics laboratory, regardless of size, access to interpretation tools that were previously only available to the largest institutions.
+                    </p>
                   </div>
                 </div>
-                <p className="text-base text-muted-foreground leading-relaxed">
-                  Founded Helena Bioinformatics to solve a problem that costs lives through delay: geneticists spending days on variant interpretation that technology should handle in minutes. Every hour a laboratory spends on manual classification is an hour a patient waits for answers.
-                </p>
-                <p className="text-base text-muted-foreground leading-relaxed">
-                  Helix Insight is built on that urgency -- engineering infrastructure where clinical accuracy and speed are not trade-offs, but requirements. The mission is straightforward: give every genetics laboratory, regardless of size, access to interpretation tools that were previously only available to the largest institutions.
-                </p>
               </div>
 
             </div>
