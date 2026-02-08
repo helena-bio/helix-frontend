@@ -345,7 +345,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <p className="text-xl font-bold">{count.toLocaleString()}</p>
+        <p className="text-lg font-semibold">{count.toLocaleString()}</p>
         <p className="text-sm font-medium">{label}</p>
       </CardContent>
     </Card>
