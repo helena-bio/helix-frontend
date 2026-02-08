@@ -7,7 +7,7 @@
  * Compatible with marketing site SSO via shared cookie domain.
  *
  * Layout structure:
- * - Header: JourneyPanel (always visible)
+ * - Header: Header (always visible)
  * - Sidebar: Always visible (modules disabled until analysis complete)
  * - Content area:
  *   - Pre-analysis: Full width workflow (upload, validation, profile, processing)
@@ -22,7 +22,7 @@
 
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { JourneyPanel } from '@/components/navigation/JourneyPanel'
+import { Header } from '@/components/navigation/Header'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { SplitView } from '@/components/layout/SplitView'
 import {
@@ -85,7 +85,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
                 <div className="h-screen flex flex-col">
                   {/* Header - Journey Panel with Logo */}
                   <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">
-                    <JourneyPanel />
+                    <Header />
                   </header>
 
                   {/* Main area: Sidebar + Content */}

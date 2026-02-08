@@ -3,4 +3,4 @@
  */
 
 export * from './Sidebar'
-export * from './JourneyPanel'
+export * from './Header'

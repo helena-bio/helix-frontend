@@ -1,6 +1,6 @@
 /**
- * Journey Panel Component
- * Progress tracker for analysis workflow with logo
+ * App Header Component
+ * Logo + workflow progress (only during active analysis) + actions
  */
 
 'use client'
@@ -58,7 +58,7 @@ function getLineColor(status: StepStatus): string {
   return status === 'completed' ? 'bg-green-600' : 'bg-border'
 }
 
-export function JourneyPanel() {
+export function Header() {
   const router = useRouter()
   const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
   const { currentSessionId, setCurrentSessionId } = useSession()
@@ -66,22 +66,18 @@ export function JourneyPanel() {
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { logout } = useAuth()
 
+  // Show journey steps only during active workflow (session exists but analysis not yet complete)
+  const showJourneySteps = currentStep !== 'analysis'
+
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {
       goToStep(stepId)
     }
   }
 
-  /**
-   * Get visual status for a step
-   * Override: Upload shows as 'completed' if sessionId exists (validation complete)
-   * even if currentStep is still 'upload' (showing QC results)
-   */
   const getVisualStatus = (stepId: typeof JOURNEY_STEPS[number]['id']): StepStatus => {
     const baseStatus = getStepStatus(stepId)
 
-    // VISUAL OVERRIDE: Upload is completed if validation finished (sessionId exists)
-    // This shows green checkmark on Upload while QC Results are displayed
     if (stepId === 'upload' && currentSessionId && baseStatus === 'current') {
       return 'completed'
     }
@@ -89,56 +85,42 @@ export function JourneyPanel() {
     return baseStatus
   }
 
-  /**
-   * Clear File - Complete Reset
-   * 1. Clear sessionId (triggers auto-cleanup in providers via useEffect)
-   * 2. Reset journey to upload
-   * 3. Navigate to /analysis (without sessionId in URL) - use replace to clear URL
-   */
   const handleClearFile = () => {
-    // Clear session - this will trigger cleanup in all providers
     setCurrentSessionId(null)
-
-    // Reset journey to upload step
     resetJourney()
-
-    // Navigate to clean /analysis page - REPLACE URL to clear query params
     router.replace('/analysis')
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
     if (!interpretation || !hasInterpretation()) {
-      console.error('[JourneyPanel] No clinical interpretation available')
+      console.error('[Header] No clinical interpretation available')
       return
     }
 
     try {
       downloadClinicalReport(interpretation, format, currentSessionId || 'report')
     } catch (error) {
-      console.error('[JourneyPanel] Download failed:', error)
+      console.error('[Header] Download failed:', error)
       alert('Download failed. Please try again.')
     }
   }
 
   const handleDownloadPhenotypeFindings = async () => {
     if (!currentSessionId) {
-      console.error('[JourneyPanel] No session for phenotype report')
+      console.error('[Header] No session for phenotype report')
       return
     }
 
     try {
       await downloadPhenotypeFindingsReport(currentSessionId)
     } catch (error) {
-      console.error('[JourneyPanel] Phenotype findings download failed:', error)
+      console.error('[Header] Phenotype findings download failed:', error)
       alert('Phenotype findings download failed. Please try again.')
     }
   }
 
-  // Show conditions for each report type
   const hasClinicalInterpretation = currentStep === 'analysis' && isComplete()
   const hasPhenotypeResults = phenotypeStatus === 'success' && aggregatedResults !== null
-
-  // Show dropdown if ANY report is available
   const showDownloadReport = hasClinicalInterpretation || hasPhenotypeResults
 
   return (
@@ -161,64 +143,67 @@ export function JourneyPanel() {
         />
       </Link>
 
-      {/* Workflow progress - Center, scrollable if needed */}
-      <div className="flex-1 flex items-center justify-center gap-3 overflow-x-auto px-4">
-        {JOURNEY_STEPS.map((step, index) => {
-          const status = getVisualStatus(step.id)
-          const Icon = getStepIcon(status)
-          const isClickable = canNavigateTo(step.id)
+      {/* Workflow progress - Only during active analysis workflow */}
+      {showJourneySteps ? (
+        <div className="flex-1 flex items-center justify-center gap-3 overflow-x-auto px-4">
+          {JOURNEY_STEPS.map((step, index) => {
+            const status = getVisualStatus(step.id)
+            const Icon = getStepIcon(status)
+            const isClickable = canNavigateTo(step.id)
 
-          return (
-            <div key={step.id} className="flex items-center gap-3">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleStepClick(step.id)}
-                      disabled={!isClickable}
-                      className={cn(
-                        'flex items-center gap-2 min-w-0 transition-opacity',
-                        isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'
-                      )}
-                    >
-                      <Icon
+            return (
+              <div key={step.id} className="flex items-center gap-3">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleStepClick(step.id)}
+                        disabled={!isClickable}
                         className={cn(
-                          'h-5 w-5 shrink-0',
-                          getIconColor(status)
+                          'flex items-center gap-2 min-w-0 transition-opacity',
+                          isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'
                         )}
-                      />
-                      <p className="text-base font-medium whitespace-nowrap">
-                        {step.label}
-                      </p>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-sm">{step.description}</p>
-                    {!isClickable && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Complete previous steps first
-                      </p>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                      >
+                        <Icon
+                          className={cn(
+                            'h-5 w-5 shrink-0',
+                            getIconColor(status)
+                          )}
+                        />
+                        <p className="text-base font-medium whitespace-nowrap">
+                          {step.label}
+                        </p>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-sm">{step.description}</p>
+                      {!isClickable && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Complete previous steps first
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
-              {index < JOURNEY_STEPS.length - 1 && (
-                <div
-                  className={cn(
-                    'w-20 h-0.5',
-                    getLineColor(status)
-                  )}
-                />
-              )}
-            </div>
-          )
-        })}
-      </div>
+                {index < JOURNEY_STEPS.length - 1 && (
+                  <div
+                    className={cn(
+                      'w-20 h-0.5',
+                      getLineColor(status)
+                    )}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="flex-1" />
+      )}
 
       {/* Right side buttons */}
       <div className="flex items-center gap-3 shrink-0 mr-6">
-        {/* Download Report dropdown - visible when ANY report is available */}
         {showDownloadReport && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -233,7 +218,6 @@ export function JourneyPanel() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
-              {/* Clinical Interpretation section */}
               {hasClinicalInterpretation && (
                 <>
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
@@ -263,12 +247,10 @@ export function JourneyPanel() {
                 </>
               )}
 
-              {/* Separator between sections */}
               {hasClinicalInterpretation && hasPhenotypeResults && (
                 <DropdownMenuSeparator />
               )}
 
-              {/* Phenotype Findings section */}
               {hasPhenotypeResults && (
                 <>
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
@@ -287,7 +269,6 @@ export function JourneyPanel() {
           </DropdownMenu>
         )}
 
-        {/* Clear File button */}
         {currentSessionId && (
           <Button
             variant="ghost"
@@ -300,7 +281,6 @@ export function JourneyPanel() {
           </Button>
         )}
 
-        {/* Logout button */}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
