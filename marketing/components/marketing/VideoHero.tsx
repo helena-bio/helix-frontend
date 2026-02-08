@@ -4,9 +4,9 @@ export function VideoHero() {
   const { openModal } = useDemoModal()
   return (
     <div className="flex flex-col items-center justify-center space-y-8">
-      <p className="text-xl text-muted-foreground">
+      <h1 className="text-3xl font-bold text-primary">
         From variants to understanding
-      </p>
+      </h1>
       <div className="w-full max-w-4xl aspect-video bg-muted/30 border border-border rounded-lg overflow-hidden shadow-lg">
         <video
           className="w-full h-full object-cover"
