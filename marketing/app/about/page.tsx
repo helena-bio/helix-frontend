@@ -2,6 +2,7 @@ import { Header, Footer } from '@/components'
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { ProtectedImage } from '@/components/ProtectedImage'
 
 export const metadata = {
   title: 'About | Helix Insight',
@@ -35,12 +36,11 @@ export default function AboutPage() {
               {/* Vladimir Mitev */}
               <div className="bg-card border border-border rounded-lg p-8">
                 <div className="flex gap-8 items-start">
-                  <Image
+                  <ProtectedImage
                     src="/images/team/vladimir-mitev.png"
-                    alt=""
                     width={200}
                     height={300}
-                    className="w-44 rounded-lg object-cover object-top shrink-0"
+                    className="w-44 shrink-0"
                   />
                   <div className="space-y-4">
                     <div>
