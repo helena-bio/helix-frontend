@@ -1,5 +1,6 @@
 import { Header, Footer } from '@/components'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export const metadata = {
   title: 'About | Helena Bioinformatics',
@@ -37,9 +38,13 @@ export default function AboutPage() {
             <h2 className="text-3xl font-bold text-primary">Leadership</h2>
             <div className="space-y-5">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 bg-muted rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-lg font-bold text-muted-foreground">VM</span>
-                </div>
+                <Image
+                  src="/images/team/vladimir-mitev.png"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="w-14 h-14 rounded-full object-cover object-top shrink-0"
+                />
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">Vladimir Mitev</h3>
                   <p className="text-base text-primary font-medium">Founder &amp; CEO</p>
