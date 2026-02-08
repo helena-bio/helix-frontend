@@ -19,23 +19,23 @@
 :root {
   /* Main colors - Cream/beige background, dark text */
   --background: oklch(0.95 0.01 85);
-  --foreground: oklch(0.25 0 0);
+  --foreground: oklch(0.4115 0.0203 231.44);
 
   /* Card colors */
   --card: oklch(0.98 0.005 85);
-  --card-foreground: oklch(0.25 0 0);
+  --card-foreground: oklch(0.4115 0.0203 231.44);
 
   /* Popover colors */
   --popover: oklch(0.98 0.005 85);
-  --popover-foreground: oklch(0.25 0 0);
+  --popover-foreground: oklch(0.4115 0.0203 231.44);
 
   /* Primary - Dark for buttons/links */
-  --primary: oklch(0.25 0 0);
+  --primary: oklch(0.4115 0.0203 231.44);
   --primary-foreground: oklch(0.95 0.01 85);
 
   /* Secondary - Subtle beige */
   --secondary: oklch(0.88 0.015 85);
-  --secondary-foreground: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.4115 0.0203 231.44);
 
   /* Muted - For disabled/subtle elements */
   --muted: oklch(0.88 0.015 85);
@@ -43,7 +43,7 @@
 
   /* Accent - Same as secondary for consistency */
   --accent: oklch(0.88 0.015 85);
-  --accent-foreground: oklch(0.25 0 0);
+  --accent-foreground: oklch(0.4115 0.0203 231.44);
 
   /* Semantic colors */
   --destructive: oklch(0.577 0.245 27.325);
@@ -56,7 +56,7 @@
   /* Borders and inputs */
   --border: oklch(0.82 0.02 85);
   --input: oklch(0.82 0.02 85);
-  --ring: oklch(0.25 0 0);
+  --ring: oklch(0.4115 0.0203 231.44);
 
   /* Charts */
   --chart-1: oklch(0.646 0.222 41.116);
@@ -70,13 +70,13 @@
 
   /* Sidebar colors */
   --sidebar: oklch(0.95 0.01 85);
-  --sidebar-foreground: oklch(0.25 0 0);
-  --sidebar-primary: oklch(0.25 0 0);
+  --sidebar-foreground: oklch(0.4115 0.0203 231.44);
+  --sidebar-primary: oklch(0.4115 0.0203 231.44);
   --sidebar-primary-foreground: oklch(0.95 0.01 85);
   --sidebar-accent: oklch(0.88 0.015 85);
-  --sidebar-accent-foreground: oklch(0.25 0 0);
+  --sidebar-accent-foreground: oklch(0.4115 0.0203 231.44);
   --sidebar-border: oklch(0.82 0.02 85);
-  --sidebar-ring: oklch(0.25 0 0);
+  --sidebar-ring: oklch(0.4115 0.0203 231.44);
 }
 
 /* Dark Theme */
