@@ -6,7 +6,7 @@ export function ProductSection() {
       <div className="max-w-3xl mx-auto space-y-8">
         <h2 className="text-3xl font-bold text-primary">Products</h2>
         <div className="flex gap-8 items-start">
-          <div className="flex items-center gap-3 shrink-0">
+          <a href="https://helixinsight.bio" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity">
             <Image
               src="/images/logos/logo_bulb.svg"
               alt=""
@@ -21,7 +21,7 @@ export function ProductSection() {
               height={80}
               className="h-20 w-auto"
             />
-          </div>
+          </a>
           <div className="space-y-4">
             <p className="text-base text-muted-foreground leading-relaxed">
               AI-powered variant interpretation for clinical genetics laboratories. Integrates population databases, clinical repositories, computational predictors, and biomedical literature into structured, ACMG-aligned evidence summaries.
