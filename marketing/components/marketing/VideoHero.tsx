@@ -5,7 +5,7 @@ export function VideoHero() {
   return (
     <div className="flex flex-col items-center justify-center space-y-8">
       <p className="text-xl text-muted-foreground">
-        AI-Powered Genetic Variant Analysis
+        From variants to understanding
       </p>
       <div className="w-full max-w-4xl aspect-video bg-muted/30 border border-border rounded-lg overflow-hidden shadow-lg">
         <video
