@@ -69,6 +69,9 @@ export function Header() {
   // Show journey steps only during active workflow (session exists but analysis not yet complete)
   const showJourneySteps = currentStep !== 'analysis'
 
+  // Show Clear File only in split view (analysis complete)
+  const isAnalysisComplete = currentStep === 'analysis'
+
   const handleStepClick = (stepId: typeof JOURNEY_STEPS[number]['id']) => {
     if (canNavigateTo(stepId)) {
       goToStep(stepId)
@@ -119,7 +122,7 @@ export function Header() {
     }
   }
 
-  const hasClinicalInterpretation = currentStep === 'analysis' && isComplete()
+  const hasClinicalInterpretation = isAnalysisComplete && isComplete()
   const hasPhenotypeResults = phenotypeStatus === 'success' && aggregatedResults !== null
   const showDownloadReport = hasClinicalInterpretation || hasPhenotypeResults
 
@@ -269,7 +272,7 @@ export function Header() {
           </DropdownMenu>
         )}
 
-        {currentSessionId && (
+        {isAnalysisComplete && currentSessionId && (
           <Button
             variant="ghost"
             size="sm"
