@@ -47,6 +47,9 @@ export default function AboutPage() {
                 <p className="text-base text-muted-foreground leading-relaxed">
                   Founded Helena Bioinformatics to build the analytical infrastructure that genomics needs but does not yet have. The goal is to make AI-powered bioinformatics tools accessible to laboratories and research institutions regardless of size or budget.
                 </p>
+                <p className="text-base text-muted-foreground leading-relaxed">
+                  The next generation of genomic analysis will not come from faster pipelines alone. It will come from software that understands clinical context, learns from real diagnostic decisions, and augments the judgment of the specialists who use it. That is what we are building.
+                </p>
               </div>
             </div>
           </section>
