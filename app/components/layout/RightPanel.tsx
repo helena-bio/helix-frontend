@@ -29,7 +29,7 @@ export function RightPanel({ children }: RightPanelProps) {
   // Show PublicationDetailPanel if publication is selected
   if (isDetailsOpen && selectedPublicationId) {
     return (
-      <div className="flex-[55_0_0%] h-full min-w-0 overflow-y-auto">
+      <div className="flex-[55_0_0%] h-full min-w-0 overflow-y-auto [scrollbar-gutter:stable]">
         <PublicationDetailPanel
           key={`publication-${selectedPublicationId}`}
           pmid={selectedPublicationId}
@@ -42,7 +42,7 @@ export function RightPanel({ children }: RightPanelProps) {
   // Show VariantDetailPanel if variant is selected and details panel is open
   if (isDetailsOpen && selectedVariantId && currentSessionId) {
     return (
-      <div className="flex-[55_0_0%] h-full min-w-0 overflow-y-auto">
+      <div className="flex-[55_0_0%] h-full min-w-0 overflow-y-auto [scrollbar-gutter:stable]">
         <VariantDetailPanel
           key={`variant-${selectedVariantId}`}
           sessionId={currentSessionId}
@@ -55,7 +55,7 @@ export function RightPanel({ children }: RightPanelProps) {
 
   // Default: Show module content (ModuleRouter)
   return (
-    <div className="flex-[55_0_0%] h-full min-w-0 overflow-y-auto bg-background">
+    <div className="flex-[55_0_0%] h-full min-w-0 overflow-y-auto [scrollbar-gutter:stable] bg-background">
       {children}
     </div>
   )
