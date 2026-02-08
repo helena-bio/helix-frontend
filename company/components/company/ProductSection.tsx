@@ -13,7 +13,7 @@ export function ProductSection() {
               alt=""
               width={32}
               height={40}
-              className="h-10 w-auto"
+              className="h-12 w-auto"
             />
             <Image
               src="/images/logos/logo_helix.svg"
