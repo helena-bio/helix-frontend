@@ -30,7 +30,11 @@ import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationCont
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@helix/shared/lib/utils'
-import { downloadClinicalReport, downloadPhenotypeFindingsReport } from '@/lib/utils/download-report'
+import {
+  downloadClinicalReport,
+  downloadPhenotypeFindingsReport,
+  downloadVariantFindingsReport,
+} from '@/lib/utils/download-report'
 
 function getStepIcon(status: StepStatus) {
   switch (status) {
@@ -108,6 +112,20 @@ export function Header() {
     }
   }
 
+  const handleDownloadVariantFindings = async () => {
+    if (!currentSessionId) {
+      console.error('[Header] No session for variant report')
+      return
+    }
+
+    try {
+      await downloadVariantFindingsReport(currentSessionId)
+    } catch (error) {
+      console.error('[Header] Variant findings download failed:', error)
+      alert('Variant findings download failed. Please try again.')
+    }
+  }
+
   const handleDownloadPhenotypeFindings = async () => {
     if (!currentSessionId) {
       console.error('[Header] No session for phenotype report')
@@ -124,7 +142,8 @@ export function Header() {
 
   const hasClinicalInterpretation = isAnalysisComplete && isComplete()
   const hasPhenotypeResults = phenotypeStatus === 'success' && aggregatedResults !== null
-  const showDownloadReport = hasClinicalInterpretation || hasPhenotypeResults
+  // Variant findings always available when analysis is complete
+  const showDownloadReport = isAnalysisComplete
 
   return (
     <div className="h-full flex items-center gap-6 overflow-hidden">
@@ -221,50 +240,60 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
+              {/* Variant Findings - always available when analysis complete */}
+              <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
+                Variant Findings
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={handleDownloadVariantFindings}
+                className="cursor-pointer text-md"
+              >
+                <FileText className="h-3 w-3 mr-2" />
+                PDF
+              </DropdownMenuItem>
+
+              {hasPhenotypeResults && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
+                    Phenotype Findings
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={handleDownloadPhenotypeFindings}
+                    className="cursor-pointer text-md"
+                  >
+                    <FileText className="h-3 w-3 mr-2" />
+                    PDF
+                  </DropdownMenuItem>
+                </>
+              )}
+
               {hasClinicalInterpretation && (
                 <>
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
                     Clinical Interpretation
                   </DropdownMenuLabel>
                   <DropdownMenuItem
                     onClick={() => handleDownloadReport('pdf')}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-md"
                   >
                     <Download className="h-3 w-3 mr-2" />
                     PDF
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDownloadReport('docx')}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-md"
                   >
                     <Download className="h-3 w-3 mr-2" />
                     DOCX
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDownloadReport('md')}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-md"
                   >
                     <Download className="h-3 w-3 mr-2" />
                     Markdown
-                  </DropdownMenuItem>
-                </>
-              )}
-
-              {hasClinicalInterpretation && hasPhenotypeResults && (
-                <DropdownMenuSeparator />
-              )}
-
-              {hasPhenotypeResults && (
-                <>
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                    Phenotype Findings
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={handleDownloadPhenotypeFindings}
-                    className="cursor-pointer"
-                  >
-                    <FileText className="h-3 w-3 mr-2" />
-                    PDF
                   </DropdownMenuItem>
                 </>
               )}

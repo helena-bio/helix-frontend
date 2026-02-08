@@ -127,6 +127,24 @@ async function downloadBinaryFromService(
 }
 
 /**
+ * Download variant analysis findings PDF report
+ * Generated server-side from DuckDB classified variants
+ */
+export async function downloadVariantFindingsReport(sessionId: string) {
+  const endpoint = `${API_BASE_URL}/api/sessions/${sessionId}/report/pdf`
+  const timestamp = new Date().toISOString().split('T')[0]
+  const filename = `variant-findings-${sessionId}-${timestamp}.pdf`
+
+  try {
+    console.log('Variant findings PDF download:', endpoint)
+    await downloadBinaryFromService(endpoint, filename)
+  } catch (error) {
+    console.error('Variant findings PDF download failed:', error)
+    throw error
+  }
+}
+
+/**
  * Download phenotype findings PDF report
  * Generated server-side from DuckDB phenotype matching results
  */
