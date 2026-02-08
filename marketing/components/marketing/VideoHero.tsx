@@ -4,14 +4,6 @@ export function VideoHero() {
   const { openModal } = useDemoModal()
   return (
     <div className="flex flex-col items-center justify-center space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-primary">
-          From variants to understanding
-        </h1>
-        <p className="text-xl text-muted-foreground">
-          AI-Powered Genetic Variant Analysis
-        </p>
-      </div>
       <div className="w-full max-w-4xl aspect-video bg-muted/30 border border-border rounded-lg overflow-hidden shadow-lg">
         <video
           className="w-full h-full object-cover"
@@ -22,6 +14,14 @@ export function VideoHero() {
           <source src="/video/helixinsight_preview.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+      </div>
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold text-primary">
+          From variants to understanding
+        </h1>
+        <p className="text-xl text-muted-foreground">
+          AI-Powered Genetic Variant Analysis
+        </p>
       </div>
       <button
         onClick={openModal}
