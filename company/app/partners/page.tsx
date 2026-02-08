@@ -48,8 +48,8 @@ export default function PartnersPage() {
                 Get in Touch
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <a href="mailto:partnerships@helena.bio" className="text-base text-muted-foreground hover:text-foreground transition-colors py-3">
-                partnerships@helena.bio
+              <a href="mailto:contact@helena.bio" className="text-base text-muted-foreground hover:text-foreground transition-colors py-3">
+                contact@helena.bio
               </a>
             </div>
           </section>
