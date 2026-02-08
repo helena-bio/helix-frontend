@@ -9,7 +9,7 @@ export function HeroSection() {
             alt="Helena Bioinformatics"
             width={500}
             height={80}
-            className="h-16 w-auto mx-auto"
+            className="h-24 w-auto mx-auto"
             priority
           />
           <p className="text-xl text-foreground font-medium">Intelligence for genomics.</p>
