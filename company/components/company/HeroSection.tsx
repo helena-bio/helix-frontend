@@ -24,7 +24,7 @@ export function HeroSection() {
               className="h-20 w-auto"
               priority
             />
-            <p className="text-xl text-foreground font-medium">Intelligence for genomics.</p>
+            <p className="text-xl text-foreground font-medium">Intelligence for genomics</p>
           </div>
         </div>
         <p className="text-lg text-muted-foreground text-center">
