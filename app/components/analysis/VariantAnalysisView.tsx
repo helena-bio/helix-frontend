@@ -24,6 +24,7 @@ import {
   ChevronUp,
   Filter,
   ExternalLink,
+  Info,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -321,26 +322,33 @@ interface FilterCardProps {
 
 function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }: FilterCardProps) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Card
-            className={`cursor-pointer transition-all ${colorClasses} ${
-              isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
-            }`}
-            onClick={onClick}
-          >
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-xl font-bold">{count.toLocaleString()}</p>
-              <p className="text-sm font-medium">{label}</p>
-            </CardContent>
-          </Card>
-        </TooltipTrigger>
-        <TooltipContent className="text-sm max-w-xs">
-          <p>{tooltip}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Card
+      className={`cursor-pointer transition-all ${colorClasses} ${
+        isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
+      }`}
+      onClick={onClick}
+    >
+      <CardContent className="py-1.5 px-3 text-center relative">
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="absolute top-1 right-1 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Info: ${label}`}
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="text-sm max-w-xs">
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <p className="text-xl font-bold">{count.toLocaleString()}</p>
+        <p className="text-sm font-medium">{label}</p>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -334,26 +334,33 @@ interface TierCardProps {
 
 function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClasses }: TierCardProps) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Card
-            className={`cursor-pointer transition-all ${colorClasses} ${
-              isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
-            }`}
-            onClick={onClick}
-          >
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold">{count}</p>
-              <p className="text-base font-semibold">{label}</p>
-            </CardContent>
-          </Card>
-        </TooltipTrigger>
-        <TooltipContent className="text-sm max-w-xs">
-          <p>{tooltip}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Card
+      className={`cursor-pointer transition-all ${colorClasses} ${
+        isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
+      }`}
+      onClick={onClick}
+    >
+      <CardContent className="py-1.5 px-3 text-center relative">
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="absolute top-1 right-1 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Info: ${label}`}
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="text-sm max-w-xs">
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <p className="text-ml font-bold">{count}</p>
+        <p className="text-base font-semibold">{label}</p>
+      </CardContent>
+    </Card>
   )
 }
 
