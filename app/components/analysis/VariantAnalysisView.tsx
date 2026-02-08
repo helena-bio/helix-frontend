@@ -333,7 +333,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="absolute top-1 right-1 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                className="absolute top-1 right-1 text-current/50 hover:text-current transition-colors"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Info: ${label}`}
               >
