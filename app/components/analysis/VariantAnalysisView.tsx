@@ -323,7 +323,7 @@ interface FilterCardProps {
 function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }: FilterCardProps) {
   return (
     <Card
-      className={`cursor-pointer transition-all ${colorClasses} ${
+      className={`cursor-pointer transition-all py-0 gap-0 ${colorClasses} ${
         isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
       }`}
       onClick={onClick}
