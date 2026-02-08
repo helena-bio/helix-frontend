@@ -240,7 +240,7 @@ function GeneSection({ gene, rank, onViewVariantDetails, acmgFilter, impactFilte
   }, [gene.variants, acmgFilter, impactFilter])
 
   return (
-    <Card>
+    <Card className="gap-0">
       <CardHeader
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={() => setIsExpanded(!isExpanded)}
