@@ -194,7 +194,7 @@ export function CasesList() {
           )}
 
           {/* Cases list */}
-          <div className="max-h-52 overflow-y-auto space-y-0.5 scrollbar-thin">
+          <div className="overflow-y-auto space-y-0.5 scrollbar-thin">
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
