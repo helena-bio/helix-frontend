@@ -60,7 +60,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { currentStep } = useJourney()
   const { currentSessionId } = useSession()
   const pathname = usePathname()
-  const { allGenes, isLoading: variantsLoading, loadProgress, loadAllVariants } = useVariantsResults()
+  const { allGenes, isLoading: variantsLoading, loadProgress, loadAllVariants, error: variantsError } = useVariantsResults()
 
   // Supplementary data contexts -- load in PARALLEL with variants
   const { status: screeningStatus, loadScreeningResults } = useScreeningResults()
@@ -78,7 +78,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
     if (!isAnalysisRoute || !currentSessionId) return
 
     // Variants
-    if (allGenes.length === 0 && !variantsLoading) {
+    if (allGenes.length === 0 && !variantsLoading && !variantsError) {
       console.log('[LayoutContent] Triggering variant load for session:', currentSessionId)
       loadAllVariants(currentSessionId)
     }
