@@ -25,6 +25,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
+  Plus,
 } from 'lucide-react'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -76,7 +77,7 @@ function getCaseDisplayName(session: AnalysisSession): string {
 export function CasesList() {
   const router = useRouter()
   const { currentSessionId, setCurrentSessionId } = useSession()
-  const { skipToAnalysis } = useJourney()
+  const { skipToAnalysis, resetJourney } = useJourney()
   const { data, isLoading } = useCases()
   const renameMutation = useRenameCase()
   const deleteMutation = useDeleteCase()
@@ -154,6 +155,12 @@ export function CasesList() {
     })
   }, [deleteMutation, currentSessionId, setCurrentSessionId, router])
 
+  const handleNewCase = useCallback(() => {
+    setCurrentSessionId(null)
+    resetJourney()
+    router.push('/analysis')
+  }, [setCurrentSessionId, resetJourney, router])
+
   return (
     <div className="py-1">
       {/* Section header */}
@@ -179,6 +186,14 @@ export function CasesList() {
 
       {isOpen && (
         <div className="mt-1 space-y-1 px-2">
+          {/* New Case button */}
+          <button
+            className="w-full flex items-center gap-2 px-2 py-1.5 text-md text-muted-foreground rounded-md hover:bg-accent hover:text-foreground transition-colors"
+            onClick={handleNewCase}
+          >
+            <Plus className="h-4 w-4" />
+            New Case
+          </button>
           {/* Search -- only show when enough cases to warrant it */}
           {cases.length > 3 && (
             <div className="relative">
