@@ -523,13 +523,12 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
             <CardContent className="p-6">
               {/* File Header */}
               <div className="border-b border-border pb-4 mb-4">
-                <div className="flex items-center gap-3">
+                <p className="text-md text-muted-foreground mb-2">File</p>
+                <div className="flex items-center gap-2">
                   <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">File</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-base font-medium">{selectedFile?.name}</p>
-                    <span className="text-muted-foreground">-</span>
-                    <p className="text-sm text-muted-foreground">{fileSize}</p>
+                  <p className="text-base font-medium">{selectedFile?.name}</p>
+                  <span className="text-muted-foreground">-</span>
+                  <p className="text-md text-muted-foreground">{fileSize}</p>
                     {/* Subtle indicator that file was auto-compressed (only visible after QC) */}
                     {wasCompressed && (
                       <TooltipProvider>
