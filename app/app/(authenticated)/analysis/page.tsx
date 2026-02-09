@@ -12,6 +12,8 @@
  * DATA LOADING:
  * - During upload flow: ProcessingFlow loads all data into contexts
  * - Reopening existing case: This page triggers data loading
+ * - Context status guards prevent double-loading (status moves to 'loading' immediately)
+ * - Context auto-resets to 'idle' on session change, retriggering this effect
  *
  * REDIRECT SAFETY:
  * - Uses a ref to read current sessionId inside setTimeout
@@ -37,9 +39,6 @@ export default function AnalysisPage() {
   const { status: screeningStatus, loadScreeningResults } = useScreeningResults()
   const { aggregatedResults, status: phenotypeStatus, loadAllPhenotypeResults } = usePhenotypeResults()
   const { results: literatureResults, status: literatureStatus, loadAllLiteratureResults } = useLiteratureResults()
-
-  // Track which session we already triggered loading for
-  const loadTriggeredForSession = useRef<string | null>(null)
 
   // Ref to track current sessionId for timeout callback (avoids stale closure)
   const sessionIdRef = useRef<string | null>(currentSessionId)
@@ -67,13 +66,13 @@ export default function AnalysisPage() {
   }, [currentSessionId, router])
 
   // Load supplementary data for existing cases (screening, phenotype, literature)
-  // Variants are loaded by LayoutContent -- this handles the rest
+  // Variants are loaded by LayoutContent -- this handles the rest.
+  //
+  // Guard: status === 'idle' only. No ref needed because:
+  // - Contexts set status to 'loading' immediately, preventing double-triggers
+  // - Contexts auto-reset to 'idle' on session change, retriggering this effect
   useEffect(() => {
     if (!currentSessionId) return
-    if (loadTriggeredForSession.current === currentSessionId) return
-
-    console.log('[AnalysisPage] Loading supplementary data for:', currentSessionId)
-    loadTriggeredForSession.current = currentSessionId
 
     // Load screening results (safe to attempt -- returns empty if not available)
     if (screeningStatus === 'idle') {
