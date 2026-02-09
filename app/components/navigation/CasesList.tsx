@@ -192,8 +192,8 @@ export function CasesList() {
             className="w-full justify-start"
             onClick={handleNewCase}
           >
-            <Plus className="h-5 w-5 shrink-0" />
-            <span className="ml-3 text-base">New Case</span>
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="ml-2 text-base">New Case</span>
           </Button>
           {/* Search -- only show when enough cases to warrant it */}
           {cases.length > 3 && (
