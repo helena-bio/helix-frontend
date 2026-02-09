@@ -50,11 +50,21 @@ interface AuthenticatedLayoutProps {
  */
 function LayoutContent({ children }: { children: ReactNode }) {
   const { currentStep } = useJourney()
+  const { currentSessionId } = useSession()
   const pathname = usePathname()
-  const { allGenes, isLoading: variantsLoading } = useVariantsResults()
+  const { allGenes, isLoading: variantsLoading, loadAllVariants } = useVariantsResults()
 
   const isAnalysisRoute = pathname === '/analysis' && currentStep === 'analysis'
   const variantsReady = allGenes.length > 0 && !variantsLoading
+
+  // Trigger variant loading when on analysis route with no data
+  useEffect(() => {
+    if (!isAnalysisRoute || !currentSessionId) return
+    if (allGenes.length > 0 || variantsLoading) return
+
+    console.log('[LayoutContent] Triggering variant load for session:', currentSessionId)
+    loadAllVariants(currentSessionId)
+  }, [isAnalysisRoute, currentSessionId, allGenes.length, variantsLoading, loadAllVariants])
 
   // Analysis route but variants still loading -- show loading screen
   if (isAnalysisRoute && !variantsReady) {
