@@ -13,6 +13,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AlertCircle } from 'lucide-react';
 import { tokenUtils } from '@/lib/auth/token';
+import { useAuth } from '@/contexts/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008';
 
@@ -31,6 +32,7 @@ interface LoginResponse {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -65,6 +67,9 @@ export default function LoginPage() {
 
       // Save JWT to cookie (shared domain with marketing site)
       tokenUtils.save(data.access_token);
+
+      // Update AuthContext with new token data
+      refreshAuth();
 
       // Redirect to dashboard
       router.push('/');
