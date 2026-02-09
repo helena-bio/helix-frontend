@@ -10,9 +10,10 @@
  *
  * Flow:
  * - ClinicalAnalysis Stage 3: Explicitly called after phenotype matching
- * - runSearch(genes, hpoTerms) → loadAllLiteratureResults(sessionId)
+ * - runSearch(genes, hpoTerms) -> loadAllLiteratureResults(sessionId)
  * - Results stream directly to context
  * - Combined scoring with phenotype clinical priority (60% clinical + 40% literature)
+ * - Session cache: switching cases restores instantly (max 3 cached)
  * - Auto-cleanup when session becomes null
  */
 
@@ -42,6 +43,9 @@ import type {
 
 const LITERATURE_API_URL = process.env.NEXT_PUBLIC_LITERATURE_API_URL || 'http://localhost:9004'
 
+// Session cache
+const MAX_CACHED_SESSIONS = 3
+
 // ============================================================================
 // SCORING WEIGHTS
 // ============================================================================
@@ -56,6 +60,17 @@ const CLINICAL_WEIGHT = 0.6
  * Weight for literature relevance score in combined calculation.
  */
 const LITERATURE_WEIGHT = 0.4
+
+// ============================================================================
+// CACHE TYPE
+// ============================================================================
+
+interface LiteratureCacheEntry {
+  results: PublicationResult[]
+  querySummary: ClinicalSearchResponse['query_summary'] | null
+  searchedGenes: string[]
+  searchedHpoTerms: LiteratureHPOTerm[]
+}
 
 // ============================================================================
 // CONTEXT TYPE
@@ -208,6 +223,37 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
   const isSearching = useRef<boolean>(false)
   const currentSessionId = useRef<string | null>(null)
 
+  // Refs mirroring state for cache saves
+  const resultsRef = useRef<PublicationResult[]>([])
+  const querySummaryRef = useRef<ClinicalSearchResponse['query_summary'] | null>(null)
+  const searchedGenesRef = useRef<string[]>([])
+  const searchedHpoTermsRef = useRef<LiteratureHPOTerm[]>([])
+
+  useEffect(() => { resultsRef.current = results }, [results])
+  useEffect(() => { querySummaryRef.current = querySummary }, [querySummary])
+  useEffect(() => { searchedGenesRef.current = searchedGenes }, [searchedGenes])
+  useEffect(() => { searchedHpoTermsRef.current = searchedHpoTerms }, [searchedHpoTerms])
+
+  // Session cache
+  const sessionCache = useRef<Map<string, LiteratureCacheEntry>>(new Map())
+
+  const saveToCache = useCallback((id: string, entry: LiteratureCacheEntry) => {
+    if (entry.results.length === 0) return
+
+    sessionCache.current.set(id, entry)
+    if (sessionCache.current.size > MAX_CACHED_SESSIONS) {
+      const oldest = sessionCache.current.keys().next().value
+      if (oldest) sessionCache.current.delete(oldest)
+    }
+  }, [])
+
+  const getCurrentCacheEntry = useCallback((): LiteratureCacheEntry => ({
+    results: resultsRef.current,
+    querySummary: querySummaryRef.current,
+    searchedGenes: searchedGenesRef.current,
+    searchedHpoTerms: searchedHpoTermsRef.current,
+  }), [])
+
   // Get phenotype matching results for combined scoring
   const { aggregatedResults } = usePhenotypeResults()
 
@@ -226,10 +272,13 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
     return map
   }, [aggregatedResults])
 
-  // Auto-cleanup when session changes or becomes null
+  // Auto-cleanup and cache management when session changes
   useEffect(() => {
-    // Case 1: Session cleared - cleanup all data
+    const prevId = currentSessionId.current
+
+    // Case 1: Session cleared
     if (sessionId === null) {
+      if (prevId) saveToCache(prevId, getCurrentCacheEntry())
       console.log('[LiteratureResultsContext] Session cleared - resetting literature results')
       currentSessionId.current = null
       setResults([])
@@ -245,9 +294,27 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
     // Case 2: Same session - do nothing
     if (sessionId === currentSessionId.current) return
 
-    // Case 3: New session - clear old data
-    console.log('[LiteratureResultsContext] Session changed - clearing old data')
+    // Case 3: New session - save current, check cache
+    if (prevId) saveToCache(prevId, getCurrentCacheEntry())
+
     currentSessionId.current = sessionId
+
+    const cached = sessionCache.current.get(sessionId)
+    if (cached) {
+      console.log(`[LiteratureResultsContext] Cache hit for ${sessionId} - restoring ${cached.results.length} publications`)
+      sessionCache.current.delete(sessionId)
+      sessionCache.current.set(sessionId, cached)
+      setResults(cached.results)
+      setQuerySummary(cached.querySummary)
+      setSearchedGenes(cached.searchedGenes)
+      setSearchedHpoTerms(cached.searchedHpoTerms)
+      setLoadProgress(100)
+      setError(null)
+      setStatus('success')
+      return
+    }
+
+    console.log(`[LiteratureResultsContext] Cache miss for ${sessionId}`)
     setResults([])
     setStatus('idle')
     setError(null)
@@ -255,7 +322,7 @@ export function LiteratureResultsProvider({ sessionId, children }: LiteratureRes
     setQuerySummary(null)
     setSearchedGenes([])
     setSearchedHpoTerms([])
-  }, [sessionId])
+  }, [sessionId, saveToCache, getCurrentCacheEntry])
 
   // Run literature search (trigger backend computation only)
   const runSearch = useCallback(async (

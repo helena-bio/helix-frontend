@@ -10,13 +10,23 @@
  * 1. Stream all variants on mount (with progress)
  * 2. Store everything in context
  * 3. Local filtering/sorting/search (instant!)
- * 4. Auto-cleanup when session changes
+ * 4. Session cache: switching between cases restores data instantly
+ *    (max 3 sessions cached, LRU eviction)
+ * 5. Auto-cleanup when session becomes null
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react'
 import type { GeneAggregated } from '@/types/variant.types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
+
+// Session cache: avoids re-streaming when switching between cases
+const MAX_CACHED_SESSIONS = 3
+
+interface VariantsCacheEntry {
+  allGenes: GeneAggregated[]
+  totalVariants: number
+}
 
 interface VariantsResultsContextValue {
   // Data
@@ -62,10 +72,41 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
   // Ref for tracking current session
   const currentSessionId = useRef<string | null>(null)
 
-  // Auto-cleanup when session changes or becomes null
+  // Refs mirroring state for cache saves (avoids adding state to effect dependencies)
+  const allGenesRef = useRef<GeneAggregated[]>([])
+  const totalVariantsRef = useRef(0)
+
+  useEffect(() => { allGenesRef.current = allGenes }, [allGenes])
+  useEffect(() => { totalVariantsRef.current = totalVariants }, [totalVariants])
+
+  // Session cache (persists across re-renders, not across page reloads)
+  const sessionCache = useRef<Map<string, VariantsCacheEntry>>(new Map())
+
+  const saveToCache = useCallback((id: string, entry: VariantsCacheEntry) => {
+    // Only cache if there's actual data
+    if (entry.allGenes.length === 0) return
+
+    sessionCache.current.set(id, entry)
+
+    // LRU eviction: Map preserves insertion order, delete oldest
+    if (sessionCache.current.size > MAX_CACHED_SESSIONS) {
+      const oldest = sessionCache.current.keys().next().value
+      if (oldest) sessionCache.current.delete(oldest)
+    }
+  }, [])
+
+  // Auto-cleanup and cache management when session changes
   useEffect(() => {
-    // Case 1: Session cleared - cleanup all data
+    const prevId = currentSessionId.current
+
+    // Case 1: Session cleared - save current to cache, then clear
     if (sessionId === null) {
+      if (prevId && allGenesRef.current.length > 0) {
+        saveToCache(prevId, {
+          allGenes: allGenesRef.current,
+          totalVariants: totalVariantsRef.current,
+        })
+      }
       console.log('[VariantsResultsContext] Session cleared - resetting variants')
       currentSessionId.current = null
       setAllGenes([])
@@ -79,15 +120,40 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     // Case 2: Same session - do nothing
     if (sessionId === currentSessionId.current) return
 
-    // Case 3: New session - clear old data
-    console.log('[VariantsResultsContext] Session changed - clearing old data')
+    // Case 3: New session - save current to cache, then check cache for new session
+    if (prevId && allGenesRef.current.length > 0) {
+      saveToCache(prevId, {
+        allGenes: allGenesRef.current,
+        totalVariants: totalVariantsRef.current,
+      })
+    }
+
     currentSessionId.current = sessionId
+
+    // Check cache for the new session
+    const cached = sessionCache.current.get(sessionId)
+    if (cached) {
+      console.log(`[VariantsResultsContext] Cache hit for ${sessionId} - restoring ${cached.allGenes.length} genes`)
+      // Move to end of Map for LRU (delete + re-insert)
+      sessionCache.current.delete(sessionId)
+      sessionCache.current.set(sessionId, cached)
+      // Restore instantly
+      setAllGenes(cached.allGenes)
+      setTotalVariants(cached.totalVariants)
+      setLoadProgress(100)
+      setError(null)
+      setIsLoading(false)
+      return
+    }
+
+    // Not in cache - clear and let LayoutContent trigger fresh load
+    console.log(`[VariantsResultsContext] Cache miss for ${sessionId} - will stream fresh`)
     setAllGenes([])
     setTotalVariants(0)
     setLoadProgress(0)
     setError(null)
     setIsLoading(false)
-  }, [sessionId])
+  }, [sessionId, saveToCache])
 
   // Load all variants via streaming
   const loadAllVariants = useCallback(async (sessionId: string) => {

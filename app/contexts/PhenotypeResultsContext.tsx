@@ -13,6 +13,7 @@
  * - ClinicalAnalysis Stage 1: runMatching() -> loadAllPhenotypeResults()
  * - Results stream directly to context (pre-aggregated by gene)
  * - Views read from pre-loaded context data
+ * - Session cache: switching cases restores instantly (max 3 cached)
  * - Auto-cleanup when session becomes null
  *
  * IMPORTANT: loadAllPhenotypeResults RETURNS the loaded data to avoid React state race conditions
@@ -42,6 +43,9 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
+// Session cache
+const MAX_CACHED_SESSIONS = 3
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -57,6 +61,16 @@ export interface GeneAggregatedResult {
   variant_count: number
   matched_hpo_terms: string[]
   variants: SessionMatchResult[]
+}
+
+interface PhenotypeCacheEntry {
+  aggregatedResults: GeneAggregatedResult[] | null
+  tier1Count: number
+  tier2Count: number
+  incidentalFindingsCount: number
+  tier3Count: number
+  tier4Count: number
+  variantsAnalyzed: number
 }
 
 interface PhenotypeResultsContextValue {
@@ -111,31 +125,60 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   // Refs for tracking
   const currentSessionId = useRef<string | null>(null)
 
-  // Auto-cleanup when session changes or becomes null
-  useEffect(() => {
-    // Case 1: Session cleared - cleanup all data
-    if (sessionId === null) {
-      console.log('[PhenotypeResultsContext] Session cleared - resetting phenotype results')
-      currentSessionId.current = null
-      setAggregatedResults(null)
-      setStatus('idle')
-      setError(null)
-      setLoadProgress(0)
-      setTier1Count(0)
-      setTier2Count(0)
-      setIncidentalFindingsCount(0)
-      setTier3Count(0)
-      setTier4Count(0)
-      setVariantsAnalyzed(0)
-      return
+  // Refs mirroring state for cache saves
+  const aggregatedRef = useRef<GeneAggregatedResult[] | null>(null)
+  const tier1Ref = useRef(0)
+  const tier2Ref = useRef(0)
+  const ifRef = useRef(0)
+  const tier3Ref = useRef(0)
+  const tier4Ref = useRef(0)
+  const analyzedRef = useRef(0)
+
+  useEffect(() => { aggregatedRef.current = aggregatedResults }, [aggregatedResults])
+  useEffect(() => { tier1Ref.current = tier1Count }, [tier1Count])
+  useEffect(() => { tier2Ref.current = tier2Count }, [tier2Count])
+  useEffect(() => { ifRef.current = incidentalFindingsCount }, [incidentalFindingsCount])
+  useEffect(() => { tier3Ref.current = tier3Count }, [tier3Count])
+  useEffect(() => { tier4Ref.current = tier4Count }, [tier4Count])
+  useEffect(() => { analyzedRef.current = variantsAnalyzed }, [variantsAnalyzed])
+
+  // Session cache
+  const sessionCache = useRef<Map<string, PhenotypeCacheEntry>>(new Map())
+
+  const saveToCache = useCallback((id: string, entry: PhenotypeCacheEntry) => {
+    if (!entry.aggregatedResults || entry.aggregatedResults.length === 0) return
+
+    sessionCache.current.set(id, entry)
+    if (sessionCache.current.size > MAX_CACHED_SESSIONS) {
+      const oldest = sessionCache.current.keys().next().value
+      if (oldest) sessionCache.current.delete(oldest)
     }
+  }, [])
 
-    // Case 2: Same session - do nothing
-    if (sessionId === currentSessionId.current) return
+  const getCurrentCacheEntry = useCallback((): PhenotypeCacheEntry => ({
+    aggregatedResults: aggregatedRef.current,
+    tier1Count: tier1Ref.current,
+    tier2Count: tier2Ref.current,
+    incidentalFindingsCount: ifRef.current,
+    tier3Count: tier3Ref.current,
+    tier4Count: tier4Ref.current,
+    variantsAnalyzed: analyzedRef.current,
+  }), [])
 
-    // Case 3: New session - clear old data
-    console.log('[PhenotypeResultsContext] Session changed - clearing old data')
-    currentSessionId.current = sessionId
+  const restoreFromCache = useCallback((entry: PhenotypeCacheEntry) => {
+    setAggregatedResults(entry.aggregatedResults)
+    setTier1Count(entry.tier1Count)
+    setTier2Count(entry.tier2Count)
+    setIncidentalFindingsCount(entry.incidentalFindingsCount)
+    setTier3Count(entry.tier3Count)
+    setTier4Count(entry.tier4Count)
+    setVariantsAnalyzed(entry.variantsAnalyzed)
+    setLoadProgress(100)
+    setError(null)
+    setStatus('success')
+  }, [])
+
+  const clearState = useCallback(() => {
     setAggregatedResults(null)
     setStatus('idle')
     setError(null)
@@ -146,7 +189,41 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     setTier3Count(0)
     setTier4Count(0)
     setVariantsAnalyzed(0)
-  }, [sessionId])
+  }, [])
+
+  // Auto-cleanup and cache management when session changes
+  useEffect(() => {
+    const prevId = currentSessionId.current
+
+    // Case 1: Session cleared
+    if (sessionId === null) {
+      if (prevId) saveToCache(prevId, getCurrentCacheEntry())
+      console.log('[PhenotypeResultsContext] Session cleared - resetting phenotype results')
+      currentSessionId.current = null
+      clearState()
+      return
+    }
+
+    // Case 2: Same session - do nothing
+    if (sessionId === currentSessionId.current) return
+
+    // Case 3: New session - save current, check cache
+    if (prevId) saveToCache(prevId, getCurrentCacheEntry())
+
+    currentSessionId.current = sessionId
+
+    const cached = sessionCache.current.get(sessionId)
+    if (cached) {
+      console.log(`[PhenotypeResultsContext] Cache hit for ${sessionId} - restoring`)
+      sessionCache.current.delete(sessionId)
+      sessionCache.current.set(sessionId, cached)
+      restoreFromCache(cached)
+      return
+    }
+
+    console.log(`[PhenotypeResultsContext] Cache miss for ${sessionId}`)
+    clearState()
+  }, [sessionId, saveToCache, getCurrentCacheEntry, restoreFromCache, clearState])
 
   // Run phenotype matching (trigger backend computation only)
   const runMatching = useCallback(async (patientHpoIds: string[]): Promise<void> => {
@@ -305,17 +382,8 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
   // Clear results
   const clearResults = useCallback(() => {
-    setAggregatedResults(null)
-    setStatus('idle')
-    setError(null)
-    setLoadProgress(0)
-    setTier1Count(0)
-    setTier2Count(0)
-    setIncidentalFindingsCount(0)
-    setTier3Count(0)
-    setTier4Count(0)
-    setVariantsAnalyzed(0)
-  }, [])
+    clearState()
+  }, [clearState])
 
   // Computed values
   const value = useMemo<PhenotypeResultsContextValue>(() => ({

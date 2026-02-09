@@ -88,7 +88,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
           </div>
         )}
         <p className="text-lg text-muted-foreground mt-4">
-          {variantsLoading ? `Loading case${loadProgress > 0 && loadProgress < 100 ? ` (${loadProgress}%)` : '...'}` : 'Preparing analysis...'}
+          {loadProgress > 0 && loadProgress < 100 ? `Loading case (${loadProgress}%)` : 'Loading case...'}
         </p>
       </div>
     )
