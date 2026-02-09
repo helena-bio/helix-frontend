@@ -185,7 +185,7 @@ export function Sidebar() {
         ref={sidebarRef}
         className={cn(
           "h-full flex flex-col bg-card border-r border-border shrink-0 overflow-hidden relative",
-          !isSidebarOpen && "cursor-pointer"
+          !isSidebarOpen && "cursor-pointer hover:bg-accent/50"
         )}
         style={{
           width: isSidebarOpen ? `${sidebarWidth}px` : `${SIDEBAR_COLLAPSED}px`,
