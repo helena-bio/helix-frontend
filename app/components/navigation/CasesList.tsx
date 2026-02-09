@@ -250,7 +250,7 @@ export function CasesList() {
                           className="p-0.5 rounded hover:bg-accent"
                           onClick={(e) => { e.stopPropagation(); setDeletingId(null) }}
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <X className="h-4 w-4" />
                         </button>
                       </div>
                     ) : isEditing ? (
