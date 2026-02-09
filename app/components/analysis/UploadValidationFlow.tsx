@@ -542,7 +542,6 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                         </Tooltip>
                       </TooltipProvider>
                     )}
-                  </div>
                 </div>
               </div>
 
@@ -551,7 +550,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                 <h3 className="text-lg font-semibold">Quality Control Results</h3>
                 <Button variant="ghost" size="sm" onClick={handleDownloadQC}>
                   <Download className="h-4 w-4 mr-2" />
-                  <span className="text-sm">Download Report</span>
+                  <span className="text-base">Download Report</span>
                 </Button>
               </div>
 
