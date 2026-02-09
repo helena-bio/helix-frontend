@@ -12,6 +12,11 @@
  * DATA LOADING:
  * - During upload flow: ProcessingFlow loads all data into contexts
  * - Reopening existing case: This page triggers data loading
+ *
+ * REDIRECT SAFETY:
+ * - Uses a ref to read current sessionId inside setTimeout
+ * - Prevents stale closure from redirecting when sessionId
+ *   is being set asynchronously (e.g. URL sync in layout)
  */
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -36,6 +41,12 @@ export default function AnalysisPage() {
   // Track which session we already triggered loading for
   const loadTriggeredForSession = useRef<string | null>(null)
 
+  // Ref to track current sessionId for timeout callback (avoids stale closure)
+  const sessionIdRef = useRef<string | null>(currentSessionId)
+  useEffect(() => {
+    sessionIdRef.current = currentSessionId
+  }, [currentSessionId])
+
   // Ensure journey is at analysis step when on this page
   useEffect(() => {
     if (currentStep !== 'analysis') {
@@ -43,11 +54,11 @@ export default function AnalysisPage() {
     }
   }, [currentStep, skipToAnalysis])
 
-  // Redirect to home if no session
+  // Redirect to home if no session (with stale-closure-safe check)
   useEffect(() => {
     if (currentSessionId === null) {
       const timeout = setTimeout(() => {
-        if (!currentSessionId) {
+        if (!sessionIdRef.current) {
           router.replace('/')
         }
       }, 100)

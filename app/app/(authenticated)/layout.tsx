@@ -19,6 +19,11 @@
  * - No session in URL = fresh start (upload step)
  * - Session in URL = continue existing session
  * - All providers receive sessionId and auto-cleanup when it changes
+ *
+ * URL SYNC:
+ * - One-way: URL -> SessionContext (never the reverse)
+ * - CasesList/Dashboard navigate via router.push only
+ * - Layout picks up searchParams change and updates context
  */
 
 import { ReactNode, useEffect, useState } from 'react'
@@ -122,15 +127,21 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
     }
   }, [router])
 
-  // Sync sessionId from URL to SessionContext
+  // Sync sessionId from URL to SessionContext (ONE-WAY: URL -> Context)
+  //
+  // IMPORTANT: currentSessionId is intentionally NOT in the dependency array.
+  // This prevents the race condition where:
+  //   1. CasesList sets sessionId via context (before URL updates)
+  //   2. This effect sees mismatch (old URL vs new context)
+  //   3. Resets sessionId to null (the old URL value)
+  //   4. JourneyContext auto-resets to 'upload'
+  //
+  // With one-way sync, only URL changes drive context updates.
+  // React state ignores set calls with the same value (no extra renders).
   useEffect(() => {
     const sessionFromUrl = searchParams.get('session')
-
-    // Update context if URL has changed
-    if (sessionFromUrl !== currentSessionId) {
-      setCurrentSessionId(sessionFromUrl)
-    }
-  }, [searchParams, currentSessionId, setCurrentSessionId])
+    setCurrentSessionId(sessionFromUrl)
+  }, [searchParams, setCurrentSessionId])
 
   if (isChecking) {
     return null

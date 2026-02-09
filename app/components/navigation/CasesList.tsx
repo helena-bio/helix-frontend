@@ -8,6 +8,11 @@
  * - Delete with inline confirmation
  * - Status indicator per case
  * - Active case highlighted
+ *
+ * SESSION MANAGEMENT:
+ * - Navigation is via router.push ONLY
+ * - Layout URL sync effect handles context update
+ * - No direct setCurrentSessionId calls (prevents race condition)
  */
 
 'use client'
@@ -107,14 +112,14 @@ export function CasesList() {
   }, [editingId])
 
   // Load completed case into analysis view
+  // NOTE: Only router.push -- layout URL sync handles setCurrentSessionId
   const handleCaseClick = useCallback((session: AnalysisSession) => {
     if (session.status !== 'completed') return
     if (session.id === currentSessionId) return
 
     skipToAnalysis()
-    setCurrentSessionId(session.id)
     router.push(`/analysis?session=${session.id}`)
-  }, [currentSessionId, setCurrentSessionId, skipToAnalysis, router])
+  }, [currentSessionId, skipToAnalysis, router])
 
   const handleStartRename = useCallback((e: React.MouseEvent, session: AnalysisSession) => {
     e.stopPropagation()
