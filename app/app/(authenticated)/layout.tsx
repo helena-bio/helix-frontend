@@ -54,7 +54,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { allGenes, isLoading: variantsLoading } = useVariantsResults()
 
   const isAnalysisRoute = pathname === '/analysis' && currentStep === 'analysis'
-  const variantsReady = allGenes.length > 0
+  const variantsReady = allGenes.length > 0 && !variantsLoading
 
   // Analysis route but variants still loading -- show loading screen
   if (isAnalysisRoute && !variantsReady) {
