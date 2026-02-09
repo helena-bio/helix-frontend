@@ -843,7 +843,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                   <p className="text-base text-muted-foreground mb-1">
                     or click to browse
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-md text-muted-foreground">
                     Supports .vcf and .vcf.gz files (max 20GB)
                   </p>
                 </div>
