@@ -340,12 +340,12 @@ function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClass
       }`}
       onClick={onClick}
     >
-      <CardContent className="py-1.5 px-3 text-center relative">
+      <CardContent className="py-1.5 px-3 text-center relative group">
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="absolute top-1 right-1 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                className="absolute top-1 right-1 text-muted-foreground/40 hover:text-muted-foreground transition-colors opacity-0 group-hover:opacity-100"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Info: ${label}`}
               >

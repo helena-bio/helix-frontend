@@ -328,7 +328,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
       }`}
       onClick={onClick}
     >
-      <CardContent className="py-1.5 px-3 text-center relative">
+      <CardContent className="py-1.5 px-3 text-center relative group">
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
