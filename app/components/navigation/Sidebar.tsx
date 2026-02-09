@@ -5,13 +5,13 @@
  *
  * Always visible in authenticated layout.
  * Two visual states:
- * - Expanded (256px): Full text labels, cases list, modules
+ * - Expanded (256px): Full text labels, modules, cases
  * - Collapsed (48px): Icon-only, click anywhere to expand
  *
  * Sections (expanded):
  * - Home button + toggle
- * - Cases (expandable list with search, rename, delete)
- * - Modules (enabled based on analysis state)
+ * - Modules (collapsible, enabled based on analysis state)
+ * - Cases (collapsible list with search, rename, delete)
  * - User menu
  */
 
@@ -19,6 +19,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Home,
   FolderOpen,
   Microscope,
@@ -64,6 +65,7 @@ export function Sidebar() {
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isModulesOpen, setIsModulesOpen] = useState(true)
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Close menu on outside click
@@ -171,41 +173,52 @@ export function Sidebar() {
               </Button>
             </div>
 
-            {/* Cases List */}
-            <div className="shrink-0">
-              <CasesList />
+            {/* Modules Navigation (collapsible) */}
+            <div className="py-1 shrink-0">
+              <button
+                className="w-full flex items-center justify-between px-3 py-1.5 text-ml font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                onClick={() => setIsModulesOpen(!isModulesOpen)}
+              >
+                <span>Modules</span>
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-200",
+                    !isModulesOpen && "-rotate-90"
+                  )}
+                />
+              </button>
+
+              {isModulesOpen && (
+                <div className="mt-1 px-2 space-y-0.5">
+                  {MODULES.map((module) => {
+                    const Icon = module.icon
+                    const isEnabled = module.checkEnabled ? module.checkEnabled() : true
+                    const isSelected = selectedModule === module.id
+
+                    return (
+                      <Button
+                        key={module.id}
+                        variant={isSelected ? 'secondary' : 'ghost'}
+                        className={cn(
+                          "w-full justify-start",
+                          !isEnabled && "opacity-50 cursor-not-allowed"
+                        )}
+                        onClick={() => handleModuleClick(module.id, isEnabled)}
+                        disabled={!isEnabled}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <span className="ml-3 text-base">{module.name}</span>
+                      </Button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* Modules Navigation */}
-            <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-              <div className="pt-2 pb-2">
-                <p className="px-3 text-ml font-semibold text-muted-foreground uppercase tracking-wider">
-                  Modules
-                </p>
-              </div>
-
-              {MODULES.map((module) => {
-                const Icon = module.icon
-                const isEnabled = module.checkEnabled ? module.checkEnabled() : true
-                const isSelected = selectedModule === module.id
-
-                return (
-                  <Button
-                    key={module.id}
-                    variant={isSelected ? 'secondary' : 'ghost'}
-                    className={cn(
-                      "w-full justify-start",
-                      !isEnabled && "opacity-50 cursor-not-allowed"
-                    )}
-                    onClick={() => handleModuleClick(module.id, isEnabled)}
-                    disabled={!isEnabled}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span className="ml-3 text-base">{module.name}</span>
-                  </Button>
-                )
-              })}
-            </nav>
+            {/* Cases List (collapsible) */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <CasesList />
+            </div>
 
             {/* User Menu */}
             <div className="border-t border-border p-2 shrink-0 relative" ref={menuRef}>
@@ -276,27 +289,8 @@ export function Sidebar() {
               </TooltipProvider>
             </div>
 
-            {/* Cases icon */}
-            <div className="px-1 shrink-0">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-center px-0 h-8"
-                      onClick={(e) => { e.stopPropagation(); toggleSidebar() }}
-                    >
-                      <FolderOpen className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p className="text-sm">Cases</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-
-            <nav className="px-1 space-y-1">
+            {/* Module icons */}
+            <nav className="px-1 space-y-1 shrink-0">
               {MODULES.map((module) => {
                 const Icon = module.icon
                 const isEnabled = module.checkEnabled ? module.checkEnabled() : true
@@ -331,6 +325,26 @@ export function Sidebar() {
                 )
               })}
             </nav>
+
+            {/* Cases icon */}
+            <div className="px-1 mt-1 shrink-0">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-center px-0 h-8"
+                      onClick={(e) => { e.stopPropagation(); toggleSidebar() }}
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p className="text-sm">Cases</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
 
             {/* Chevron centered vertically */}
             <div className="flex-1 flex items-center justify-center">
