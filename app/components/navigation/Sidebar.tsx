@@ -5,17 +5,14 @@
  *
  * Always visible in authenticated layout.
  * Two visual states:
- * - Expanded (256px): Full text labels, modules, cases
+ * - Expanded (resizable, min 256px / max 480px): modules, cases, user menu
  * - Collapsed (48px): Icon-only, click anywhere to expand
  *
- * Sections (expanded):
- * - Home button + toggle
- * - Modules (collapsible, enabled based on analysis state)
- * - Cases (collapsible list with search, rename, delete)
- * - User menu
+ * Resize: drag right edge to adjust width. Uses direct DOM manipulation
+ * during drag for zero-flicker performance, commits to state on mouseup.
  */
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -44,6 +41,10 @@ import { SettingsModal } from './SettingsModal'
 import { CasesList } from './CasesList'
 import { cn } from '@helix/shared/lib/utils'
 
+const SIDEBAR_MIN = 256
+const SIDEBAR_MAX = 480
+const SIDEBAR_COLLAPSED = 48
+
 interface Module {
   id: string
   name: string
@@ -66,7 +67,10 @@ export function Sidebar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isModulesOpen, setIsModulesOpen] = useState(true)
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const menuRef = useRef<HTMLDivElement>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
+  const isResizing = useRef(false)
 
   // Close menu on outside click
   useEffect(() => {
@@ -80,6 +84,42 @@ export function Sidebar() {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isUserMenuOpen])
+
+  // Resize handlers -- direct DOM for zero flicker
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    isResizing.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const startX = e.clientX
+    const startWidth = sidebarRef.current?.offsetWidth ?? SIDEBAR_MIN
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizing.current || !sidebarRef.current) return
+      const delta = moveEvent.clientX - startX
+      const newWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth + delta))
+      sidebarRef.current.style.width = `${newWidth}px`
+    }
+
+    const handleMouseUp = () => {
+      if (!isResizing.current) return
+      isResizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+
+      // Commit final width to state
+      if (sidebarRef.current) {
+        setSidebarWidth(sidebarRef.current.offsetWidth)
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [])
 
   // Analysis must be complete before any module is accessible
   const isAnalysisComplete = currentStep === 'analysis'
@@ -142,10 +182,15 @@ export function Sidebar() {
     <>
       <style>{"@keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }"}</style>
       <aside
+        ref={sidebarRef}
         className={cn(
-          "h-full flex flex-col bg-card transition-all duration-300 border-r border-border shrink-0 overflow-hidden",
-          isSidebarOpen ? "w-64" : "w-12 cursor-pointer"
+          "h-full flex flex-col bg-card border-r border-border shrink-0 overflow-hidden relative",
+          !isSidebarOpen && "cursor-pointer"
         )}
+        style={{
+          width: isSidebarOpen ? `${sidebarWidth}px` : `${SIDEBAR_COLLAPSED}px`,
+          transition: isResizing.current ? 'none' : 'width 300ms',
+        }}
         onClick={!isSidebarOpen ? handleCollapsedClick : undefined}
       >
         {isSidebarOpen ? (
@@ -374,6 +419,14 @@ export function Sidebar() {
               </TooltipProvider>
             </div>
           </>
+        )}
+
+        {/* Resize handle -- only when expanded */}
+        {isSidebarOpen && (
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors z-50"
+            onMouseDown={handleResizeStart}
+          />
         )}
       </aside>
 
