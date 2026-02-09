@@ -423,3 +423,12 @@ img {
   user-select: none;
   -webkit-touch-callout: none;
 }
+
+/* Sonner toast close button - top right */
+[data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  top: 4px !important;
+  right: 4px !important;
+  left: auto !important;
+  transform: none !important;
+}
