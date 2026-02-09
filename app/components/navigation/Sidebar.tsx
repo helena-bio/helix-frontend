@@ -38,6 +38,9 @@ import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
+import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
+import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
+import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { SettingsModal } from './SettingsModal'
 import { CasesList } from './CasesList'
 import { cn } from '@helix/shared/lib/utils'
@@ -64,6 +67,15 @@ export function Sidebar() {
   const { currentStep } = useJourney()
   const { user, logout } = useAuth()
   const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
+  const { aggregatedResults: phenotypeData } = usePhenotypeResults()
+  const { results: literatureData } = useLiteratureResults()
+  const { status: screeningStatus } = useScreeningResults()
+
+  // Data presence overrides enablement flags for completed cases
+  const hasPhenotypeData = !!(phenotypeData && phenotypeData.length > 0)
+  const hasLiteratureData = !!(literatureData && literatureData.length > 0)
+  const hasScreeningData = screeningStatus === 'success'
+
   const router = useRouter()
   const pathname = usePathname()
 
@@ -146,19 +158,19 @@ export function Sidebar() {
       id: 'vus',
       name: 'Clinical Screening',
       icon: Shield,
-      checkEnabled: () => isAnalysisComplete && enableScreening,
+      checkEnabled: () => isAnalysisComplete && (enableScreening || hasScreeningData),
     },
     {
       id: 'phenotype',
       name: 'Phenotype Matching',
       icon: Dna,
-      checkEnabled: () => isAnalysisComplete && enablePhenotypeMatching,
+      checkEnabled: () => isAnalysisComplete && (enablePhenotypeMatching || hasPhenotypeData),
     },
     {
       id: 'literature',
       name: 'Literature Analysis',
       icon: BookOpen,
-      checkEnabled: () => isAnalysisComplete && enablePhenotypeMatching,
+      checkEnabled: () => isAnalysisComplete && (enablePhenotypeMatching || hasLiteratureData || hasPhenotypeData),
     },
   ]
 
