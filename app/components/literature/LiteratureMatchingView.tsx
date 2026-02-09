@@ -19,6 +19,7 @@
 import { useState, useMemo } from 'react'
 import {
   BookOpen,
+  Info,
   Loader2,
   ChevronDown,
   ChevronUp,
@@ -386,26 +387,33 @@ interface TierCardProps {
 
 function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClasses }: TierCardProps) {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Card
-            className={`cursor-pointer transition-all py-0 gap-0 ${colorClasses} ${
-              isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:border-gray-400'
-            }`}
-            onClick={onClick}
-          >
-            <CardContent className="py-1.5 px-3 text-center">
-              <p className="text-ml font-bold">{count}</p>
-              <p className="text-base font-semibold">{label}</p>
-            </CardContent>
-          </Card>
-        </TooltipTrigger>
-        <TooltipContent className="text-sm max-w-xs">
-          <p>{tooltip}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Card
+      className={`cursor-pointer transition-all py-0 gap-0 ${colorClasses} ${
+        isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:border-gray-400'
+      }`}
+      onClick={onClick}
+    >
+      <CardContent className="py-1.5 px-3 text-center relative group">
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-current/50 hover:text-current transition-all"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Info: ${label}`}
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="text-sm max-w-xs">
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <p className="text-lg font-semibold">{count}</p>
+        <p className="text-sm font-medium">{label}</p>
+      </CardContent>
+    </Card>
   )
 }
 
