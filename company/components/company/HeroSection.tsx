@@ -44,7 +44,7 @@ export function HeroSection() {
               className="h-32 w-auto hidden md:block"
               priority
             />
-            <p className="text-xl sm:text-2xl md:text-4xl text-foreground font-medium tracking-wide">Intelligence for genomics</p>
+            <p className="text-xl sm:text-2xl md:text-3xl text-foreground font-medium tracking-wide">Intelligence for genomics</p>
           </div>
         </div>
         <p className="text-base md:text-lg text-muted-foreground text-center">
