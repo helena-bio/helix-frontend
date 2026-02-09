@@ -72,7 +72,17 @@ function LayoutContent({ children }: { children: ReactNode }) {
     return (
       <div className="flex-1 h-full flex flex-col items-center justify-center bg-background">
         <HelixLoader size="md" />
-        <p className="text-lg text-muted-foreground mt-6">
+        {loadProgress > 0 && loadProgress < 100 && (
+          <div className="w-64 mt-6">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${loadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+        <p className="text-lg text-muted-foreground mt-4">
           {variantsLoading ? `Loading case${loadProgress > 0 && loadProgress < 100 ? ` (${loadProgress}%)` : '...'}` : 'Preparing analysis...'}
         </p>
       </div>
