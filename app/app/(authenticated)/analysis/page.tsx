@@ -17,7 +17,6 @@ import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
-import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
@@ -30,7 +29,6 @@ export default function AnalysisPage() {
   const { skipToAnalysis, currentStep } = useJourney()
 
   // Data contexts
-  const { allGenes, isLoading: variantsLoading, loadAllVariants } = useVariantsResults()
   const { status: screeningStatus, loadScreeningResults } = useScreeningResults()
   const { aggregatedResults, status: phenotypeStatus, loadAllPhenotypeResults } = usePhenotypeResults()
   const { results: literatureResults, status: literatureStatus, loadAllLiteratureResults } = useLiteratureResults()
@@ -57,20 +55,14 @@ export default function AnalysisPage() {
     }
   }, [currentSessionId, router])
 
-  // Load data for existing cases (not from upload flow)
-  // Triggers once per session -- checks if data is already present
+  // Load supplementary data for existing cases (screening, phenotype, literature)
+  // Variants are loaded by LayoutContent -- this handles the rest
   useEffect(() => {
     if (!currentSessionId) return
     if (loadTriggeredForSession.current === currentSessionId) return
 
-    // If variants are already loaded (from upload flow), skip
-    if (allGenes.length > 0 || variantsLoading) return
-
-    console.log('[AnalysisPage] Loading data for existing case:', currentSessionId)
+    console.log('[AnalysisPage] Loading supplementary data for:', currentSessionId)
     loadTriggeredForSession.current = currentSessionId
-
-    // Load variants (always available for completed cases)
-    loadAllVariants(currentSessionId)
 
     // Load screening results (safe to attempt -- returns empty if not available)
     if (screeningStatus === 'idle') {
@@ -94,12 +86,9 @@ export default function AnalysisPage() {
     }
   }, [
     currentSessionId,
-    allGenes.length,
-    variantsLoading,
     screeningStatus,
     phenotypeStatus,
     literatureStatus,
-    loadAllVariants,
     loadScreeningResults,
     loadAllPhenotypeResults,
     loadAllLiteratureResults,
