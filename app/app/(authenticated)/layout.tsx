@@ -10,8 +10,8 @@
  * - Header: Header (always visible)
  * - Sidebar: Always visible (modules disabled until analysis complete)
  * - Content area:
- *   - Pre-analysis: Full width workflow (upload, validation, profile, processing)
- *   - Post-analysis: SplitView (Chat + View Panel)
+ *   - /analysis: SplitView (Chat + View Panel)
+ *   - Everything else: Full width (dashboard, upload workflow)
  *
  * SESSION MANAGEMENT:
  * - URL is source of truth: /analysis?session=<uuid>
@@ -21,7 +21,7 @@
  */
 
 import { ReactNode, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Header } from '@/components/navigation/Header'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { SplitView } from '@/components/layout/SplitView'
@@ -46,10 +46,11 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
   const { currentSessionId, setCurrentSessionId } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [isChecking, setIsChecking] = useState(true)
 
-  // Check if analysis is complete (show split view)
-  const isAnalysisComplete = currentStep === 'analysis'
+  // SplitView only on /analysis route (route is source of truth for layout)
+  const showSplitView = pathname === '/analysis' && currentStep === 'analysis'
 
   // Auth check -- cookie-based JWT validation
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
                     <Sidebar />
 
                     {/* Content area */}
-                    {isAnalysisComplete ? (
+                    {showSplitView ? (
                       <SplitView>
                         {children}
                       </SplitView>

@@ -9,7 +9,7 @@
  * - Clean separation, no hacks
  */
 
-import { useCallback, useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { flushSync } from 'react-dom'
 import { useStartProcessing } from '@/hooks/mutations'
 import { useTaskStatus, useSession } from '@/hooks/queries'
@@ -34,6 +34,7 @@ import {
   CloudDownload
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { PROCESSING_QUOTES } from '@/lib/constants/processing-quotes'
 
 interface ProcessingFlowProps {
   sessionId: string
@@ -199,6 +200,10 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
   }, [taskStatus, phase, sessionId, loadAllVariants, nextStep, onComplete, onError])
 
   // Get backend progress
+
+  const processingQuote = useMemo(() => {
+    return PROCESSING_QUOTES[Math.floor(Math.random() * PROCESSING_QUOTES.length)]
+  }, [])
   const getBackendProgress = useCallback((): number => {
     if (!taskStatus?.info) return hasStarted ? 5 : 0
     const backendProgress = taskStatus.info.progress as number | undefined
@@ -342,9 +347,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
           </Card>
 
           <Alert>
-            <AlertDescription className="text-base">
+            <AlertDescription className="text-md">
               This process typically takes 10-15 minutes for a whole genome.
-              You can safely close this window - processing will continue in the background.
+              {processingQuote}
             </AlertDescription>
           </Alert>
         </div>

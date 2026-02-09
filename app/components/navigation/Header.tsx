@@ -1,11 +1,11 @@
 /**
  * App Header Component
- * Logo + workflow progress (only during active analysis) + actions
+ * Logo + workflow progress (only during upload workflow) + actions
  */
 
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CheckCircle2, Clock, Lock, X, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
@@ -64,14 +64,15 @@ function getLineColor(status: StepStatus): string {
 
 export function Header() {
   const router = useRouter()
+  const pathname = usePathname()
   const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { interpretation, hasInterpretation, isComplete } = useClinicalInterpretation()
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { logout } = useAuth()
 
-  // Show journey steps only during active workflow (session exists but analysis not yet complete)
-  const showJourneySteps = currentStep !== 'analysis'
+  // Show journey steps only on /upload route
+  const showJourneySteps = pathname === '/upload'
 
   // Show Clear File only in split view (analysis complete)
   const isAnalysisComplete = currentStep === 'analysis'
@@ -95,7 +96,7 @@ export function Header() {
   const handleClearFile = () => {
     setCurrentSessionId(null)
     resetJourney()
-    router.replace('/analysis')
+    router.replace('/')
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
@@ -165,7 +166,7 @@ export function Header() {
         />
       </Link>
 
-      {/* Workflow progress - Only during active analysis workflow */}
+      {/* Workflow progress - Only during upload workflow */}
       {showJourneySteps ? (
         <div className="flex-1 flex items-center justify-center gap-3 overflow-x-auto px-4">
           {JOURNEY_STEPS.map((step, index) => {

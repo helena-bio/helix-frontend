@@ -13,6 +13,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   ChevronLeft,
   ChevronRight,
@@ -63,6 +64,8 @@ export function Sidebar() {
   const { currentStep } = useJourney()
   const { user, logout } = useAuth()
   const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
+  const router = useRouter()
+  const pathname = usePathname()
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -123,6 +126,9 @@ export function Sidebar() {
 
   // Analysis must be complete before any module is accessible
   const isAnalysisComplete = currentStep === 'analysis'
+
+  // Home is active when on dashboard
+  const isHome = pathname === '/'
 
   // User display values
   const userName = user?.full_name || 'User'
@@ -200,9 +206,9 @@ export function Sidebar() {
             {/* Header: Home button + Toggle button */}
             <div className="flex items-center justify-between px-2 py-2 h-[53px] shrink-0">
               <Button
-                variant={selectedModule === null ? 'secondary' : 'ghost'}
+                variant={isHome ? 'secondary' : 'ghost'}
                 className="h-8 flex-1 justify-start mr-2"
-                onClick={() => setSelectedModule(null)}
+                onClick={() => router.push('/')}
               >
                 <Home className="h-4 w-4 shrink-0" />
                 <span className="ml-2 text-base">Home</span>
@@ -320,9 +326,9 @@ export function Sidebar() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant={selectedModule === null ? 'secondary' : 'ghost'}
+                      variant={isHome ? 'secondary' : 'ghost'}
                       className="w-full justify-center px-0 h-8"
-                      onClick={(e) => { e.stopPropagation(); setSelectedModule(null) }}
+                      onClick={(e) => { e.stopPropagation(); router.push('/') }}
                     >
                       <Home className="h-4 w-4" />
                     </Button>

@@ -150,7 +150,7 @@ export function CasesList() {
         setDeletingId(null)
         if (sessionId === currentSessionId) {
           setCurrentSessionId(null)
-          router.push('/analysis')
+          router.push('/')
         }
       },
     })
@@ -159,7 +159,7 @@ export function CasesList() {
   const handleNewCase = useCallback(() => {
     setCurrentSessionId(null)
     resetJourney()
-    router.push('/analysis')
+    router.push('/upload')
   }, [setCurrentSessionId, resetJourney, router])
 
   return (
