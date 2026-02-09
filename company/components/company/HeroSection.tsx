@@ -1,5 +1,4 @@
 import Image from 'next/image'
-
 export function HeroSection() {
   return (
     <section className="flex items-center justify-center px-6 pt-32 pb-20">
@@ -48,12 +47,10 @@ export function HeroSection() {
             <p className="text-lg sm:text-xl md:text-2xl text-foreground font-medium">Intelligence for genomics</p>
           </div>
         </div>
-
         <p className="text-base md:text-lg text-muted-foreground text-center">
           Software company integrating artificial intelligence into bioinformatics research and clinical genomics.
         </p>
-
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 text-md text-muted-foreground">
           <span>Sofia, Bulgaria</span>
           <span className="text-border">|</span>
           <span>EU Infrastructure</span>
