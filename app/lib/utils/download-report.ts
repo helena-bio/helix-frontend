@@ -131,7 +131,7 @@ async function downloadBinaryFromService(
  * Generated server-side from DuckDB classified variants
  */
 export async function downloadVariantFindingsReport(sessionId: string) {
-  const endpoint = `${API_BASE_URL}/api/sessions/${sessionId}/report/pdf`
+  const endpoint = `${API_BASE_URL}/sessions/${sessionId}/report/pdf`
   const timestamp = new Date().toISOString().split('T')[0]
   const filename = `variant-findings-${sessionId}-${timestamp}.pdf`
 
