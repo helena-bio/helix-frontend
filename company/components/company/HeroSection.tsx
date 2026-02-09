@@ -11,7 +11,7 @@ export function HeroSection() {
             alt=""
             width={120}
             height={150}
-            className="h-44 w-auto absolute right-full mr-4 top-1/2 -translate-y-1/2"
+            className="h-56 w-auto absolute right-full mr-4 top-1/2 -translate-y-1/2"
             priority
           />
           {/* Centered text stack */}
@@ -21,7 +21,7 @@ export function HeroSection() {
               alt="Helena Bioinformatics"
               width={500}
               height={80}
-              className="h-24 w-auto"
+              className="h-28 w-auto"
               priority
             />
             <p className="text-xl text-foreground font-medium">Intelligence for genomics</p>
