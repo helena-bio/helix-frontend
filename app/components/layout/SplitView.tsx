@@ -16,7 +16,7 @@ import { LeftPanel } from './LeftPanel'
 import { RightPanel } from './RightPanel'
 
 const LEFT_MIN = 280
-const RIGHT_MIN = 360
+const RIGHT_MIN_PERCENT = 55
 const DEFAULT_LEFT_PERCENT = 45
 
 interface SplitViewProps {
@@ -53,7 +53,7 @@ export function SplitView({ children }: SplitViewProps) {
 
       // Enforce minimums
       newLeftWidth = Math.max(LEFT_MIN, newLeftWidth)
-      newLeftWidth = Math.min(containerWidth - RIGHT_MIN, newLeftWidth)
+      newLeftWidth = Math.min(containerWidth * (1 - RIGHT_MIN_PERCENT / 100), newLeftWidth)
 
       const percent = (newLeftWidth / containerWidth) * 100
       leftRef.current.style.flex = `0 0 ${percent}%`
