@@ -335,8 +335,8 @@ interface TierCardProps {
 function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClasses }: TierCardProps) {
   return (
     <Card
-      className={`cursor-pointer transition-all ${colorClasses} ${
-        isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
+      className={`cursor-pointer transition-all py-0 gap-0 ${colorClasses} ${
+        isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:border-gray-400'
       }`}
       onClick={onClick}
     >
@@ -349,7 +349,7 @@ function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClass
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Info: ${label}`}
               >
-                <Info className="h-3 w-3" />
+                <Info className="h-3.5 w-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent className="text-sm max-w-xs">

@@ -390,8 +390,8 @@ function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClass
       <Tooltip>
         <TooltipTrigger asChild>
           <Card
-            className={`cursor-pointer transition-all ${colorClasses} ${
-              isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
+            className={`cursor-pointer transition-all py-0 gap-0 ${colorClasses} ${
+              isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:border-gray-400'
             }`}
             onClick={onClick}
           >
