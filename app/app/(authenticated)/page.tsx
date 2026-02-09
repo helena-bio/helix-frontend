@@ -2,6 +2,11 @@
  * Dashboard Page
  * Main home view after authentication
  * Shows user's cases and quick actions
+ *
+ * SESSION MANAGEMENT:
+ * - Navigation is via router.push ONLY
+ * - Layout URL sync effect handles context update
+ * - skipToAnalysis() sets journey step before navigation
  */
 'use client'
 
@@ -11,6 +16,7 @@ import { Plus, Microscope, CheckCircle2, Loader2, Clock, AlertCircle, Search } f
 import { Button } from '@helix/shared/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
+import { useJourney } from '@/contexts/JourneyContext'
 import { useCases } from '@/hooks/queries/use-cases'
 import { cn } from '@helix/shared/lib/utils'
 import type { AnalysisSession } from '@/types/variant.types'
@@ -76,6 +82,7 @@ function getCaseDisplayName(session: AnalysisSession): string {
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuth()
+  const { skipToAnalysis } = useJourney()
   const { data, isLoading } = useCases()
 
   const cases = data?.sessions ?? []
@@ -93,6 +100,7 @@ export default function DashboardPage() {
 
   const handleCaseClick = (session: AnalysisSession) => {
     if (session.status !== 'completed') return
+    skipToAnalysis()
     router.push(`/analysis?session=${session.id}`)
   }
 
