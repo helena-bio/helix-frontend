@@ -283,14 +283,14 @@ export function CasesList() {
                             onClick={(e) => handleStartRename(e, session)}
                             title="Rename"
                           >
-                            <Pencil className="h-3 w-3 text-muted-foreground" />
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
                           </button>
                           <button
                             className="p-0.5 rounded hover:bg-destructive/10"
                             onClick={(e) => handleDelete(e, session.id)}
                             title="Delete"
                           >
-                            <Trash2 className="h-3 w-3 text-muted-foreground" />
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
                           </button>
                         </div>
                       </div>
