@@ -4,26 +4,16 @@ export function HeroSection() {
   return (
     <section className="flex items-center justify-center px-6 pt-32 pb-20">
       <div className="flex flex-col items-center justify-center space-y-8 max-w-3xl">
-        {/* Logo group - woman is positioned absolutely on desktop, stacked on mobile */}
-        <div className="relative">
-          {/* Woman logo - hidden on mobile, absolute left on desktop */}
-          <Image
-            src="/images/logos/logo_helena_woman.svg"
-            alt=""
-            width={120}
-            height={150}
-            className="h-56 w-auto absolute right-full mr-4 top-1/2 -translate-y-1/2 hidden md:block"
-            priority
-          />
-          {/* Centered text stack */}
-          <div className="flex flex-col items-center gap-2">
-            {/* Woman logo - shown on mobile only, above text */}
+        {/* Logo group */}
+        <div className="flex flex-col items-center gap-2">
+          {/* Woman + text logo row - always side by side */}
+          <div className="flex items-center gap-3 md:gap-4">
             <Image
               src="/images/logos/logo_helena_woman.svg"
               alt=""
               width={80}
               height={100}
-              className="h-28 w-auto md:hidden"
+              className="h-20 sm:h-24 md:h-40 w-auto"
               priority
             />
             <Image
@@ -31,11 +21,11 @@ export function HeroSection() {
               alt="Helena Bioinformatics"
               width={500}
               height={80}
-              className="h-16 sm:h-20 md:h-28 w-auto"
+              className="h-12 sm:h-16 md:h-28 w-auto"
               priority
             />
-            <p className="text-lg sm:text-xl md:text-2xl text-foreground font-medium">Intelligence for genomics</p>
           </div>
+          <p className="text-lg sm:text-xl md:text-2xl text-foreground font-medium">Intelligence for genomics</p>
         </div>
 
         <p className="text-base md:text-lg text-muted-foreground text-center">
