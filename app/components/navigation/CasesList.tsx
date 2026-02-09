@@ -187,6 +187,18 @@ export function CasesList() {
 
       {isOpen && (
         <div className="mt-1 space-y-1 px-2">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-8 pl-8 pr-2 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+
           <Button
             variant="ghost"
             className="w-full justify-start"
@@ -195,19 +207,6 @@ export function CasesList() {
             <Plus className="h-4 w-4 shrink-0" />
             <span className="ml-2 text-base">New Case</span>
           </Button>
-          {/* Search */}
-          {(
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-7 pl-7 pr-2 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-          )}
 
           {/* Cases list */}
           <div className="overflow-y-auto space-y-0.5 scrollbar-thin">
