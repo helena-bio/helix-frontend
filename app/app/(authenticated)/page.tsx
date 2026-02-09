@@ -5,8 +5,9 @@
  */
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Microscope, CheckCircle2, Loader2, Clock, AlertCircle } from 'lucide-react'
+import { Plus, Microscope, CheckCircle2, Loader2, Clock, AlertCircle, Search } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
@@ -78,6 +79,13 @@ export default function DashboardPage() {
   const { data, isLoading } = useCases()
 
   const cases = data?.sessions ?? []
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredCases = cases.filter((session) => {
+    if (!searchQuery) return true
+    const name = getCaseDisplayName(session).toLowerCase()
+    return name.includes(searchQuery.toLowerCase())
+  })
 
   const handleNewCase = () => {
     router.push('/upload')
@@ -124,23 +132,36 @@ export default function DashboardPage() {
 
         {/* Cases List */}
         <div>
-          <h2 className="text-lg font-semibold mb-4">Recent Cases</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Recent Cases</h2>
+          </div>
+
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search cases..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-9 pl-9 pr-3 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : cases.length === 0 ? (
+          ) : filteredCases.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <p className="text-base text-muted-foreground">
-                  No cases yet. Start by uploading a VCF file.
+                  {searchQuery ? 'No matching cases' : 'No cases yet. Start by uploading a VCF file.'}
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-2">
-              {cases.map((session) => {
+              {filteredCases.map((session) => {
                 const isCompleted = session.status === 'completed'
 
                 return (
