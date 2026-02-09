@@ -39,7 +39,10 @@ function getHeaders(additionalHeaders?: HeadersInit): HeadersInit {
     'Content-Type': 'application/json',
   }
 
-  if (token && tokenUtils.isValid()) {
+  // Always send token if it exists -- let the server validate expiry.
+  // Previously this checked tokenUtils.isValid() which silently dropped
+  // the Authorization header when close to expiry, causing 401 cascades.
+  if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
