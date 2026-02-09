@@ -10,7 +10,8 @@
  * - Header: Header (always visible)
  * - Sidebar: Always visible (modules disabled until analysis complete)
  * - Content area:
- *   - /analysis: SplitView (Chat + View Panel)
+ *   - /analysis (loading): Full-screen loading with bulb spinner
+ *   - /analysis (ready): SplitView (Chat + View Panel)
  *   - Everything else: Full width (dashboard, upload workflow)
  *
  * SESSION MANAGEMENT:
@@ -25,6 +26,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Header } from '@/components/navigation/Header'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { SplitView } from '@/components/layout/SplitView'
+import { HelixLoader } from '@/components/ui/helix-loader'
 import {
   ClinicalInterpretationProvider,
   ClinicalProfileProvider,
@@ -35,22 +37,59 @@ import {
 } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
+import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { tokenUtils } from '@/lib/auth/token'
 
 interface AuthenticatedLayoutProps {
   children: ReactNode
 }
 
-export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
+/**
+ * Inner layout that can access VariantsResultsContext
+ * (must be inside the provider tree)
+ */
+function LayoutContent({ children }: { children: ReactNode }) {
   const { currentStep } = useJourney()
+  const pathname = usePathname()
+  const { allGenes, isLoading: variantsLoading } = useVariantsResults()
+
+  const isAnalysisRoute = pathname === '/analysis' && currentStep === 'analysis'
+  const variantsReady = allGenes.length > 0
+
+  // Analysis route but variants still loading -- show loading screen
+  if (isAnalysisRoute && !variantsReady) {
+    return (
+      <div className="flex-1 h-full flex flex-col items-center justify-center bg-background">
+        <HelixLoader size="md" />
+        <p className="text-lg text-muted-foreground mt-6">
+          {variantsLoading ? 'Loading case...' : 'Preparing analysis...'}
+        </p>
+      </div>
+    )
+  }
+
+  // Analysis route with data ready -- SplitView
+  if (isAnalysisRoute && variantsReady) {
+    return (
+      <SplitView>
+        {children}
+      </SplitView>
+    )
+  }
+
+  // All other routes -- full width
+  return (
+    <main className="flex-1 h-full overflow-auto bg-background">
+      {children}
+    </main>
+  )
+}
+
+export default function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { currentSessionId, setCurrentSessionId } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const pathname = usePathname()
   const [isChecking, setIsChecking] = useState(true)
-
-  // SplitView only on /analysis route (route is source of truth for layout)
-  const showSplitView = pathname === '/analysis' && currentStep === 'analysis'
 
   // Auth check -- cookie-based JWT validation
   useEffect(() => {
@@ -95,15 +134,9 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
                     <Sidebar />
 
                     {/* Content area */}
-                    {showSplitView ? (
-                      <SplitView>
-                        {children}
-                      </SplitView>
-                    ) : (
-                      <main className="flex-1 h-full overflow-auto bg-background">
-                        {children}
-                      </main>
-                    )}
+                    <LayoutContent>
+                      {children}
+                    </LayoutContent>
                   </div>
                 </div>
               </LiteratureResultsProvider>
