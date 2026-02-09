@@ -32,8 +32,8 @@ export default function AnalysisPage() {
   // Data contexts
   const { allGenes, isLoading: variantsLoading, loadAllVariants } = useVariantsResults()
   const { status: screeningStatus, loadScreeningResults } = useScreeningResults()
-  const { allResults: phenotypeResults, status: phenotypeStatus, loadAllPhenotypeResults } = usePhenotypeResults()
-  const { publications, status: literatureStatus, loadAllLiteratureResults } = useLiteratureResults()
+  const { aggregatedResults, status: phenotypeStatus, loadAllPhenotypeResults } = usePhenotypeResults()
+  const { results: literatureResults, status: literatureStatus, loadAllLiteratureResults } = useLiteratureResults()
 
   // Track which session we already triggered loading for
   const loadTriggeredForSession = useRef<string | null>(null)
