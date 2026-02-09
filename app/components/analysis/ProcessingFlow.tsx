@@ -296,7 +296,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Progress value={backendProgress} className="h-2" />
-                  <div className="flex justify-between text-sm text-muted-foreground">
+                  <div className="flex justify-between text-base text-muted-foreground">
                     <span>Progress</span>
                     <span>{Math.round(backendProgress)}%</span>
                   </div>
@@ -328,7 +328,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-base font-medium">{stage.name}</p>
-                          <p className="text-sm text-muted-foreground">{stage.description}</p>
+                          <p className="text-md text-muted-foreground">{stage.description}</p>
                         </div>
                         {isCurrent && (
                           <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
@@ -371,7 +371,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
             <div className="space-y-6">
               <div className="space-y-2">
                 <Progress value={100} className="h-2" />
-                <div className="flex justify-between text-sm text-muted-foreground">
+                <div className="flex justify-between text-base text-muted-foreground">
                   <span>Loading into memory</span>
                   <span>Please wait...</span>
                 </div>
@@ -389,7 +389,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-base font-medium">{stage.name}</p>
-                      <p className="text-sm text-muted-foreground">{stage.description}</p>
+                      <p className="text-md text-muted-foreground">{stage.description}</p>
                     </div>
                   </div>
                 ))}
@@ -401,7 +401,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-medium">{FRONTEND_STAGE.name}</p>
-                    <p className="text-sm text-muted-foreground">{FRONTEND_STAGE.description}</p>
+                    <p className="text-md text-muted-foreground">{FRONTEND_STAGE.description}</p>
                   </div>
                   <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
                 </div>
