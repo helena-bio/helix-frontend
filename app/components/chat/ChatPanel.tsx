@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef, useEffect, memo } from 'react'
-import { Send, Square, Sparkles, Database, BookOpen, ExternalLink } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback, memo } from 'react'
+import { Send, Square, Sparkles, Database, BookOpen, ExternalLink, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
@@ -207,7 +207,6 @@ export function ChatPanel() {
   const [isQuerying, setIsQuerying] = useState(false)
   const [isSearchingLiterature, setIsSearchingLiterature] = useState(false)
   const [conversationId, setConversationId] = useState<string | undefined>()
-  const [isInterpretationStarted, setIsInterpretationStarted] = useState(false)
   const [isGeneratingInterpretation, setIsGeneratingInterpretation] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(true)
 
@@ -262,7 +261,7 @@ export function ChatPanel() {
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight
-      
+
       // Consider "at bottom" if within 100px
       const atBottom = distanceFromBottom < 100
       setIsAtBottom(atBottom)
@@ -272,40 +271,43 @@ export function ChatPanel() {
     return () => container.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Auto-start clinical interpretation when ChatPanel mounts
-  useEffect(() => {
-    if (isInterpretationStarted || !currentSessionId) return
-    if (hasInterpretation()) return // Already have interpretation
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
 
-    console.log('[ChatPanel] Auto-starting clinical interpretation')
-    setIsInterpretationStarted(true)
+  const handlePublicationClick = (pmid: string) => {
+    setSelectedPublicationId(pmid)
+    openDetails()
+  }
+
+  // Generate clinical interpretation on demand
+  const handleGenerateInterpretation = useCallback(() => {
+    if (!currentSessionId || isGeneratingInterpretation) return
+    if (hasInterpretation()) return
+
+    console.log('[ChatPanel] Starting clinical interpretation')
     setIsGeneratingInterpretation(true)
-    setIsGenerating(true) // Track in context
+    setIsGenerating(true)
 
-    // Track streaming message ID
-    const interpretationMessageId = 'interpretation-initial'
+    const interpretationMessageId = `interpretation-${Date.now()}`
     currentStreamingIdRef.current = interpretationMessageId
 
-    // Start clinical interpretation streaming
     clinicalInterpretationMutation.mutateAsync({
       sessionId: currentSessionId,
       onStreamToken: (token) => {
         const currentId = currentStreamingIdRef.current
         if (!currentId) return
 
-        // Update or create streaming message
         setMessages(prev => {
           const existingMessage = prev.find(m => m.id === currentId)
-          
+
           if (existingMessage) {
-            // Update existing message
             return prev.map(msg =>
               msg.id === currentId && msg.isStreaming
                 ? { ...msg, content: msg.content + token }
                 : msg
             )
           } else {
-            // Create streaming message with first token
             return [
               ...prev,
               {
@@ -320,12 +322,10 @@ export function ChatPanel() {
           }
         })
 
-        // Also update context
         setInterpretation((prev) => (prev || '') + token)
       },
       onComplete: (fullText) => {
         console.log('[ChatPanel] Clinical interpretation complete')
-        // Finalize streaming message
         setMessages(prev =>
           prev.map(msg =>
             msg.id === interpretationMessageId
@@ -335,14 +335,14 @@ export function ChatPanel() {
         )
         setInterpretation(fullText)
         setIsGeneratingInterpretation(false)
-        setIsGenerating(false) // Done generating
+        setIsGenerating(false)
         currentStreamingIdRef.current = null
       },
       onError: (error) => {
         console.error('[ChatPanel] Clinical interpretation failed:', error)
         setMessages(prev => {
           const existingMessage = prev.find(m => m.id === interpretationMessageId)
-          
+
           const errorMessage: Message = {
             id: interpretationMessageId,
             role: 'assistant',
@@ -359,20 +359,11 @@ export function ChatPanel() {
           }
         })
         setIsGeneratingInterpretation(false)
-        setIsGenerating(false) // Done generating (with error)
+        setIsGenerating(false)
         currentStreamingIdRef.current = null
       },
     })
-  }, [currentSessionId, isInterpretationStarted, hasInterpretation, clinicalInterpretationMutation, setInterpretation, setIsGenerating])
-
-  // ============================================================================
-  // HANDLERS
-  // ============================================================================
-
-  const handlePublicationClick = (pmid: string) => {
-    setSelectedPublicationId(pmid)
-    openDetails()
-  }
+  }, [currentSessionId, isGeneratingInterpretation, hasInterpretation, clinicalInterpretationMutation, setInterpretation, setIsGenerating])
 
   const handleSend = async () => {
     if (!inputValue.trim() || isSending || isGeneratingInterpretation) return
@@ -481,7 +472,7 @@ export function ChatPanel() {
           setMessages(prev => {
             // Check if streaming message exists
             const existingMessage = prev.find(m => m.id === currentId)
-            
+
             if (existingMessage) {
               // Update existing message
               return prev.map(msg =>
@@ -665,8 +656,11 @@ export function ChatPanel() {
 
   // Show thinking indicator when sending but no message with content yet
   const lastMessage = displayMessages[displayMessages.length - 1]
-  const shouldShowThinking = isSending && !isQuerying && !isSearchingLiterature && 
+  const shouldShowThinking = isSending && !isQuerying && !isSearchingLiterature &&
     (!lastMessage || lastMessage.role === 'user')
+
+  // Show generate button when no interpretation exists and not currently generating
+  const showGenerateButton = !hasInterpretation() && !isGeneratingInterpretation && displayMessages.length === 0
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
@@ -677,9 +671,20 @@ export function ChatPanel() {
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold">Helix AI</h2>
             <p className="text-sm text-muted-foreground truncate">
-              {isGeneratingInterpretation ? 'Generating clinical interpretation...' : 'Clinical Interpretation'}
+              {isGeneratingInterpretation ? 'Generating clinical interpretation...' : 'Ask questions or generate interpretation'}
             </p>
           </div>
+          {showGenerateButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateInterpretation}
+              className="shrink-0 gap-1.5"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              <span>Generate Report</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -752,8 +757,8 @@ export function ChatPanel() {
             )}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-2">
-          AI can make mistakes. Verify important information.
+        <p className="text-sm text-muted-foreground text-center mt-2">
+          AI can make mistakes. Please double-check responses.
         </p>
       </div>
     </div>
