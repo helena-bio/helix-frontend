@@ -798,6 +798,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                       placeholder="e.g. Patient 001"
                       className="w-full px-3 py-2 text-md border border-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                       onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
                       maxLength={200}
                     />
                   </div>
