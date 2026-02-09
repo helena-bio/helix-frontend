@@ -155,96 +155,76 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     setIsLoading(false)
   }, [sessionId, saveToCache])
 
-  // Load all variants via streaming
+  // Web Worker ref for streaming parse (persists across renders)
+  const workerRef = useRef<Worker | null>(null)
+
+  // Load all variants via Web Worker (JSON.parse off main thread)
   const loadAllVariants = useCallback(async (sessionId: string) => {
     setIsLoading(true)
     setLoadProgress(0)
     setError(null)
     setAllGenes([])
 
+    // Terminate any existing worker
+    if (workerRef.current) {
+      workerRef.current.terminate()
+      workerRef.current = null
+    }
+
     try {
-      console.log('[VariantsResultsContext] Starting streaming load...')
+      console.log('[VariantsResultsContext] Starting Web Worker streaming load...')
 
-      const response = await fetch(
-        `${API_BASE_URL}/sessions/${sessionId}/variants/stream/by-gene`
-      )
+      const worker = new Worker('/workers/ndjson-stream-worker.js')
+      workerRef.current = worker
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      if (!response.body) {
-        throw new Error('No response body')
-      }
-
-      console.log('[VariantsResultsContext] Response headers:', {
-        contentType: response.headers.get('content-type'),
-        contentEncoding: response.headers.get('content-encoding'),
-      })
-
-      // CRITICAL: Browser automatically decompresses based on Content-Encoding header!
-      // Do NOT use DecompressionStream - it fails with our zlib streaming format.
-      // Just read the body as text - browser handles decompression transparently.
-      const reader = response.body
-        .pipeThrough(new TextDecoderStream())
-        .getReader()
-
-      let buffer = ''
       let loadedGenes: GeneAggregated[] = []
-      let totalGenesCount = 0
       let totalVariantsCount = 0
 
-      while (true) {
-        const { value, done } = await reader.read()
+      worker.onmessage = (e) => {
+        const msg = e.data
 
-        if (done) break
+        if (msg.type === 'metadata') {
+          totalVariantsCount = msg.data.total_variants
+          console.log(`[VariantsResultsContext] Worker streaming ${msg.data.total_genes} genes, ${totalVariantsCount} variants...`)
+        } else if (msg.type === 'batch') {
+          // Append batch from worker (already parsed)
+          loadedGenes = loadedGenes.concat(msg.genes)
 
-        buffer += value
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.trim()) continue
-
-          try {
-            const parsed = JSON.parse(line)
-
-            if (parsed.type === 'metadata') {
-              totalGenesCount = parsed.total_genes
-              totalVariantsCount = parsed.total_variants
-              console.log(`[VariantsResultsContext] Streaming ${totalGenesCount} genes, ${totalVariantsCount} variants...`)
-            } else if (parsed.type === 'gene') {
-              loadedGenes.push(parsed.data)
-
-              // Update progress every 500 genes (reduces re-renders 5x)
-              if (loadedGenes.length % 500 === 0) {
-                const progress = totalGenesCount > 0
-                  ? Math.round((loadedGenes.length / totalGenesCount) * 100)
-                  : 0
-                setLoadProgress(progress)
-
-                // Update state in batches for performance
-                setAllGenes([...loadedGenes])
-              }
-            } else if (parsed.type === 'complete') {
-              console.log(`[VariantsResultsContext] Streaming complete: ${parsed.total_streamed} genes loaded`)
-            }
-          } catch (e) {
-            console.warn('[VariantsResultsContext] Failed to parse line:', e)
-          }
+          const progress = msg.totalGenes > 0
+            ? Math.round((msg.totalSoFar / msg.totalGenes) * 100)
+            : 0
+          setLoadProgress(progress)
+          setAllGenes([...loadedGenes])
+        } else if (msg.type === 'complete') {
+          console.log(`[VariantsResultsContext] Worker complete: ${msg.totalGenes} genes loaded`)
+          setAllGenes(loadedGenes)
+          setTotalVariants(totalVariantsCount)
+          setLoadProgress(100)
+          setIsLoading(false)
+          worker.terminate()
+          workerRef.current = null
+        } else if (msg.type === 'error') {
+          console.error('[VariantsResultsContext] Worker error:', msg.message)
+          setError(msg.message)
+          setIsLoading(false)
+          worker.terminate()
+          workerRef.current = null
         }
       }
 
-      // Final update
-      setAllGenes(loadedGenes)
-      setTotalVariants(totalVariantsCount)
-      setLoadProgress(100)
-      setIsLoading(false)
+      worker.onerror = (err) => {
+        console.error('[VariantsResultsContext] Worker crashed:', err)
+        setError('Worker failed: ' + (err.message || 'Unknown error'))
+        setIsLoading(false)
+        workerRef.current = null
+      }
 
-      console.log(`[VariantsResultsContext] All data loaded locally: ${loadedGenes.length} genes`)
+      // Start the worker
+      const url = `${API_BASE_URL}/sessions/${sessionId}/variants/stream/by-gene`
+      worker.postMessage({ type: 'start', url, batchSize: 500 })
 
     } catch (err) {
-      console.error('[VariantsResultsContext] Streaming failed:', err)
+      console.error('[VariantsResultsContext] Failed to create worker:', err)
       setError(err instanceof Error ? err.message : 'Unknown error')
       setIsLoading(false)
     }
