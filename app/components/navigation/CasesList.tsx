@@ -270,10 +270,10 @@ export function CasesList() {
                           <StatusDot status={session.status} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate leading-tight">
+                          <p className="text-base font-medium truncate leading-tight">
                             {getCaseDisplayName(session)}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <p className="text-md text-muted-foreground mt-0.5">
                             {formatRelativeDate(session.created_at)}
                           </p>
                         </div>
