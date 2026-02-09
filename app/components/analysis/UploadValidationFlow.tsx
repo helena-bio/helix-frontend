@@ -787,7 +787,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                 {/* Case Name input */}
                 {!isProcessing && (
                   <div className="w-full max-w-sm">
-                    <label htmlFor="case-name" className="text-sm text-muted-foreground mb-1 block text-left">
+                    <label htmlFor="case-name" className="text-base font-semibold text-muted-foreground mb-1 block text-left">
                       Case Name
                     </label>
                     <input
