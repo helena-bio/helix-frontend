@@ -796,7 +796,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                       value={caseName}
                       onChange={(e) => setCaseName(e.target.value)}
                       placeholder="e.g. Patient 001"
-                      className="w-full px-3 py-2 text-md border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full px-3 py-2 text-md border border-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                       onClick={(e) => e.stopPropagation()}
                       maxLength={200}
                     />
