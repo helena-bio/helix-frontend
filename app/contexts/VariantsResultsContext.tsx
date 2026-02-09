@@ -216,8 +216,8 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
             } else if (parsed.type === 'gene') {
               loadedGenes.push(parsed.data)
 
-              // Update progress every 100 genes
-              if (loadedGenes.length % 100 === 0) {
+              // Update progress every 500 genes (reduces re-renders 5x)
+              if (loadedGenes.length % 500 === 0) {
                 const progress = totalGenesCount > 0
                   ? Math.round((loadedGenes.length / totalGenesCount) * 100)
                   : 0

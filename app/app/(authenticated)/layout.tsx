@@ -43,6 +43,9 @@ import {
 import { useJourney } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useVariantsResults } from '@/contexts/VariantsResultsContext'
+import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
+import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
+import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { tokenUtils } from '@/lib/auth/token'
 
 interface AuthenticatedLayoutProps {
@@ -59,18 +62,60 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { allGenes, isLoading: variantsLoading, loadProgress, loadAllVariants } = useVariantsResults()
 
+  // Supplementary data contexts -- load in PARALLEL with variants
+  const { status: screeningStatus, loadScreeningResults } = useScreeningResults()
+  const { status: phenotypeStatus, loadAllPhenotypeResults } = usePhenotypeResults()
+  const { status: literatureStatus, loadAllLiteratureResults } = useLiteratureResults()
+
   const isAnalysisRoute = pathname === '/analysis' && currentStep === 'analysis'
   // Variants are ready only when loaded AND streaming is complete (progress 100%)
   const variantsReady = allGenes.length > 0 && !variantsLoading && loadProgress >= 100
 
-  // Trigger variant loading when on analysis route with no data
+  // Trigger ALL data loading in parallel when on analysis route
+  // Variants, screening, phenotype, and literature all stream simultaneously.
+  // Each context guards against double-loading via status checks.
   useEffect(() => {
     if (!isAnalysisRoute || !currentSessionId) return
-    if (allGenes.length > 0 || variantsLoading) return
 
-    console.log('[LayoutContent] Triggering variant load for session:', currentSessionId)
-    loadAllVariants(currentSessionId)
-  }, [isAnalysisRoute, currentSessionId, allGenes.length, variantsLoading, loadAllVariants])
+    // Variants
+    if (allGenes.length === 0 && !variantsLoading) {
+      console.log('[LayoutContent] Triggering variant load for session:', currentSessionId)
+      loadAllVariants(currentSessionId)
+    }
+
+    // Screening (parallel -- fires same tick as variants)
+    if (screeningStatus === 'idle') {
+      loadScreeningResults(currentSessionId).catch(() => {
+        console.log('[LayoutContent] No screening results for this session')
+      })
+    }
+
+    // Phenotype (parallel)
+    if (phenotypeStatus === 'idle') {
+      loadAllPhenotypeResults(currentSessionId).catch(() => {
+        console.log('[LayoutContent] No phenotype results for this session')
+      })
+    }
+
+    // Literature (parallel)
+    if (literatureStatus === 'idle') {
+      loadAllLiteratureResults(currentSessionId).catch(() => {
+        console.log('[LayoutContent] No literature results for this session')
+      })
+    }
+  }, [
+    isAnalysisRoute,
+    currentSessionId,
+    allGenes.length,
+    variantsLoading,
+    loadAllVariants,
+    screeningStatus,
+    loadScreeningResults,
+    phenotypeStatus,
+    loadAllPhenotypeResults,
+    literatureStatus,
+    loadAllLiteratureResults,
+  ])
 
   // Analysis route but variants still loading -- show loading screen
   if (isAnalysisRoute && !variantsReady) {
