@@ -3,7 +3,7 @@
  * Production-ready API endpoints for Helix Insight backend
  */
 
-import { uploadFileWithProgress, get, post } from './client'
+import { uploadFileWithProgress, get, post, patch, del } from './client'
 import type {
   AnalysisSession,
   QCMetrics,
@@ -72,6 +72,43 @@ export async function uploadVCFFile(
  */
 export async function getSession(sessionId: string): Promise<AnalysisSession> {
   return get<AnalysisSession>(`/sessions/${sessionId}`)
+}
+
+/**
+ * List user's cases (sessions).
+ * JWT provides user_id -- backend filters automatically.
+ */
+export async function listCases(
+  status?: string,
+  limit: number = 100,
+  offset: number = 0
+): Promise<{ sessions: AnalysisSession[]; total_count: number; statistics: Record<string, any> }> {
+  const params = new URLSearchParams()
+  if (status) params.append('status', status)
+  params.append('limit', String(limit))
+  params.append('offset', String(offset))
+
+  const queryString = params.toString()
+  return get(`/sessions${queryString ? `?${queryString}` : ''}`)
+}
+
+/**
+ * Rename a case (update case_label).
+ */
+export async function renameCase(
+  sessionId: string,
+  caseLabel: string
+): Promise<AnalysisSession> {
+  return patch<AnalysisSession>(`/sessions/${sessionId}`, { case_label: caseLabel })
+}
+
+/**
+ * Delete a case (soft delete).
+ */
+export async function deleteCase(
+  sessionId: string
+): Promise<{ session_id: string; deleted: boolean; message: string }> {
+  return del(`/sessions/${sessionId}`)
 }
 
 /**

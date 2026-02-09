@@ -5,16 +5,14 @@
  *
  * Always visible in authenticated layout.
  * Two visual states:
- * - Expanded (256px): Full text labels
+ * - Expanded (256px): Full text labels, cases list, modules
  * - Collapsed (48px): Icon-only, click anywhere to expand
  *
- * Module enablement:
- * - Pre-analysis: All modules disabled (grayed out)
- * - Post-analysis: Modules enabled based on ClinicalProfileContext flags
- *
- * User menu:
- * - Shows user name and plan from JWT
- * - Dropdown with email, settings, logout
+ * Sections (expanded):
+ * - Home button + toggle
+ * - Cases (expandable list with search, rename, delete)
+ * - Modules (enabled based on analysis state)
+ * - User menu
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -22,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
+  FolderOpen,
   Microscope,
   Shield,
   Dna,
@@ -41,6 +40,7 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { SettingsModal } from './SettingsModal'
+import { CasesList } from './CasesList'
 import { cn } from '@helix/shared/lib/utils'
 
 interface Module {
@@ -171,8 +171,13 @@ export function Sidebar() {
               </Button>
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-2 space-y-1">
+            {/* Cases List */}
+            <div className="shrink-0">
+              <CasesList />
+            </div>
+
+            {/* Modules Navigation */}
+            <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
               <div className="pt-2 pb-2">
                 <p className="px-3 text-ml font-semibold text-muted-foreground uppercase tracking-wider">
                   Modules
@@ -266,6 +271,26 @@ export function Sidebar() {
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     <p className="text-sm">Home</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            {/* Cases icon */}
+            <div className="px-1 shrink-0">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-center px-0 h-8"
+                      onClick={(e) => { e.stopPropagation(); toggleSidebar() }}
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p className="text-sm">Cases</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

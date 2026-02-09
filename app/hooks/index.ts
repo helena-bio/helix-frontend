@@ -7,7 +7,7 @@ export {
   useVariants,
 } from './queries/use-variant-analysis-queries'
 export { usePatientPhenotype } from './queries/use-clinical-profile'
-
+export { useCases, casesKeys } from './queries/use-cases'
 // Mutations
 export {
   useUploadVCF,
@@ -21,6 +21,6 @@ export {
   useSavePatientPhenotype,
   useDeletePatientPhenotype,
 } from './mutations/use-clinical-profile-mutations'
-
+export { useRenameCase, useDeleteCase } from './mutations/use-case-mutations'
 // Utilities
 export { useDebounce } from './use-debounce'
