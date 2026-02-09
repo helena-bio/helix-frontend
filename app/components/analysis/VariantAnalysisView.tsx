@@ -337,7 +337,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Info: ${label}`}
               >
-                <Info className="h-3 w-3" />
+                <Info className="h-3.5 w-3.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent className="text-sm max-w-xs">
