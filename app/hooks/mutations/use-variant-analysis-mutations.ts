@@ -5,6 +5,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadVCFFile, startProcessing } from '@/lib/api/variant-analysis'
 import { useSession } from '@/contexts/SessionContext'
+import { casesKeys } from '@/hooks/queries/use-cases'
 import type { AnalysisSession } from '@/types/variant.types'
 import { toast } from 'sonner'
 
@@ -34,7 +35,7 @@ export function useUploadVCF() {
     onSuccess: (session: AnalysisSession) => {
       setCurrentSessionId(session.id)
       queryClient.setQueryData(['session', session.id], session)
-      queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      queryClient.invalidateQueries({ queryKey: casesKeys.all })
       toast.success('File uploaded successfully', {
         description: `Session ${session.id} created`,
       })
