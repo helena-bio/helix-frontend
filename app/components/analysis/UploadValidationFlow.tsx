@@ -523,7 +523,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
             <CardContent className="p-6">
               {/* File Header */}
               <div className="border-b border-border pb-4 mb-4">
-                <p className="text-md text-muted-foreground mb-2">File</p>
+                <h3 className="text-lg font-semibold mb-2">File</h3>
                 <div className="flex items-center gap-2">
                   <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   <p className="text-base font-medium">{selectedFile?.name}</p>
