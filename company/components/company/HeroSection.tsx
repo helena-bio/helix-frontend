@@ -47,7 +47,7 @@ export function HeroSection() {
             <p className="text-xl sm:text-2xl md:text-3xl text-foreground font-medium tracking-wide">Intelligence for genomics</p>
           </div>
         </div>
-        <p className="text-base md:text-lg text-muted-foreground text-center">
+        <p className="text-base md:text-lg text-muted-foreground text-center mt-4">
           Software company integrating artificial intelligence into bioinformatics research and clinical genomics.
         </p>
         <div className="flex items-center gap-3 text-md text-muted-foreground">
