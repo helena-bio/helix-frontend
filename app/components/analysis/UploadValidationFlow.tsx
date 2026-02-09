@@ -557,12 +557,12 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
               {/* QC Metrics Grid */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-md text-muted-foreground mb-1">Samples Detected</p>
-                  <p className="text-lg font-semibold">{qcResults.sampleCount}</p>
+                  <p className="text-lg font-semibold mb-1">Samples Detected</p>
+                  <p className="text-base">{qcResults.sampleCount}</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="text-md text-muted-foreground">Genome Build</p>
+                    <p className="text-lg font-semibold">Genome Build</p>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
@@ -577,18 +577,18 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-lg font-semibold">{qcResults.genomeBuild}</p>
+                  <p className="text-base">{qcResults.genomeBuild}</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-md text-muted-foreground mb-1">Variants</p>
-                  <p className="text-lg font-semibold">{qcResults.totalVariants.toLocaleString()}</p>
+                  <p className="text-lg font-semibold mb-1">Variants</p>
+                  <p className="text-base">{qcResults.totalVariants.toLocaleString()}</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-md text-muted-foreground mb-1">Status</p>
+                  <p className="text-lg font-semibold mb-1">Status</p>
                   {isSupported ? (
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      <p className="text-lg font-semibold text-green-600">Valid</p>
+                      <p className="text-base text-green-600">Valid</p>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">

@@ -239,12 +239,12 @@ export function CasesList() {
                   >
                     {isDeleting ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-destructive flex-1 truncate">Delete?</span>
+                        <span className="text-md text-destructive flex-1 truncate">Delete?</span>
                         <button
                           className="p-0.5 rounded hover:bg-destructive/10"
                           onClick={(e) => { e.stopPropagation(); handleConfirmDelete(session.id) }}
                         >
-                          <Check className="h-3.5 w-3.5 text-destructive" />
+                          <Check className="h-4 w-4 text-destructive" />
                         </button>
                         <button
                           className="p-0.5 rounded hover:bg-accent"
