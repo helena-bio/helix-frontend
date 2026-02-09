@@ -324,7 +324,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
   return (
     <Card
       className={`cursor-pointer transition-all py-0 gap-0 ${colorClasses} ${
-        isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:scale-105'
+        isSelected ? 'ring-2 ring-gray-400 ring-offset-2' : 'hover:border-gray-400'
       }`}
       onClick={onClick}
     >
@@ -333,7 +333,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="absolute top-1 right-1 text-current/50 hover:text-current transition-colors"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-current/50 hover:text-current transition-all"
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Info: ${label}`}
               >
