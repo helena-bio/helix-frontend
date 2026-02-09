@@ -200,7 +200,7 @@ export function CasesList() {
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             ) : filteredCases.length === 0 ? (
-              <p className="text-sm text-muted-foreground px-2 py-3 text-center">
+              <p className="text-md text-muted-foreground px-2 py-3 text-center">
                 {searchQuery ? 'No matches' : 'No cases yet'}
               </p>
             ) : (
