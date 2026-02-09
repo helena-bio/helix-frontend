@@ -52,10 +52,11 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { currentStep } = useJourney()
   const { currentSessionId } = useSession()
   const pathname = usePathname()
-  const { allGenes, isLoading: variantsLoading, loadAllVariants } = useVariantsResults()
+  const { allGenes, isLoading: variantsLoading, loadProgress, loadAllVariants } = useVariantsResults()
 
   const isAnalysisRoute = pathname === '/analysis' && currentStep === 'analysis'
-  const variantsReady = allGenes.length > 0 && !variantsLoading
+  // Variants are ready only when loaded AND streaming is complete (progress 100%)
+  const variantsReady = allGenes.length > 0 && !variantsLoading && loadProgress >= 100
 
   // Trigger variant loading when on analysis route with no data
   useEffect(() => {
@@ -72,7 +73,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
       <div className="flex-1 h-full flex flex-col items-center justify-center bg-background">
         <HelixLoader size="md" />
         <p className="text-lg text-muted-foreground mt-6">
-          {variantsLoading ? 'Loading case...' : 'Preparing analysis...'}
+          {variantsLoading ? `Loading case${loadProgress > 0 && loadProgress < 100 ? ` (${loadProgress}%)` : '...'}` : 'Preparing analysis...'}
         </p>
       </div>
     )
