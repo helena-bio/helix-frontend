@@ -47,7 +47,7 @@ import { cn } from '@helix/shared/lib/utils'
 
 const SIDEBAR_MIN = 256
 const SIDEBAR_MAX = 480
-const SIDEBAR_COLLAPSED = 48
+const SIDEBAR_COLLAPSED = 40
 
 interface Module {
   id: string
