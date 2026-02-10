@@ -59,7 +59,7 @@ export default function JoinUsPage() {
             <h2 className="text-lg font-semibold text-foreground">How to Reach Us</h2>
             <p className="text-base text-muted-foreground leading-relaxed">
               Send a brief introduction and your area of interest to{' '}
-              <a href="mailto:careers@helena.bio" className="text-foreground hover:text-primary transition-colors">careers@helena.bio</a>.
+              <a href="mailto:contact@helena.bio" className="text-foreground hover:text-primary transition-colors">contact@helena.bio</a>.
               There is no formal application process -- we are simply building a network of people who share our focus.
             </p>
           </section>
