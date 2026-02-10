@@ -29,6 +29,7 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   refreshAuth: () => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -130,10 +131,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  /**
+   * Update user state directly (e.g. after profile edit).
+   * Does not change JWT -- next login will get fresh token.
+   */
+  const updateUser = useCallback((updates: Partial<User>) => {
+    setAuthState((prev) => ({
+      ...prev,
+      user: prev.user ? { ...prev.user, ...updates } : null,
+    }));
+  }, []);
+
   const value: AuthContextType = {
     ...authState,
     logout,
     refreshAuth,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

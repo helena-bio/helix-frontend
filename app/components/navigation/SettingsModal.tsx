@@ -23,7 +23,7 @@ type SettingsSection = 'general' | 'account'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008'
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { user, refreshAuth } = useAuth()
+  const { user, updateUser } = useAuth()
   const [activeSection, setActiveSection] = useState<SettingsSection>('general')
 
   // Profile form
@@ -95,8 +95,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         throw new Error(data.detail || 'Failed to update profile')
       }
 
+      // Update UI immediately (JWT refreshes on next login)
+      updateUser({
+        full_name: `${firstName.trim()} ${lastName.trim()}`,
+      })
+
       setProfileSuccess(true)
-      // Note: JWT won't update until next login, but we show success
       setTimeout(() => setProfileSuccess(false), 3000)
     } catch (err) {
       setProfileError(err instanceof Error ? err.message : 'Failed to update profile')
