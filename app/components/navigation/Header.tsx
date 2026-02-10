@@ -8,7 +8,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, X, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -65,8 +65,8 @@ function getLineColor(status: StepStatus): string {
 export function Header() {
   const router = useRouter()
   const pathname = usePathname()
-  const { getStepStatus, canNavigateTo, goToStep, resetJourney, currentStep } = useJourney()
-  const { currentSessionId, setCurrentSessionId } = useSession()
+  const { getStepStatus, canNavigateTo, goToStep, currentStep } = useJourney()
+  const { currentSessionId } = useSession()
   const { interpretation, hasInterpretation, isComplete } = useClinicalInterpretation()
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { logout } = useAuth()
@@ -91,12 +91,6 @@ export function Header() {
     }
 
     return baseStatus
-  }
-
-  const handleClearFile = () => {
-    setCurrentSessionId(null)
-    resetJourney()
-    router.replace('/')
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
@@ -300,18 +294,6 @@ export function Header() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
-
-        {isAnalysisComplete && currentSessionId && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearFile}
-            className="h-8 text-sm"
-          >
-            <X className="h-4 w-4 mr-2" />
-            Clear File
-          </Button>
         )}
 
         <TooltipProvider>

@@ -196,6 +196,14 @@ export interface SessionMatchResult {
   impact?: string
   gnomad_af?: number
   consequence?: string
+  hgvs_protein?: string
+  hgvs_cdna?: string
+  chromosome?: string
+  position?: number
+  reference_allele?: string
+  alternate_allele?: string
+  genotype?: string
+  rsid?: string
   individual_matches: SimilarityMatch[]
 }
 
