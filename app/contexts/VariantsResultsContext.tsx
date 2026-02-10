@@ -7,7 +7,7 @@
  * 1. Load gene summaries on case open (~50-100KB, <200ms) -> table renders instantly
  * 2. When user expands a gene, fetch variants on-demand (<50ms per gene)
  * 3. Session cache: LRU of 3 sessions (summaries + already-loaded gene variants)
- * 4. Fallback: if summaries file missing, loads full data directly (old path)
+ * 4. Empty state if summaries unavailable
  *
  * No Phase 2 bulk loading. Variants are fetched per-gene on demand.
  */
@@ -233,14 +233,12 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       let summaryGenes: GeneAggregated[] = []
       let totalVariantsCount = 0
       let loadedImpactByAcmg: ImpactByAcmg = EMPTY_IMPACT
-      let summariesAvailable = true
 
       try {
         const response = await fetch(summaryUrl)
 
         if (!response.ok) {
-          console.log('[VariantsResultsContext] Summaries not available, falling back to full load')
-          summariesAvailable = false
+          throw new Error('Summaries not available: HTTP ' + response.status)
         } else {
           await streamNdjson(
             summaryUrl,
@@ -262,53 +260,8 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
           console.log('[VariantsResultsContext] Summaries loaded: ' + summaryGenes.length + ' genes')
         }
       } catch (e) {
-        console.log('[VariantsResultsContext] Summaries fetch failed, falling back')
-        summariesAvailable = false
-      }
-
-      // Fallback: no summaries, load full data directly (old path)
-      if (!summariesAvailable) {
-        console.log('[VariantsResultsContext] Fallback: streaming full data...')
-        const fullUrl = API_BASE_URL + '/sessions/' + sid + '/variants/stream/by-gene'
-        const fullGenes: GeneAggregated[] = []
-
-        await streamNdjson(
-          fullUrl,
-          (meta) => {
-            totalVariantsCount = meta.total_variants
-          },
-          (gene) => {
-            fullGenes.push(gene)
-          },
-          (loaded, total) => {
-            const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
-            setLoadProgress(progress)
-            if (loaded % 500 === 0) {
-              setAllGenes([...fullGenes])
-            }
-          },
-        )
-
-        // Build impact_by_acmg from full data
-        const computed: ImpactByAcmg = { all: { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 } }
-        for (const gene of fullGenes) {
-          for (const v of gene.variants || []) {
-            const impact = (v.impact || '').toUpperCase()
-            const acmg = v.acmg_class || 'Unknown'
-            if (impact in computed.all) {
-              computed.all[impact as keyof typeof computed.all] += 1
-              if (!computed[acmg]) {
-                computed[acmg] = { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 }
-              }
-              computed[acmg][impact as keyof typeof computed.all] += 1
-            }
-          }
-        }
-
-        setAllGenes(fullGenes)
-        setTotalVariants(totalVariantsCount)
-        setImpactByAcmg(computed)
-        setLoadProgress(100)
+        console.error('[VariantsResultsContext] Summaries fetch failed:', e)
+        setError('Failed to load gene summaries')
         setIsLoading(false)
         return
       }

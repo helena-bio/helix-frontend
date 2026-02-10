@@ -274,7 +274,7 @@ export async function getVariantStatistics(
  */
 export async function getGeneVariants(
   sessionId: string,
-  geneSymbol: sring
+  geneSymbol: string
 ): Promise<{ gene_symbol: string; variant_count: number; variants: any[] }> {
   return get(`/sessions/${sessionId}/variants/by-gene/${encodeURIComponent(geneSymbol)}`)
 }
