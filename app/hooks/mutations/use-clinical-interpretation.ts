@@ -7,6 +7,7 @@ import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useSession } from '@/contexts/SessionContext'
 import { isTier1, isTier2, isTierIF } from '@/types/tiers.types'
+import { useVariantStatistics } from '@/hooks/queries'
 
 interface ClinicalInterpretationParams {
   sessionId: string
@@ -33,6 +34,9 @@ export function useClinicalInterpretation() {
   } = usePhenotypeResults()
   const { screeningResponse } = useScreeningResults()
   const { groupedByGene, totalResults } = useLiteratureResults()
+  const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {
+    enabled: !!currentSessionId,
+  })
 
   return useMutation({
     mutationFn: async (params: ClinicalInterpretationParams) => {
@@ -144,6 +148,12 @@ export function useClinicalInterpretation() {
             moderate_evidence: g.moderateCount,
             combined_score: g.combinedScore,
           })),
+        } : null,
+        analysis_summary: statistics ? {
+          total_variants: statistics.total_variants,
+          classification_breakdown: statistics.classification_breakdown,
+          impact_breakdown: statistics.impact_breakdown,
+          top_genes: statistics.top_genes?.slice(0, 10),
         } : null,
       }
 
