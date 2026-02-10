@@ -1,18 +1,17 @@
 "use client"
 
 /**
- * Matched Phenotype Context - Summary-First Architecture
+ * Matched Phenotype Context - Summary-First with Disk Cache
  *
  * WORKFLOW:
  * 1. runMatching() - triggers backend computation, saves to DuckDB
- * 2. loadAllPhenotypeResults() - streams lightweight gene SUMMARIES (~50KB)
+ * 2. loadAllPhenotypeResults() - check IndexedDB first, then fetch summaries
  * 3. Individual variants loaded on-demand when user expands a gene
  *
- * Flow:
- * - ClinicalAnalysis Stage 1: runMatching() -> loadAllPhenotypeResults()
- * - Summaries stream instantly (<200ms)
- * - Gene expansion triggers DuckDB query (<50ms)
- * - Session cache: switching cases restores instantly (max 3 cached)
+ * Caching layers:
+ * - In-memory LRU (3 sessions) - instant tab switching
+ * - IndexedDB disk cache (TTL 7 days) - survives page refresh
+ * - Network fetch as last resort
  *
  * 5-tier system with Incidental Findings:
  * - Tier 1: P/LP with phenotype match (confirmed relevant)
@@ -37,10 +36,11 @@ import {
   getPhenotypeGeneVariants,
   type SessionMatchResult,
 } from '@/lib/api/hpo'
+import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
-const MAX_CACHED_SESSIONS = 3
+const MAX_CACHED_SESSIONS = 10
 
 // ============================================================================
 // TYPES
@@ -64,6 +64,16 @@ export interface GeneAggregatedResult {
   tier_4_count: number
   // Lazy-loaded on expand
   variants?: SessionMatchResult[]
+}
+
+interface PhenotypeDiskData {
+  aggregatedResults: GeneAggregatedResult[]
+  tier1Count: number
+  tier2Count: number
+  incidentalFindingsCount: number
+  tier3Count: number
+  tier4Count: number
+  variantsAnalyzed: number
 }
 
 interface PhenotypeCacheEntry {
@@ -139,7 +149,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
   const sessionCache = useRef<Map<string, PhenotypeCacheEntry>>(new Map())
 
-  const saveToCache = useCallback((id: string, entry: PhenotypeCacheEntry) => {
+  const saveToMemoryCache = useCallback((id: string, entry: PhenotypeCacheEntry) => {
     if (!entry.aggregatedResults || entry.aggregatedResults.length === 0) return
 
     sessionCache.current.set(id, entry)
@@ -159,7 +169,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     variantsAnalyzed: analyzedRef.current,
   }), [])
 
-  const restoreFromCache = useCallback((entry: PhenotypeCacheEntry) => {
+  const restoreFromEntry = useCallback((entry: PhenotypeCacheEntry) => {
     setAggregatedResults(entry.aggregatedResults)
     setTier1Count(entry.tier1Count)
     setTier2Count(entry.tier2Count)
@@ -185,13 +195,13 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     setVariantsAnalyzed(0)
   }, [])
 
-  // Auto-cleanup and cache management when session changes
+  // Session change: memory cache + IndexedDB
   useEffect(() => {
     const prevId = currentSessionId.current
 
     if (sessionId === null) {
-      if (prevId) saveToCache(prevId, getCurrentCacheEntry())
-      console.log('[PhenotypeResultsContext] Session cleared - resetting phenotype results')
+      if (prevId) saveToMemoryCache(prevId, getCurrentCacheEntry())
+      console.log('[PhenotypeResultsContext] Session cleared')
       currentSessionId.current = null
       clearState()
       return
@@ -199,22 +209,31 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
     if (sessionId === currentSessionId.current) return
 
-    if (prevId) saveToCache(prevId, getCurrentCacheEntry())
+    if (prevId) saveToMemoryCache(prevId, getCurrentCacheEntry())
 
     currentSessionId.current = sessionId
 
-    const cached = sessionCache.current.get(sessionId)
-    if (cached) {
-      console.log(`[PhenotypeResultsContext] Cache hit for ${sessionId} - restoring`)
+    // Check memory cache first (instant)
+    const memoryCached = sessionCache.current.get(sessionId)
+    if (memoryCached) {
+      console.log(`[PhenotypeResultsContext] Memory cache hit for ${sessionId}`)
       sessionCache.current.delete(sessionId)
-      sessionCache.current.set(sessionId, cached)
-      restoreFromCache(cached)
+      sessionCache.current.set(sessionId, memoryCached)
+      restoreFromEntry(memoryCached)
       return
     }
 
-    console.log(`[PhenotypeResultsContext] Cache miss for ${sessionId}`)
+    // Check IndexedDB
     clearState()
-  }, [sessionId, saveToCache, getCurrentCacheEntry, restoreFromCache, clearState])
+    getCached<PhenotypeDiskData>('phenotype-summaries', sessionId).then(diskData => {
+      if (diskData && currentSessionId.current === sessionId) {
+        console.log(`[PhenotypeResultsContext] Disk cache hit: ${diskData.aggregatedResults.length} genes`)
+        restoreFromEntry(diskData)
+      } else if (!diskData) {
+        console.log(`[PhenotypeResultsContext] Disk cache miss for ${sessionId}`)
+      }
+    }).catch(() => {})
+  }, [sessionId, saveToMemoryCache, getCurrentCacheEntry, restoreFromEntry, clearState])
 
   // Run phenotype matching (trigger backend computation only)
   const runMatching = useCallback(async (patientHpoIds: string[]): Promise<void> => {
@@ -267,8 +286,14 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     }
   }, [sessionId])
 
-  // Load gene summaries (lightweight, no variants)
+  // Load gene summaries (check disk cache first)
   const loadAllPhenotypeResults = useCallback(async (sid: string): Promise<GeneAggregatedResult[]> => {
+    // Quick check: if data already loaded (from disk cache restore), skip
+    if (aggregatedRef.current && aggregatedRef.current.length > 0 && currentSessionId.current === sid) {
+      console.log('[PhenotypeResultsContext] Data already loaded, skipping fetch')
+      return aggregatedRef.current
+    }
+
     setStatus('loading')
     setLoadProgress(0)
     setError(null)
@@ -296,6 +321,12 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       let buffer = ''
       let loadedGenes: GeneAggregatedResult[] = []
       let totalGenesCount = 0
+      let loadedTier1 = 0
+      let loadedTier2 = 0
+      let loadedIF = 0
+      let loadedTier3 = 0
+      let loadedTier4 = 0
+      let loadedAnalyzed = 0
 
       while (true) {
         const { value, done } = await reader.read()
@@ -313,13 +344,19 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
             if (parsed.type === 'metadata') {
               totalGenesCount = parsed.total_genes
+              loadedTier1 = parsed.tier_1_count
+              loadedTier2 = parsed.tier_2_count
+              loadedIF = parsed.incidental_findings_count || 0
+              loadedTier3 = parsed.tier_3_count
+              loadedTier4 = parsed.tier_4_count
+              loadedAnalyzed = parsed.total_variants
               console.log(`[PhenotypeResultsContext] Streaming ${totalGenesCount} gene summaries...`)
-              setTier1Count(parsed.tier_1_count)
-              setTier2Count(parsed.tier_2_count)
-              setIncidentalFindingsCount(parsed.incidental_findings_count || 0)
-              setTier3Count(parsed.tier_3_count)
-              setTier4Count(parsed.tier_4_count)
-              setVariantsAnalyzed(parsed.total_variants)
+              setTier1Count(loadedTier1)
+              setTier2Count(loadedTier2)
+              setIncidentalFindingsCount(loadedIF)
+              setTier3Count(loadedTier3)
+              setTier4Count(loadedTier4)
+              setVariantsAnalyzed(loadedAnalyzed)
             } else if (parsed.type === 'gene') {
               loadedGenes.push(parsed.data)
 
@@ -344,6 +381,18 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       setStatus('success')
 
       console.log(`[PhenotypeResultsContext] Summaries loaded: ${loadedGenes.length} genes`)
+
+      // Persist to IndexedDB (async, non-blocking)
+      setCache<PhenotypeDiskData>('phenotype-summaries', sid, {
+        aggregatedResults: loadedGenes,
+        tier1Count: loadedTier1,
+        tier2Count: loadedTier2,
+        incidentalFindingsCount: loadedIF,
+        tier3Count: loadedTier3,
+        tier4Count: loadedTier4,
+        variantsAnalyzed: loadedAnalyzed,
+      }).catch(() => {})
+
       return loadedGenes
 
     } catch (err) {
@@ -359,7 +408,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     sid: string,
     geneSymbol: string
   ): Promise<SessionMatchResult[]> => {
-    // Check if already loaded in current results
     const current = aggregatedRef.current
     if (current) {
       const gene = current.find(g => g.gene_symbol === geneSymbol)
@@ -371,7 +419,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     console.log(`[PhenotypeResultsContext] Loading variants for ${geneSymbol}...`)
     const response = await getPhenotypeGeneVariants(sid, geneSymbol)
 
-    // Update gene in aggregatedResults with loaded variants
     setAggregatedResults(prev => {
       if (!prev) return prev
       return prev.map(g =>

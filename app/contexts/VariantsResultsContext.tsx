@@ -4,20 +4,26 @@
  * VariantsResultsContext - Summary-first with lazy gene expansion
  *
  * Architecture:
- * 1. Load gene summaries on case open (~50-100KB, <200ms) -> table renders instantly
- * 2. When user expands a gene, fetch variants on-demand (<50ms per gene)
- * 3. Session cache: LRU of 3 sessions (summaries + already-loaded gene variants)
- * 4. Empty state if summaries unavailable
- *
- * No Phase 2 bulk loading. Variants are fetched per-gene on demand.
+ * 1. Check IndexedDB disk cache -> instant restore (0ms)
+ * 2. On miss: fetch gene summaries (~330KB, <200ms) -> save to IndexedDB
+ * 3. When user expands a gene, fetch variants on-demand (<50ms per gene)
+ * 4. In-memory LRU of 3 sessions for tab switching
+ * 5. IndexedDB persists across page refreshes (TTL: 7 days)
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react'
 import type { GeneAggregated, ImpactByAcmg } from '@/types/variant.types'
+import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
-const MAX_CACHED_SESSIONS = 3
+const MAX_CACHED_SESSIONS = 10
+
+interface VariantsDiskData {
+  allGenes: GeneAggregated[]
+  totalVariants: number
+  impactByAcmg: ImpactByAcmg
+}
 
 interface VariantsCacheEntry {
   allGenes: GeneAggregated[]
@@ -26,26 +32,17 @@ interface VariantsCacheEntry {
 }
 
 interface VariantsResultsContextValue {
-  // Data
   allGenes: GeneAggregated[]
   totalVariants: number
   impactByAcmg: ImpactByAcmg
-
-  // Loading state
   isLoading: boolean
   loadProgress: number
   error: string | null
-
-  // Actions
   loadAllVariants: (sessionId: string) => Promise<void>
   loadGeneVariants: (sessionId: string, geneSymbol: string) => Promise<void>
   clearVariants: () => void
-
-  // Local operations
   filterByGene: (geneSymbol: string) => GeneAggregated[]
   searchGenes: (query: string) => GeneAggregated[]
-
-  // Computed stats
   totalGenes: number
   pathogenicCount: number
   likelyPathogenicCount: number
@@ -64,7 +61,7 @@ const EMPTY_IMPACT: ImpactByAcmg = {
 }
 
 // ============================================================
-// NDJSON streaming parser (main thread, summaries are small)
+// NDJSON streaming parser (summaries are small, main thread OK)
 // ============================================================
 async function streamNdjson(
   url: string,
@@ -132,7 +129,6 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
   const [loadProgress, setLoadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  // Ref for tracking current session
   const currentSessionId = useRef<string | null>(null)
 
   // Refs mirroring state for cache saves
@@ -144,10 +140,10 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
   useEffect(() => { totalVariantsRef.current = totalVariants }, [totalVariants])
   useEffect(() => { impactByAcmgRef.current = impactByAcmg }, [impactByAcmg])
 
-  // Session cache
+  // In-memory LRU cache (fast tab switching)
   const sessionCache = useRef<Map<string, VariantsCacheEntry>>(new Map())
 
-  const saveToCache = useCallback((id: string, entry: VariantsCacheEntry) => {
+  const saveToMemoryCache = useCallback((id: string, entry: VariantsCacheEntry) => {
     if (entry.allGenes.length === 0) return
 
     sessionCache.current.set(id, entry)
@@ -167,13 +163,13 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     setIsLoading(false)
   }, [])
 
-  // Session change: cache management
+  // Session change: memory cache + IndexedDB
   useEffect(() => {
     const prevId = currentSessionId.current
 
     if (sessionId === null) {
       if (prevId && allGenesRef.current.length > 0) {
-        saveToCache(prevId, {
+        saveToMemoryCache(prevId, {
           allGenes: allGenesRef.current,
           totalVariants: totalVariantsRef.current,
           impactByAcmg: impactByAcmgRef.current,
@@ -187,9 +183,9 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
 
     if (sessionId === currentSessionId.current) return
 
-    // Save current session to cache
+    // Save current to memory cache
     if (prevId && allGenesRef.current.length > 0) {
-      saveToCache(prevId, {
+      saveToMemoryCache(prevId, {
         allGenes: allGenesRef.current,
         totalVariants: totalVariantsRef.current,
         impactByAcmg: impactByAcmgRef.current,
@@ -198,29 +194,48 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
 
     currentSessionId.current = sessionId
 
-    // Check cache
-    const cached = sessionCache.current.get(sessionId)
-    if (cached) {
-      console.log('[VariantsResultsContext] Cache hit: ' + cached.allGenes.length + ' genes')
+    // Check memory cache first (instant)
+    const memoryCached = sessionCache.current.get(sessionId)
+    if (memoryCached) {
+      console.log('[VariantsResultsContext] Memory cache hit: ' + memoryCached.allGenes.length + ' genes')
       sessionCache.current.delete(sessionId)
-      sessionCache.current.set(sessionId, cached)
-      setAllGenes(cached.allGenes)
-      setTotalVariants(cached.totalVariants)
-      setImpactByAcmg(cached.impactByAcmg)
+      sessionCache.current.set(sessionId, memoryCached)
+      setAllGenes(memoryCached.allGenes)
+      setTotalVariants(memoryCached.totalVariants)
+      setImpactByAcmg(memoryCached.impactByAcmg)
       setLoadProgress(100)
       setError(null)
       setIsLoading(false)
       return
     }
 
-    console.log('[VariantsResultsContext] Cache miss for ' + sessionId)
+    // Check IndexedDB (persists across refreshes)
     clearState()
-  }, [sessionId, saveToCache, clearState])
+    getCached<VariantsDiskData>('variant-summaries', sessionId).then(diskData => {
+      if (diskData && currentSessionId.current === sessionId) {
+        console.log('[VariantsResultsContext] Disk cache hit: ' + diskData.allGenes.length + ' genes')
+        setAllGenes(diskData.allGenes)
+        setTotalVariants(diskData.totalVariants)
+        setImpactByAcmg(diskData.impactByAcmg)
+        setLoadProgress(100)
+      } else if (!diskData) {
+        console.log('[VariantsResultsContext] Disk cache miss for ' + sessionId)
+      }
+    }).catch(() => {
+      // IndexedDB unavailable, will fetch from network
+    })
+  }, [sessionId, saveToMemoryCache, clearState])
 
   // ============================================================
-  // Load gene summaries (instant, ~50-100KB)
+  // Load gene summaries (instant, ~330KB)
   // ============================================================
   const loadAllVariants = useCallback(async (sid: string) => {
+    // Quick check: if data already loaded (from disk cache), skip
+    if (allGenesRef.current.length > 0 && currentSessionId.current === sid) {
+      console.log('[VariantsResultsContext] Data already loaded, skipping fetch')
+      return
+    }
+
     setIsLoading(true)
     setLoadProgress(0)
     setError(null)
@@ -228,7 +243,6 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     setImpactByAcmg(EMPTY_IMPACT)
 
     try {
-      // Try summaries endpoint first
       const summaryUrl = API_BASE_URL + '/sessions/' + sid + '/variants/summaries'
       let summaryGenes: GeneAggregated[] = []
       let totalVariantsCount = 0
@@ -266,12 +280,19 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
         return
       }
 
-      // Summaries loaded - render immediately
+      // Render immediately
       setAllGenes(summaryGenes)
       setTotalVariants(totalVariantsCount)
       setImpactByAcmg(loadedImpactByAcmg)
       setLoadProgress(100)
       setIsLoading(false)
+
+      // Persist to IndexedDB (async, non-blocking)
+      setCache<VariantsDiskData>('variant-summaries', sid, {
+        allGenes: summaryGenes,
+        totalVariants: totalVariantsCount,
+        impactByAcmg: loadedImpactByAcmg,
+      }).catch(() => {})
 
     } catch (err) {
       console.error('[VariantsResultsContext] Loading failed:', err)
@@ -296,7 +317,6 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       const data = await response.json()
       const variants = data.variants || []
 
-      // Update the specific gene in allGenes with loaded variants
       setAllGenes(prev =>
         prev.map(g =>
           g.gene_symbol === geneSymbol
@@ -309,12 +329,9 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     }
   }, [])
 
-  // Clear variants
   const clearVariants = useCallback(() => {
     clearState()
   }, [clearState])
-
-  // LOCAL OPERATIONS
 
   const filterByGene = useCallback((geneSymbol: string) => {
     return allGenes.filter(g => g.gene_symbol === geneSymbol)
