@@ -551,7 +551,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
           </div>
 
           {/* File Info & QC Results Card */}
-          <Card className="gap-0">
+          <Card className="gap-0 py-0">
             <CardContent className="p-6">
               {/* File Header */}
               <div className="border-b border-border pb-4 mb-4">

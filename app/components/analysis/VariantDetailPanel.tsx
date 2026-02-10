@@ -30,7 +30,7 @@ import {
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
 import { useHPOTerm } from '@/hooks/queries'
-import { ConsequenceBadges, getImpactColor } from '@/components/shared'
+import { ConsequenceBadges, getImpactColor, truncateSequence, formatAlleles } from '@/components/shared'
 import { GnomADCard } from './GnomADCard'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
@@ -44,9 +44,9 @@ const InfoRow = ({ label, value, mono = false }: { label: string; value: any; mo
   if (value === null || value === undefined || value === '') return null
 
   return (
-    <div className="flex justify-between items-start py-1.5">
-      <span className="text-base text-muted-foreground">{label}</span>
-      <span className={`text-md font-medium text-right ${mono ? 'font-mono' : ''}`}>
+    <div className="flex justify-between items-start py-1.5 gap-4">
+      <span className="text-base text-muted-foreground flex-shrink-0">{label}</span>
+      <span className={`text-md font-medium text-right break-all min-w-0 ${mono ? 'font-mono' : ''}`}>
         {value}
       </span>
     </div>
@@ -361,8 +361,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <h2 className="text-2xl font-bold">
               {variant.gene_symbol || 'Unknown Gene'}
             </h2>
-            <span className="text-base text-muted-foreground font-mono font-semibold">
-              {variant.chromosome}:{variant.position.toLocaleString()} {variant.reference_allele} → {variant.alternate_allele}
+            <span className="text-base text-muted-foreground font-mono font-semibold truncate max-w-md" title={`${variant.reference_allele} → ${variant.alternate_allele}`}>
+              {variant.chromosome}:{variant.position.toLocaleString()} {truncateSequence(variant.reference_allele, 15)} → {truncateSequence(variant.alternate_allele, 15)}
             </span>
             {variant.priority_tier && (
               <Badge variant="outline" className="text-sm">
@@ -371,7 +371,9 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             )}
           </div>
           {variant.hgvs_protein && (
-            <p className="text-sm text-muted-foreground font-mono mt-1">{variant.hgvs_protein}</p>
+            <p className="text-sm text-muted-foreground font-mono mt-1 truncate max-w-2xl" title={variant.hgvs_protein}>
+              {truncateSequence(variant.hgvs_protein, 80)}
+            </p>
           )}
         </div>
       </div>
