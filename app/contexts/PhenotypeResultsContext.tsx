@@ -36,6 +36,7 @@ import {
   getPhenotypeGeneVariants,
   type SessionMatchResult,
 } from '@/lib/api/hpo'
+import { isTier1, isTier2, isTierIF } from '@/types/tiers.types'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
@@ -220,6 +221,10 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       sessionCache.current.delete(sessionId)
       sessionCache.current.set(sessionId, memoryCached)
       restoreFromEntry(memoryCached)
+      // Preload if variants missing (e.g., cached before preload completed)
+      if (memoryCached.aggregatedResults) {
+        preloadClinicalVariants(sessionId, memoryCached.aggregatedResults)
+      }
       return
     }
 
@@ -229,6 +234,8 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       if (diskData && currentSessionId.current === sessionId) {
         console.log(`[PhenotypeResultsContext] Disk cache hit: ${diskData.aggregatedResults.length} genes`)
         restoreFromEntry(diskData)
+        // Preload variants for clinical genes (not in disk cache)
+        preloadClinicalVariants(sessionId, diskData.aggregatedResults)
       } else if (!diskData) {
         console.log(`[PhenotypeResultsContext] Disk cache miss for ${sessionId}`)
       }
@@ -285,6 +292,37 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       throw err
     }
   }, [sessionId])
+
+  // Preload variants for clinically relevant genes (T1/T2/IF)
+  const preloadClinicalVariants = useCallback((sid: string, genes: GeneAggregatedResult[]) => {
+    const clinicalGenes = genes.filter(
+      g => (isTier1(g.best_tier) || isTier2(g.best_tier) || isTierIF(g.best_tier)) && !g.variants
+    )
+    if (clinicalGenes.length === 0) return
+
+    console.log(`[PhenotypeResultsContext] Preloading variants for ${clinicalGenes.length} clinical genes...`)
+    Promise.all(
+      clinicalGenes.map(async (g) => {
+        try {
+          const response = await getPhenotypeGeneVariants(sid, g.gene_symbol)
+          return { gene_symbol: g.gene_symbol, variants: response.variants }
+        } catch (e) {
+          console.warn(`[PhenotypeResultsContext] Preload failed for ${g.gene_symbol}:`, e)
+          return null
+        }
+      })
+    ).then((results) => {
+      const loaded = results.filter(Boolean) as { gene_symbol: string; variants: SessionMatchResult[] }[]
+      if (loaded.length > 0) {
+        setAggregatedResults(prev => {
+          if (!prev) return prev
+          const variantMap = new Map(loaded.map(r => [r.gene_symbol, r.variants]))
+          return prev.map(g => variantMap.has(g.gene_symbol) ? { ...g, variants: variantMap.get(g.gene_symbol) } : g)
+        })
+        console.log(`[PhenotypeResultsContext] Preloaded variants for ${loaded.length} clinical genes`)
+      }
+    })
+  }, [])
 
   // Load gene summaries (check disk cache first)
   const loadAllPhenotypeResults = useCallback(async (sid: string): Promise<GeneAggregatedResult[]> => {
@@ -381,6 +419,9 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       setStatus('success')
 
       console.log(`[PhenotypeResultsContext] Summaries loaded: ${loadedGenes.length} genes`)
+
+      // Eager preload variants for clinically relevant genes
+      preloadClinicalVariants(sid, loadedGenes)
 
       // Persist to IndexedDB (async, non-blocking)
       setCache<PhenotypeDiskData>('phenotype-summaries', sid, {

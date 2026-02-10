@@ -413,31 +413,38 @@ export function ChatPanel() {
           tier_4_count: phenotypeResults.tier4Count,
           clinically_relevant_genes: phenotypeResults.aggregatedResults
             .filter(g => isTier1(g.best_tier) || isTier2(g.best_tier) || isTierIF(g.best_tier))
-            .map(g => ({
-              gene_symbol: g.gene_symbol,
-              rank: g.rank,
-              clinical_score: g.best_clinical_score,
-              phenotype_score: g.best_phenotype_score,
-              tier: g.best_tier,
-              variant_count: g.variant_count,
-              matched_hpo_terms: g.best_matched_terms ?? 0,
-              tier_1_count: g.tier_1_count,
-              tier_2_count: g.tier_2_count,
-              incidental_count: g.incidental_count,
-              variants: g.variants?.map(v => ({
-                variant_idx: v.variant_idx,
-                clinical_tier: v.clinical_tier,
-                acmg_class: v.acmg_class,
-                impact: v.impact,
-                consequence: v.consequence,
-                gnomad_af: v.gnomad_af,
-                hgvs_protein: v.hgvs_protein,
-                hgvs_cdna: v.hgvs_cdna,
-                chromosome: v.chromosome,
-                position: v.position,
-                rsid: v.rsid,
-              })) ?? null,
-            })),
+            .map(g => {
+              // Variants are eagerly preloaded by PhenotypeResultsContext
+              const tierVariants = (g.variants ?? [])
+                .filter(v => isTier1(v.clinical_tier) || isTier2(v.clinical_tier) || isTierIF(v.clinical_tier))
+
+              return {
+                gene_symbol: g.gene_symbol,
+                rank: g.rank,
+                clinical_score: g.best_clinical_score,
+                phenotype_score: g.best_phenotype_score,
+                tier: g.best_tier,
+                variant_count: g.variant_count,
+                matched_hpo_terms: g.best_matched_terms ?? 0,
+                tier_1_count: g.tier_1_count,
+                tier_2_count: g.tier_2_count,
+                incidental_count: g.incidental_count,
+                tier_variants_count: tierVariants.length,
+                variants: tierVariants.map(v => ({
+                  variant_idx: v.variant_idx,
+                  clinical_tier: v.clinical_tier,
+                  acmg_class: v.acmg_class,
+                  impact: v.impact,
+                  consequence: v.consequence,
+                  gnomad_af: v.gnomad_af,
+                  hgvs_protein: v.hgvs_protein,
+                  hgvs_cdna: v.hgvs_cdna,
+                  chromosome: v.chromosome,
+                  position: v.position,
+                  rsid: v.rsid,
+                })),
+              }
+            }),
         }
       }
 
