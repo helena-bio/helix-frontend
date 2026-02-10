@@ -443,7 +443,7 @@ export function ChatPanel() {
 
       // 3. Screening Results Context
       if (screeningResults?.screeningResponse) {
-        metadata.screening_context = {
+        metadata.screening_results_context = {
           summary: screeningResults.screeningResponse.summary,
           tier1_count: screeningResults.screeningResponse.summary.tier1_count,
           tier2_count: screeningResults.screeningResponse.summary.tier2_count,
