@@ -26,7 +26,8 @@ import {
   Search,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Copy
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
 import { useHPOTerm } from '@/hooks/queries'
@@ -40,15 +41,33 @@ interface VariantDetailPanelProps {
   onBack: () => void
 }
 
-const InfoRow = ({ label, value, mono = false }: { label: string; value: any; mono?: boolean }) => {
+const InfoRow = ({ label, value, mono = false, copyable = false }: { label: string; value: any; mono?: boolean; copyable?: boolean }) => {
   if (value === null || value === undefined || value === '') return null
+
+  const displayValue = typeof value === 'string' && value.length > 60
+    ? value.slice(0, 60) + '...'
+    : value
 
   return (
     <div className="flex justify-between items-start py-1.5 gap-4">
       <span className="text-base text-muted-foreground flex-shrink-0">{label}</span>
-      <span className={`text-md font-medium text-right break-all min-w-0 ${mono ? 'font-mono' : ''}`}>
-        {value}
-      </span>
+      <div className="flex items-start gap-1 min-w-0">
+        <span
+          className={`text-md font-medium text-right break-all min-w-0 ${mono ? 'font-mono' : ''}`}
+          title={typeof value === 'string' && value.length > 60 ? value : undefined}
+        >
+          {displayValue}
+        </span>
+        {copyable && typeof value === 'string' && (
+          <button
+            onClick={() => navigator.clipboard.writeText(value)}
+            className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
+            title="Copy to clipboard"
+          >
+            <Copy className="h-3 w-3 text-muted-foreground" />
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -616,9 +635,9 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <InfoRow label="HGVS Genomic" value={variant.hgvs_genomic} mono />
-                <InfoRow label="HGVS cDNA" value={variant.hgvs_cdna} mono />
-                <InfoRow label="HGVS Protein" value={variant.hgvs_protein} mono />
+                <InfoRow label="HGVS Genomic" value={variant.hgvs_genomic} mono copyable />
+                <InfoRow label="HGVS cDNA" value={variant.hgvs_cdna} mono copyable />
+                <InfoRow label="HGVS Protein" value={variant.hgvs_protein} mono copyable />
                 {variant.consequence && (
                   <div className="py-1.5">
                     <p className="text-base text-muted-foreground mb-2">Consequence</p>

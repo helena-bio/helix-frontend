@@ -186,13 +186,27 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
         <div className="mt-4 space-y-4">
           {/* Variant Details */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
+            <div className="min-w-0">
               <p className="text-md text-muted-foreground">HGVS Protein</p>
-              <p className="text-md font-mono">{variant.hgvs_protein || '-'}</p>
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>{truncateSequence(variant.hgvs_protein, 40)}</p>
+                {variant.hgvs_protein && (
+                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
+                    <Copy className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-md text-muted-foreground">HGVS cDNA</p>
-              <p className="text-md font-mono">{variant.hgvs_cdna || '-'}</p>
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>{truncateSequence(variant.hgvs_cdna, 40)}</p>
+                {variant.hgvs_cdna && (
+                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
+                    <Copy className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-md text-muted-foreground">Depth</p>
