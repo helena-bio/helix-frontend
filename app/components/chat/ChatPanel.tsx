@@ -417,7 +417,7 @@ export function ChatPanel() {
             phenotype_score: g.best_phenotype_score,
             tier: g.best_tier,
             variant_count: g.variant_count,
-            matched_hpo_terms: g.matched_hpo_terms,
+            matched_hpo_terms: g.best_matched_terms ?? 0,
           })),
         }
       }

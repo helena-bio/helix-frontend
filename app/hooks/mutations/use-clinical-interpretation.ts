@@ -63,7 +63,7 @@ export function useClinicalInterpretation() {
             clinical_score: g.best_clinical_score,
             phenotype_score: g.best_phenotype_score,
             variant_count: g.variant_count,
-            matched_hpo_terms: g.matched_hpo_terms,
+            matched_hpo_terms: g.best_matched_terms ?? 0,
           })),
         } : null,
         screening_results_context: screeningResponse ? {

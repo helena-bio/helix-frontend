@@ -265,3 +265,31 @@ export async function getMatchingResults(sessionId: string): Promise<SessionMatc
 
   return response.json()
 }
+
+// ============================================
+// ON-DEMAND GENE VARIANTS (Summary-first architecture)
+// ============================================
+
+export interface PhenotypeGeneVariantsResponse {
+  gene_symbol: string
+  variant_count: number
+  variants: SessionMatchResult[]
+}
+
+/**
+ * Fetch phenotype match variants for a single gene on-demand.
+ * Called when user expands a gene card in PhenotypeMatchingView.
+ */
+export async function getPhenotypeGeneVariants(
+  sessionId: string,
+  geneSymbol: string
+): Promise<PhenotypeGeneVariantsResponse> {
+  const url = `${API_URL}/phenotype/api/sessions/${sessionId}/phenotype/by-gene/${encodeURIComponent(geneSymbol)}`
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error(`Failed to load variants for ${geneSymbol}: ${response.statusText}`)
+  }
+
+  return response.json()
+}

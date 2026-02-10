@@ -1,22 +1,18 @@
 "use client"
 
 /**
- * Matched Phenotype Context - Streaming Architecture
+ * Matched Phenotype Context - Summary-First Architecture
  *
- * NEW WORKFLOW (matching Variants streaming):
+ * WORKFLOW:
  * 1. runMatching() - triggers backend computation, saves to DuckDB
- * 2. loadAllPhenotypeResults() - streams aggregated results by gene and RETURNS them
- * 3. Backend does aggregation (not frontend!)
- * 4. Progressive loading with progress tracking
+ * 2. loadAllPhenotypeResults() - streams lightweight gene SUMMARIES (~50KB)
+ * 3. Individual variants loaded on-demand when user expands a gene
  *
  * Flow:
  * - ClinicalAnalysis Stage 1: runMatching() -> loadAllPhenotypeResults()
- * - Results stream directly to context (pre-aggregated by gene)
- * - Views read from pre-loaded context data
+ * - Summaries stream instantly (<200ms)
+ * - Gene expansion triggers DuckDB query (<50ms)
  * - Session cache: switching cases restores instantly (max 3 cached)
- * - Auto-cleanup when session becomes null
- *
- * IMPORTANT: loadAllPhenotypeResults RETURNS the loaded data to avoid React state race conditions
  *
  * 5-tier system with Incidental Findings:
  * - Tier 1: P/LP with phenotype match (confirmed relevant)
@@ -38,12 +34,12 @@ import {
 } from 'react'
 import {
   runSessionPhenotypeMatching,
+  getPhenotypeGeneVariants,
   type SessionMatchResult,
 } from '@/lib/api/hpo'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
-// Session cache
 const MAX_CACHED_SESSIONS = 3
 
 // ============================================================================
@@ -59,8 +55,15 @@ export interface GeneAggregatedResult {
   best_phenotype_score: number
   best_tier: string
   variant_count: number
-  matched_hpo_terms: string[]
-  variants: SessionMatchResult[]
+  best_matched_terms: number
+  total_patient_terms: number
+  tier_1_count: number
+  tier_2_count: number
+  incidental_count: number
+  tier_3_count: number
+  tier_4_count: number
+  // Lazy-loaded on expand
+  variants?: SessionMatchResult[]
 }
 
 interface PhenotypeCacheEntry {
@@ -74,21 +77,15 @@ interface PhenotypeCacheEntry {
 }
 
 interface PhenotypeResultsContextValue {
-  // Status
   status: MatchingStatus
   isLoading: boolean
   loadProgress: number
   error: Error | null
-
-  // Aggregated results by gene (sorted by clinical priority)
   aggregatedResults: GeneAggregatedResult[] | null
-
-  // Actions
   runMatching: (patientHpoIds: string[]) => Promise<void>
   loadAllPhenotypeResults: (sessionId: string) => Promise<GeneAggregatedResult[]>
+  loadPhenotypeGeneVariants: (sessionId: string, geneSymbol: string) => Promise<SessionMatchResult[]>
   clearResults: () => void
-
-  // Computed
   totalGenes: number
   tier1Count: number
   tier2Count: number
@@ -110,7 +107,6 @@ interface PhenotypeResultsProviderProps {
 }
 
 export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResultsProviderProps) {
-  // State
   const [status, setStatus] = useState<MatchingStatus>('idle')
   const [loadProgress, setLoadProgress] = useState(0)
   const [error, setError] = useState<Error | null>(null)
@@ -122,7 +118,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   const [tier4Count, setTier4Count] = useState(0)
   const [variantsAnalyzed, setVariantsAnalyzed] = useState(0)
 
-  // Refs for tracking
   const currentSessionId = useRef<string | null>(null)
 
   // Refs mirroring state for cache saves
@@ -142,7 +137,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   useEffect(() => { tier4Ref.current = tier4Count }, [tier4Count])
   useEffect(() => { analyzedRef.current = variantsAnalyzed }, [variantsAnalyzed])
 
-  // Session cache
   const sessionCache = useRef<Map<string, PhenotypeCacheEntry>>(new Map())
 
   const saveToCache = useCallback((id: string, entry: PhenotypeCacheEntry) => {
@@ -195,7 +189,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
   useEffect(() => {
     const prevId = currentSessionId.current
 
-    // Case 1: Session cleared
     if (sessionId === null) {
       if (prevId) saveToCache(prevId, getCurrentCacheEntry())
       console.log('[PhenotypeResultsContext] Session cleared - resetting phenotype results')
@@ -204,10 +197,8 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       return
     }
 
-    // Case 2: Same session - do nothing
     if (sessionId === currentSessionId.current) return
 
-    // Case 3: New session - save current, check cache
     if (prevId) saveToCache(prevId, getCurrentCacheEntry())
 
     currentSessionId.current = sessionId
@@ -246,7 +237,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     setError(null)
 
     try {
-      // Call session-based matching API (computes & saves to DuckDB)
       console.log('[PhenotypeResultsContext] Calling session matching API...')
       const runResponse = await runSessionPhenotypeMatching({
         sessionId,
@@ -268,7 +258,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
         return
       }
 
-      // NOTE: Don't fetch results here - caller will call loadAllPhenotypeResults()
       setStatus('success')
     } catch (err) {
       console.error('[PhenotypeResultsContext] Matching failed:', err)
@@ -278,18 +267,18 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     }
   }, [sessionId])
 
-  // Load all phenotype results via streaming - RETURNS loaded data to avoid race conditions
-  const loadAllPhenotypeResults = useCallback(async (sessionId: string): Promise<GeneAggregatedResult[]> => {
+  // Load gene summaries (lightweight, no variants)
+  const loadAllPhenotypeResults = useCallback(async (sid: string): Promise<GeneAggregatedResult[]> => {
     setStatus('loading')
     setLoadProgress(0)
     setError(null)
     setAggregatedResults(null)
 
     try {
-      console.log('[PhenotypeResultsContext] Starting streaming load...')
+      console.log('[PhenotypeResultsContext] Loading phenotype summaries...')
 
       const response = await fetch(
-        `${API_BASE_URL}/phenotype/api/sessions/${sessionId}/phenotype/stream/by-gene`
+        `${API_BASE_URL}/phenotype/api/sessions/${sid}/phenotype/summaries`
       )
 
       if (!response.ok) {
@@ -300,12 +289,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
         throw new Error('No response body')
       }
 
-      console.log('[PhenotypeResultsContext] Response headers:', {
-        contentType: response.headers.get('content-type'),
-        contentEncoding: response.headers.get('content-encoding'),
-      })
-
-      // Browser automatically decompresses based on Content-Encoding header
       const reader = response.body
         .pipeThrough(new TextDecoderStream())
         .getReader()
@@ -316,7 +299,6 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
       while (true) {
         const { value, done } = await reader.read()
-
         if (done) break
 
         buffer += value
@@ -331,9 +313,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
 
             if (parsed.type === 'metadata') {
               totalGenesCount = parsed.total_genes
-              console.log(`[PhenotypeResultsContext] Streaming ${totalGenesCount} genes...`)
-
-              // Store tier counts from metadata
+              console.log(`[PhenotypeResultsContext] Streaming ${totalGenesCount} gene summaries...`)
               setTier1Count(parsed.tier_1_count)
               setTier2Count(parsed.tier_2_count)
               setIncidentalFindingsCount(parsed.incidental_findings_count || 0)
@@ -343,18 +323,15 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
             } else if (parsed.type === 'gene') {
               loadedGenes.push(parsed.data)
 
-              // Update progress every 50 genes
               if (loadedGenes.length % 50 === 0) {
                 const progress = totalGenesCount > 0
                   ? Math.round((loadedGenes.length / totalGenesCount) * 100)
                   : 0
                 setLoadProgress(progress)
-
-                // Update state in batches for performance
                 setAggregatedResults([...loadedGenes])
               }
             } else if (parsed.type === 'complete') {
-              console.log(`[PhenotypeResultsContext] Streaming complete: ${parsed.total_streamed} genes loaded`)
+              console.log(`[PhenotypeResultsContext] Summaries complete: ${parsed.total_streamed} genes`)
             }
           } catch (e) {
             console.warn('[PhenotypeResultsContext] Failed to parse line:', e)
@@ -362,30 +339,55 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
         }
       }
 
-      // Final update
       setAggregatedResults(loadedGenes)
       setLoadProgress(100)
       setStatus('success')
 
-      console.log(`[PhenotypeResultsContext] All data loaded: ${loadedGenes.length} genes`)
-
-      // RETURN the loaded data to avoid React state race conditions
+      console.log(`[PhenotypeResultsContext] Summaries loaded: ${loadedGenes.length} genes`)
       return loadedGenes
 
     } catch (err) {
-      console.error('[PhenotypeResultsContext] Streaming failed:', err)
+      console.error('[PhenotypeResultsContext] Summaries load failed:', err)
       setError(err instanceof Error ? err : new Error('Unknown error'))
       setStatus('error')
       throw err
     }
   }, [])
 
-  // Clear results
+  // Load variants for a single gene on-demand
+  const loadPhenotypeGeneVariants = useCallback(async (
+    sid: string,
+    geneSymbol: string
+  ): Promise<SessionMatchResult[]> => {
+    // Check if already loaded in current results
+    const current = aggregatedRef.current
+    if (current) {
+      const gene = current.find(g => g.gene_symbol === geneSymbol)
+      if (gene?.variants && gene.variants.length > 0) {
+        return gene.variants
+      }
+    }
+
+    console.log(`[PhenotypeResultsContext] Loading variants for ${geneSymbol}...`)
+    const response = await getPhenotypeGeneVariants(sid, geneSymbol)
+
+    // Update gene in aggregatedResults with loaded variants
+    setAggregatedResults(prev => {
+      if (!prev) return prev
+      return prev.map(g =>
+        g.gene_symbol === geneSymbol
+          ? { ...g, variants: response.variants }
+          : g
+      )
+    })
+
+    return response.variants
+  }, [])
+
   const clearResults = useCallback(() => {
     clearState()
   }, [clearState])
 
-  // Computed values
   const value = useMemo<PhenotypeResultsContextValue>(() => ({
     status,
     isLoading: status === 'pending' || status === 'loading',
@@ -394,6 +396,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     aggregatedResults,
     runMatching,
     loadAllPhenotypeResults,
+    loadPhenotypeGeneVariants,
     clearResults,
     totalGenes: aggregatedResults?.length || 0,
     tier1Count,
@@ -409,6 +412,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
     aggregatedResults,
     runMatching,
     loadAllPhenotypeResults,
+    loadPhenotypeGeneVariants,
     clearResults,
     tier1Count,
     tier2Count,

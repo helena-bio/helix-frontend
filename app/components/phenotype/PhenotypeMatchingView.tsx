@@ -1,18 +1,16 @@
 "use client"
 
 /**
- * PhenotypeMatchingView Component - CLINICAL GRADE
+ * PhenotypeMatchingView Component - Summary-First Architecture
  *
- * Card-based layout matching LiteratureMatchingView design.
- * Uses lazy loading with Intersection Observer for smooth scrolling.
+ * Card-based layout with lazy gene expansion.
+ * Gene summaries load instantly (~50KB), variants on-demand from DuckDB.
  *
  * Features:
  * - Card per gene (not table rows)
- * - Lazy loading (no pagination)
- * - Consistent typography with LiteratureMatchingView
- * - Clickable tier cards with filtering
- * - Filter by gene name AND tier (both genes and variants within genes)
- * - Aligned columns across all gene cards
+ * - Lazy loading with Intersection Observer
+ * - On-demand variant loading on gene expand
+ * - Clickable tier cards with filtering (uses summary counts)
  * - 5-tier system: T1, T2, IF (Incidental Findings), T3, T4
  */
 
@@ -56,27 +54,18 @@ interface PhenotypeMatchingViewProps {
 const INITIAL_LOAD = 15
 const LOAD_MORE_COUNT = 15
 
-// Tier filter type - includes IF for Incidental Findings
 type TierFilter = 'all' | 'T1' | 'T2' | 'IF' | 'T3' | 'T4'
 
 /**
  * Get short tier from best_tier string
- * Uses regex with word boundary for exact matching
- * IF is checked BEFORE tier numbers to avoid false matching
  */
 const getShortTier = (tier: string): TierFilter => {
   const tierLower = tier.toLowerCase()
-
-  // IF must be checked BEFORE tier numbers to avoid false matching
   if (tierLower.startsWith('if') || tierLower.includes('incidental')) return 'IF'
-
-  // Use regex with word boundaries to match exact tier numbers
-  // \b ensures we match "tier 1" but NOT "tier 14"
   if (/tier\s*1\b/.test(tierLower)) return 'T1'
   if (/tier\s*2\b/.test(tierLower) || tierLower.includes('potentially')) return 'T2'
   if (/tier\s*3\b/.test(tierLower) || tierLower.includes('uncertain')) return 'T3'
   if (/tier\s*4\b/.test(tierLower) || tierLower.includes('unlikely')) return 'T4'
-
   return 'T4'
 }
 
@@ -211,32 +200,50 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 interface GeneSectionProps {
   geneResult: GeneAggregatedResult
   rank: number
+  sessionId: string
   onViewVariantDetails: (variantIdx: number) => void
   tierFilter: TierFilter
 }
 
-function GeneSection({ geneResult, rank, onViewVariantDetails, tierFilter }: GeneSectionProps) {
+function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFilter }: GeneSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isLoadingVariants, setIsLoadingVariants] = useState(false)
+  const { loadPhenotypeGeneVariants } = usePhenotypeResults()
 
-  // CRITICAL: Filter variants by tier when tier filter is active
-  const visibleVariants = useMemo(() => {
-    if (tierFilter === 'all') {
-      return geneResult.variants
+  const handleExpand = useCallback(async () => {
+    if (isExpanded) {
+      setIsExpanded(false)
+      return
     }
 
-    // Filter variants to show only those matching the selected tier
+    setIsExpanded(true)
+
+    // Load variants on-demand if not already loaded
+    if (!geneResult.variants || geneResult.variants.length === 0) {
+      setIsLoadingVariants(true)
+      try {
+        await loadPhenotypeGeneVariants(sessionId, geneResult.gene_symbol)
+      } catch (err) {
+        console.error(`Failed to load variants for ${geneResult.gene_symbol}:`, err)
+      } finally {
+        setIsLoadingVariants(false)
+      }
+    }
+  }, [isExpanded, geneResult.variants, geneResult.gene_symbol, sessionId, loadPhenotypeGeneVariants])
+
+  // Filter loaded variants by tier
+  const visibleVariants = useMemo(() => {
+    if (!geneResult.variants) return []
+    if (tierFilter === 'all') return geneResult.variants
     return geneResult.variants.filter(v => getShortTier(v.clinical_tier) === tierFilter)
   }, [geneResult.variants, tierFilter])
-
-  const visibleVariantCount = visibleVariants.length
 
   return (
     <Card className="gap-0">
       <CardHeader
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleExpand}
       >
-        {/* Flex layout with justify-between */}
         <div className="flex items-center justify-between">
           {/* Left: Rank + Gene + Tier + Variants */}
           <div className="flex items-center gap-3">
@@ -246,23 +253,18 @@ function GeneSection({ geneResult, rank, onViewVariantDetails, tierFilter }: Gen
               {formatTierDisplay(geneResult.best_tier)}
             </Badge>
             <Badge variant="secondary" className="text-sm">
-              {visibleVariantCount} variant{visibleVariantCount !== 1 ? 's' : ''}
+              {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
               {tierFilter !== 'all' && ` (${tierFilter})`}
             </Badge>
-            {/* Matched HPO Terms Preview */}
-            {geneResult.matched_hpo_terms.slice(0, 2).map((term, idx) => (
-              <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary">
-                {term}
-              </Badge>
-            ))}
-            {geneResult.matched_hpo_terms.length > 2 && (
-              <Badge variant="secondary" className="text-xs">
-                +{geneResult.matched_hpo_terms.length - 2} more
+            {/* Matched terms count */}
+            {geneResult.best_matched_terms > 0 && (
+              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                {geneResult.best_matched_terms}/{geneResult.total_patient_terms} HPO matched
               </Badge>
             )}
           </div>
 
-          {/* Right: Score + HPO + Chevron - compact */}
+          {/* Right: Score + HPO + Chevron */}
           <div className="flex items-center gap-2">
             <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
               <TrendingUp className="h-3 w-3 mr-1" />
@@ -278,40 +280,36 @@ function GeneSection({ geneResult, rank, onViewVariantDetails, tierFilter }: Gen
 
       {isExpanded && (
         <CardContent className="space-y-3">
-          {/* All Matched HPO Terms */}
-          {geneResult.matched_hpo_terms.length > 0 && (
-            <div className="mb-4">
-              <p className="text-base font-semibold mb-2">Matched HPO Terms</p>
-              <div className="flex flex-wrap gap-2">
-                {geneResult.matched_hpo_terms.map((term, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-sm bg-primary/10 text-primary">
-                    {term}
-                  </Badge>
+          {/* Loading state */}
+          {isLoadingVariants && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+              <span className="text-sm text-muted-foreground">Loading variants...</span>
+            </div>
+          )}
+
+          {/* Variants */}
+          {!isLoadingVariants && geneResult.variants && (
+            <div>
+              <p className="text-base font-semibold mb-3">
+                Variants ({visibleVariants.length})
+                {tierFilter !== 'all' && (
+                  <span className="text-sm text-muted-foreground font-normal ml-2">
+                    - Showing only {tierFilter} variants
+                  </span>
+                )}
+              </p>
+              <div className="space-y-3">
+                {visibleVariants.map((variant) => (
+                  <VariantCard
+                    key={variant.variant_idx}
+                    variant={variant}
+                    onViewDetails={onViewVariantDetails}
+                  />
                 ))}
               </div>
             </div>
           )}
-
-          {/* Variants - FILTERED by tier */}
-          <div>
-            <p className="text-base font-semibold mb-3">
-              Variants ({visibleVariantCount})
-              {tierFilter !== 'all' && (
-                <span className="text-sm text-muted-foreground font-normal ml-2">
-                  - Showing only {tierFilter} variants
-                </span>
-              )}
-            </p>
-            <div className="space-y-3">
-              {visibleVariants.map((variant) => (
-                <VariantCard
-                  key={variant.variant_idx}
-                  variant={variant}
-                  onViewDetails={onViewVariantDetails}
-                />
-              ))}
-            </div>
-          </div>
         </CardContent>
       )}
     </Card>
@@ -369,7 +367,6 @@ function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClass
 // ============================================================================
 
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
-  // Local state
   const [geneFilter, setGeneFilter] = useState('')
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
@@ -390,7 +387,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     if (node) observerRef.current.observe(node)
   }, [])
 
-  // Contexts
   const { hpoTerms } = useClinicalProfileContext()
   const {
     status,
@@ -407,27 +403,31 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   const selectedTerms = hpoTerms
 
-  // Handle tier card click
   const handleTierClick = (tier: TierFilter) => {
     setTierFilter(prev => prev === tier ? 'all' : tier)
-    setVisibleCount(INITIAL_LOAD) // Reset visible count when filter changes
+    setVisibleCount(INITIAL_LOAD)
   }
 
-  // Filter results by gene name and tier
-  // Gene must have at least one variant matching the tier filter
+  // Filter by gene name and tier (using summary counts, no variant iteration)
   const filteredResults = useMemo(() => {
     if (!aggregatedResults) return []
 
     let filtered = aggregatedResults
 
-    // Filter by tier - gene must have at least one variant of this tier
+    // Filter by tier using summary counts (no variant iteration needed)
     if (tierFilter !== 'all') {
-      filtered = filtered.filter(g =>
-        g.variants.some(v => getShortTier(v.clinical_tier) === tierFilter)
-      )
+      filtered = filtered.filter(g => {
+        switch (tierFilter) {
+          case 'T1': return g.tier_1_count > 0
+          case 'T2': return g.tier_2_count > 0
+          case 'IF': return g.incidental_count > 0
+          case 'T3': return g.tier_3_count > 0
+          case 'T4': return g.tier_4_count > 0
+          default: return true
+        }
+      })
     }
 
-    // Filter by gene name
     if (geneFilter) {
       const filter = geneFilter.toLowerCase()
       filtered = filtered.filter(g => g.gene_symbol.toLowerCase().includes(filter))
@@ -442,15 +442,12 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   const hasMore = visibleCount < filteredResults.length
 
-  // Reset visible count when filter changes
   useEffect(() => {
     setVisibleCount(INITIAL_LOAD)
   }, [geneFilter, tierFilter])
 
-  // Check if we have results
   const hasResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
 
-  // View variant detail
   if (selectedVariantIdx !== null) {
     return (
       <VariantDetailPanel
@@ -475,7 +472,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
           </p>
         </div>
 
-        {/* Status Badge */}
         {status === 'success' && hasResults && (
           <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-300">
             {totalGenes} Genes Analyzed
@@ -489,7 +485,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         )}
       </div>
 
-      {/* Tier Summary Cards - Clickable - 6 columns with IF */}
+      {/* Tier Summary Cards */}
       {hasResults && (
         <div className="grid grid-cols-6 gap-4">
           <TierCard
@@ -643,7 +639,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
             </span>
           </div>
 
-          {/* Scoring explanation */}
           <p className="text-md text-muted-foreground">
             Sorted by Clinical Priority Score. Higher scores indicate stronger clinical relevance.
             {tierFilter !== 'all' && ' Showing only variants matching selected tier.'}
@@ -655,6 +650,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
               key={geneResult.gene_symbol}
               geneResult={geneResult}
               rank={idx + 1}
+              sessionId={sessionId}
               onViewVariantDetails={setSelectedVariantIdx}
               tierFilter={tierFilter}
             />
