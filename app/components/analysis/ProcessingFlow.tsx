@@ -327,7 +327,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
           <Alert>
             <AlertDescription className="text-md">
               This process typically takes 10-15 minutes for a whole genome.
-              {processingQuote}
+               {processingQuote}
             </AlertDescription>
           </Alert>
         </div>
