@@ -118,7 +118,7 @@ export default function DashboardPage() {
         </div>
 
         {/* New Case CTA */}
-        <Card className="border-primary/20 bg-primary/5">
+        <Card className="border-primary/20 bg-primary/5 py-0 gap-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-start gap-3">
@@ -175,7 +175,7 @@ export default function DashboardPage() {
                 return (
                   <Card
                     key={session.id}
-                    className={cn(
+                    className={cn("py-0 gap-0",
                       "transition-colors",
                       isCompleted && "hover:bg-accent cursor-pointer"
                     )}

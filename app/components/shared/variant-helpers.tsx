@@ -174,3 +174,29 @@ export function ConsequenceBadges({ consequence, maxBadges = 3, className = '' }
     </div>
   )
 }
+
+// ============================================================================
+// SEQUENCE TRUNCATION
+// ============================================================================
+
+/**
+ * Truncate long DNA/protein sequences for display.
+ * "AGTCACCAACTCTGGGTCCAGTGTGACCTCCAGT..." -> "AGTCACCAACTCTGGGTCC..."
+ */
+export const truncateSequence = (seq: string | null | undefined, maxLen: number = 20): string => {
+  if (!seq) return '-'
+  if (seq.length <= maxLen) return seq
+  return seq.slice(0, maxLen) + '...'
+}
+
+/**
+ * Format allele display with truncation for long indels.
+ * Short: "A/T" or "AC/A"
+ * Long: "A/AGTCACCAACTCTG..." -> "A / AGTCACC..."
+ */
+export const formatAlleles = (ref: string | null | undefined, alt: string | null | undefined, maxLen: number = 20): string => {
+  const r = ref || '-'
+  const a = alt || '-'
+  if (r.length + a.length <= maxLen + 3) return `${r}/${a}`
+  return `${truncateSequence(r, maxLen)}/${truncateSequence(a, maxLen)}`
+}

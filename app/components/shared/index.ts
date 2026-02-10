@@ -10,4 +10,6 @@ export {
   parseConsequences,
   getConsequenceColor,
   ConsequenceBadges,
+  truncateSequence,
+  formatAlleles,
 } from './variant-helpers'

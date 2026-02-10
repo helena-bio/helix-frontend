@@ -45,6 +45,7 @@ import {
   getZygosityBadge,
   formatACMGDisplay,
   ConsequenceBadges,
+  truncateSequence,
 } from '@/components/shared'
 import type { GeneAggregated, VariantInGene } from '@/types/variant.types'
 
@@ -154,9 +155,9 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               </Badge>
             )}
           </div>
-          <p className="text-base font-mono text-muted-foreground">
+          <p className="text-base font-mono text-muted-foreground truncate" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}/${variant.alternate_allele}`}>
             {variant.chromosome}:{variant.position?.toLocaleString()}
-            <span className="ml-2">{variant.reference_allele}/{variant.alternate_allele}</span>
+            <span className="ml-2">{truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}</span>
           </p>
           <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
         </div>
