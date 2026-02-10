@@ -1,21 +1,19 @@
 "use client"
 
 /**
- * VariantsResultsContext - Two-phase loading for instant case switching
- *
- * Phase 1: Gene summaries (255KB, <200ms) -> table renders immediately
- * Phase 2: Full variant data (77MB, ~10s) -> loads in background
+ * VariantsResultsContext - Summary-first with lazy gene expansion
  *
  * Architecture:
- * 1. Stream gene summaries on case open (instant table render)
- * 2. Background-load full variant data (silent, no loading screen)
- * 3. When user expands a gene, variants are already there (or show spinner)
- * 4. Session cache: LRU cache of 3 sessions (full data, instant switch-back)
- * 5. Fallback: if summaries file missing, loads full data directly (old path)
+ * 1. Load gene summaries on case open (~50-100KB, <200ms) -> table renders instantly
+ * 2. When user expands a gene, fetch variants on-demand (<50ms per gene)
+ * 3. Session cache: LRU of 3 sessions (summaries + already-loaded gene variants)
+ * 4. Fallback: if summaries file missing, loads full data directly (old path)
+ *
+ * No Phase 2 bulk loading. Variants are fetched per-gene on demand.
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, ReactNode } from 'react'
-import type { GeneAggregated } from '@/types/variant.types'
+import type { GeneAggregated, ImpactByAcmg } from '@/types/variant.types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
@@ -24,30 +22,27 @@ const MAX_CACHED_SESSIONS = 3
 interface VariantsCacheEntry {
   allGenes: GeneAggregated[]
   totalVariants: number
-  variantsFullyLoaded: boolean
+  impactByAcmg: ImpactByAcmg
 }
 
 interface VariantsResultsContextValue {
   // Data
   allGenes: GeneAggregated[]
   totalVariants: number
+  impactByAcmg: ImpactByAcmg
 
   // Loading state
-  isLoading: boolean          // Phase 1 (summaries) - controls loading screen
-  loadProgress: number        // Phase 1 progress (0-100)
-  isLoadingFullData: boolean  // Phase 2 (background) - subtle indicator
-  fullDataProgress: number    // Phase 2 progress (0-100)
-  variantsFullyLoaded: boolean // All variant arrays populated
+  isLoading: boolean
+  loadProgress: number
   error: string | null
 
   // Actions
   loadAllVariants: (sessionId: string) => Promise<void>
+  loadGeneVariants: (sessionId: string, geneSymbol: string) => Promise<void>
   clearVariants: () => void
 
-  // Local operations (instant!)
+  // Local operations
   filterByGene: (geneSymbol: string) => GeneAggregated[]
-  filterByAcmg: (acmgClass: string) => GeneAggregated[]
-  filterByImpact: (impact: string) => GeneAggregated[]
   searchGenes: (query: string) => GeneAggregated[]
 
   // Computed stats
@@ -64,8 +59,12 @@ interface VariantsResultsProviderProps {
   children: ReactNode
 }
 
+const EMPTY_IMPACT: ImpactByAcmg = {
+  all: { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 },
+}
+
 // ============================================================
-// NDJSON streaming parser (main thread, used for both phases)
+// NDJSON streaming parser (main thread, summaries are small)
 // ============================================================
 async function streamNdjson(
   url: string,
@@ -128,27 +127,22 @@ async function streamNdjson(
 export function VariantsResultsProvider({ sessionId, children }: VariantsResultsProviderProps) {
   const [allGenes, setAllGenes] = useState<GeneAggregated[]>([])
   const [totalVariants, setTotalVariants] = useState(0)
+  const [impactByAcmg, setImpactByAcmg] = useState<ImpactByAcmg>(EMPTY_IMPACT)
   const [isLoading, setIsLoading] = useState(false)
   const [loadProgress, setLoadProgress] = useState(0)
-  const [isLoadingFullData, setIsLoadingFullData] = useState(false)
-  const [fullDataProgress, setFullDataProgress] = useState(0)
-  const [variantsFullyLoaded, setVariantsFullyLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Ref for tracking current session
   const currentSessionId = useRef<string | null>(null)
 
-  // Abort controller for background loading
-  const bgAbortRef = useRef<AbortController | null>(null)
-
   // Refs mirroring state for cache saves
   const allGenesRef = useRef<GeneAggregated[]>([])
   const totalVariantsRef = useRef(0)
-  const variantsFullyLoadedRef = useRef(false)
+  const impactByAcmgRef = useRef<ImpactByAcmg>(EMPTY_IMPACT)
 
   useEffect(() => { allGenesRef.current = allGenes }, [allGenes])
   useEffect(() => { totalVariantsRef.current = totalVariants }, [totalVariants])
-  useEffect(() => { variantsFullyLoadedRef.current = variantsFullyLoaded }, [variantsFullyLoaded])
+  useEffect(() => { impactByAcmgRef.current = impactByAcmg }, [impactByAcmg])
 
   // Session cache
   const sessionCache = useRef<Map<string, VariantsCacheEntry>>(new Map())
@@ -167,12 +161,10 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
   const clearState = useCallback(() => {
     setAllGenes([])
     setTotalVariants(0)
+    setImpactByAcmg(EMPTY_IMPACT)
     setLoadProgress(0)
-    setFullDataProgress(0)
     setError(null)
     setIsLoading(false)
-    setIsLoadingFullData(false)
-    setVariantsFullyLoaded(false)
   }, [])
 
   // Session change: cache management
@@ -184,11 +176,9 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
         saveToCache(prevId, {
           allGenes: allGenesRef.current,
           totalVariants: totalVariantsRef.current,
-          variantsFullyLoaded: variantsFullyLoadedRef.current,
+          impactByAcmg: impactByAcmgRef.current,
         })
       }
-      // Abort any background loading
-      if (bgAbortRef.current) bgAbortRef.current.abort()
       console.log('[VariantsResultsContext] Session cleared')
       currentSessionId.current = null
       clearState()
@@ -202,52 +192,47 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       saveToCache(prevId, {
         allGenes: allGenesRef.current,
         totalVariants: totalVariantsRef.current,
-        variantsFullyLoaded: variantsFullyLoadedRef.current,
+        impactByAcmg: impactByAcmgRef.current,
       })
     }
-
-    // Abort any background loading from previous session
-    if (bgAbortRef.current) bgAbortRef.current.abort()
 
     currentSessionId.current = sessionId
 
     // Check cache
     const cached = sessionCache.current.get(sessionId)
     if (cached) {
-      console.log(`[VariantsResultsContext] Cache hit: ${cached.allGenes.length} genes, full=${cached.variantsFullyLoaded}`)
+      console.log('[VariantsResultsContext] Cache hit: ' + cached.allGenes.length + ' genes')
       sessionCache.current.delete(sessionId)
       sessionCache.current.set(sessionId, cached)
       setAllGenes(cached.allGenes)
       setTotalVariants(cached.totalVariants)
+      setImpactByAcmg(cached.impactByAcmg)
       setLoadProgress(100)
-      setVariantsFullyLoaded(cached.variantsFullyLoaded)
       setError(null)
       setIsLoading(false)
-      setIsLoadingFullData(false)
       return
     }
 
-    console.log(`[VariantsResultsContext] Cache miss for ${sessionId}`)
+    console.log('[VariantsResultsContext] Cache miss for ' + sessionId)
     clearState()
   }, [sessionId, saveToCache, clearState])
 
   // ============================================================
-  // Two-phase loading
+  // Load gene summaries (instant, ~50-100KB)
   // ============================================================
-  const loadAllVariants = useCallback(async (sessionId: string) => {
+  const loadAllVariants = useCallback(async (sid: string) => {
     setIsLoading(true)
     setLoadProgress(0)
     setError(null)
     setAllGenes([])
-    setVariantsFullyLoaded(false)
+    setImpactByAcmg(EMPTY_IMPACT)
 
     try {
-      // ---- PHASE 1: Gene summaries (255KB) ----
-      console.log('[VariantsResultsContext] Phase 1: Loading gene summaries...')
-
-      const summaryUrl = `${API_BASE_URL}/sessions/${sessionId}/variants/summaries`
+      // Try summaries endpoint first
+      const summaryUrl = API_BASE_URL + '/sessions/' + sid + '/variants/summaries'
       let summaryGenes: GeneAggregated[] = []
       let totalVariantsCount = 0
+      let loadedImpactByAcmg: ImpactByAcmg = EMPTY_IMPACT
       let summariesAvailable = true
 
       try {
@@ -257,54 +242,40 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
           console.log('[VariantsResultsContext] Summaries not available, falling back to full load')
           summariesAvailable = false
         } else {
-          // Parse summaries (small enough for main thread)
-          const reader = response.body!
-            .pipeThrough(new TextDecoderStream())
-            .getReader()
-
-          let buffer = ''
-
-          while (true) {
-            const { value, done } = await reader.read()
-            if (done) break
-
-            buffer += value
-            const lines = buffer.split('\n')
-            buffer = lines.pop() || ''
-
-            for (const line of lines) {
-              if (!line.trim()) continue
-              try {
-                const parsed = JSON.parse(line)
-                if (parsed.type === 'metadata') {
-                  totalVariantsCount = parsed.total_variants
-                } else if (parsed.type === 'gene') {
-                  // Add empty variants array for compatibility
-                  summaryGenes.push({ ...parsed.data, variants: [] })
-                }
-              } catch (e) {
-                // Skip malformed lines
+          await streamNdjson(
+            summaryUrl,
+            (meta) => {
+              totalVariantsCount = meta.total_variants
+              if (meta.impact_by_acmg) {
+                loadedImpactByAcmg = meta.impact_by_acmg
               }
-            }
-          }
+            },
+            (gene) => {
+              summaryGenes.push({ ...gene, variants: [] })
+            },
+            (loaded, total) => {
+              const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
+              setLoadProgress(progress)
+            },
+          )
 
-          console.log(`[VariantsResultsContext] Phase 1 complete: ${summaryGenes.length} genes in ~200ms`)
+          console.log('[VariantsResultsContext] Summaries loaded: ' + summaryGenes.length + ' genes')
         }
       } catch (e) {
         console.log('[VariantsResultsContext] Summaries fetch failed, falling back')
         summariesAvailable = false
       }
 
-      // ---- FALLBACK: No summaries, load full data directly ----
+      // Fallback: no summaries, load full data directly (old path)
       if (!summariesAvailable) {
         console.log('[VariantsResultsContext] Fallback: streaming full data...')
+        const fullUrl = API_BASE_URL + '/sessions/' + sid + '/variants/stream/by-gene'
         const fullGenes: GeneAggregated[] = []
 
         await streamNdjson(
-          `${API_BASE_URL}/sessions/${sessionId}/variants/stream/by-gene`,
+          fullUrl,
           (meta) => {
             totalVariantsCount = meta.total_variants
-            console.log(`[VariantsResultsContext] Streaming ${meta.total_genes} genes...`)
           },
           (gene) => {
             fullGenes.push(gene)
@@ -318,62 +289,36 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
           },
         )
 
+        // Build impact_by_acmg from full data
+        const computed: ImpactByAcmg = { all: { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 } }
+        for (const gene of fullGenes) {
+          for (const v of gene.variants || []) {
+            const impact = (v.impact || '').toUpperCase()
+            const acmg = v.acmg_class || 'Unknown'
+            if (impact in computed.all) {
+              computed.all[impact as keyof typeof computed.all] += 1
+              if (!computed[acmg]) {
+                computed[acmg] = { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 }
+              }
+              computed[acmg][impact as keyof typeof computed.all] += 1
+            }
+          }
+        }
+
         setAllGenes(fullGenes)
         setTotalVariants(totalVariantsCount)
+        setImpactByAcmg(computed)
         setLoadProgress(100)
         setIsLoading(false)
-        setVariantsFullyLoaded(true)
         return
       }
 
-      // ---- Phase 1 renders table NOW ----
+      // Summaries loaded - render immediately
       setAllGenes(summaryGenes)
       setTotalVariants(totalVariantsCount)
+      setImpactByAcmg(loadedImpactByAcmg)
       setLoadProgress(100)
-      setIsLoading(false)  // Loading screen clears, table visible
-
-      // ---- PHASE 2: Full variant data (77MB, background) ----
-      console.log('[VariantsResultsContext] Phase 2: Background loading full variant data...')
-      setIsLoadingFullData(true)
-      setFullDataProgress(0)
-
-      const abortController = new AbortController()
-      bgAbortRef.current = abortController
-
-      try {
-        const fullGenes: GeneAggregated[] = []
-
-        await streamNdjson(
-          `${API_BASE_URL}/sessions/${sessionId}/variants/stream/by-gene`,
-          (meta) => {
-            console.log(`[VariantsResultsContext] Phase 2: streaming ${meta.total_genes} genes with variants...`)
-          },
-          (gene) => {
-            if (abortController.signal.aborted) return
-            fullGenes.push(gene)
-          },
-          (loaded, total) => {
-            if (abortController.signal.aborted) return
-            const progress = total > 0 ? Math.round((loaded / total) * 100) : 0
-            setFullDataProgress(progress)
-          },
-        )
-
-        if (!abortController.signal.aborted) {
-          // One single state update: replace summaries with full data
-          console.log(`[VariantsResultsContext] Phase 2 complete: ${fullGenes.length} genes with variants`)
-          setAllGenes(fullGenes)
-          setVariantsFullyLoaded(true)
-          setIsLoadingFullData(false)
-          setFullDataProgress(100)
-        }
-      } catch (bgErr) {
-        if (!abortController.signal.aborted) {
-          console.error('[VariantsResultsContext] Phase 2 failed:', bgErr)
-          setIsLoadingFullData(false)
-          // Table still works with summaries, just no variant expansion
-        }
-      }
+      setIsLoading(false)
 
     } catch (err) {
       console.error('[VariantsResultsContext] Loading failed:', err)
@@ -382,9 +327,37 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
     }
   }, [])
 
+  // ============================================================
+  // Load variants for a single gene (on-demand, <50ms)
+  // ============================================================
+  const loadGeneVariants = useCallback(async (sid: string, geneSymbol: string) => {
+    try {
+      const url = API_BASE_URL + '/sessions/' + sid + '/variants/by-gene/' + encodeURIComponent(geneSymbol)
+      const response = await fetch(url)
+
+      if (!response.ok) {
+        console.error('[VariantsResultsContext] Failed to load variants for ' + geneSymbol)
+        return
+      }
+
+      const data = await response.json()
+      const variants = data.variants || []
+
+      // Update the specific gene in allGenes with loaded variants
+      setAllGenes(prev =>
+        prev.map(g =>
+          g.gene_symbol === geneSymbol
+            ? { ...g, variants }
+            : g
+        )
+      )
+    } catch (err) {
+      console.error('[VariantsResultsContext] Gene variants load error:', err)
+    }
+  }, [])
+
   // Clear variants
   const clearVariants = useCallback(() => {
-    if (bgAbortRef.current) bgAbortRef.current.abort()
     clearState()
   }, [clearState])
 
@@ -392,22 +365,6 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
 
   const filterByGene = useCallback((geneSymbol: string) => {
     return allGenes.filter(g => g.gene_symbol === geneSymbol)
-  }, [allGenes])
-
-  const filterByAcmg = useCallback((acmgClass: string) => {
-    return allGenes.filter(g =>
-      g.variants && g.variants.length > 0
-        ? g.variants.some(v => v.acmg_class === acmgClass)
-        : g.best_acmg_class === acmgClass
-    )
-  }, [allGenes])
-
-  const filterByImpact = useCallback((impact: string) => {
-    return allGenes.filter(g =>
-      g.variants && g.variants.length > 0
-        ? g.variants.some(v => v.impact === impact)
-        : g.best_impact === impact
-    )
   }, [allGenes])
 
   const searchGenes = useCallback((query: string) => {
@@ -436,17 +393,14 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       value={{
         allGenes,
         totalVariants,
+        impactByAcmg,
         isLoading,
         loadProgress,
-        isLoadingFullData,
-        fullDataProgress,
-        variantsFullyLoaded,
         error,
         loadAllVariants,
+        loadGeneVariants,
         clearVariants,
         filterByGene,
-        filterByAcmg,
-        filterByImpact,
         searchGenes,
         totalGenes,
         pathogenicCount,

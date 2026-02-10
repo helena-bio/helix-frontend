@@ -171,6 +171,10 @@ export interface GeneAggregated {
   vus_count: number
   likely_benign_count: number
   benign_count: number
+  high_impact_count: number
+  moderate_impact_count: number
+  low_impact_count: number
+  modifier_impact_count: number
   variants: VariantInGene[]
 }
 
@@ -197,6 +201,39 @@ export interface GeneAggregatedFilters {
   gene_symbol?: string
   page?: number
   page_size?: number
+}
+
+/**
+ * Impact counts keyed by ACMG class (pre-computed cross-matrix)
+ * Keys: all, Pathogenic, Likely Pathogenic, Uncertain Significance, etc.
+ */
+export interface ImpactByAcmg {
+  [acmgClass: string]: {
+    HIGH: number
+    MODERATE: number
+    LOW: number
+    MODIFIER: number
+  }
+}
+
+/**
+ * Metadata from gene summaries stream (first NDJSON line)
+ */
+export interface SummaryMetadata {
+  total_genes: number
+  total_variants: number
+  impact_by_acmg: ImpactByAcmg
+  session_id: string
+  timestamp: number
+}
+
+/**
+ * Response from /variants/by-gene/{gene_symbol} on-demand endpoint
+ */
+export interface GeneVariantsResponse {
+  gene_symbol: string
+  variant_count: number
+  variants: VariantInGene[]
 }
 
 export * from "./literature.types"

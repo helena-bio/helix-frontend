@@ -6,6 +6,11 @@
  * Card-based layout with LOCAL filtering (from context).
  * Data is pre-loaded in VariantsResultsContext via streaming in ClinicalAnalysis.
  *
+ * Summary-first architecture:
+ * - Gene cards render instantly from summaries (~50-100KB)
+ * - Variants loaded on-demand when user expands a gene (<50ms)
+ * - Impact counts from pre-computed cross-matrix (no variant iteration)
+ *
  * Features:
  * - Card per gene (not table rows)
  * - Lazy loading for VISUALIZATION only (not data fetching)
@@ -64,28 +69,48 @@ const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
   return filter
 }
 
-// Check if variant matches ACMG filter
+// Check if gene matches filters using SUMMARY COUNTS (no variant iteration)
+const geneMatchesFilters = (
+  gene: GeneAggregated,
+  acmgFilter: ACMGFilter,
+  impactFilter: ImpactFilter
+): boolean => {
+  // ACMG filter check using summary counts
+  if (acmgFilter !== 'all') {
+    const acmgClass = acmgFilterToBackend(acmgFilter)
+    let hasAcmg = false
+    if (acmgClass === 'Pathogenic') hasAcmg = gene.pathogenic_count > 0
+    else if (acmgClass === 'Likely Pathogenic') hasAcmg = gene.likely_pathogenic_count > 0
+    else if (acmgClass === 'Uncertain Significance') hasAcmg = gene.vus_count > 0
+    else if (acmgClass === 'Likely Benign') hasAcmg = gene.likely_benign_count > 0
+    else if (acmgClass === 'Benign') hasAcmg = gene.benign_count > 0
+    if (!hasAcmg) return false
+  }
+
+  // Impact filter check using summary counts
+  if (impactFilter !== 'all') {
+    let hasImpact = false
+    if (impactFilter === 'HIGH') hasImpact = gene.high_impact_count > 0
+    else if (impactFilter === 'MODERATE') hasImpact = gene.moderate_impact_count > 0
+    else if (impactFilter === 'LOW') hasImpact = gene.low_impact_count > 0
+    else if (impactFilter === 'MODIFIER') hasImpact = gene.modifier_impact_count > 0
+    if (!hasImpact) return false
+  }
+
+  return true
+}
+
+// Check if variant matches ACMG filter (used for visible variants in expanded gene)
 const variantMatchesACMG = (variant: VariantInGene, filter: ACMGFilter): boolean => {
   if (filter === 'all') return true
   const acmgClass = acmgFilterToBackend(filter)
   return variant.acmg_class === acmgClass
 }
 
-// Check if variant matches Impact filter
+// Check if variant matches Impact filter (used for visible variants in expanded gene)
 const variantMatchesImpact = (variant: VariantInGene, filter: ImpactFilter): boolean => {
   if (filter === 'all') return true
   return variant.impact === filter
-}
-
-// Check if gene has any variant matching filters
-const geneMatchesFilters = (
-  gene: GeneAggregated,
-  acmgFilter: ACMGFilter,
-  impactFilter: ImpactFilter
-): boolean => {
-  return gene.variants.some(v =>
-    variantMatchesACMG(v, acmgFilter) && variantMatchesImpact(v, impactFilter)
-  )
 }
 
 // ============================================================================
@@ -224,16 +249,34 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 interface GeneSectionProps {
   gene: GeneAggregated
   rank: number
+  sessionId: string
   onViewVariantDetails: (variantIdx: number) => void
+  onLoadVariants: (geneSymbol: string) => Promise<void>
   acmgFilter: ACMGFilter
   impactFilter: ImpactFilter
 }
 
-function GeneSection({ gene, rank, onViewVariantDetails, acmgFilter, impactFilter }: GeneSectionProps) {
+function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVariants, acmgFilter, impactFilter }: GeneSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isLoadingVariants, setIsLoadingVariants] = useState(false)
 
-  // Filter variants to show based on active filters
+  const hasVariants = gene.variants && gene.variants.length > 0
+
+  const handleExpand = async () => {
+    const willExpand = !isExpanded
+    setIsExpanded(willExpand)
+
+    // Lazy load variants on first expand
+    if (willExpand && !hasVariants) {
+      setIsLoadingVariants(true)
+      await onLoadVariants(gene.gene_symbol)
+      setIsLoadingVariants(false)
+    }
+  }
+
+  // Filter loaded variants based on active filters
   const visibleVariants = useMemo(() => {
+    if (!gene.variants) return []
     return gene.variants.filter(v =>
       variantMatchesACMG(v, acmgFilter) && variantMatchesImpact(v, impactFilter)
     )
@@ -243,7 +286,7 @@ function GeneSection({ gene, rank, onViewVariantDetails, acmgFilter, impactFilte
     <Card className="gap-0">
       <CardHeader
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleExpand}
       >
         <div className="flex items-center justify-between">
           {/* Left: Rank + Gene + ACMG + Tier + Variants */}
@@ -261,7 +304,7 @@ function GeneSection({ gene, rank, onViewVariantDetails, acmgFilter, impactFilte
               </Badge>
             )}
             <Badge variant="secondary" className="text-sm">
-              {visibleVariants.length} variant{visibleVariants.length !== 1 ? 's' : ''}
+              {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
             </Badge>
             {gene.best_impact && (
               <Badge variant="outline" className={`text-sm ${getImpactColor(gene.best_impact)}`}>
@@ -294,13 +337,24 @@ function GeneSection({ gene, rank, onViewVariantDetails, acmgFilter, impactFilte
 
       {isExpanded && (
         <CardContent className="space-y-3">
-          {visibleVariants.map((variant) => (
-            <VariantCard
-              key={variant.variant_idx}
-              variant={variant}
-              onViewDetails={onViewVariantDetails}
-            />
-          ))}
+          {isLoadingVariants ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mr-2" />
+              <span className="text-sm text-muted-foreground">Loading variants...</span>
+            </div>
+          ) : visibleVariants.length > 0 ? (
+            visibleVariants.map((variant) => (
+              <VariantCard
+                key={variant.variant_idx}
+                variant={variant}
+                onViewDetails={onViewVariantDetails}
+              />
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No variants match the active filters
+            </p>
+          )}
         </CardContent>
       )}
     </Card>
@@ -361,10 +415,12 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const {
     allGenes,
     totalVariants,
+    impactByAcmg,
     isLoading,
     pathogenicCount,
     likelyPathogenicCount,
     vusCount,
+    loadGeneVariants,
   } = useVariantsResults()
 
   // Local state for filters
@@ -391,11 +447,11 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     if (node) observerRef.current.observe(node)
   }, [])
 
-  // LOCAL FILTERING (instant, no API calls)
+  // LOCAL FILTERING using summary counts (instant, no variant iteration)
   const filteredGenes = useMemo(() => {
     let filtered = allGenes
 
-    // Filter genes that have at least one variant matching both filters
+    // Filter genes by summary counts
     filtered = filtered.filter(g => geneMatchesFilters(g, acmgFilter, impactFilter))
 
     // Filter by gene name
@@ -421,7 +477,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
 
   // Calculate ACMG counts from ALL genes (always total counts)
   const acmgCounts = useMemo(() => {
-    // Calculate likely_benign and benign from allGenes
     const likely_benign = allGenes.reduce((sum, g) => sum + g.likely_benign_count, 0)
     const benign = allGenes.reduce((sum, g) => sum + g.benign_count, 0)
 
@@ -435,25 +490,23 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     }
   }, [allGenes, totalVariants, pathogenicCount, likelyPathogenicCount, vusCount])
 
-  // Calculate Impact counts from FILTERED variants
+  // Impact counts from pre-computed cross-matrix (no variant iteration)
   const impactCounts = useMemo(() => {
-    const counts = { high: 0, moderate: 0, low: 0, modifier: 0 }
+    // Determine which ACMG key to use from cross-matrix
+    let acmgKey = 'all'
+    if (acmgFilter !== 'all') {
+      acmgKey = acmgFilterToBackend(acmgFilter) || 'all'
+    }
 
-    // Count impacts from variants that match ACMG filter
-    allGenes.forEach(gene => {
-      gene.variants.forEach(variant => {
-        // Only count variants that match the active ACMG filter
-        if (!variantMatchesACMG(variant, acmgFilter)) return
+    const matrix = impactByAcmg[acmgKey] || impactByAcmg['all'] || { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 }
 
-        if (variant.impact === 'HIGH') counts.high++
-        else if (variant.impact === 'MODERATE') counts.moderate++
-        else if (variant.impact === 'LOW') counts.low++
-        else if (variant.impact === 'MODIFIER') counts.modifier++
-      })
-    })
-
-    return counts
-  }, [allGenes, acmgFilter])
+    return {
+      high: matrix.HIGH || 0,
+      moderate: matrix.MODERATE || 0,
+      low: matrix.LOW || 0,
+      modifier: matrix.MODIFIER || 0,
+    }
+  }, [impactByAcmg, acmgFilter])
 
   // Handle filter clicks
   const handleAcmgClick = (filter: ACMGFilter) => {
@@ -464,6 +517,11 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const handleImpactClick = (filter: ImpactFilter) => {
     setImpactFilter(prev => prev === filter ? 'all' : filter)
   }
+
+  // Load gene variants handler
+  const handleLoadGeneVariants = useCallback(async (geneSymbol: string) => {
+    await loadGeneVariants(sessionId, geneSymbol)
+  }, [sessionId, loadGeneVariants])
 
   // View variant detail
   if (selectedVariantIdx !== null) {
@@ -637,7 +695,9 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
               key={gene.gene_symbol}
               gene={gene}
               rank={idx + 1}
+              sessionId={sessionId}
               onViewVariantDetails={setSelectedVariantIdx}
+              onLoadVariants={handleLoadGeneVariants}
               acmgFilter={acmgFilter}
               impactFilter={impactFilter}
             />

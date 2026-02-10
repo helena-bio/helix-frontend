@@ -267,3 +267,14 @@ export async function getVariantStatistics(
 
   return get(url)
 }
+
+/**
+ * Get variants for a single gene (on-demand, for lazy gene expansion)
+ * Direct DuckDB query, typically <50ms
+ */
+export async function getGeneVariants(
+  sessionId: string,
+  geneSymbol: sring
+): Promise<{ gene_symbol: string; variant_count: number; variants: any[] }> {
+  return get(`/sessions/${sessionId}/variants/by-gene/${encodeURIComponent(geneSymbol)}`)
+}
