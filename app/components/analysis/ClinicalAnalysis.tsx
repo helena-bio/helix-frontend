@@ -380,7 +380,7 @@ export function ClinicalAnalysis({
 
   if (errorMessage) {
     return (
-      <div className="flex items-center justify-center min-h-[600px] p-8">
+      <div className="flex justify-center pt-12 p-8">
         <Card className="w-full max-w-md border-destructive">
           <CardContent className="pt-6">
             <div className="text-center space-y-6">
@@ -403,7 +403,7 @@ export function ClinicalAnalysis({
 
   if (progress === 100 && !currentStage) {
     return (
-      <div className="flex items-center justify-center min-h-[600px] p-8">
+      <div className="flex justify-center pt-12 p-8">
         <Card className="w-full max-w-md border-green-500">
           <CardContent className="pt-6">
             <div className="text-center space-y-6">
@@ -428,7 +428,7 @@ export function ClinicalAnalysis({
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[600px] p-8">
+    <div className="flex justify-center pt-12 p-8">
       <div className="w-full max-w-2xl space-y-4">
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} />
