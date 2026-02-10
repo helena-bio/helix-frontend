@@ -26,12 +26,12 @@
  * - Layout picks up searchParams change and updates context
  */
 
+import { Loader2 } from 'lucide-react'
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Header } from '@/components/navigation/Header'
 import { Sidebar } from '@/components/navigation/Sidebar'
 import { SplitView } from '@/components/layout/SplitView'
-import { HelixLoader } from '@/components/ui/helix-loader'
 import {
   ClinicalInterpretationProvider,
   ClinicalProfileProvider,
@@ -121,8 +121,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
   if (isAnalysisRoute && !variantsReady) {
     return (
       <div className="flex-1 h-full flex flex-col items-center justify-center bg-background">
-        <HelixLoader size="md" />
-        <p className="text-lg text-muted-foreground mt-4">Loading case...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-md text-muted-foreground mt-3">Loading case...</p>
       </div>
     )
   }
