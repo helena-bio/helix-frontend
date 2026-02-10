@@ -840,7 +840,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                     <AlertCircle className="h-4 w-4 text-orange-600" />
                     <AlertDescription className="text-md">
                       <p className="mb-2">
-                        A case with this filename already exists: <strong>{duplicateSession.label}</strong>
+                        This file was already uploaded in case: <strong>{duplicateSession.label}</strong>
                       </p>
                       <div className="flex gap-2">
                         <Button
