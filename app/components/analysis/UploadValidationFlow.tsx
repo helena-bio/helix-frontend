@@ -37,7 +37,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelixLoader } from '@/components/ui/helix-loader'
 import { useUploadVCF, useStartValidation } from '@/hooks/mutations'
+import { useCases } from '@/hooks/queries/use-cases'
 import { useTaskStatus } from '@/hooks/queries'
+import { useRouter } from 'next/navigation'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useFileCompression } from '@/hooks/useFileCompression'
 import { toast } from 'sonner'
@@ -77,6 +79,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const [uploadProgress, setUploadProgress] = useState(0)
   const [validationProgress, setValidationProgress] = useState(0)
   const [wasCompressed, setWasCompressed] = useState(false) // Track if file was auto-compressed
+  const [duplicateSession, setDuplicateSession] = useState<{ id: string; label: string } | null>(null)
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -91,6 +94,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
 
   // Journey context
   const { nextStep } = useJourney()
+  const router = useRouter()
+  const { skipToAnalysis } = useJourney()
+  const { data: casesData } = useCases()
 
   // Poll task status when validating
   const { data: taskStatus } = useTaskStatus(taskId, {
@@ -198,6 +204,28 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     return null
   }, [])
 
+  // Check for duplicate filename among existing cases
+  const checkDuplicate = useCallback((fileName: string) => {
+    if (!casesData?.sessions) return null
+    const match = casesData.sessions.find(
+      (s) => s.original_filename === fileName && s.status === 'completed'
+    )
+    if (match) {
+      return {
+        id: match.id,
+        label: match.case_label || match.original_filename || match.id.slice(0, 8),
+      }
+    }
+    return null
+  }, [casesData])
+
+  // Open existing duplicate case
+  const handleOpenExisting = useCallback(() => {
+    if (!duplicateSession) return
+    skipToAnalysis()
+    router.push('/analysis?session=' + duplicateSession.id)
+  }, [duplicateSession, skipToAnalysis, router])
+
   // Drag & Drop handlers
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -242,9 +270,10 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       setSelectedFile(file)
       setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
       setValidationError(null)
+      setDuplicateSession(checkDuplicate(file.name))
       toast.success('File selected', { description: file.name })
     }
-  }, [validateFile])
+  }, [validateFile, checkDuplicate])
 
   // File input handler
   const handleFileSelect = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -262,9 +291,10 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
       setSelectedFile(file)
       setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
       setValidationError(null)
+      setDuplicateSession(checkDuplicate(file.name))
       toast.success('File selected', { description: file.name })
     }
-  }, [validateFile])
+  }, [validateFile, checkDuplicate])
 
   const handleBrowseClick = useCallback(() => {
     fileInputRef.current?.click()
@@ -277,6 +307,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setCompressionProgress(0)
     setUploadProgress(0)
     setWasCompressed(false)
+    setDuplicateSession(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -462,6 +493,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setUploadProgress(0)
     setValidationProgress(0)
     setWasCompressed(false)
+    setDuplicateSession(null)
     uploadMutation.reset()
     startValidationMutation.reset()
     if (fileInputRef.current) {
@@ -800,6 +832,36 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                       maxLength={200}
                     />
                   </div>
+                )}
+
+                {/* Duplicate file warning */}
+                {duplicateSession && !isProcessing && (
+                  <Alert className="w-full max-w-sm border-orange-300 bg-orange-50 text-orange-900">
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                    <AlertDescription className="text-md">
+                      <p className="mb-2">
+                        A case with this filename already exists: <strong>{duplicateSession.label}</strong>
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-sm border-orange-300 hover:bg-orange-100"
+                          onClick={(e) => { e.stopPropagation(); handleOpenExisting() }}
+                        >
+                          Open Existing
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-sm text-orange-700"
+                          onClick={(e) => { e.stopPropagation(); setDuplicateSession(null) }}
+                        >
+                          Upload Anyway
+                        </Button>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {/* Progress bar - only during processing */}
