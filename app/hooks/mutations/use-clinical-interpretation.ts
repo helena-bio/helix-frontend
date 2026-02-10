@@ -6,6 +6,7 @@ import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useSession } from '@/contexts/SessionContext'
+import { isTier1, isTier2, isTierIF } from '@/types/tiers.types'
 
 interface ClinicalInterpretationParams {
   sessionId: string
@@ -21,6 +22,7 @@ export function useClinicalInterpretation() {
   const { getCompleteProfile } = useClinicalProfileContext()
   const {
     aggregatedResults,
+    loadPhenotypeGeneVariants,
     tier1Count,
     tier2Count,
     incidentalFindingsCount,
@@ -45,6 +47,28 @@ export function useClinicalInterpretation() {
         throw new Error('Session ID is required')
       }
 
+      // Filter clinically relevant genes: Tier 1, Tier 2, Incidental Findings
+      const clinicallyRelevantGenes = aggregatedResults?.filter(g =>
+        isTier1(g.best_tier) || isTier2(g.best_tier) || isTierIF(g.best_tier)
+      ) ?? []
+
+      // Load variant-level data for all clinically relevant genes
+      // Uses cached data if already loaded, fetches from backend otherwise
+      if (clinicallyRelevantGenes.length > 0 && sessionId) {
+        const genesToLoad = clinicallyRelevantGenes.filter(g => !g.variants || g.variants.length === 0)
+        if (genesToLoad.length > 0) {
+          console.log(`[ClinicalInterpretation] Loading variants for ${genesToLoad.length} genes`)
+          await Promise.all(
+            genesToLoad.map(g => loadPhenotypeGeneVariants(sessionId, g.gene_symbol))
+          )
+        }
+      }
+
+      // Re-read after loading (context may have updated)
+      const genesWithVariants = aggregatedResults?.filter(g =>
+        isTier1(g.best_tier) || isTier2(g.best_tier) || isTierIF(g.best_tier)
+      ) ?? []
+
       // Build complete payload with all 4 contexts
       const payload = {
         session_id: sessionId,
@@ -57,13 +81,35 @@ export function useClinicalInterpretation() {
           tier_3_count: tier3Count,
           tier_4_count: tier4Count,
           variants_analyzed: variantsAnalyzed,
-          top_matched_genes: aggregatedResults.slice(0, 20).map(g => ({
+          clinically_relevant_genes: genesWithVariants.map(g => ({
             gene_symbol: g.gene_symbol,
             tier: g.best_tier,
             clinical_score: g.best_clinical_score,
             phenotype_score: g.best_phenotype_score,
             variant_count: g.variant_count,
             matched_hpo_terms: g.best_matched_terms ?? 0,
+            tier_1_count: g.tier_1_count,
+            tier_2_count: g.tier_2_count,
+            incidental_count: g.incidental_count,
+            variants: g.variants?.map(v => ({
+              variant_idx: v.variant_idx,
+              clinical_tier: v.clinical_tier,
+              acmg_class: v.acmg_class,
+              impact: v.impact,
+              consequence: v.consequence,
+              gnomad_af: v.gnomad_af,
+              phenotype_match_score: v.phenotype_match_score,
+              clinical_priority_score: v.clinical_priority_score,
+              matched_terms: v.matched_terms,
+              hgvs_protein: v.hgvs_protein,
+              hgvs_cdna: v.hgvs_cdna,
+              chromosome: v.chromosome,
+              position: v.position,
+              reference_allele: v.reference_allele,
+              alternate_allele: v.alternate_allele,
+              genotype: v.genotype,
+              rsid: v.rsid,
+            })) ?? [],
           })),
         } : null,
         screening_results_context: screeningResponse ? {

@@ -16,6 +16,7 @@ import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent, LiteratureResultEvent } from '@/lib/api/ai'
+import { isTier1, isTier2, isTierIF } from '@/types/tiers.types'
 
 // ============================================================================
 // MESSAGE COMPONENTS
@@ -410,15 +411,33 @@ export function ChatPanel() {
           incidental_findings_count: phenotypeResults.incidentalFindingsCount,
           tier_3_count: phenotypeResults.tier3Count,
           tier_4_count: phenotypeResults.tier4Count,
-          top_matched_genes: phenotypeResults.aggregatedResults.slice(0, 20).map(g => ({
-            gene_symbol: g.gene_symbol,
-            rank: g.rank,
-            clinical_score: g.best_clinical_score,
-            phenotype_score: g.best_phenotype_score,
-            tier: g.best_tier,
-            variant_count: g.variant_count,
-            matched_hpo_terms: g.best_matched_terms ?? 0,
-          })),
+          clinically_relevant_genes: phenotypeResults.aggregatedResults
+            .filter(g => isTier1(g.best_tier) || isTier2(g.best_tier) || isTierIF(g.best_tier))
+            .map(g => ({
+              gene_symbol: g.gene_symbol,
+              rank: g.rank,
+              clinical_score: g.best_clinical_score,
+              phenotype_score: g.best_phenotype_score,
+              tier: g.best_tier,
+              variant_count: g.variant_count,
+              matched_hpo_terms: g.best_matched_terms ?? 0,
+              tier_1_count: g.tier_1_count,
+              tier_2_count: g.tier_2_count,
+              incidental_count: g.incidental_count,
+              variants: g.variants?.map(v => ({
+                variant_idx: v.variant_idx,
+                clinical_tier: v.clinical_tier,
+                acmg_class: v.acmg_class,
+                impact: v.impact,
+                consequence: v.consequence,
+                gnomad_af: v.gnomad_af,
+                hgvs_protein: v.hgvs_protein,
+                hgvs_cdna: v.hgvs_cdna,
+                chromosome: v.chromosome,
+                position: v.position,
+                rsid: v.rsid,
+              })) ?? null,
+            })),
         }
       }
 
