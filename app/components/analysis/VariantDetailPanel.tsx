@@ -64,7 +64,7 @@ const InfoRow = ({ label, value, mono = false, copyable = false }: { label: stri
             className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
             title="Copy to clipboard"
           >
-            <Copy className="h-3 w-3 text-muted-foreground" />
+            <Copy className="h-4 w-4 text-muted-foreground" />
           </button>
         )}
       </div>

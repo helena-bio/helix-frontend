@@ -30,6 +30,7 @@ import {
   Filter,
   ExternalLink,
   Info,
+  Copy,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -191,8 +192,8 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               <div className="flex items-center gap-1 min-w-0">
                 <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>{truncateSequence(variant.hgvs_protein, 40)}</p>
                 {variant.hgvs_protein && (
-                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
-                    <Copy className="h-3 w-3 text-muted-foreground" />
+                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
+                    <Copy className="h-4 w-4 text-muted-foreground" />
                   </button>
                 )}
               </div>
@@ -202,8 +203,8 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               <div className="flex items-center gap-1 min-w-0">
                 <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>{truncateSequence(variant.hgvs_cdna, 40)}</p>
                 {variant.hgvs_cdna && (
-                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
-                    <Copy className="h-3 w-3 text-muted-foreground" />
+                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
+                    <Copy className="h-4 w-4 text-muted-foreground" />
                   </button>
                 )}
               </div>
@@ -406,7 +407,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
                 onClick={(e) => e.stopPropagation()}
                 aria-label={`Info: ${label}`}
               >
-                <Info className="h-3.5 w-3.5" />
+                <Info className="h-4 w-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent className="text-sm max-w-xs">
