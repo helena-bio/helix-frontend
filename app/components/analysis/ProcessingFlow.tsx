@@ -31,7 +31,6 @@ import {
   BarChart3,
   Download,
   Dna,
-  CloudDownload
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PROCESSING_QUOTES } from '@/lib/constants/processing-quotes'
@@ -47,7 +46,6 @@ interface PipelineStage {
   name: string
   icon: React.ReactNode
   description: string
-  isFrontend?: boolean
 }
 
 // Backend stages (from Celery task)
@@ -96,16 +94,7 @@ const BACKEND_STAGES: PipelineStage[] = [
   },
 ]
 
-// Frontend stage (happens in browser after backend completes)
-const FRONTEND_STAGE: PipelineStage = {
-  id: 'frontend_loading',
-  name: 'Loading Into Memory',
-  icon: <CloudDownload className="h-4 w-4" />,
-  description: 'Loading variants into browser memory',
-  isFrontend: true,
-}
-
-type ProcessingPhase = 'backend' | 'frontend' | 'error'
+type ProcessingPhase = 'backend' | 'error'
 
 export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlowProps) {
   const [phase, setPhase] = useState<ProcessingPhase>('backend')
@@ -159,37 +148,26 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     if (taskStatus.successful) {
       frontendStartedRef.current = true
 
-      // Show success toast BEFORE starting frontend phase
-      toast.success('Backend processing complete', {
+      toast.success('Processing complete', {
         description: `${taskStatus.result?.variants_parsed?.toLocaleString() || 'Unknown'} variants processed`,
       })
 
-      // Start frontend streaming
-      const startFrontendLoading = async () => {
+      // Load summaries into memory (instant with summary-first architecture)
+      // then advance to next step
+      const finalize = async () => {
         try {
-          setPhase('frontend')
           await loadAllVariants(sessionId)
-
-          // Frontend complete - advance to next step
-          flushSync(() => {
-            nextStep() // processing -> profile
-          })
-
-          onComplete?.()
         } catch (error) {
-          console.error('[ProcessingFlow] Frontend loading failed:', error)
-          toast.error('Failed to load variants', {
-            description: 'Continuing anyway - data will load on demand'
-          })
-          // Don't block - advance anyway
-          flushSync(() => {
-            nextStep()
-          })
-          onComplete?.()
+          console.warn('[ProcessingFlow] Pre-load failed, will load on demand')
         }
+
+        flushSync(() => {
+          nextStep() // processing -> profile
+        })
+        onComplete?.()
       }
 
-      startFrontendLoading()
+      finalize()
     } else if (taskStatus.failed) {
       const error = taskStatus.info?.error || 'Processing failed'
       setPhase('error')
@@ -357,64 +335,4 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     )
   }
 
-  // Frontend Loading View
-  return (
-    <div className="flex items-center justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-2xl space-y-4">
-        <div className="flex items-center justify-center gap-4">
-          <HelixLoader size="xs" speed={3} />
-          <div>
-            <h1 className="text-3xl font-bold">Loading Variants</h1>
-            <p className="text-base text-muted-foreground">
-              Preparing data for analysis
-            </p>
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Progress value={100} className="h-2" />
-                <div className="flex justify-between text-base text-muted-foreground">
-                  <span>Loading into memory</span>
-                  <span>Please wait...</span>
-                </div>
-              </div>
-
-              {/* Show all backend stages as complete */}
-              <div className="space-y-3">
-                {BACKEND_STAGES.map((stage) => (
-                  <div
-                    key={stage.id}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-background"
-                  >
-                    <div className="flex-shrink-0 p-2 rounded-full bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400">
-                      <CheckCircle2 className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-medium">{stage.name}</p>
-                      <p className="text-md text-muted-foreground">{stage.description}</p>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Frontend stage - active */}
-                <div className="flex items-start gap-3 p-3 rounded-lg border bg-primary/5 border-primary/50">
-                  <div className="flex-shrink-0 p-2 rounded-full bg-primary/10 text-primary">
-                    {FRONTEND_STAGE.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium">{FRONTEND_STAGE.name}</p>
-                    <p className="text-md text-muted-foreground">{FRONTEND_STAGE.description}</p>
-                  </div>
-                  <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
 }
