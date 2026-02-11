@@ -18,7 +18,6 @@ export interface ChatRequest {
   message: string
   conversation_id?: string
   session_id?: string
-  metadata?: Record<string, any>
 }
 
 export interface ChatResponse {

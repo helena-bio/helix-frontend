@@ -48,7 +48,6 @@ export function useAIChatStream() {
     message,
     conversation_id,
     session_id,
-    metadata,
     onConversationStarted,
     onToken,
     onQueryingStarted,
@@ -62,7 +61,6 @@ export function useAIChatStream() {
     message: string
     conversation_id?: string
     session_id?: string
-    metadata?: Record<string, any>
     onConversationStarted?: (conversationId: string) => void
     onToken: (token: string) => void
     onQueryingStarted?: () => void
@@ -78,7 +76,6 @@ export function useAIChatStream() {
         message,
         conversation_id,
         session_id,
-        metadata,
       })
 
       for await (const event of stream) {

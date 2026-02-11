@@ -4,19 +4,13 @@ import { useState, useRef, useEffect, useCallback, memo } from 'react'
 import { Send, Square, Sparkles, Database, BookOpen, ExternalLink, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
-import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
-import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
-import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
-import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useClinicalInterpretation as useClinicalInterpretationContext } from '@/contexts/ClinicalInterpretationContext'
-import { useVariantStatistics } from '@/hooks/queries'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { useClinicalInterpretation } from '@/hooks/mutations/use-clinical-interpretation'
 import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
 import type { Message } from '@/types/ai.types'
 import type { QueryResultEvent, LiteratureResultEvent } from '@/lib/api/ai'
-import { isTier1, isTier2, isTierIF } from '@/types/tiers.types'
 
 // ============================================================================
 // MESSAGE COMPONENTS
@@ -213,7 +207,6 @@ export function ChatPanel() {
 
   // Track current streaming message ID for multi-round support
   const currentStreamingIdRef = useRef<string | null>(null)
-
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -224,22 +217,8 @@ export function ChatPanel() {
     openDetails,
   } = useSession()
 
-  // Get complete clinical profile
-  const { getCompleteProfile } = useClinicalProfileContext()
-
-  // Safe context access - these providers are only available in analysis mode
-  const phenotypeResults = usePhenotypeResults()
-  const screeningResults = useScreeningResults()
-  const literatureResults = useLiteratureResults()
-
   // Get clinical interpretation context with setIsGenerating
   const { setInterpretation, setIsGenerating, hasInterpretation } = useClinicalInterpretationContext()
-
-  // Get variant statistics for analysis context
-  const { data: statistics } = useVariantStatistics(currentSessionId || '', undefined, {
-    enabled: !!currentSessionId,
-  })
-
   const { streamMessage } = useAIChatStream()
   const clinicalInterpretationMutation = useClinicalInterpretation()
 
@@ -262,10 +241,8 @@ export function ChatPanel() {
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight
-
       // Consider "at bottom" if within 100px
-      const atBottom = distanceFromBottom < 100
-      setIsAtBottom(atBottom)
+      setIsAtBottom(distanceFromBottom < 100)
     }
 
     container.addEventListener('scroll', handleScroll)
@@ -386,106 +363,10 @@ export function ChatPanel() {
     currentStreamingIdRef.current = streamingMessageId
 
     try {
-      // Build metadata with ALL available contexts
-      const metadata: Record<string, any> = {}
-
-      // 1. Complete Clinical Profile (demographics, ethnicity, clinical context, etc.)
-      const clinicalProfile = getCompleteProfile()
-      metadata.clinical_profile = {
-        demographics: clinicalProfile.demographics,
-        ethnicity: clinicalProfile.ethnicity,
-        clinical_context: clinicalProfile.clinical_context,
-        phenotype: clinicalProfile.phenotype,
-        reproductive: clinicalProfile.reproductive,
-        sample_info: clinicalProfile.sample_info,
-        consent: clinicalProfile.consent,
-      }
-
-      // 2. Matched Phenotype Results Context (from DuckDB)
-      if (phenotypeResults?.aggregatedResults && phenotypeResults.aggregatedResults.length > 0) {
-        metadata.matched_phenotype_context = {
-          total_genes: phenotypeResults.totalGenes,
-          variants_analyzed: phenotypeResults.variantsAnalyzed,
-          tier_1_count: phenotypeResults.tier1Count,
-          tier_2_count: phenotypeResults.tier2Count,
-          incidental_findings_count: phenotypeResults.incidentalFindingsCount,
-          tier_3_count: phenotypeResults.tier3Count,
-          tier_4_count: phenotypeResults.tier4Count,
-          clinically_relevant_genes: phenotypeResults.aggregatedResults
-            .filter(g => isTier1(g.best_tier) || isTier2(g.best_tier) || isTierIF(g.best_tier))
-            .map(g => {
-              // Variants are eagerly preloaded by PhenotypeResultsContext
-              const tierVariants = (g.variants ?? [])
-                .filter(v => isTier1(v.clinical_tier) || isTier2(v.clinical_tier) || isTierIF(v.clinical_tier))
-
-              return {
-                gene_symbol: g.gene_symbol,
-                rank: g.rank,
-                clinical_score: g.best_clinical_score,
-                phenotype_score: g.best_phenotype_score,
-                tier: g.best_tier,
-                variant_count: g.variant_count,
-                matched_hpo_terms: g.best_matched_terms ?? 0,
-                tier_1_count: g.tier_1_count,
-                tier_2_count: g.tier_2_count,
-                incidental_count: g.incidental_count,
-                tier_variants_count: tierVariants.length,
-                variants: tierVariants.map(v => ({
-                  variant_idx: v.variant_idx,
-                  clinical_tier: v.clinical_tier,
-                  acmg_class: v.acmg_class,
-                  impact: v.impact,
-                  consequence: v.consequence,
-                  gnomad_af: v.gnomad_af,
-                  hgvs_protein: v.hgvs_protein,
-                  hgvs_cdna: v.hgvs_cdna,
-                  chromosome: v.chromosome,
-                  position: v.position,
-                  rsid: v.rsid,
-                })),
-              }
-            }),
-        }
-      }
-
-      // 3. Screening Results Context
-      if (screeningResults?.screeningResponse) {
-        metadata.screening_results_context = {
-          summary: screeningResults.screeningResponse.summary,
-          tier1_count: screeningResults.screeningResponse.summary.tier1_count,
-          tier2_count: screeningResults.screeningResponse.summary.tier2_count,
-          tier3_count: screeningResults.screeningResponse.summary.tier3_count,
-          tier4_count: screeningResults.screeningResponse.summary.tier4_count,
-          top_tier1_variants: screeningResults.screeningResponse.tier1_results.slice(0, 5).map(v => ({
-            gene_symbol: v.gene_symbol,
-            tier: v.tier,
-            total_score: v.total_score,
-            clinical_actionability: v.clinical_actionability,
-          })),
-          top_tier2_variants: screeningResults.screeningResponse.tier2_results.slice(0, 5).map(v => ({
-            gene_symbol: v.gene_symbol,
-            tier: v.tier,
-            total_score: v.total_score,
-            clinical_actionability: v.clinical_actionability,
-          })),
-        }
-      }
-
-      // 4. Analysis Summary Context (variant statistics)
-      if (statistics) {
-        metadata.analysis_summary = {
-          total_variants: statistics.total_variants,
-          classification_breakdown: statistics.classification_breakdown,
-          impact_breakdown: statistics.impact_breakdown,
-          top_genes: statistics.top_genes.slice(0, 10),
-        }
-      }
-
       await streamMessage({
         message: userMessage.content,
         conversation_id: conversationId,
         session_id: currentSessionId || undefined,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
 
         onConversationStarted: (id: string) => {
           setConversationId(id)
