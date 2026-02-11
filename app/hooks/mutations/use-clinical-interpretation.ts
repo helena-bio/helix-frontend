@@ -1,90 +1,83 @@
 "use client"
 
+/**
+ * Clinical Interpretation Mutation Hook
+ *
+ * Two-phase flow:
+ * 1. POST /interpret/generate -- AI generates interpretation, saves .md to disk
+ * 2. GET  /interpret/{session_id} -- Read saved interpretation content
+ *
+ * Backend adapts interpretation depth based on available data:
+ * Level 1: Variants only
+ * Level 2: Variants + Screening
+ * Level 3: Variants + Phenotype (+/- Literature)
+ * Level 4: Full analysis (all modules)
+ */
+
 import { useMutation } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
 
-interface ClinicalInterpretationParams {
-  sessionId?: string
-  onStreamToken?: (token: string) => void
-  onComplete?: (fullText: string) => void
-  onError?: (error: Error) => void
-}
-
 const AI_API_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 
-export function useClinicalInterpretation() {
+export interface InterpretationMetadata {
+  status: string
+  session_id: string
+  level: number
+  level_label: string
+  content_length: number
+  modules_used: string[]
+}
+
+export interface InterpretationContent {
+  session_id: string
+  content: string
+  content_length: number
+}
+
+/**
+ * Generate clinical interpretation (saves to disk on backend).
+ * Returns metadata about the generated interpretation.
+ */
+export function useGenerateInterpretation() {
   const { currentSessionId } = useSession()
 
   return useMutation({
-    mutationFn: async (params: ClinicalInterpretationParams) => {
-      const {
-        sessionId = currentSessionId,
-        onStreamToken,
-        onComplete,
-        onError: onErrorCallback,
-      } = params
-
-      if (!sessionId) {
+    mutationFn: async (sessionId?: string): Promise<InterpretationMetadata> => {
+      const id = sessionId || currentSessionId
+      if (!id) {
         throw new Error('Session ID is required')
       }
 
-      // Backend loads all context server-side -- send only session_id
-      const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/stream`, {
+      const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/generate`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ session_id: sessionId }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: id }),
       })
 
       if (!response.ok) {
-        throw new Error(`Clinical interpretation failed: ${response.statusText}`)
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.detail || `Interpretation failed: ${response.statusText}`)
       }
 
-      if (!response.body) {
-        throw new Error('No response body')
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let fullText = ''
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n')
-
-          for (const line of lines) {
-            if (!line.trim() || !line.startsWith('data: ')) continue
-
-            const data = line.slice(6)
-            if (data === '[DONE]') continue
-
-            try {
-              const event = JSON.parse(data)
-
-              if (event.type === 'token' && event.content) {
-                fullText += event.content
-                onStreamToken?.(event.content)
-              } else if (event.type === 'complete') {
-                onComplete?.(fullText)
-              } else if (event.type === 'error') {
-                throw new Error(event.error || 'Streaming error')
-              }
-            } catch (parseError) {
-              console.warn('Failed to parse SSE event:', parseError)
-            }
-          }
-        }
-      } catch (error) {
-        onErrorCallback?.(error as Error)
-        throw error
-      }
-
-      return fullText
+      return response.json()
     },
   })
+}
+
+/**
+ * Fetch saved clinical interpretation content from disk.
+ * Returns null if no interpretation exists yet.
+ */
+export async function fetchInterpretation(sessionId: string): Promise<InterpretationContent | null> {
+  const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/${sessionId}`)
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch interpretation: ${response.statusText}`)
+  }
+
+  return response.json()
 }

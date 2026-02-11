@@ -24,6 +24,7 @@ import {
   Shield,
   Dna,
   BookOpen,
+  FileText,
   Settings,
   LogOut,
 } from 'lucide-react'
@@ -41,6 +42,7 @@ import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
+import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
 import { SettingsModal } from './SettingsModal'
 import { CasesList } from './CasesList'
 import { cn } from '@helix/shared/lib/utils'
@@ -70,6 +72,7 @@ export function Sidebar() {
   const { aggregatedResults: phenotypeData } = usePhenotypeResults()
   const { results: literatureData } = useLiteratureResults()
   const { status: screeningStatus } = useScreeningResults()
+  const { hasInterpretation } = useClinicalInterpretation()
 
   // Data presence overrides enablement flags for completed cases
   const hasPhenotypeData = !!(phenotypeData && phenotypeData.length > 0)
@@ -171,6 +174,12 @@ export function Sidebar() {
       name: 'Literature Analysis',
       icon: BookOpen,
       checkEnabled: () => isAnalysisComplete && (enablePhenotypeMatching || hasLiteratureData || hasPhenotypeData),
+    },
+    {
+      id: 'report',
+      name: 'Clinical Report',
+      icon: FileText,
+      checkEnabled: () => isAnalysisComplete && hasInterpretation,
     },
   ]
 

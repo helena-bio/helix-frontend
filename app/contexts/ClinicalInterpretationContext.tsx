@@ -1,73 +1,259 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+/**
+ * Clinical Interpretation Context
+ *
+ * Manages AI-generated clinical interpretation lifecycle:
+ * 1. generate(sessionId) - POST /interpret/generate (AI generates, saves .md to disk)
+ * 2. loadInterpretation(sessionId) - GET /interpret/{session_id} (read saved content)
+ *
+ * Backend adapts interpretation depth based on available data:
+ * Level 1: Variants only
+ * Level 2: Variants + Screening
+ * Level 3: Variants + Phenotype (+/- Literature)
+ * Level 4: Full analysis (all modules)
+ *
+ * Session cache: switching cases restores instantly (max 3 cached).
+ */
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useMemo,
+} from 'react'
+
+const AI_API_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
+const MAX_CACHED_SESSIONS = 3
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export type InterpretationStatus = 'idle' | 'generating' | 'loading' | 'success' | 'error'
+
+export interface InterpretationMetadata {
+  level: number
+  level_label: string
+  modules_used: string[]
+  content_length: number
+}
+
+interface CacheEntry {
+  content: string
+  metadata: InterpretationMetadata
+}
 
 interface ClinicalInterpretationContextValue {
-  interpretation: string | null
+  // State
+  status: InterpretationStatus
+  content: string | null
+  metadata: InterpretationMetadata | null
+  error: Error | null
+
+  // Derived
+  hasInterpretation: boolean
   isGenerating: boolean
-  setInterpretation: (text: string | ((prev: string | null) => string)) => void
-  setIsGenerating: (generating: boolean) => void
+
+  // Actions
+  generate: (sessionId: string) => Promise<void>
+  loadInterpretation: (sessionId: string) => Promise<boolean>
   clearInterpretation: () => void
-  hasInterpretation: () => boolean
-  isComplete: () => boolean
 }
+
+// ============================================================================
+// Context
+// ============================================================================
 
 const ClinicalInterpretationContext = createContext<ClinicalInterpretationContextValue | undefined>(
   undefined
 )
 
-interface ClinicalInterpretationProviderProps {
+interface ProviderProps {
   sessionId: string | null
   children: React.ReactNode
 }
 
-export function ClinicalInterpretationProvider({ sessionId, children }: ClinicalInterpretationProviderProps) {
-  const [interpretation, setInterpretationState] = useState<string | null>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
+export function ClinicalInterpretationProvider({ sessionId, children }: ProviderProps) {
+  const [status, setStatus] = useState<InterpretationStatus>('idle')
+  const [content, setContent] = useState<string | null>(null)
+  const [metadata, setMetadata] = useState<InterpretationMetadata | null>(null)
+  const [error, setError] = useState<Error | null>(null)
 
-  // Auto-cleanup when session changes or becomes null
-  useEffect(() => {
-    if (sessionId === null) {
-      console.log('[ClinicalInterpretationContext] Session cleared - resetting interpretation')
-      setInterpretationState(null)
-      setIsGenerating(false)
+  const currentSessionId = useRef<string | null>(null)
+  const sessionCache = useRef<Map<string, CacheEntry>>(new Map())
+
+  // Refs for cache saves
+  const contentRef = useRef<string | null>(null)
+  const metadataRef = useRef<InterpretationMetadata | null>(null)
+  useEffect(() => { contentRef.current = content }, [content])
+  useEffect(() => { metadataRef.current = metadata }, [metadata])
+
+  const saveToCache = useCallback((id: string, entry: CacheEntry) => {
+    sessionCache.current.set(id, entry)
+    if (sessionCache.current.size > MAX_CACHED_SESSIONS) {
+      const oldest = sessionCache.current.keys().next().value
+      if (oldest) sessionCache.current.delete(oldest)
     }
-  }, [sessionId])
+  }, [])
 
-  const setInterpretation = useCallback((text: string | ((prev: string | null) => string)) => {
-    if (typeof text === 'function') {
-      setInterpretationState((prev) => text(prev))
-    } else {
-      setInterpretationState(text)
+  const resetState = useCallback(() => {
+    setContent(null)
+    setMetadata(null)
+    setStatus('idle')
+    setError(null)
+  }, [])
+
+  // Session change: save current to cache, restore or reset
+  useEffect(() => {
+    const prevId = currentSessionId.current
+
+    if (sessionId === null) {
+      if (prevId && contentRef.current && metadataRef.current) {
+        saveToCache(prevId, { content: contentRef.current, metadata: metadataRef.current })
+      }
+      currentSessionId.current = null
+      resetState()
+      return
+    }
+
+    if (sessionId === currentSessionId.current) return
+
+    // Save previous
+    if (prevId && contentRef.current && metadataRef.current) {
+      saveToCache(prevId, { content: contentRef.current, metadata: metadataRef.current })
+    }
+
+    currentSessionId.current = sessionId
+
+    // Check cache
+    const cached = sessionCache.current.get(sessionId)
+    if (cached) {
+      console.log(`[ClinicalInterpretation] Cache hit: ${sessionId}`)
+      setContent(cached.content)
+      setMetadata(cached.metadata)
+      setStatus('success')
+      setError(null)
+      return
+    }
+
+    console.log(`[ClinicalInterpretation] Cache miss: ${sessionId}`)
+    resetState()
+  }, [sessionId, saveToCache, resetState])
+
+  // Generate interpretation (POST - AI generates + saves to disk)
+  const generate = useCallback(async (sid: string) => {
+    console.log(`[ClinicalInterpretation] Generating for session: ${sid}`)
+    setStatus('generating')
+    setError(null)
+    setContent(null)
+    setMetadata(null)
+
+    try {
+      const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.detail || `Generation failed: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+
+      console.log(`[ClinicalInterpretation] Generated: Level ${result.level} (${result.level_label}), ${result.content_length} chars`)
+
+      const meta: InterpretationMetadata = {
+        level: result.level,
+        level_label: result.level_label,
+        modules_used: result.modules_used,
+        content_length: result.content_length,
+      }
+      setMetadata(meta)
+
+      // Now load the content from disk
+      await loadContent(sid, meta)
+    } catch (err) {
+      console.error('[ClinicalInterpretation] Generation failed:', err)
+      setError(err as Error)
+      setStatus('error')
+      throw err
+    }
+  }, [])
+
+  // Load saved interpretation content (GET)
+  const loadContent = async (sid: string, meta: InterpretationMetadata) => {
+    setStatus('loading')
+
+    try {
+      const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/${sid}`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to load interpretation: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+
+      setContent(result.content)
+      setStatus('success')
+
+      console.log(`[ClinicalInterpretation] Loaded: ${result.content_length} chars`)
+    } catch (err) {
+      console.error('[ClinicalInterpretation] Load failed:', err)
+      setError(err as Error)
+      setStatus('error')
+      throw err
+    }
+  }
+
+  // Try to load existing interpretation (for case restore)
+  const loadInterpretation = useCallback(async (sid: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/${sid}`)
+
+      if (response.status === 404) {
+        return false
+      }
+
+      if (!response.ok) {
+        return false
+      }
+
+      const result = await response.json()
+      setContent(result.content)
+      setStatus('success')
+
+      console.log(`[ClinicalInterpretation] Restored from disk: ${result.content_length} chars`)
+      return true
+    } catch {
+      return false
     }
   }, [])
 
   const clearInterpretation = useCallback(() => {
-    console.log('[ClinicalInterpretationContext] Clearing interpretation')
-    setInterpretationState(null)
-    setIsGenerating(false)
-  }, [])
+    console.log('[ClinicalInterpretation] Clearing')
+    resetState()
+  }, [resetState])
 
-  const hasInterpretation = useCallback(() => {
-    return interpretation !== null && interpretation.length > 0
-  }, [interpretation])
-
-  const isComplete = useCallback(() => {
-    return hasInterpretation() && !isGenerating
-  }, [hasInterpretation, isGenerating])
+  const value = useMemo<ClinicalInterpretationContextValue>(() => ({
+    status,
+    content,
+    metadata,
+    error,
+    hasInterpretation: content !== null && content.length > 0,
+    isGenerating: status === 'generating' || status === 'loading',
+    generate,
+    loadInterpretation,
+    clearInterpretation,
+  }), [status, content, metadata, error, generate, loadInterpretation, clearInterpretation])
 
   return (
-    <ClinicalInterpretationContext.Provider
-      value={{
-        interpretation,
-        isGenerating,
-        setInterpretation,
-        setIsGenerating,
-        clearInterpretation,
-        hasInterpretation,
-        isComplete,
-      }}
-    >
+    <ClinicalInterpretationContext.Provider value={value}>
       {children}
     </ClinicalInterpretationContext.Provider>
   )
