@@ -1,85 +1,102 @@
 /**
- * Patient Phenotype API Client
+ * Clinical Profile API Client
  *
- * Functions for managing HPO terms and clinical notes.
- * Uses phenotype service endpoint: /sessions/{id}/phenotype
+ * Save/load complete clinical profile as NDJSON on disk.
+ * Endpoint: /sessions/{id}/clinical-profile (variant analysis service)
+ *
+ * Replaces the old postgres-based phenotype endpoints.
  */
 
-import type { HPOTerm } from "./hpo"
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
+import { get, post, del } from './client'
+import type { HPOTerm } from './hpo'
+import type {
+  Demographics,
+  EthnicityData,
+  ClinicalContext,
+  ReproductiveContext,
+  SampleInfo,
+  ConsentPreferences,
+} from '@/types/clinical-profile.types'
 
-export interface PatientPhenotype {
-  id: string
-  session_id: string
-  hpo_terms: HPOTerm[]
-  clinical_notes: string
-  term_count: number
+/**
+ * Modules enablement (persisted with profile)
+ */
+export interface ModulesData {
+  enable_screening: boolean
+  enable_phenotype_matching: boolean
 }
 
-export interface SavePhenotypeRequest {
+/**
+ * Phenotype data (HPO terms + clinical notes)
+ */
+export interface PhenotypeData {
   hpo_terms: HPOTerm[]
   clinical_notes?: string
 }
 
-export interface SavePhenotypeResponse extends PatientPhenotype {
-  message: string
+/**
+ * Full clinical profile request (sent to backend)
+ */
+export interface ClinicalProfileRequest {
+  demographics: Demographics
+  modules?: ModulesData
+  ethnicity?: EthnicityData
+  clinical_context?: ClinicalContext
+  reproductive?: ReproductiveContext
+  sample_info?: SampleInfo
+  consent?: ConsentPreferences
+  phenotype?: PhenotypeData
 }
 
 /**
- * Get patient phenotype (HPO terms) for a session
+ * Clinical profile as loaded from disk (backend response)
  */
-export async function getPatientPhenotype(sessionId: string): Promise<PatientPhenotype | null> {
-  const url = `${API_URL}/phenotype/api/sessions/${sessionId}/phenotype`
-  const response = await fetch(url)
-
-  if (response.status === 404) {
-    return null
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to get patient phenotype: ${response.statusText}`)
-  }
-
-  return response.json()
+export interface ClinicalProfileResponse {
+  session_id: string
+  saved_at: number
+  version: string
+  demographics?: Demographics
+  modules?: ModulesData
+  ethnicity?: EthnicityData
+  clinical_context?: ClinicalContext
+  reproductive?: ReproductiveContext
+  sample_info?: SampleInfo
+  consent?: ConsentPreferences
+  phenotype?: PhenotypeData
 }
 
 /**
- * Save patient phenotype (HPO terms) for a session
+ * Save complete clinical profile to disk (NDJSON)
  */
-export async function savePatientPhenotype(
+export async function saveClinicalProfile(
   sessionId: string,
-  data: SavePhenotypeRequest
-): Promise<SavePhenotypeResponse> {
-  const url = `${API_URL}/phenotype/api/sessions/${sessionId}/phenotype`
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to save patient phenotype: ${response.statusText}`)
-  }
-
-  return response.json()
+  data: ClinicalProfileRequest
+): Promise<{ message: string; session_id: string; saved_at: number }> {
+  return post(`/sessions/${sessionId}/clinical-profile`, data)
 }
 
 /**
- * Delete patient phenotype for a session
+ * Load clinical profile from disk (NDJSON)
+ * Returns null-like 404 handled by caller
  */
-export async function deletePatientPhenotype(
+export async function getClinicalProfile(
+  sessionId: string
+): Promise<ClinicalProfileResponse | null> {
+  try {
+    return await get<ClinicalProfileResponse>(`/sessions/${sessionId}/clinical-profile`)
+  } catch (error: any) {
+    if (error?.status === 404 || error?.message?.includes('404')) {
+      return null
+    }
+    throw error
+  }
+}
+
+/**
+ * Delete clinical profile from disk
+ */
+export async function deleteClinicalProfile(
   sessionId: string
 ): Promise<{ session_id: string; deleted: boolean; message: string }> {
-  const url = `${API_URL}/phenotype/api/sessions/${sessionId}/phenotype`
-  const response = await fetch(url, {
-    method: 'DELETE',
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to delete patient phenotype: ${response.statusText}`)
-  }
-
-  return response.json()
+  return del(`/sessions/${sessionId}/clinical-profile`)
 }

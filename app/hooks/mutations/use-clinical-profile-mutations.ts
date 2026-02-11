@@ -1,40 +1,43 @@
 /**
- * Mutation hooks for patient phenotype operations
+ * Mutation hooks for clinical profile operations.
+ * Saves/deletes complete clinical profile to/from disk (NDJSON).
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  savePatientPhenotype,
-  deletePatientPhenotype,
-  SavePhenotypeRequest,
-  SavePhenotypeResponse,
+  saveClinicalProfile,
+  deleteClinicalProfile,
+  type ClinicalProfileRequest,
 } from '@/lib/api/clinical-profile'
 
-interface SavePhenotypeParams {
+interface SaveClinicalProfileParams {
   sessionId: string
-  hpo_terms: Array<{ hpo_id: string; name: string; definition?: string }>
-  clinical_notes?: string
+  data: ClinicalProfileRequest
 }
 
-export function useSavePatientPhenotype() {
+export function useSaveClinicalProfile() {
   const queryClient = useQueryClient()
 
-  return useMutation<SavePhenotypeResponse, Error, SavePhenotypeParams>({
-    mutationFn: ({ sessionId, hpo_terms, clinical_notes }) =>
-      savePatientPhenotype(sessionId, { hpo_terms, clinical_notes }),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['patient-phenotype', data.session_id] })
+  return useMutation({
+    mutationFn: ({ sessionId, data }: SaveClinicalProfileParams) =>
+      saveClinicalProfile(sessionId, data),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['clinical-profile', variables.sessionId],
+      })
     },
   })
 }
 
-export function useDeletePatientPhenotype() {
+export function useDeleteClinicalProfile() {
   const queryClient = useQueryClient()
 
-  return useMutation<{ session_id: string; deleted: boolean; message: string }, Error, string>({
-    mutationFn: (sessionId) => deletePatientPhenotype(sessionId),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['patient-phenotype', data.session_id] })
+  return useMutation({
+    mutationFn: (sessionId: string) => deleteClinicalProfile(sessionId),
+    onSuccess: (_result, sessionId) => {
+      queryClient.invalidateQueries({
+        queryKey: ['clinical-profile', sessionId],
+      })
     },
   })
 }

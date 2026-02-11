@@ -3,8 +3,8 @@
 /**
  * ClinicalProfileEntry Component - Patient Clinical Profile
  *
- * Collects patient data and saves to context (LOCAL STATE + HPO in backend)
- * Shows ClinicalAnalysis after successful save
+ * Collects patient data and saves to disk via context (NDJSON).
+ * Shows ClinicalAnalysis after successful save.
  *
  * STRUCTURE:
  * 1. Demographics (Required) - age, sex
@@ -71,13 +71,21 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     addHPOTerm,
     removeHPOTerm,
     setClinicalNotes,
-    savePhenotype,
+    saveProfile,
     setDemographics,
     setEthnicity,
     setClinicalContext,
     setReproductive,
     setSampleInfo,
     setConsent,
+    // Loaded data from disk
+    demographics: loadedDemographics,
+    ethnicity: loadedEthnicity,
+    clinicalContext: loadedClinicalContext,
+    reproductive: loadedReproductive,
+    sampleInfo: loadedSampleInfo,
+    consent: loadedConsent,
+    isProfileLoaded,
   } = useClinicalProfileContext()
 
   // UI state
@@ -122,6 +130,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [localClinicalNotes, setLocalClinicalNotes] = useState(clinicalNotes)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const hasPrefilledRef = useRef(false)
   const debouncedQuery = useDebounce(searchQuery, 300)
 
   const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
@@ -130,6 +139,47 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   })
 
   const extractMutation = useHPOExtract()
+
+  // Pre-fill form from saved profile (disk -> context -> form)
+  useEffect(() => {
+    if (!isProfileLoaded || hasPrefilledRef.current) return
+    hasPrefilledRef.current = true
+
+    if (loadedDemographics.age_years) setAgeYears(String(loadedDemographics.age_years))
+    if (loadedDemographics.age_days) setAgeDays(String(loadedDemographics.age_days))
+    if (loadedDemographics.sex) setSex(loadedDemographics.sex)
+
+    if (loadedEthnicity?.primary) setEthnicityLocal(loadedEthnicity.primary as Ethnicity)
+    if (loadedEthnicity?.note) setEthnicityNote(loadedEthnicity.note)
+
+    if (loadedClinicalContext?.indication) setIndication(loadedClinicalContext.indication as Indication)
+    if (loadedClinicalContext?.indication_details) setIndicationDetails(loadedClinicalContext.indication_details)
+    if (loadedClinicalContext?.family_history?.has_affected_relatives) setHasFamilyHistory(true)
+    if (loadedClinicalContext?.family_history?.consanguinity) setHasConsanguinity(true)
+    if (loadedClinicalContext?.family_history?.details) setFamilyHistoryDetails(loadedClinicalContext.family_history.details)
+
+    if (loadedSampleInfo?.sample_type) setSampleTypeLocal(loadedSampleInfo.sample_type as SampleType)
+    if (loadedSampleInfo?.has_parental_samples) setHasParentalSamples(true)
+    if (loadedSampleInfo?.has_affected_sibling) setHasAffectedSibling(true)
+
+    if (loadedReproductive?.is_pregnant) setIsPregnant(true)
+    if (loadedReproductive?.gestational_age_weeks) setGestationalAge(String(loadedReproductive.gestational_age_weeks))
+    if (loadedReproductive?.family_planning) setFamilyPlanning(true)
+
+    if (loadedConsent) {
+      setConsentSecondaryFindings(loadedConsent.secondary_findings)
+      setConsentCarrierResults(loadedConsent.carrier_results)
+      setConsentPharmacogenomics(loadedConsent.pharmacogenomics)
+    }
+  }, [
+    isProfileLoaded,
+    loadedDemographics,
+    loadedEthnicity,
+    loadedClinicalContext,
+    loadedSampleInfo,
+    loadedReproductive,
+    loadedConsent,
+  ])
 
   // Sync clinical notes from context
   useEffect(() => {
@@ -178,9 +228,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       try {
         await addHPOTerm(term)
         toast.success('Added: ' + term.name)
-        // DON'T close popover - allow multiple selections
-        // DON'T clear search - user might want to refine search
-        // Refocus input so user can continue typing
         searchInputRef.current?.focus()
       } catch (error) {
         console.error('Failed to add term:', error)
@@ -240,7 +287,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     setIsSaving(true)
 
     try {
-      // Save to context
+      // Save demographics to context
       const demographics: Demographics = {
         sex,
         age_years: ageY,
@@ -248,7 +295,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       }
       setDemographics(demographics)
 
-      // Only save clinical info if screening is enabled
+      // Save clinical info to context (if screening enabled)
       if (enableScreening) {
         if (ethnicity) {
           const ethnicityData: EthnicityData = {
@@ -297,11 +344,13 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         setConsent(consentData)
       }
 
-      // Only save HPO terms if phenotype matching is enabled
-      if (enablePhenotypeMatching && (hpoTerms.length > 0 || localClinicalNotes)) {
-        setClinicalNotes(localClinicalNotes)
-        await savePhenotype()
-      }
+      // Save clinical notes to context
+      setClinicalNotes(localClinicalNotes)
+
+      // Save entire profile to disk (NDJSON)
+      // Small delay to let React state updates propagate to context
+      await new Promise(resolve => setTimeout(resolve, 0))
+      await saveProfile()
 
       toast.success('Clinical profile saved')
       setShowAnalysis(true)
@@ -344,7 +393,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     setSampleInfo,
     setConsent,
     setClinicalNotes,
-    savePhenotype,
+    saveProfile,
   ])
 
   const clearSearch = useCallback(() => {

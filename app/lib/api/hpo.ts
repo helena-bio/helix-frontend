@@ -5,8 +5,6 @@
  * Includes session-based phenotype matching with DuckDB backing.
  */
 
-import type { PatientPhenotype, SavePhenotypeRequest, SavePhenotypeResponse } from './clinical-profile'
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
 
 export interface HPOTerm {
@@ -86,55 +84,6 @@ export async function extractHPOFromText(text: string): Promise<ExtractHPORespon
 
   if (!response.ok) {
     throw new Error('HPO extraction failed: ' + response.statusText)
-  }
-
-  return response.json()
-}
-
-// Legacy functions - deprecated, use clinical-profile.ts instead
-export async function savePhenotype(
-  sessionId: string,
-  data: SavePhenotypeRequest
-): Promise<SavePhenotypeResponse> {
-  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to save phenotype: ' + response.statusText)
-  }
-
-  return response.json()
-}
-
-export async function getPhenotype(sessionId: string): Promise<PatientPhenotype | null> {
-  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
-  const response = await fetch(url)
-
-  if (response.status === 404) {
-    return null
-  }
-
-  if (!response.ok) {
-    throw new Error('Failed to get phenotype: ' + response.statusText)
-  }
-
-  return response.json()
-}
-
-export async function deletePhenotype(sessionId: string): Promise<{ deleted: boolean; message: string }> {
-  const url = API_URL + '/phenotype/api/sessions/' + sessionId + '/phenotype'
-  const response = await fetch(url, {
-    method: 'DELETE',
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to delete phenotype: ' + response.statusText)
   }
 
   return response.json()
@@ -222,7 +171,6 @@ export interface SessionMatchResultsResponse {
 /**
  * Run phenotype matching for a session.
  * Reads variants directly from DuckDB and saves results back.
- * This is the preferred method - no need to transfer variants over HTTP.
  */
 export async function runSessionPhenotypeMatching(
   request: RunSessionMatchingRequest

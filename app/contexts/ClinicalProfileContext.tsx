@@ -1,25 +1,27 @@
 /**
  * Clinical Profile Context Provider
  *
- * Manages patient clinical profile as LOCAL STATE:
- * - Demographics (age, sex) - LOCAL ONLY
- * - Module Enablement (screening, phenotype) - LOCAL ONLY - DEFAULT: DISABLED
- * - Ethnicity & ancestry - LOCAL ONLY
- * - Family history - LOCAL ONLY
- * - Clinical context - LOCAL ONLY
- * - Reproductive context - LOCAL ONLY
- * - Sample info - LOCAL ONLY
- * - Consent preferences - LOCAL ONLY
+ * Manages patient clinical profile with DISK PERSISTENCE (NDJSON).
+ * All data saved/loaded via /sessions/{id}/clinical-profile endpoint.
  *
- * HPO terms stored in backend via /sessions/{id}/phenotype
+ * On mount: loads saved profile from disk (if exists) -> populates state
+ * On save: writes ALL data to disk as single NDJSON file
+ *
+ * No PostgreSQL dependency. Everything on disk.
  */
 'use client'
 
-import React, { createContext, useContext, ReactNode, useState, useCallback } from 'react'
-import { usePatientPhenotype } from '@/hooks/queries/use-clinical-profile'
-import {
-  useSavePatientPhenotype,
-} from '@/hooks/mutations/use-clinical-profile-mutations'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react'
+import { useClinicalProfile } from '@/hooks/queries/use-clinical-profile'
+import { useSaveClinicalProfile } from '@/hooks/mutations/use-clinical-profile-mutations'
 import type {
   ClinicalProfile,
   Demographics,
@@ -30,7 +32,17 @@ import type {
   ConsentPreferences,
 } from '@/types/clinical-profile.types'
 
+interface HPOTerm {
+  hpo_id: string
+  name: string
+  definition?: string
+}
+
 interface ClinicalProfileContextValue {
+  // Loading state
+  isLoadingProfile: boolean
+  isProfileLoaded: boolean
+
   // Module enablement
   enableScreening: boolean
   enablePhenotypeMatching: boolean
@@ -45,12 +57,11 @@ interface ClinicalProfileContextValue {
   sampleInfo?: SampleInfo
   consent: ConsentPreferences
 
-  // Backend HPO terms
-  hpoTerms: Array<{ hpo_id: string; name: string; definition?: string }>
+  // HPO terms
+  hpoTerms: HPOTerm[]
   clinicalNotes: string
-  isLoadingHPO: boolean
 
-  // Actions - Local state updates (no API)
+  // Actions - state updates
   setDemographics: (data: Demographics) => void
   setEthnicity: (data: EthnicityData | undefined) => void
   setClinicalContext: (data: ClinicalContext | undefined) => void
@@ -58,11 +69,13 @@ interface ClinicalProfileContextValue {
   setSampleInfo: (data: SampleInfo | undefined) => void
   setConsent: (data: ConsentPreferences) => void
 
-  // Actions - HPO terms (backend API)
-  addHPOTerm: (term: { hpo_id: string; name: string; definition?: string }) => Promise<void>
+  // Actions - HPO terms
+  addHPOTerm: (term: HPOTerm) => Promise<void>
   removeHPOTerm: (hpoId: string) => Promise<void>
   setClinicalNotes: (notes: string) => void
-  savePhenotype: () => Promise<void>
+
+  // Actions - disk persistence
+  saveProfile: () => Promise<void>
 
   // Computed
   hpoTermIds: string[]
@@ -82,11 +95,11 @@ interface ClinicalProfileProviderProps {
 }
 
 export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfileProviderProps) {
-  // Module enablement (default: both disabled - user must opt-in)
+  // Module enablement (default: both disabled)
   const [enableScreening, setEnableScreening] = useState(false)
   const [enablePhenotypeMatching, setEnablePhenotypeMatching] = useState(false)
 
-  // Local state - NO backend storage
+  // Local state
   const [demographics, setDemographics] = useState<Demographics>({ sex: 'female' })
   const [ethnicity, setEthnicity] = useState<EthnicityData | undefined>(undefined)
   const [clinicalContext, setClinicalContext] = useState<ClinicalContext | undefined>(undefined)
@@ -101,37 +114,72 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     pharmacogenomics: false,
   })
 
-  // Backend HPO terms
-  const {
-    data: phenotypeData,
-    isLoading: isLoadingHPO,
-    refetch,
-  } = usePatientPhenotype(sessionId)
-
-  const savePhenotypeMutation = useSavePatientPhenotype()
-
-  // Local HPO state (synced with backend on load)
-  const [localHPOTerms, setLocalHPOTerms] = useState<Array<{ hpo_id: string; name: string; definition?: string }>>([])
+  // HPO terms
+  const [localHPOTerms, setLocalHPOTerms] = useState<HPOTerm[]>([])
   const [localClinicalNotes, setLocalClinicalNotes] = useState<string>('')
 
-  // Sync backend data to local state when loaded
-  const syncFromBackend = useCallback(() => {
-    if (phenotypeData) {
-      setLocalHPOTerms(phenotypeData.hpo_terms || [])
-      setLocalClinicalNotes(phenotypeData.clinical_notes || '')
-    }
-  }, [phenotypeData])
+  // Load from disk
+  const { data: savedProfile, isLoading: isLoadingProfile } = useClinicalProfile(sessionId)
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false)
+  const initializedForSessionRef = useRef<string | null>(null)
 
-  // Sync on data load
-  React.useEffect(() => {
-    syncFromBackend()
-  }, [syncFromBackend])
+  // Populate state from disk data (once per session)
+  useEffect(() => {
+    if (!savedProfile || !sessionId) return
+    if (initializedForSessionRef.current === sessionId) return
+
+    if (savedProfile.demographics) {
+      setDemographics(savedProfile.demographics)
+    }
+
+    if (savedProfile.modules) {
+      setEnableScreening(savedProfile.modules.enable_screening)
+      setEnablePhenotypeMatching(savedProfile.modules.enable_phenotype_matching)
+    }
+
+    if (savedProfile.ethnicity) setEthnicity(savedProfile.ethnicity)
+    if (savedProfile.clinical_context) setClinicalContext(savedProfile.clinical_context)
+
+    if (savedProfile.reproductive) {
+      setReproductive(savedProfile.reproductive)
+    }
+
+    if (savedProfile.sample_info) setSampleInfo(savedProfile.sample_info)
+
+    if (savedProfile.consent) {
+      setConsent(savedProfile.consent)
+    }
+
+    if (savedProfile.phenotype) {
+      setLocalHPOTerms(savedProfile.phenotype.hpo_terms || [])
+      setLocalClinicalNotes(savedProfile.phenotype.clinical_notes || '')
+    }
+
+    initializedForSessionRef.current = sessionId
+    setIsProfileLoaded(true)
+  }, [savedProfile, sessionId])
+
+  // Reset when session changes
+  useEffect(() => {
+    if (sessionId && initializedForSessionRef.current !== sessionId) {
+      setIsProfileLoaded(false)
+    }
+  }, [sessionId])
+
+  // Mark as loaded even if no saved profile exists (404)
+  useEffect(() => {
+    if (!isLoadingProfile && !savedProfile && sessionId && !isProfileLoaded) {
+      initializedForSessionRef.current = sessionId
+      setIsProfileLoaded(true)
+    }
+  }, [isLoadingProfile, savedProfile, sessionId, isProfileLoaded])
+
+  // Save mutation
+  const saveMutation = useSaveClinicalProfile()
 
   // HPO term management
-  const addHPOTerm = useCallback(async (term: { hpo_id: string; name: string; definition?: string }) => {
-    if (localHPOTerms.some(t => t.hpo_id === term.hpo_id)) {
-      return
-    }
+  const addHPOTerm = useCallback(async (term: HPOTerm) => {
+    if (localHPOTerms.some(t => t.hpo_id === term.hpo_id)) return
     setLocalHPOTerms(prev => [...prev, term])
   }, [localHPOTerms])
 
@@ -143,18 +191,35 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     setLocalClinicalNotes(notes)
   }, [])
 
-  // Save phenotype to backend
-  const savePhenotype = useCallback(async () => {
+  // Save entire profile to disk
+  const saveProfile = useCallback(async () => {
     if (!sessionId) throw new Error('No session ID')
 
-    await savePhenotypeMutation.mutateAsync({
+    await saveMutation.mutateAsync({
       sessionId,
-      hpo_terms: localHPOTerms,
-      clinical_notes: localClinicalNotes,
+      data: {
+        demographics,
+        modules: {
+          enable_screening: enableScreening,
+          enable_phenotype_matching: enablePhenotypeMatching,
+        },
+        ethnicity: ethnicity || undefined,
+        clinical_context: clinicalContext || undefined,
+        reproductive,
+        sample_info: sampleInfo || undefined,
+        consent,
+        phenotype: {
+          hpo_terms: localHPOTerms,
+          clinical_notes: localClinicalNotes || undefined,
+        },
+      },
     })
-
-    await refetch()
-  }, [sessionId, localHPOTerms, localClinicalNotes, savePhenotypeMutation, refetch])
+  }, [
+    sessionId, saveMutation,
+    demographics, enableScreening, enablePhenotypeMatching,
+    ethnicity, clinicalContext, reproductive, sampleInfo, consent,
+    localHPOTerms, localClinicalNotes,
+  ])
 
   // Computed values
   const hpoTermIds = localHPOTerms.map(t => t.hpo_id)
@@ -170,7 +235,6 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     clinicalContext?.indication
   )
 
-  // Get complete profile for submission
   const getCompleteProfile = useCallback((): ClinicalProfile => {
     return {
       session_id: sessionId!,
@@ -185,9 +249,14 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       sample_info: sampleInfo,
       consent,
     }
-  }, [sessionId, demographics, ethnicity, clinicalContext, localHPOTerms, localClinicalNotes, reproductive, sampleInfo, consent])
+  }, [
+    sessionId, demographics, ethnicity, clinicalContext,
+    localHPOTerms, localClinicalNotes, reproductive, sampleInfo, consent,
+  ])
 
   const value: ClinicalProfileContextValue = {
+    isLoadingProfile,
+    isProfileLoaded,
     enableScreening,
     enablePhenotypeMatching,
     setEnableScreening,
@@ -200,7 +269,6 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     consent,
     hpoTerms: localHPOTerms,
     clinicalNotes: localClinicalNotes,
-    isLoadingHPO,
     setDemographics,
     setEthnicity,
     setClinicalContext,
@@ -210,7 +278,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     addHPOTerm,
     removeHPOTerm,
     setClinicalNotes: setClinicalNotesLocal,
-    savePhenotype,
+    saveProfile,
     hpoTermIds,
     termCount,
     hasRequiredData,
