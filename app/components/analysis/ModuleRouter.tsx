@@ -10,6 +10,7 @@ import { VariantAnalysisView } from './VariantAnalysisView'
 import { ClinicalScreeningView } from '@/components/screening'
 import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
 import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
+import { ClinicalReportView } from '@/components/report/ClinicalReportView'
 
 interface ModuleRouterProps {
   sessionId: string
@@ -36,6 +37,11 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
   // Literature Analysis
   if (selectedModule === 'literature') {
     return <LiteratureMatchingView sessionId={sessionId} />
+  }
+
+  // Clinical Report
+  if (selectedModule === 'report') {
+    return <ClinicalReportView sessionId={sessionId} />
   }
 
   // Fallback - should not reach here with current modules
