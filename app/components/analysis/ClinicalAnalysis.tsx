@@ -403,7 +403,7 @@ export function ClinicalAnalysis({
     const stageNames: Record<string, string> = {
       phenotype: 'Running Phenotype Matching',
       screening: screeningProgress > 0
-        ? \`Streaming Screening Results (${screeningProgress}%)`
+        ? `Streaming Screening Results (${screeningProgress}%)`
         : 'Running Clinical Screening',
       literature: 'Searching Literature',
       interpretation: 'Generating Clinical Interpretation',

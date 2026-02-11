@@ -67,7 +67,7 @@ export function Header() {
   const pathname = usePathname()
   const { getStepStatus, canNavigateTo, goToStep, currentStep } = useJourney()
   const { currentSessionId } = useSession()
-  const { interpretation, hasInterpretation, isComplete } = useClinicalInterpretation()
+  const { content: interpretation, hasInterpretation, status: interpretationStatus } = useClinicalInterpretation()
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { logout } = useAuth()
 
@@ -94,7 +94,7 @@ export function Header() {
   }
 
   const handleDownloadReport = async (format: 'md' | 'docx' | 'pdf') => {
-    if (!interpretation || !hasInterpretation()) {
+    if (!interpretation || !hasInterpretation) {
       console.error('[Header] No clinical interpretation available')
       return
     }
@@ -135,7 +135,7 @@ export function Header() {
     }
   }
 
-  const hasClinicalInterpretation = isAnalysisComplete && isComplete()
+  const hasClinicalInterpretation = isAnalysisComplete && interpretationStatus === 'success'
   const hasPhenotypeResults = phenotypeStatus === 'success' && aggregatedResults !== null
   // Variant findings always available when analysis is complete
   const showDownloadReport = isAnalysisComplete
