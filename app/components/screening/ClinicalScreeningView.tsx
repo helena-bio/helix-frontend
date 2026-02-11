@@ -3,11 +3,11 @@
 /**
  * ClinicalScreeningView Component
  *
- * Card-based layout matching PhenotypeMatchingView design.
- * Shows age-aware screening with tier-based prioritization.
+ * Summary-first gene cards with lazy-loaded variants on expand.
+ * Same pattern as PhenotypeMatchingView.
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   Filter,
   Loader2,
@@ -24,13 +24,13 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
+import type { ScreeningGeneResult, ScreeningVariantResult } from '@/contexts/ScreeningResultsContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import {
   getTierColor,
   ConsequenceBadges,
 } from '@/components/shared'
-import type { VariantResult } from '@/lib/api/screening'
 
 interface ClinicalScreeningViewProps {
   sessionId: string
@@ -39,148 +39,235 @@ interface ClinicalScreeningViewProps {
 type TierFilter = 'all' | 'TIER_1' | 'TIER_2' | 'TIER_3' | 'TIER_4'
 
 // ============================================================================
-// VARIANT CARD COMPONENT
+// VARIANT ROW (inside expanded gene card)
 // ============================================================================
 
-interface VariantCardProps {
-  variant: VariantResult
-  rank: number
+interface VariantRowProps {
+  variant: ScreeningVariantResult
   onViewDetails: () => void
 }
 
-function VariantCard({ variant, rank, onViewDetails }: VariantCardProps) {
+function VariantRow({ variant, onViewDetails }: VariantRowProps) {
+  const [showScores, setShowScores] = useState(false)
+
+  return (
+    <div className="border rounded-lg p-3 space-y-2">
+      {/* Variant header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className={`text-xs ${getTierColor(variant.tier)}`}>
+            {variant.tier.replace('_', ' ')}
+          </Badge>
+          <Badge
+            variant="outline"
+            className={`text-xs ${
+              variant.clinical_actionability === 'immediate' ? 'bg-red-100 text-red-900 border-red-300' :
+              variant.clinical_actionability === 'monitoring' ? 'bg-orange-100 text-orange-900 border-orange-300' :
+              variant.clinical_actionability === 'future' ? 'bg-yellow-100 text-yellow-900 border-yellow-300' :
+              'bg-gray-100 text-gray-700 border-gray-300'
+            }`}
+          >
+            {variant.clinical_actionability?.toUpperCase() || 'UNKNOWN'}
+          </Badge>
+          <span className="text-sm font-mono text-muted-foreground">
+            {variant.hgvs_protein || variant.hgvs_cdna || 'No protein change'}
+          </span>
+          <ConsequenceBadges consequence={variant.consequence} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-base font-bold">{variant.total_score.toFixed(3)}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1"
+            onClick={() => setShowScores(!showScores)}
+          >
+            {showScores ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Score breakdown (collapsible) */}
+      {showScores && (
+        <div className="space-y-2 pt-2 border-t">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Constraint</p>
+              <p className="text-sm font-mono">{variant.constraint_score?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Deleteriousness</p>
+              <p className="text-sm font-mono">{variant.deleteriousness_score?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Phenotype</p>
+              <p className="text-sm font-mono">{variant.phenotype_score?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Age Relevance</p>
+              <p className="text-sm font-mono">{variant.age_relevance_score?.toFixed(2) || '0.00'}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground">ACMG Boost</p>
+              <p className="text-sm font-mono">{variant.acmg_boost?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Ethnicity Boost</p>
+              <p className="text-sm font-mono">{variant.ethnicity_boost?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Family History</p>
+              <p className="text-sm font-mono">{variant.family_history_boost?.toFixed(2) || '0.00'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">De Novo</p>
+              <p className="text-sm font-mono">{variant.de_novo_boost?.toFixed(2) || '0.00'}</p>
+            </div>
+          </div>
+          {variant.justification && (
+            <p className="text-sm text-muted-foreground">{variant.justification}</p>
+          )}
+          <div className="pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-7"
+              onClick={onViewDetails}
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Full Details
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// GENE CARD (summary-first, expand for variants)
+// ============================================================================
+
+interface GeneCardProps {
+  gene: ScreeningGeneResult
+  sessionId: string
+  onViewVariantDetails: (variantId: string) => void
+}
+
+function GeneCard({ gene, sessionId, onViewVariantDetails }: GeneCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isLoadingVariants, setIsLoadingVariants] = useState(false)
+  const { loadScreeningGeneVariants } = useScreeningResults()
+
+  const handleExpand = useCallback(async () => {
+    if (isExpanded) {
+      setIsExpanded(false)
+      return
+    }
+
+    setIsExpanded(true)
+
+    // Lazy-load variants if not cached
+    if (!gene.variants || gene.variants.length === 0) {
+      setIsLoadingVariants(true)
+      try {
+        await loadScreeningGeneVariants(sessionId, gene.gene_symbol)
+      } catch (err) {
+        console.error(`Failed to load variants for ${gene.gene_symbol}:`, err)
+      } finally {
+        setIsLoadingVariants(false)
+      }
+    }
+  }, [isExpanded, gene, sessionId, loadScreeningGeneVariants])
 
   return (
     <Card className="gap-0">
       <CardHeader
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={handleExpand}
       >
-        {/* Header - Flex layout with justify-between */}
         <div className="flex items-center justify-between">
-          {/* Left: Rank + Gene + Tier + Actionability */}
+          {/* Left: Rank + Gene + Tier + Actionability + ACMG */}
           <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
-            <span className="text-lg font-semibold w-16">{variant.gene_symbol}</span>
-            <Badge variant="outline" className={`text-sm w-16 justify-center ${getTierColor(variant.tier)}`}>
-              {variant.tier.replace('_', ' ')}
+            <span className="text-lg font-bold text-muted-foreground w-8">#{gene.rank}</span>
+            <span className="text-lg font-semibold w-20">{gene.gene_symbol}</span>
+            <Badge variant="outline" className={`text-sm w-16 justify-center ${getTierColor(gene.best_tier)}`}>
+              {gene.best_tier.replace('_', ' ')}
             </Badge>
             <Badge
               variant="outline"
               className={`text-sm ${
-                variant.clinical_actionability === 'immediate' ? 'bg-red-100 text-red-900 border-red-300' :
-                variant.clinical_actionability === 'monitoring' ? 'bg-orange-100 text-orange-900 border-orange-300' :
-                variant.clinical_actionability === 'future' ? 'bg-yellow-100 text-yellow-900 border-yellow-300' :
+                gene.best_actionability === 'immediate' ? 'bg-red-100 text-red-900 border-red-300' :
+                gene.best_actionability === 'monitoring' ? 'bg-orange-100 text-orange-900 border-orange-300' :
+                gene.best_actionability === 'future' ? 'bg-yellow-100 text-yellow-900 border-yellow-300' :
                 'bg-gray-100 text-gray-700 border-gray-300'
               }`}
             >
-              {variant.clinical_actionability?.toUpperCase() || 'UNKNOWN'}
+              {gene.best_actionability?.toUpperCase() || 'UNKNOWN'}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {gene.best_acmg_class}
             </Badge>
           </div>
 
-          {/* Right: Score + Chevron */}
-          <div className="flex items-center gap-2">
+          {/* Right: Variant count + Score + Chevron */}
+          <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-lg font-bold">{variant.total_score.toFixed(1)}</p>
-              <p className="text-sm text-muted-foreground">Score</p>
+              <p className="text-sm text-muted-foreground">{gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold">{gene.best_score.toFixed(3)}</p>
+              <p className="text-xs text-muted-foreground">Best Score</p>
             </div>
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </div>
+
+        {/* Tier distribution mini-badges */}
+        {(gene.tier_1_count > 0 || gene.tier_2_count > 0) && (
+          <div className="flex items-center gap-2 mt-1 ml-11">
+            {gene.tier_1_count > 0 && (
+              <span className="text-xs text-red-700 bg-red-50 px-1.5 py-0.5 rounded">
+                T1: {gene.tier_1_count}
+              </span>
+            )}
+            {gene.tier_2_count > 0 && (
+              <span className="text-xs text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded">
+                T2: {gene.tier_2_count}
+              </span>
+            )}
+            {gene.tier_3_count > 0 && (
+              <span className="text-xs text-yellow-700 bg-yellow-50 px-1.5 py-0.5 rounded">
+                T3: {gene.tier_3_count}
+              </span>
+            )}
+          </div>
+        )}
       </CardHeader>
 
+      {/* Expanded: variant list (lazy-loaded) */}
       {isExpanded && (
-        <CardContent className="space-y-3">
-          {/* Protein Change and Consequence */}
-          <div>
-            <p className="text-base font-mono text-muted-foreground mb-1">
-              {variant.hgvs_protein || 'No protein change'}
+        <CardContent className="space-y-2 pt-0">
+          {isLoadingVariants ? (
+            <div className="flex items-center justify-center py-4 gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm text-muted-foreground">Loading variants...</span>
+            </div>
+          ) : gene.variants && gene.variants.length > 0 ? (
+            gene.variants.map((variant) => (
+              <VariantRow
+                key={variant.variant_id}
+                variant={variant}
+                onViewDetails={() => onViewVariantDetails(variant.variant_id)}
+              />
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No variant details available
             </p>
-            <ConsequenceBadges consequence={variant.consequence} />
-          </div>
-
-          {/* Score Breakdown */}
-          <div>
-            <p className="text-base font-semibold mb-2">Score Breakdown</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <p className="text-md text-muted-foreground">Constraint</p>
-                <p className="text-base font-mono">{variant.constraint_score?.toFixed(2) || '0.00'}</p>
-              </div>
-              <div>
-                <p className="text-md text-muted-foreground">Deleteriousness</p>
-                <p className="text-base font-mono">{variant.deleteriousness_score?.toFixed(2) || '0.00'}</p>
-              </div>
-              <div>
-                <p className="text-md text-muted-foreground">Phenotype</p>
-                <p className="text-base font-mono">{variant.phenotype_score?.toFixed(2) || '0.00'}</p>
-              </div>
-              <div>
-                <p className="text-md text-muted-foreground">Age Relevance</p>
-                <p className="text-base font-mono">{variant.age_relevance_score?.toFixed(2) || '0.00'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Boosts */}
-          <div>
-            <p className="text-base font-semibold mb-2">Clinical Boosts</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div>
-                <p className="text-md text-muted-foreground">ACMG</p>
-                <p className="text-base font-mono">{variant.acmg_boost?.toFixed(2) || '0.00'}</p>
-              </div>
-              <div>
-                <p className="text-md text-muted-foreground">Ethnicity</p>
-                <p className="text-base font-mono">{variant.ethnicity_boost?.toFixed(2) || '0.00'}</p>
-              </div>
-              <div>
-                <p className="text-md text-muted-foreground">Family History</p>
-                <p className="text-base font-mono">{variant.family_history_boost?.toFixed(2) || '0.00'}</p>
-              </div>
-              <div>
-                <p className="text-md text-muted-foreground">De Novo</p>
-                <p className="text-base font-mono">{variant.de_novo_boost?.toFixed(2) || '0.00'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Justification */}
-          {variant.justification && (
-            <div>
-              <p className="text-base font-semibold mb-1">Clinical Justification</p>
-              <p className="text-base text-muted-foreground">{variant.justification}</p>
-            </div>
           )}
-
-          {/* Age Group and Mode */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-sm text-muted-foreground">Age Group</p>
-              <p className="text-base">{variant.age_group || 'Unknown'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Screening Mode</p>
-              <p className="text-base">{variant.screening_mode?.replace(/_/g, ' ') || 'Unknown'}</p>
-            </div>
-          </div>
-
-          {/* View Details Button */}
-          <div className="pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onViewDetails()
-              }}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View Full Details
-            </Button>
-          </div>
         </CardContent>
       )}
     </Card>
@@ -237,14 +324,23 @@ function TierCard({ count, label, tooltip, isSelected, onClick, colorClasses }: 
 // ============================================================================
 
 export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps) {
-  const { screeningResponse } = useScreeningResults()
+  const {
+    geneResults,
+    tier1Count,
+    tier2Count,
+    tier3Count,
+    tier4Count,
+    totalVariantsAnalyzed,
+    ageGroup,
+    screeningMode,
+  } = useScreeningResults()
   const { hpoTerms } = useClinicalProfileContext()
   const [geneFilter, setGeneFilter] = useState('')
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
 
   // Loading/Empty state
-  if (!screeningResponse) {
+  if (!geneResults) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-start gap-4">
@@ -262,35 +358,23 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
     )
   }
 
-  const summary = screeningResponse.summary
-
-  // Combine all tier results
-  const allVariants = useMemo(() => {
-    return [
-      ...screeningResponse.tier1_results,
-      ...screeningResponse.tier2_results,
-      ...screeningResponse.tier3_results,
-      ...screeningResponse.tier4_results,
-    ]
-  }, [screeningResponse])
-
   // Apply filters
-  const filteredVariants = useMemo(() => {
-    let variants = allVariants
+  const filteredGenes = useMemo(() => {
+    let genes = geneResults
 
     // Tier filter
     if (tierFilter !== 'all') {
-      variants = variants.filter(v => v.tier === tierFilter)
+      genes = genes.filter(g => g.best_tier === tierFilter)
     }
 
     // Gene filter
     if (geneFilter.trim()) {
       const search = geneFilter.toLowerCase()
-      variants = variants.filter(v => v.gene_symbol.toLowerCase().includes(search))
+      genes = genes.filter(g => g.gene_symbol.toLowerCase().includes(search))
     }
 
-    return variants
-  }, [allVariants, tierFilter, geneFilter])
+    return genes
+  }, [geneResults, tierFilter, geneFilter])
 
   // Handle tier click
   const handleTierClick = (filter: TierFilter) => {
@@ -324,22 +408,22 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
 
         {/* Status Badge */}
         <Badge variant="outline" className="text-sm bg-green-50 text-green-700 border-green-300">
-          {summary.total_variants_analyzed?.toLocaleString() || 0} Variants Screened
+          {totalVariantsAnalyzed.toLocaleString()} Variants Screened
         </Badge>
       </div>
 
       {/* Tier Cards */}
       <div className="grid grid-cols-5 gap-3">
         <TierCard
-          count={allVariants.length}
-          label="All Tiers"
-          tooltip="Show all variants across all tiers"
+          count={geneResults.length}
+          label="All Genes"
+          tooltip="Show all genes across all tiers"
           isSelected={tierFilter === 'all'}
           onClick={() => handleTierClick('all')}
           colorClasses=""
         />
         <TierCard
-          count={summary.tier1_count || 0}
+          count={tier1Count}
           label="Tier 1"
           tooltip="Highest priority - immediate clinical action recommended"
           isSelected={tierFilter === 'TIER_1'}
@@ -347,7 +431,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
           colorClasses="border-red-200 bg-red-50 text-red-900"
         />
         <TierCard
-          count={summary.tier2_count || 0}
+          count={tier2Count}
           label="Tier 2"
           tooltip="High priority - monitoring and follow-up recommended"
           isSelected={tierFilter === 'TIER_2'}
@@ -355,7 +439,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
           colorClasses="border-orange-200 bg-orange-50 text-orange-900"
         />
         <TierCard
-          count={summary.tier3_count || 0}
+          count={tier3Count}
           label="Tier 3"
           tooltip="Moderate priority - future clinical relevance possible"
           isSelected={tierFilter === 'TIER_3'}
@@ -363,7 +447,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
           colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900"
         />
         <TierCard
-          count={summary.tier4_count || 0}
+          count={tier4Count}
           label="Tier 4"
           tooltip="Lower priority - research or uncertain significance"
           isSelected={tierFilter === 'TIER_4'}
@@ -377,26 +461,18 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
         <CardContent className="pt-6">
           <div className="space-y-4">
             {/* Demographics Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Age Group</p>
-                <p className="text-base font-semibold">{summary.age_group || 'Unknown'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Sex</p>
-                <p className="text-base font-semibold">{summary.sex || 'Unknown'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Ethnicity</p>
-                <p className="text-base font-semibold">{summary.ethnicity || 'Not specified'}</p>
+                <p className="text-base font-semibold">{ageGroup || 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Screening Mode</p>
-                <p className="text-base font-semibold">{summary.screening_mode?.replace(/_/g, ' ') || 'Unknown'}</p>
+                <p className="text-base font-semibold">{screeningMode?.replace(/_/g, ' ') || 'Unknown'}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Processing Time</p>
-                <p className="text-base font-semibold">{summary.processing_time_seconds?.toFixed(1) || '0.0'}s</p>
+                <p className="text-sm text-muted-foreground">Genes with Variants</p>
+                <p className="text-base font-semibold">{geneResults.length.toLocaleString()}</p>
               </div>
             </div>
 
@@ -426,7 +502,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
               <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
                 Screening prioritizes variants based on age-specific disease onset, phenotype relevance,
-                ethnicity-specific prevalence, and clinical actionability.
+                ethnicity-specific prevalence, and clinical actionability. Click a gene to see individual variants.
               </p>
             </div>
           </div>
@@ -445,37 +521,37 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
             className="max-w-xs text-base"
           />
           <span className="text-sm text-muted-foreground">
-            Showing {filteredVariants.length} of {allVariants.length} variants
+            Showing {filteredGenes.length} of {geneResults.length} genes
             {(tierFilter !== 'all' || geneFilter) && ` (filtered)`}
           </span>
         </div>
 
         {/* Sorting explanation */}
         <p className="text-sm text-muted-foreground">
-          Sorted by tier priority (Tier 1 first), then by total score.
+          Sorted by tier priority (Tier 1 first), then by best score.
           {tierFilter !== 'all' && ' Click the tier card again to show all.'}
         </p>
 
-        {/* Variant Cards */}
-        {filteredVariants.map((variant, idx) => (
-          <VariantCard
-            key={variant.variant_id}
-            variant={variant}
-            rank={idx + 1}
-            onViewDetails={() => setSelectedVariantId(variant.variant_id)}
+        {/* Gene Cards */}
+        {filteredGenes.map((gene) => (
+          <GeneCard
+            key={gene.gene_symbol}
+            gene={gene}
+            sessionId={sessionId}
+            onViewVariantDetails={(variantId) => setSelectedVariantId(variantId)}
           />
         ))}
 
         {/* No results for filter */}
-        {filteredVariants.length === 0 && (
+        {filteredGenes.length === 0 && (
           <Card>
             <CardContent className="p-6 text-center">
               <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-base font-medium mb-2">No Variants Match Filter</p>
+              <p className="text-base font-medium mb-2">No Genes Match Filter</p>
               <p className="text-sm text-muted-foreground">
                 {tierFilter !== 'all' || geneFilter
-                  ? 'No variants match the selected filters.'
-                  : 'No variants available.'}
+                  ? 'No genes match the selected filters.'
+                  : 'No screening results available.'}
               </p>
             </CardContent>
           </Card>

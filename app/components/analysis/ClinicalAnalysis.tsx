@@ -97,7 +97,7 @@ export function ClinicalAnalysis({
     getCompleteProfile,
     hpoTerms
   } = useClinicalProfileContext()
-  const { loadScreeningResults, loadProgress: screeningProgress } = useScreeningResults()
+  const { loadAllScreeningResults, loadProgress: screeningProgress } = useScreeningResults()
   const { runMatching: runPhenotypeMatching, loadAllPhenotypeResults } = usePhenotypeResults()
   const { loadAllLiteratureResults } = useLiteratureResults()
   const screeningMutation = useRunScreening()
@@ -233,7 +233,7 @@ export function ClinicalAnalysis({
             console.log('='.repeat(80))
 
             // Step 2: Stream results from backend (instant if Redis cache hit!)
-            await loadScreeningResults(sessionId)
+            await loadAllScreeningResults(sessionId)
 
             updateStageStatus('screening', 'completed')
             toast.success('Clinical screening complete')
@@ -352,7 +352,7 @@ export function ClinicalAnalysis({
     loadAllPhenotypeResults,
     loadAllLiteratureResults,
     screeningMutation,
-    loadScreeningResults,
+    loadAllScreeningResults,
     literatureSearchMutation,
     updateStageStatus,
     nextStep,

@@ -63,7 +63,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const { allGenes, isLoading: variantsLoading, loadProgress, loadAllVariants, error: variantsError } = useVariantsResults()
 
   // Supplementary data contexts -- load in PARALLEL with variants
-  const { status: screeningStatus, loadScreeningResults } = useScreeningResults()
+  const { status: screeningStatus, loadAllScreeningResults } = useScreeningResults()
   const { status: phenotypeStatus, loadAllPhenotypeResults } = usePhenotypeResults()
   const { status: literatureStatus, loadAllLiteratureResults } = useLiteratureResults()
 
@@ -85,7 +85,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
     // Screening (parallel -- fires same tick as variants)
     if (screeningStatus === 'idle') {
-      loadScreeningResults(currentSessionId).catch(() => {
+      loadAllScreeningResults(currentSessionId).catch(() => {
         console.log('[LayoutContent] No screening results for this session')
       })
     }
@@ -110,7 +110,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
     variantsLoading,
     loadAllVariants,
     screeningStatus,
-    loadScreeningResults,
+    loadAllScreeningResults,
     phenotypeStatus,
     loadAllPhenotypeResults,
     literatureStatus,
