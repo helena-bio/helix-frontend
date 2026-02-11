@@ -14,11 +14,11 @@
  */
 
 const DB_NAME = 'helix-session-cache'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 const MAX_ENTRIES = 100
 
-export type StoreName = 'variant-summaries' | 'phenotype-summaries'
+export type StoreName = 'variant-summaries' | 'phenotype-summaries' | 'screening-summaries'
 
 interface CacheEntry<T> {
   sessionId: string
@@ -37,6 +37,9 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains('phenotype-summaries')) {
         db.createObjectStore('phenotype-summaries', { keyPath: 'sessionId' })
+      }
+      if (!db.objectStoreNames.contains('screening-summaries')) {
+        db.createObjectStore('screening-summaries', { keyPath: 'sessionId' })
       }
     }
 
