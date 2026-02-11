@@ -383,11 +383,6 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <span className="text-base text-muted-foreground font-mono font-semibold truncate max-w-md" title={`${variant.reference_allele} → ${variant.alternate_allele}`}>
               {variant.chromosome}:{variant.position.toLocaleString()} {truncateSequence(variant.reference_allele, 15)} → {truncateSequence(variant.alternate_allele, 15)}
             </span>
-            {variant.priority_tier && (
-              <Badge variant="outline" className="text-sm">
-                Tier {variant.priority_tier}
-              </Badge>
-            )}
           </div>
           {variant.hgvs_protein && (
             <p className="text-sm text-muted-foreground font-mono mt-1 truncate max-w-2xl" title={variant.hgvs_protein}>

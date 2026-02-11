@@ -72,7 +72,6 @@ export interface Variant {
   is_final_candidate: boolean | null
   compound_het_candidate: boolean | null
   priority_score: number | null
-  priority_tier: number | null
   is_flagged: boolean | null
   flag_reason: number | null
   processing_notes: number | null
@@ -147,7 +146,6 @@ export interface VariantInGene {
   acmg_criteria: string | null
   confidence_score: number | null
   priority_score: number | null
-  priority_tier: number | null
   gnomad_af: number | null
   clinvar_significance: string | null
   genotype: string | null
@@ -164,7 +162,6 @@ export interface GeneAggregated {
   best_acmg_class: string | null
   best_acmg_priority: number
   best_impact: string | null
-  best_tier: number | null
   best_priority_score: number | null
   pathogenic_count: number
   likely_pathogenic_count: number

@@ -42,7 +42,6 @@ import { VariantDetailPanel } from './VariantDetailPanel'
 import {
   getACMGColor,
   getImpactColor,
-  getTierColor,
   getZygosityBadge,
   formatACMGDisplay,
   ConsequenceBadges,
@@ -150,11 +149,6 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             <Badge variant="outline" className={`text-sm ${zygosity.color}`}>
               {zygosity.label}
             </Badge>
-            {variant.priority_tier && (
-              <Badge variant="outline" className={`text-sm ${getTierColor(variant.priority_tier)}`}>
-                T{variant.priority_tier}
-              </Badge>
-            )}
           </div>
           <p className="text-base font-mono text-muted-foreground truncate" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}/${variant.alternate_allele}`}>
             {variant.chromosome}:{variant.position?.toLocaleString()}
@@ -312,11 +306,6 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
             {gene.best_acmg_class && (
               <Badge variant="outline" className={`text-sm w-12 justify-center ${getACMGColor(gene.best_acmg_class)}`}>
                 {formatACMGDisplay(gene.best_acmg_class)}
-              </Badge>
-            )}
-            {gene.best_tier && (
-              <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(gene.best_tier)}`}>
-                T{gene.best_tier}
               </Badge>
             )}
             <Badge variant="secondary" className="text-sm">

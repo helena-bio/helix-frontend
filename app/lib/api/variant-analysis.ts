@@ -252,7 +252,6 @@ export async function getVariantStatistics(
 ): Promise<{
   total_variants: number
   classification_breakdown: Record<string, number>
-  tier_breakdown: Record<string, number>
   impact_breakdown: Record<string, number>
   top_genes: Array<{ gene_symbol: string; variant_count: number }>
 }> {

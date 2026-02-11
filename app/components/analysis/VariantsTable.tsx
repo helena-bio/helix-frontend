@@ -72,19 +72,6 @@ const getZygosityBadge = (genotype: string | null) => {
   return { label: genotype, color: 'bg-gray-100' }
 }
 
-const getTierBadge = (tier: number | null) => {
-  if (!tier) return null
-
-  const colors = {
-    1: 'bg-red-100 text-red-900 border-red-300',
-    2: 'bg-orange-100 text-orange-900 border-orange-300',
-    3: 'bg-yellow-100 text-yellow-900 border-yellow-300',
-    4: 'bg-blue-100 text-blue-900 border-blue-300',
-    5: 'bg-gray-100 text-gray-900 border-gray-300',
-  }
-
-  return { label: `T${tier}`, color: colors[tier as keyof typeof colors] || colors[5] }
-}
 
 const truncateAllele = (allele: string, maxLength: number = 10): string => {
   if (allele.length <= maxLength) return allele
@@ -156,7 +143,6 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
             ) : (
               data.variants.map((variant: any) => {
                 const zygosity = getZygosityBadge(variant.genotype)
-                const tier = getTierBadge(variant.priority_tier)
                 const changeText = `${variant.reference_allele}/${variant.alternate_allele}`
 
                 return (
