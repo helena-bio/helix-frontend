@@ -2,6 +2,10 @@
  * Dashboard Page
  * Expandable case cards with lazy-loaded clinical profile.
  * Card layout aligned 1:1 with PhenotypeMatchingView GeneSection.
+ *
+ * CACHING:
+ * - Memory LRU (Map ref) for instant re-expand within session
+ * - IndexedDB 'clinical-profiles' store for cross-session persistence (7d TTL)
  */
 'use client'
 
@@ -33,6 +37,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useCases } from '@/hooks/queries/use-cases'
 import { cn } from '@helix/shared/lib/utils'
+import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 import type { AnalysisSession } from '@/types/variant.types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
@@ -96,6 +101,31 @@ function getCaseDisplayName(session: AnalysisSession): string {
   return session.id.slice(0, 8)
 }
 
+function parseNdjsonProfile(text: string, sessionId: string): ClinicalProfileData {
+  const lines = text.trim().split('\n')
+  const merged: ClinicalProfileData = { session_id: sessionId }
+  for (const line of lines) {
+    try {
+      const parsed = JSON.parse(line)
+      if (parsed.type === 'metadata') {
+        merged.session_id = parsed.session_id
+        merged.saved_at = parsed.saved_at
+      } else if (parsed.type === 'demographics') {
+        merged.demographics = parsed.data
+      } else if (parsed.type === 'modules') {
+        merged.modules = parsed.data
+      } else if (parsed.type === 'reproductive') {
+        merged.reproductive = parsed.data
+      } else if (parsed.type === 'consent') {
+        merged.consent = parsed.data
+      } else if (parsed.type === 'phenotype') {
+        merged.phenotype = parsed.data
+      }
+    } catch { /* skip malformed lines */ }
+  }
+  return merged
+}
+
 const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }> = {
   completed: { color: 'bg-green-100 text-green-900 border-green-300', icon: CheckCircle2 },
   processing: { color: 'bg-orange-100 text-orange-900 border-orange-300', icon: Loader2 },
@@ -111,11 +141,11 @@ const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }>
 interface CaseCardProps {
   session: AnalysisSession
   rank: number
-  profileCache: React.MutableRefObject<Map<string, ClinicalProfileData>>
+  memoryCache: React.MutableRefObject<Map<string, ClinicalProfileData>>
   onNavigate: (session: AnalysisSession) => void
 }
 
-function CaseCard({ session, rank, profileCache, onNavigate }: CaseCardProps) {
+function CaseCard({ session, rank, memoryCache, onNavigate }: CaseCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [profile, setProfile] = useState<ClinicalProfileData | null>(null)
@@ -134,14 +164,22 @@ function CaseCard({ session, rank, profileCache, onNavigate }: CaseCardProps) {
 
     setIsExpanded(true)
 
-    // Check cache first
-    const cached = profileCache.current.get(session.id)
-    if (cached) {
-      setProfile(cached)
+    // Layer 1: Memory cache (instant)
+    const memoryCached = memoryCache.current.get(session.id)
+    if (memoryCached) {
+      setProfile(memoryCached)
       return
     }
 
-    // Fetch clinical profile
+    // Layer 2: IndexedDB cache (fast, persistent)
+    const diskCached = await getCached<ClinicalProfileData>('clinical-profiles', session.id)
+    if (diskCached) {
+      memoryCache.current.set(session.id, diskCached)
+      setProfile(diskCached)
+      return
+    }
+
+    // Layer 3: Network fetch
     setIsLoadingProfile(true)
     try {
       const res = await fetch(
@@ -150,39 +188,18 @@ function CaseCard({ session, rank, profileCache, onNavigate }: CaseCardProps) {
       )
       if (res.ok) {
         const text = await res.text()
-        const lines = text.trim().split('\n')
-
-        // Parse NDJSON - merge all lines into single object
-        let merged: ClinicalProfileData = { session_id: session.id }
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line)
-            if (parsed.type === 'metadata') {
-              merged.session_id = parsed.session_id
-              merged.saved_at = parsed.saved_at
-            } else if (parsed.type === 'demographics') {
-              merged.demographics = parsed.data
-            } else if (parsed.type === 'modules') {
-              merged.modules = parsed.data
-            } else if (parsed.type === 'reproductive') {
-              merged.reproductive = parsed.data
-            } else if (parsed.type === 'consent') {
-              merged.consent = parsed.data
-            } else if (parsed.type === 'phenotype') {
-              merged.phenotype = parsed.data
-            }
-          } catch { /* skip malformed lines */ }
-        }
-
-        profileCache.current.set(session.id, merged)
-        setProfile(merged)
+        const parsed = parseNdjsonProfile(text, session.id)
+        // Save to both caches
+        memoryCache.current.set(session.id, parsed)
+        setCache('clinical-profiles', session.id, parsed).catch(() => {})
+        setProfile(parsed)
       }
     } catch (err) {
       console.error(`Failed to load profile for ${session.id}:`, err)
     } finally {
       setIsLoadingProfile(false)
     }
-  }, [isExpanded, isCompleted, session.id, profileCache])
+  }, [isExpanded, isCompleted, session.id, memoryCache])
 
   return (
     <Card className="gap-0">
@@ -411,7 +428,7 @@ export default function DashboardPage() {
 
   const cases = data?.sessions ?? []
   const [searchQuery, setSearchQuery] = useState('')
-  const profileCache = useRef<Map<string, ClinicalProfileData>>(new Map())
+  const memoryCache = useRef<Map<string, ClinicalProfileData>>(new Map())
 
   const filteredCases = cases.filter((session) => {
     if (!searchQuery) return true
@@ -497,7 +514,7 @@ export default function DashboardPage() {
                 key={session.id}
                 session={session}
                 rank={idx + 1}
-                profileCache={profileCache}
+                memoryCache={memoryCache}
                 onNavigate={handleNavigate}
               />
             ))}
