@@ -116,15 +116,6 @@ const VariantRow = memo(function VariantRow({
           {zygosity.label}
         </Badge>
       </td>
-      <td className="px-2 py-2">
-        {tier ? (
-          <Badge variant="outline" className={`text-sm ${tier.color}`}>
-            {tier.label}
-          </Badge>
-        ) : (
-          <span className="text-sm text-muted-foreground">-</span>
-        )}
-      </td>
     </tr>
   )
 })
@@ -168,7 +159,6 @@ export const VariantsCompactTable = memo(function VariantsCompactTable({
               <th className="px-2 py-2 text-md font-semibold">Change</th>
               <th className="px-2 py-2 text-md font-semibold">ACMG</th>
               <th className="px-2 py-2 text-md font-semibold">Zyg</th>
-              <th className="px-2 py-2 text-md font-semibold">Tier</th>
             </tr>
           </thead>
           <tbody>

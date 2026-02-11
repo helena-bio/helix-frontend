@@ -125,7 +125,6 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
               <TableHead className="text-base">Zygosity</TableHead>
               <TableHead className="text-base">ACMG</TableHead>
               <TableHead className="text-base">gnomAD AF</TableHead>
-              <TableHead className="text-base">Tier</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -186,13 +185,6 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                       </TableCell>
                       <TableCell className="font-mono text-sm">
                         {variant.global_af ? variant.global_af.toExponential(2) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {tier ? (
-                          <Badge variant="outline" className={`text-sm ${tier.color}`}>
-                            {tier.label}
-                          </Badge>
-                        ) : '-'}
                       </TableCell>
                       <TableCell>
                         <Button
