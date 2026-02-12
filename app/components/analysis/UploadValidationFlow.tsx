@@ -693,7 +693,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 {showSettings && (
                   <div className="border border-border rounded-lg p-4 bg-background">
                     <h4 className="text-base font-semibold mb-3">Quality Filtering Preset</h4>
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <p className="text-md text-muted-foreground mb-3">
                       Controls how aggressively low-quality variants are removed before annotation.
                       ClinVar pathogenic/likely pathogenic variants are always preserved regardless of preset.
                     </p>
