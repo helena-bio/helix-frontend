@@ -138,7 +138,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   // All other routes -- full width
   return (
-    <main className="flex-1 h-full overflow-auto bg-background">
+    <main className="flex-1 h-full overflow-y-auto [scrollbar-gutter:stable] bg-background">
       {children}
     </main>
   )
