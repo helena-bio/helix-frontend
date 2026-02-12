@@ -82,7 +82,7 @@ function getCaseDisplayName(session: AnalysisSession): string {
 
 export function CasesList() {
   const router = useRouter()
-  const { currentSessionId, setCurrentSessionId } = useSession()
+  const { currentSessionId, setCurrentSessionId, setSelectedModule } = useSession()
   const { skipToAnalysis, resetJourney } = useJourney()
   const { data, isLoading } = useCases()
   const renameMutation = useRenameCase()
@@ -118,8 +118,9 @@ export function CasesList() {
     if (session.id === currentSessionId) return
 
     skipToAnalysis()
+    setSelectedModule('analysis')
     router.push(`/analysis?session=${session.id}`)
-  }, [currentSessionId, skipToAnalysis, router])
+  }, [currentSessionId, skipToAnalysis, setSelectedModule, router])
 
   const handleStartRename = useCallback((e: React.MouseEvent, session: AnalysisSession) => {
     e.stopPropagation()
