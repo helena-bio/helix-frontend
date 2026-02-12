@@ -37,7 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@helix/shared/components/ui/dropdown-menu'
-import { downloadClinicalReport } from '@/lib/utils/download-report'
+import { downloadClinicalReport, type ReportFormat } from '@/lib/utils/download-report'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -208,6 +208,45 @@ function CaseCard({ session, rank, memoryCache, onNavigate }: CaseCardProps) {
       setIsLoadingProfile(false)
     }
   }, [isExpanded, isCompleted, session.id, memoryCache])
+
+  const handleDownloadReport = useCallback(async (sessionId: string, format: ReportFormat) => {
+    try {
+      let interpretationContent: string | undefined
+
+      // Layer 1: IndexedDB cache
+      try {
+        const cached = await getCached<{ content: string }>('clinical-interpretations', sessionId)
+        if (cached?.content) {
+          interpretationContent = cached.content
+        }
+      } catch { /* IndexedDB unavailable */ }
+
+      // Layer 2: Backend fetch
+      if (!interpretationContent) {
+        const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
+        const res = await fetch(`${AI_URL}/api/v1/analysis/interpret/${sessionId}`)
+        if (!res.ok) throw new Error('No interpretation')
+        const data = await res.json()
+        interpretationContent = data.content
+        // Cache for next time
+        setCache('clinical-interpretations', sessionId, {
+          content: data.content,
+          metadata: {
+            level: data.level ?? 0,
+            level_label: data.level_label ?? '',
+            modules_used: data.modules_used ?? [],
+            content_length: data.content_length ?? 0,
+          },
+        }).catch(() => {})
+      }
+
+      if (interpretationContent === undefined) throw new Error("No content")
+      await downloadClinicalReport(interpretationContent, format, sessionId)
+      toast.success(`Report downloaded as ${format === 'md' ? 'Markdown' : format.toUpperCase()}`)
+    } catch {
+      toast.error('No clinical report available for this case')
+    }
+  }, [])
 
   return (
     <Card className="gap-0">
@@ -394,54 +433,16 @@ function CaseCard({ session, rank, memoryCache, onNavigate }: CaseCardProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-40" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem
-                      className="cursor-pointer text-md"
-                      onClick={async () => {
-                        try {
-                          const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
-                          const res = await fetch(`${AI_URL}/api/v1/analysis/interpret/${session.id}`)
-                          if (!res.ok) throw new Error('No interpretation')
-                          const data = await res.json()
-                          await downloadClinicalReport(data.content, 'pdf', session.id)
-                          toast.success('Report downloaded as PDF')
-                        } catch { toast.error('No clinical report available for this case') }
-                      }}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer text-md"
-                      onClick={async () => {
-                        try {
-                          const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
-                          const res = await fetch(`${AI_URL}/api/v1/analysis/interpret/${session.id}`)
-                          if (!res.ok) throw new Error('No interpretation')
-                          const data = await res.json()
-                          await downloadClinicalReport(data.content, 'docx', session.id)
-                          toast.success('Report downloaded as DOCX')
-                        } catch { toast.error('No clinical report available for this case') }
-                      }}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      DOCX
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer text-md"
-                      onClick={async () => {
-                        try {
-                          const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
-                          const res = await fetch(`${AI_URL}/api/v1/analysis/interpret/${session.id}`)
-                          if (!res.ok) throw new Error('No interpretation')
-                          const data = await res.json()
-                          await downloadClinicalReport(data.content, 'md', session.id)
-                          toast.success('Report downloaded as Markdown')
-                        } catch { toast.error('No clinical report available for this case') }
-                      }}
-                    >
-                      <Download className="h-3 w-3 mr-2" />
-                      Markdown
-                    </DropdownMenuItem>
+                    {(['pdf', 'docx', 'md'] as ReportFormat[]).map((fmt) => (
+                      <DropdownMenuItem
+                        key={fmt}
+                        className="cursor-pointer text-md"
+                        onClick={() => handleDownloadReport(session.id, fmt)}
+                      >
+                        <Download className="h-3 w-3 mr-2" />
+                        {fmt === 'md' ? 'Markdown' : fmt.toUpperCase()}
+                      </DropdownMenuItem>
+                    ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
