@@ -210,7 +210,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
 
       {/* Report content */}
       <Card>
-        <CardContent className="p-0 prose prose-sm dark:prose-invert max-w-none">
+        <CardContent className="px-6 pt-4 pb-6 prose prose-sm dark:prose-invert max-w-none">
           <MarkdownMessage content={content} isUser={false} />
         </CardContent>
       </Card>
