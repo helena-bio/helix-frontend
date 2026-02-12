@@ -62,18 +62,18 @@ const EVENING: GreetingSet = {
 
 const NIGHT: GreetingSet = {
   titles: [
-    "Hey night owl, {name}",
-    "Burning the midnight oil, {name}?",
-    "Late night session, {name}?",
-    "Can't sleep either, {name}?",
-    "The night shift, {name}",
+    "Working late, {name}?",
+    "Evening, {name}",
+    "Late session, {name}?",
+    "Still at it, {name}?",
+    "Good evening, {name}",
   ],
   subtitles: [
-    "Great discoveries happen at unusual hours.",
-    "The genome never sleeps. Neither do you, apparently.",
     "Quiet hours, focused work.",
-    "Just you, your data, and the silence.",
-    "Tomorrow's breakthroughs start tonight.",
+    "The best reviews happen with zero distractions.",
+    "No rush. Take your time with the data.",
+    "Your cases are ready whenever you are.",
+    "Tomorrow's insights start with tonight's review.",
   ],
 }
 
