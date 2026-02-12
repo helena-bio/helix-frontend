@@ -511,7 +511,7 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-full p-8">
       <div className="w-full max-w-4xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-start gap-4">
+        <div className="flex items-center gap-4">
           <div className="p-3 rounded-lg bg-primary/10">
             <Microscope className="h-6 w-6 text-primary" />
           </div>
