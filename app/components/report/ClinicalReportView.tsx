@@ -19,12 +19,20 @@ import {
   Dna,
   Filter,
   BookOpen,
+  ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@helix/shared/components/ui/dropdown-menu'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
 import { MarkdownMessage } from '@/components/chat/MarkdownMessage'
+import { downloadClinicalReport } from '@/lib/utils/download-report'
 import { toast } from 'sonner'
 
 interface ClinicalReportViewProps {
@@ -85,19 +93,14 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
     }
   }, [sessionId, generate])
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async (format: 'md' | 'docx' | 'pdf') => {
     if (!content) return
-
-    const blob = new Blob([content], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `clinical-interpretation-${sessionId.slice(0, 8)}.md`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    toast.success('Report downloaded')
+    try {
+      await downloadClinicalReport(content, format, sessionId)
+      toast.success(`Report downloaded as ${format.toUpperCase()}`)
+    } catch (err) {
+      toast.error(`Download failed. Please try again.`)
+    }
   }, [content, sessionId])
 
   const levelConfig = metadata ? LEVEL_CONFIG[metadata.level] || LEVEL_CONFIG[1] : null
@@ -175,10 +178,38 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-3.5 w-3.5 mr-1.5" />
-            <span className="text-sm">Download</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                <span className="text-sm">Download</span>
+                <ChevronDown className="h-3 w-3 ml-1.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={() => handleDownload('pdf')}
+                className="cursor-pointer text-md"
+              >
+                <Download className="h-3 w-3 mr-2" />
+                PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDownload('docx')}
+                className="cursor-pointer text-md"
+              >
+                <Download className="h-3 w-3 mr-2" />
+                DOCX
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDownload('md')}
+                className="cursor-pointer text-md"
+              >
+                <Download className="h-3 w-3 mr-2" />
+                Markdown
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" onClick={handleRegenerate} disabled={isRegenerating}>
             <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span className="text-sm">Regenerate</span>
