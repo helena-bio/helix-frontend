@@ -9,7 +9,7 @@
  */
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Plus,
@@ -47,6 +47,7 @@ import { useCases } from '@/hooks/queries/use-cases'
 import { cn } from '@helix/shared/lib/utils'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 import type { AnalysisSession } from '@/types/variant.types'
+import { getDashboardGreeting } from '@/lib/constants/dashboard-greetings'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
@@ -490,6 +491,7 @@ export default function DashboardPage() {
   const cases = data?.sessions ?? []
   const [searchQuery, setSearchQuery] = useState('')
   const memoryCache = useRef<Map<string, ClinicalProfileData>>(new Map())
+  const greeting = useMemo(() => getDashboardGreeting(user?.full_name), [user?.full_name])
 
   const filteredCases = cases.filter((session) => {
     if (!searchQuery) return true
@@ -514,10 +516,10 @@ export default function DashboardPage() {
         <div className="relative">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight">
-              {user?.full_name ? `Welcome, ${user.full_name}` : 'Dashboard'}
+              {greeting.title}
             </h1>
             <p className="text-base text-muted-foreground mt-1">
-              Manage your variant analysis cases
+              {greeting.subtitle}
             </p>
           </div>
           <Button onClick={handleNewCase} className="absolute right-0 top-1/2 -translate-y-1/2">
