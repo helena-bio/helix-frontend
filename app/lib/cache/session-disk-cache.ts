@@ -13,10 +13,10 @@
  * Max entries per store: 100
  */
 const DB_NAME = 'helix-session-cache'
-const DB_VERSION = 3
+const DB_VERSION = 4
 const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 const MAX_ENTRIES = 100
-export type StoreName = 'variant-summaries' | 'phenotype-summaries' | 'screening-summaries' | 'clinical-profiles'
+export type StoreName = 'variant-summaries' | 'phenotype-summaries' | 'screening-summaries' | 'clinical-profiles' | 'clinical-interpretations'
 interface CacheEntry<T> {
   sessionId: string
   data: T
@@ -38,6 +38,9 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains('clinical-profiles')) {
         db.createObjectStore('clinical-profiles', { keyPath: 'sessionId' })
+      }
+      if (!db.objectStoreNames.contains('clinical-interpretations')) {
+        db.createObjectStore('clinical-interpretations', { keyPath: 'sessionId' })
       }
     }
     request.onsuccess = () => resolve(request.result)

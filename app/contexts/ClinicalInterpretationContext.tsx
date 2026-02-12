@@ -13,7 +13,10 @@
  * Level 3: Variants + Phenotype (+/- Literature)
  * Level 4: Full analysis (all modules)
  *
- * Session cache: switching cases restores instantly (max 3 cached).
+ * Cache layers:
+ * Layer 1: Memory Map (instant switch between cases, max 3)
+ * Layer 2: IndexedDB (survives page refresh, 7d TTL)
+ * Layer 3: Backend GET /interpret/{session_id} (disk)
  */
 
 import React, {
@@ -25,6 +28,7 @@ import React, {
   useRef,
   useMemo,
 } from 'react'
+import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 
 const AI_API_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 const MAX_CACHED_SESSIONS = 3
@@ -93,11 +97,14 @@ export function ClinicalInterpretationProvider({ sessionId, children }: Provider
   useEffect(() => { metadataRef.current = metadata }, [metadata])
 
   const saveToCache = useCallback((id: string, entry: CacheEntry) => {
+    // Layer 1: Memory
     sessionCache.current.set(id, entry)
     if (sessionCache.current.size > MAX_CACHED_SESSIONS) {
       const oldest = sessionCache.current.keys().next().value
       if (oldest) sessionCache.current.delete(oldest)
     }
+    // Layer 2: IndexedDB
+    setCache('clinical-interpretations', id, entry).catch(() => {})
   }, [])
 
   const resetState = useCallback(() => {
@@ -106,6 +113,48 @@ export function ClinicalInterpretationProvider({ sessionId, children }: Provider
     setStatus('idle')
     setError(null)
   }, [])
+
+  // Restore from IndexedDB or backend
+  const restoreInterpretation = useCallback(async (sid: string) => {
+    // Layer 2: IndexedDB
+    try {
+      const diskCached = await getCached<CacheEntry>('clinical-interpretations', sid)
+      if (diskCached) {
+        console.log(`[ClinicalInterpretation] IndexedDB hit: ${sid}`)
+        sessionCache.current.set(sid, diskCached)
+        setContent(diskCached.content)
+        setMetadata(diskCached.metadata)
+        setStatus('success')
+        setError(null)
+        return
+      }
+    } catch {
+      // IndexedDB unavailable, continue to backend
+    }
+
+    // Layer 3: Backend
+    try {
+      const response = await fetch(`${AI_API_URL}/api/v1/analysis/interpret/${sid}`)
+      if (response.ok) {
+        const result = await response.json()
+        const meta: InterpretationMetadata = {
+          level: result.level ?? 0,
+          level_label: result.level_label ?? '',
+          modules_used: result.modules_used ?? [],
+          content_length: result.content_length ?? result.content?.length ?? 0,
+        }
+        const entry: CacheEntry = { content: result.content, metadata: meta }
+        saveToCache(sid, entry)
+        setContent(result.content)
+        setMetadata(meta)
+        setStatus('success')
+        setError(null)
+        console.log(`[ClinicalInterpretation] Restored from backend: ${sid} (${result.content_length} chars)`)
+      }
+    } catch {
+      // No interpretation available -- stay idle
+    }
+  }, [saveToCache])
 
   // Session change: save current to cache, restore or reset
   useEffect(() => {
@@ -129,10 +178,10 @@ export function ClinicalInterpretationProvider({ sessionId, children }: Provider
 
     currentSessionId.current = sessionId
 
-    // Check cache
+    // Layer 1: Memory cache
     const cached = sessionCache.current.get(sessionId)
     if (cached) {
-      console.log(`[ClinicalInterpretation] Cache hit: ${sessionId}`)
+      console.log(`[ClinicalInterpretation] Memory hit: ${sessionId}`)
       setContent(cached.content)
       setMetadata(cached.metadata)
       setStatus('success')
@@ -140,9 +189,11 @@ export function ClinicalInterpretationProvider({ sessionId, children }: Provider
       return
     }
 
+    // Reset and try IndexedDB + backend async
     console.log(`[ClinicalInterpretation] Cache miss: ${sessionId}`)
     resetState()
-  }, [sessionId, saveToCache, resetState])
+    restoreInterpretation(sessionId)
+  }, [sessionId, saveToCache, resetState, restoreInterpretation])
 
   // Generate interpretation (POST - AI generates + saves to disk)
   const generate = useCallback(async (sid: string) => {
@@ -202,6 +253,9 @@ export function ClinicalInterpretationProvider({ sessionId, children }: Provider
       setContent(result.content)
       setStatus('success')
 
+      // Cache to both layers
+      saveToCache(sid, { content: result.content, metadata: meta })
+
       console.log(`[ClinicalInterpretation] Loaded: ${result.content_length} chars`)
     } catch (err) {
       console.error('[ClinicalInterpretation] Load failed:', err)
@@ -225,15 +279,26 @@ export function ClinicalInterpretationProvider({ sessionId, children }: Provider
       }
 
       const result = await response.json()
+      const meta: InterpretationMetadata = {
+        level: result.level ?? 0,
+        level_label: result.level_label ?? '',
+        modules_used: result.modules_used ?? [],
+        content_length: result.content_length ?? result.content?.length ?? 0,
+      }
+
       setContent(result.content)
+      setMetadata(meta)
       setStatus('success')
+
+      // Cache to both layers
+      saveToCache(sid, { content: result.content, metadata: meta })
 
       console.log(`[ClinicalInterpretation] Restored from disk: ${result.content_length} chars`)
       return true
     } catch {
       return false
     }
-  }, [])
+  }, [saveToCache])
 
   const clearInterpretation = useCallback(() => {
     console.log('[ClinicalInterpretation] Clearing')
