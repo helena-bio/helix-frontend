@@ -739,11 +739,6 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                         >
                           <Settings className="h-4 w-4 mr-2" />
                           <span className="text-base">Settings</span>
-                          {filteringPreset !== 'strict' && (
-                            <span className="ml-1 text-xs text-primary">
-                              ({currentPresetInfo.name})
-                            </span>
-                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
