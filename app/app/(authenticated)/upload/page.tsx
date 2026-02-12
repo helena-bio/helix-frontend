@@ -12,7 +12,7 @@
  * - After upload completes, sessionId is added to URL: /upload?session=<uuid>
  * - When journey reaches analysis step, redirects to /analysis?session=<uuid>
  */
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
@@ -30,6 +30,9 @@ export default function UploadPage() {
   const queryClient = useQueryClient()
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { currentStep, skipToAnalysis, resetJourney } = useJourney()
+
+  // Processing configuration - bridge between Upload and Processing steps
+  const [filteringPreset, setFilteringPreset] = useState<string>('strict')
 
   // Reset journey when landing on /upload without a session
   useEffect(() => {
@@ -62,6 +65,8 @@ export default function UploadPage() {
     return (
       <UploadValidationFlow
         onComplete={handleUploadComplete}
+        filteringPreset={filteringPreset}
+        onFilteringPresetChange={setFilteringPreset}
       />
     )
   }
@@ -76,7 +81,10 @@ export default function UploadPage() {
       )
     }
     return (
-      <ProcessingFlow sessionId={currentSessionId} />
+      <ProcessingFlow
+        sessionId={currentSessionId}
+        filteringPreset={filteringPreset}
+      />
     )
   }
 

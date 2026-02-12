@@ -29,7 +29,7 @@
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
-import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna, Loader2, Zap } from 'lucide-react'
+import { Upload, FileCode, AlertCircle, CheckCircle2, X, Download, Info, PlayCircle, Dna, Loader2, Zap, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -57,12 +57,36 @@ interface QCResults {
   genomeBuild: string
 }
 
+// Filtering preset definitions for UI
+const FILTERING_PRESETS = [
+  {
+    id: 'strict',
+    name: 'Strict',
+    description: 'Clinical-grade thresholds (quality>=30, depth>=20, GQ>=30)',
+    detail: 'Best for high-quality WES/WGS data. Default for clinical diagnostics.',
+  },
+  {
+    id: 'balanced',
+    name: 'Balanced',
+    description: 'Relaxed thresholds (quality>=20, depth>=15, GQ>=20)',
+    detail: 'Good for older WGS, panel data, or lower-coverage regions.',
+  },
+  {
+    id: 'permissive',
+    name: 'Permissive',
+    description: 'Maximum sensitivity (quality>=10, depth>=10, GQ>=10)',
+    detail: 'More noise but minimal risk of missing true variants.',
+  },
+] as const
+
 interface UploadValidationFlowProps {
   onComplete?: (sessionId: string) => void
   onError?: (error: Error) => void
+  filteringPreset?: string
+  onFilteringPresetChange?: (preset: string) => void
 }
 
-export function UploadValidationFlow({ onComplete, onError }: UploadValidationFlowProps) {
+export function UploadValidationFlow({ onComplete, onError, filteringPreset = 'strict', onFilteringPresetChange }: UploadValidationFlowProps) {
   // Flow state
   const [phase, setPhase] = useState<FlowPhase>('selection')
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -80,6 +104,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
   const [validationProgress, setValidationProgress] = useState(0)
   const [wasCompressed, setWasCompressed] = useState(false) // Track if file was auto-compressed
   const [duplicateSession, setDuplicateSession] = useState<{ id: string; label: string } | null>(null)
+
+  // Settings panel state
+  const [showSettings, setShowSettings] = useState(false)
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -494,6 +521,7 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     setValidationProgress(0)
     setWasCompressed(false)
     setDuplicateSession(null)
+    setShowSettings(false)
     uploadMutation.reset()
     startValidationMutation.reset()
     if (fileInputRef.current) {
@@ -529,6 +557,9 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
     a.click()
     URL.revokeObjectURL(url)
   }, [qcResults, selectedFile])
+
+  // Get current preset info for display
+  const currentPresetInfo = FILTERING_PRESETS.find(p => p.id === filteringPreset) || FILTERING_PRESETS[0]
 
   // Render - QC Results State
   if (phase === 'qc_results' && qcResults) {
@@ -657,7 +688,70 @@ export function UploadValidationFlow({ onComplete, onError }: UploadValidationFl
                     </p>
                   </div>
                 </div>
-                <div className="flex justify-end">
+
+                {/* Processing Settings (collapsible) */}
+                {showSettings && (
+                  <div className="border border-border rounded-lg p-4 bg-background">
+                    <h4 className="text-base font-semibold mb-3">Quality Filtering Preset</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Controls how aggressively low-quality variants are removed before annotation.
+                      ClinVar pathogenic/likely pathogenic variants are always preserved regardless of preset.
+                    </p>
+                    <div className="space-y-2">
+                      {FILTERING_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          onClick={() => onFilteringPresetChange?.(preset.id)}
+                          className={`
+                            w-full text-left p-3 rounded-lg border transition-all
+                            ${filteringPreset === preset.id
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/30 hover:bg-accent/5'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className={`
+                              h-3 w-3 rounded-full border-2
+                              ${filteringPreset === preset.id
+                                ? 'border-primary bg-primary'
+                                : 'border-muted-foreground'
+                              }
+                            `} />
+                            <span className="text-base font-medium">{preset.name}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground ml-5">{preset.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowSettings(!showSettings)}
+                          className="flex-shrink-0"
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          <span className="text-base">Settings</span>
+                          {filteringPreset !== 'strict' && (
+                            <span className="ml-1 text-xs text-primary">
+                              ({currentPresetInfo.name})
+                            </span>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-sm">Configure processing options</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

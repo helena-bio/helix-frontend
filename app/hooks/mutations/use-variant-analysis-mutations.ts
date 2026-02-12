@@ -49,7 +49,7 @@ export function useUploadVCF() {
 }
 
 /**
- * Start processing pipeline mutation
+ * Start processing pipeline mutation with configurable filtering preset
  */
 export function useStartProcessing() {
   const queryClient = useQueryClient()
@@ -58,11 +58,13 @@ export function useStartProcessing() {
     mutationFn: async ({
       sessionId,
       vcfFilePath,
+      filteringPreset = 'strict',
     }: {
       sessionId: string
       vcfFilePath: string
+      filteringPreset?: string
     }) => {
-      return startProcessing(sessionId, vcfFilePath)
+      return startProcessing(sessionId, vcfFilePath, filteringPreset)
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({

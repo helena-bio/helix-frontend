@@ -122,14 +122,21 @@ export async function startValidation(
 }
 
 /**
- * Start processing pipeline
+ * Start processing pipeline with configurable filtering preset.
+ *
+ * @param filteringPreset - Quality filtering preset:
+ *   strict (default): quality>=30, depth>=20, GQ>=30
+ *   balanced: quality>=20, depth>=15, GQ>=20
+ *   permissive: quality>=10, depth>=10, GQ>=10
  */
 export async function startProcessing(
   sessionId: string,
-  vcfFilePath: string
+  vcfFilePath: string,
+  filteringPreset: string = 'strict'
 ): Promise<{ task_id: string; session_id: string; status: string }> {
   return post(`/tasks/pipeline/start/${sessionId}`, {
     vcf_file_path: vcfFilePath,
+    filtering_preset: filteringPreset,
   })
 }
 

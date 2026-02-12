@@ -37,6 +37,7 @@ import { PROCESSING_QUOTES } from '@/lib/constants/processing-quotes'
 
 interface ProcessingFlowProps {
   sessionId: string
+  filteringPreset?: string
   onComplete?: () => void
   onError?: (error: Error) => void
 }
@@ -96,7 +97,7 @@ const BACKEND_STAGES: PipelineStage[] = [
 
 type ProcessingPhase = 'backend' | 'error'
 
-export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlowProps) {
+export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComplete, onError }: ProcessingFlowProps) {
   const [phase, setPhase] = useState<ProcessingPhase>('backend')
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -125,6 +126,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
         const result = await startProcessingMutation.mutateAsync({
           sessionId,
           vcfFilePath: session.vcf_file_path!,
+          filteringPreset,
         })
         setTaskId(result.task_id)
       } catch (error) {
@@ -137,9 +139,9 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
     }
 
     startProcessing()
-  }, [session?.vcf_file_path, sessionId, startProcessingMutation, onError])
+  }, [session?.vcf_file_path, sessionId, filteringPreset, startProcessingMutation, onError])
 
-  // Handle backend completion → Start frontend streaming
+  // Handle backend completion -> Start frontend streaming
   useEffect(() => {
     if (phase !== 'backend') return
     if (!taskStatus?.ready) return
@@ -213,6 +215,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       const result = await startProcessingMutation.mutateAsync({
         sessionId,
         vcfFilePath: session.vcf_file_path,
+        filteringPreset,
       })
       setTaskId(result.task_id)
     } catch (error) {
@@ -222,7 +225,7 @@ export function ProcessingFlow({ sessionId, onComplete, onError }: ProcessingFlo
       toast.error('Failed to start processing', { description: err.message })
       onError?.(err)
     }
-  }, [session?.vcf_file_path, sessionId, startProcessingMutation, onError])
+  }, [session?.vcf_file_path, sessionId, filteringPreset, startProcessingMutation, onError])
 
   // Error State
   if (phase === 'error') {
