@@ -31,6 +31,14 @@ import {
   BookOpen,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@helix/shared/components/ui/dropdown-menu'
+import { downloadClinicalReport } from '@/lib/utils/download-report'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
@@ -372,18 +380,70 @@ function CaseCard({ session, rank, memoryCache, onNavigate }: CaseCardProps) {
                   <ExternalLink className="h-3 w-3 mr-1" />
                   View Case
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onNavigate(session)
-                  }}
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  Download Report
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-sm"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      Download Report
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-40" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-md"
+                      onClick={async () => {
+                        try {
+                          const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
+                          const res = await fetch(`${AI_URL}/api/v1/analysis/interpret/${session.id}`)
+                          if (!res.ok) throw new Error('No interpretation')
+                          const data = await res.json()
+                          await downloadClinicalReport(data.content, 'pdf', session.id)
+                          toast.success('Report downloaded as PDF')
+                        } catch { toast.error('No clinical report available for this case') }
+                      }}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-md"
+                      onClick={async () => {
+                        try {
+                          const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
+                          const res = await fetch(`${AI_URL}/api/v1/analysis/interpret/${session.id}`)
+                          if (!res.ok) throw new Error('No interpretation')
+                          const data = await res.json()
+                          await downloadClinicalReport(data.content, 'docx', session.id)
+                          toast.success('Report downloaded as DOCX')
+                        } catch { toast.error('No clinical report available for this case') }
+                      }}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      DOCX
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-md"
+                      onClick={async () => {
+                        try {
+                          const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
+                          const res = await fetch(`${AI_URL}/api/v1/analysis/interpret/${session.id}`)
+                          if (!res.ok) throw new Error('No interpretation')
+                          const data = await res.json()
+                          await downloadClinicalReport(data.content, 'md', session.id)
+                          toast.success('Report downloaded as Markdown')
+                        } catch { toast.error('No clinical report available for this case') }
+                      }}
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      Markdown
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           )}
