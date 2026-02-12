@@ -511,11 +511,8 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-full p-8">
       <div className="w-full max-w-4xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-primary/10">
-            <Microscope className="h-6 w-6 text-primary" />
-          </div>
-          <div className="flex-1">
+        <div className="relative">
+          <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight">
               {user?.full_name ? `Welcome, ${user.full_name}` : 'Dashboard'}
             </h1>
@@ -523,7 +520,7 @@ export default function DashboardPage() {
               Manage your variant analysis cases
             </p>
           </div>
-          <Button onClick={handleNewCase}>
+          <Button onClick={handleNewCase} className="absolute right-0 top-1/2 -translate-y-1/2">
             <Plus className="h-4 w-4 mr-2" />
             <span className="text-base">New Case</span>
           </Button>
