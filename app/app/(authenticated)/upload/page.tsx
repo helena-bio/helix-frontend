@@ -12,8 +12,9 @@
  * - After upload completes, sessionId is added to URL: /upload?session=<uuid>
  * - When journey reaches analysis step, redirects to /analysis?session=<uuid>
  */
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import {
@@ -21,12 +22,14 @@ import {
   ClinicalProfileEntry,
   ProcessingFlow,
 } from '@/components/analysis'
+import { casesKeys } from '@/hooks/queries/use-cases'
 import { Loader2 } from 'lucide-react'
 
 export default function UploadPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { currentSessionId, setCurrentSessionId } = useSession()
-  const { currentStep, resetJourney } = useJourney()
+  const { currentStep, skipToAnalysis, resetJourney } = useJourney()
 
   // Reset journey when landing on /upload without a session
   useEffect(() => {
@@ -48,6 +51,12 @@ export default function UploadPage() {
     router.push(`/upload?session=${sessionId}`)
   }
 
+  // Handle analysis ready - invalidate cases list so sidebar updates
+  const handleAnalysisReady = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: casesKeys.all })
+    skipToAnalysis()
+  }, [queryClient, skipToAnalysis])
+
   // Step 1: Upload (includes validation and QC)
   if (currentStep === 'upload') {
     return (
@@ -66,7 +75,6 @@ export default function UploadPage() {
         </div>
       )
     }
-
     return (
       <ProcessingFlow sessionId={currentSessionId} />
     )
@@ -81,8 +89,7 @@ export default function UploadPage() {
         </div>
       )
     }
-
-    return <ClinicalProfileEntry sessionId={currentSessionId} />
+    return <ClinicalProfileEntry sessionId={currentSessionId} onComplete={handleAnalysisReady} />
   }
 
   // Fallback - analysis step redirect is handled by useEffect above
