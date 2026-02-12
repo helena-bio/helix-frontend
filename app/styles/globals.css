@@ -1,6 +1,7 @@
 @import '@helix/shared/styles/globals.css';
 
 /* Always reserve scrollbar gutter -- no layout shift on Windows */
-html {
+html,
+.overflow-auto {
   scrollbar-gutter: stable;
 }
