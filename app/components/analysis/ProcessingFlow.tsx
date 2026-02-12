@@ -282,7 +282,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Progress value={backendProgress} className="h-2" />
-                  <div className="flex justify-between text-base text-muted-foreground">
+                  <div className="flex justify-between text-md text-muted-foreground">
                     <span>Progress</span>
                     <span>{Math.round(backendProgress)}%</span>
                   </div>
