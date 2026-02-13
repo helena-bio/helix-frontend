@@ -63,6 +63,9 @@ type ACMGFilter = 'all' | 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely B
 // Impact filter type
 type ImpactFilter = 'all' | 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
 
+// Zero impact counts constant
+const ZERO_IMPACT = { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 }
+
 // Convert filter to backend ACMG class format
 const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
   if (filter === 'all') return undefined
@@ -496,14 +499,21 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   }, [allGenes, totalVariants, pathogenicCount, likelyPathogenicCount, vusCount])
 
   // Impact counts from pre-computed cross-matrix (no variant iteration)
+  // FIX: When filtering by specific ACMG class, do NOT fallback to 'all'.
+  // Missing key means 0 variants for that classification.
   const impactCounts = useMemo(() => {
-    // Determine which ACMG key to use from cross-matrix
-    let acmgKey = 'all'
-    if (acmgFilter !== 'all') {
-      acmgKey = acmgFilterToBackend(acmgFilter) || 'all'
+    if (acmgFilter === 'all') {
+      const matrix = impactByAcmg['all'] || ZERO_IMPACT
+      return {
+        high: matrix.HIGH || 0,
+        moderate: matrix.MODERATE || 0,
+        low: matrix.LOW || 0,
+        modifier: matrix.MODIFIER || 0,
+      }
     }
 
-    const matrix = impactByAcmg[acmgKey] || impactByAcmg['all'] || { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 }
+    const acmgKey = acmgFilterToBackend(acmgFilter) || 'all'
+    const matrix = impactByAcmg[acmgKey] || ZERO_IMPACT
 
     return {
       high: matrix.HIGH || 0,
