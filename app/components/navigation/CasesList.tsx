@@ -202,6 +202,16 @@ export function CasesList() {
 
       {isOpen && (
         <div className="mt-1 space-y-1 px-2">
+          {/* New Case button */}
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={handleNewCase}
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="ml-2 text-base">New Case</span>
+          </Button>
+
           {/* My/All toggle */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5">
             <button
@@ -237,15 +247,6 @@ export function CasesList() {
               className="w-full h-8 pl-8 pr-2 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
-
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-            onClick={handleNewCase}
-          >
-            <Plus className="h-4 w-4 shrink-0" />
-            <span className="ml-2 text-base">New Case</span>
-          </Button>
 
           {/* Cases list */}
           <div className="overflow-y-auto space-y-0.5 scrollbar-thin">
@@ -325,7 +326,7 @@ export function CasesList() {
                           <StatusDot status={session.status} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-md font-medium truncate leading-tight">
+                          <p className="text-base font-medium truncate leading-tight">
                             {getCaseDisplayName(session)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">

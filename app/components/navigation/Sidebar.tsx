@@ -328,10 +328,10 @@ export function Sidebar() {
                 className="w-full justify-start hover:bg-accent"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               >
-                <UserAvatar fullName={userName} userId={user?.id} size="sm" version={avatarVersion} />
+                <UserAvatar fullName={userName} userId={user?.id} size="md" version={avatarVersion} />
                 <div className="ml-3 flex-1 text-left">
                   <div className="text-base font-medium">{userName}</div>
-                  <div className="text-sm text-muted-foreground">Partner</div>
+                  <div className="text-md text-muted-foreground">Partner</div>
                 </div>
               </Button>
             </div>
