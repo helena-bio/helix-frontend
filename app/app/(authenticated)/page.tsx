@@ -41,6 +41,7 @@ import {
 import { downloadClinicalReport, type ReportFormat } from '@/lib/utils/download-report'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@helix/shared/components/ui/tooltip'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -279,7 +280,18 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
           </div>
           {/* Right: Avatar + Date + Chevron */}
           <div className="flex items-center gap-3">
-            <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-sm">{session.owner_name || "Unknown"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <span className="text-md text-muted-foreground">
               {formatRelativeDate(session.created_at)}
             </span>

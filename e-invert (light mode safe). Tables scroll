@@ -1,0 +1,64 @@
+[1mdiff --git a/app/components/report/ClinicalReportView.tsx b/app/components/report/ClinicalReportView.tsx[m
+[1mindex e2106ef..96fe13a 100644[m
+[1m--- a/app/components/report/ClinicalReportView.tsx[m
+[1m+++ b/app/components/report/ClinicalReportView.tsx[m
+[36m@@ -5,6 +5,12 @@[m
+  *[m
+  * Renders the saved markdown interpretation with metadata about[m
+  * interpretation level and modules used. Supports regeneration.[m
+[32m+[m[32m *[m
+[32m+[m[32m * Layout: Root div uses overflow-hidden to establish a containing block[m
+[32m+[m[32m * that forces text wrapping within the RightPanel boundary. This is[m
+[32m+[m[32m * necessary because markdown prose content (tables, long paragraphs)[m
+[32m+[m[32m * can push flex containers wider than their allocated space.[m
+[32m+[m[32m * DropdownMenu uses Radix portal so it is not clipped.[m
+  */[m
+ [m
+ import { useState, useCallback } from 'react'[m
+[36m@@ -108,7 +114,7 @@[m [mexport function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {[m
+   // Generating state[m
+   if (isGenerating) {[m
+     return ([m
+[31m-      <div className="p-6 space-y-6">[m
+[32m+[m[32m      <div className="p-6 space-y-6 overflow-hidden">[m
+         <Header />[m
+         <div className="text-center py-16">[m
+           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />[m
+[36m@@ -124,7 +130,7 @@[m [mexport function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {[m
+   // Error state[m
+   if (status === 'error') {[m
+     return ([m
+[31m-      <div className="p-6 space-y-6">[m
+[32m+[m[32m      <div className="p-6 space-y-6 overflow-hidden">[m
+         <Header />[m
+         <Card className="border-destructive">[m
+           <CardContent className="p-6 text-center">[m
+[36m@@ -144,7 +150,7 @@[m [mexport function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {[m
+   // No content yet[m
+   if (!content) {[m
+     return ([m
+[31m-      <div className="p-6 space-y-6">[m
+[32m+[m[32m      <div className="p-6 space-y-6 overflow-hidden">[m
+         <Header />[m
+         <Card>[m
+           <CardContent className="p-6 text-center">[m
+[36m@@ -165,7 +171,7 @@[m [mexport function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {[m
+ [m
+   // Success - show report[m
+   return ([m
+[31m-    <div className="p-6 space-y-6">[m
+[32m+[m[32m    <div className="p-6 space-y-6 overflow-hidden">[m
+       {/* Header with actions */}[m
+       <div className="flex items-start gap-4">[m
+         <div className="p-3 rounded-lg bg-primary/10 shrink-0">[m
+[36m@@ -241,8 +247,8 @@[m [mexport function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {[m
+ [m
+       {/* Report content */}[m
+       <Card className="min-w-0 overflow-hidden">[m
+[31m-        <CardContent className="px-6 pt-4 pb-6 min-w-0">[m
+[31m-          <div className="overflow-x-auto">[m
+[32m+[m[32m        <CardContent className="px-6 pt-4 pb-6 min-w-0 overflow-hidden">[m
+[32m+[m[32m          <div className="overflow-x-auto prose prose-sm max-w-none dark:prose-invert">[m
+             <MarkdownMessage content={content} isUser={false} />[m
+           </div>[m
+         </CardContent>[m
