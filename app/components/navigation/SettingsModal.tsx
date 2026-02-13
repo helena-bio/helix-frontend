@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react'
 import { X, Check, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { tokenUtils } from '@/lib/auth/token'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -64,7 +65,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     { id: 'account', label: 'Account' },
   ]
 
-  const userInitial = (user?.full_name || 'U').charAt(0).toUpperCase()
 
   const handleProfileSave = async () => {
     if (!firstName.trim() || !lastName.trim()) {
@@ -201,9 +201,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                 {/* Avatar + Email (read-only) */}
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg font-semibold shrink-0">
-                    {userInitial}
-                  </div>
+                  <UserAvatar fullName={user?.full_name || "User"} size="lg" />
                   <div>
                     <p className="text-base font-medium text-foreground">{user?.full_name || 'User'}</p>
                     <p className="text-md text-muted-foreground">{user?.email || ''}</p>

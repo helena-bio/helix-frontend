@@ -44,6 +44,7 @@ import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
 import { SettingsModal } from './SettingsModal'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 import { CasesList } from './CasesList'
 import { cn } from '@helix/shared/lib/utils'
 
@@ -148,7 +149,6 @@ export function Sidebar() {
   // User display values
   const userName = user?.full_name || 'User'
   const userEmail = user?.email || ''
-  const userInitial = userName.charAt(0).toUpperCase()
 
   const MODULES: Module[] = [
     {
@@ -328,9 +328,7 @@ export function Sidebar() {
                 className="w-full justify-start hover:bg-accent"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               >
-                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold shrink-0">
-                  {userInitial}
-                </div>
+                <UserAvatar fullName={userName} size="sm" />
                 <div className="ml-3 flex-1 text-left">
                   <div className="text-base font-medium">{userName}</div>
                   <div className="text-sm text-muted-foreground">Partner</div>
@@ -433,9 +431,7 @@ export function Sidebar() {
                       className="w-full justify-center px-0"
                       onClick={(e) => { e.stopPropagation(); setIsUserMenuOpen(!isUserMenuOpen) }}
                     >
-                      <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
-                        {userInitial}
-                      </div>
+                      <UserAvatar fullName={userName} size="sm" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">
