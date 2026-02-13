@@ -212,6 +212,18 @@ export function CasesList() {
             <span className="ml-2 text-base">New Case</span>
           </Button>
 
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-8 pl-8 pr-2 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+
           {/* My/All toggle */}
           <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5">
             <button
@@ -234,18 +246,6 @@ export function CasesList() {
               <Users className="h-4 w-4" />
               All
             </button>
-          </div>
-
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-8 pl-8 pr-2 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
-            />
           </div>
 
           {/* Cases list */}
