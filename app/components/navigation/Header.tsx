@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText, UserPlus } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -36,7 +36,6 @@ import {
   downloadPhenotypeFindingsReport,
   downloadVariantFindingsReport,
 } from '@/lib/utils/download-report'
-import { InviteModal } from './InviteModal'
 
 function getStepIcon(status: StepStatus) {
   switch (status) {
@@ -73,7 +72,6 @@ export function Header() {
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { user, logout } = useAuth()
 
-  const [inviteModalOpen, setInviteModalOpen] = useState(false)
 
   const isAdmin = user?.role === 'admin'
 
@@ -303,27 +301,6 @@ export function Header() {
             </DropdownMenu>
           )}
 
-          {/* Invite button - admin only */}
-          {isAdmin && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setInviteModalOpen(true)}
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                  >
-                    <UserPlus className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-sm">Invite team member</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -344,11 +321,5 @@ export function Header() {
         </div>
       </div>
 
-      {/* Invite modal */}
-      <InviteModal
-        isOpen={inviteModalOpen}
-        onClose={() => setInviteModalOpen(false)}
-      />
-    </>
   )
 }
