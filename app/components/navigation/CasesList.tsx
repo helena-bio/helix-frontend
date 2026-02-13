@@ -201,7 +201,7 @@ export function CasesList() {
       </button>
 
       {isOpen && (
-        <div className="mt-1 space-y-1 px-2">
+        <div className="mt-1 space-y-1.5 px-2">
           {/* New Case button */}
           <Button
             variant="ghost"
@@ -213,7 +213,7 @@ export function CasesList() {
           </Button>
 
           {/* Search */}
-          <div className="relative mb-1">
+          <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
