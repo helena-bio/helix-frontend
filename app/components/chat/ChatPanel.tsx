@@ -541,7 +541,7 @@ export function ChatPanel() {
             size="icon"
             onClick={handleSend}
             disabled={!inputValue.trim() || isSending}
-            className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
+            className="absolute right-2 bottom-3 h-8 w-8 rounded-lg"
           >
             {isSending ? (
               <Square className="h-4 w-4" fill="currentColor" />
