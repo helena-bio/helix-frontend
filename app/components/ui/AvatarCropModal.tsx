@@ -1,8 +1,8 @@
 /**
  * AvatarCropModal Component
  *
- * Professional avatar editor with zoom, pan, and circular crop.
- * Renders cropped result to canvas and uploads via API.
+ * Avatar editor with zoom (CSS transform) and pan.
+ * Circular crop preview, uploads cropped WebP via API.
  */
 'use client'
 
@@ -24,7 +24,7 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 })
   const [zoom, setZoom] = useState(1)
-  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [saving, setSaving] = useState(false)
@@ -32,13 +32,12 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
 
   const imgRef = useRef<HTMLImageElement | null>(null)
 
-  // Load file as data URL
+  // Load image
   useEffect(() => {
     const reader = new FileReader()
     reader.onload = (e) => {
       const url = e.target?.result as string
       setImageUrl(url)
-
       const img = new Image()
       img.onload = () => {
         setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight })
@@ -49,67 +48,61 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
     reader.readAsDataURL(imageFile)
   }, [imageFile])
 
-  // Base scale: fit image so shortest side covers the crop area
-  const baseScale = useMemo(() => {
-    if (!naturalSize.w || !naturalSize.h) return 1
-    return CROP_SIZE / Math.min(naturalSize.w, naturalSize.h)
+  // Base dimensions: scale so shortest side = CROP_SIZE
+  const baseDims = useMemo(() => {
+    if (!naturalSize.w || !naturalSize.h) return { w: CROP_SIZE, h: CROP_SIZE }
+    const ratio = naturalSize.w / naturalSize.h
+    if (ratio >= 1) {
+      // Landscape or square: height = CROP_SIZE, width = wider
+      return { w: CROP_SIZE * ratio, h: CROP_SIZE }
+    } else {
+      // Portrait: width = CROP_SIZE, height = taller
+      return { w: CROP_SIZE, h: CROP_SIZE / ratio }
+    }
   }, [naturalSize])
 
-  const scale = baseScale * zoom
-  const scaledW = naturalSize.w * scale
-  const scaledH = naturalSize.h * scale
-
-  // Clamp offset so image always covers the crop circle
-  const clampOffset = useCallback((ox: number, oy: number, z?: number) => {
-    const s = baseScale * (z ?? zoom)
-    const sw = naturalSize.w * s
-    const sh = naturalSize.h * s
-    const maxX = Math.max(0, (sw - CROP_SIZE) / 2)
-    const maxY = Math.max(0, (sh - CROP_SIZE) / 2)
+  // Max pan: image edge can't go past crop edge
+  const clampPan = useCallback((px: number, py: number, z?: number) => {
+    const s = z ?? zoom
+    const maxX = Math.max(0, (baseDims.w * s - CROP_SIZE) / 2)
+    const maxY = Math.max(0, (baseDims.h * s - CROP_SIZE) / 2)
     return {
-      x: Math.max(-maxX, Math.min(maxX, ox)),
-      y: Math.max(-maxY, Math.min(maxY, oy)),
+      x: Math.max(-maxX, Math.min(maxX, px)),
+      y: Math.max(-maxY, Math.min(maxY, py)),
     }
-  }, [baseScale, zoom, naturalSize])
+  }, [baseDims, zoom])
 
-  // Re-clamp when zoom changes
+  // Re-clamp pan when zoom changes
   useEffect(() => {
-    setOffset((prev) => clampOffset(prev.x, prev.y, zoom))
-  }, [zoom, clampOffset])
+    setPan((prev) => clampPan(prev.x, prev.y, zoom))
+  }, [zoom, clampPan])
 
-  // Drag handlers
+  // Drag
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault()
     setIsDragging(true)
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y })
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
     ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-  }, [offset])
+  }, [pan])
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isDragging) return
-    const raw = { x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }
-    setOffset(clampOffset(raw.x, raw.y))
-  }, [isDragging, dragStart, clampOffset])
+    setPan(clampPan(e.clientX - dragStart.x, e.clientY - dragStart.y))
+  }, [isDragging, dragStart, clampPan])
 
-  const handlePointerUp = useCallback(() => {
-    setIsDragging(false)
-  }, [])
+  const handlePointerUp = useCallback(() => setIsDragging(false), [])
 
-  const handleZoomChange = useCallback((v: number) => {
+  // Zoom
+  const handleZoom = useCallback((v: number) => {
     setZoom(Math.max(1, Math.min(3, Math.round(v * 20) / 20)))
   }, [])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    handleZoomChange(zoom + delta)
-  }, [zoom, handleZoomChange])
+    handleZoom(zoom + (e.deltaY > 0 ? -0.1 : 0.1))
+  }, [zoom, handleZoom])
 
-  // Image position: centered + offset
-  const imgX = (CROP_SIZE - scaledW) / 2 + offset.x
-  const imgY = (CROP_SIZE - scaledH) / 2 + offset.y
-
-  // Save: crop to canvas, upload
+  // Save
   const handleSave = useCallback(async () => {
     if (!imgRef.current) return
     setSaving(true)
@@ -121,39 +114,38 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
       canvas.height = OUTPUT_SIZE
       const ctx = canvas.getContext('2d')!
 
-      // Source rectangle in original image coordinates
-      const srcX = -imgX / scale
-      const srcY = -imgY / scale
-      const srcSize = CROP_SIZE / scale
+      // Map crop area back to natural image coordinates
+      const baseScale = naturalSize.w / baseDims.w
+      // Center of crop in base-image space (before zoom)
+      const centerX = (baseDims.w / 2 - pan.x / zoom) * baseScale
+      const centerY = (baseDims.h / 2 - pan.y / zoom) * baseScale
+      const srcSize = (CROP_SIZE / zoom) * baseScale
+
+      const srcX = centerX - srcSize / 2
+      const srcY = centerY - srcSize / 2
 
       // Circular clip
       ctx.beginPath()
       ctx.arc(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, 0, Math.PI * 2)
       ctx.clip()
 
-      ctx.drawImage(
-        imgRef.current,
-        srcX, srcY, srcSize, srcSize,
-        0, 0, OUTPUT_SIZE, OUTPUT_SIZE
-      )
+      ctx.drawImage(imgRef.current, srcX, srcY, srcSize, srcSize, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
 
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, 'image/webp', 0.9)
-      )
+      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/webp', 0.9))
       if (!blob) throw new Error('Failed to create image')
 
       const formData = new FormData()
       formData.append('file', blob, 'avatar.webp')
 
       const token = tokenUtils.get()
-      const response = await fetch(`${API_URL}/auth/avatar`, {
+      const res = await fetch(`${API_URL}/auth/avatar`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
       })
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => null)
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
         throw new Error(data?.detail || 'Upload failed')
       }
 
@@ -162,7 +154,7 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
       setError(err instanceof Error ? err.message : 'Upload failed')
       setSaving(false)
     }
-  }, [imgX, imgY, scale, onSave])
+  }, [naturalSize, baseDims, pan, zoom, onSave])
 
   const imageReady = imageUrl && naturalSize.w > 0
 
@@ -174,10 +166,7 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="text-lg font-semibold text-foreground">Edit photo</h3>
-          <button
-            onClick={onCancel}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -190,12 +179,13 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
             </div>
           ) : (
             <>
-              {/* Crop container with overflow hidden */}
+              {/* Square container with circular clip */}
               <div
-                className="relative select-none overflow-hidden rounded-full"
+                className="relative select-none overflow-hidden"
                 style={{
                   width: CROP_SIZE,
                   height: CROP_SIZE,
+                  borderRadius: '50%',
                   cursor: isDragging ? 'grabbing' : 'grab',
                 }}
                 onPointerDown={handlePointerDown}
@@ -204,16 +194,18 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
                 onPointerLeave={handlePointerUp}
                 onWheel={handleWheel}
               >
+                {/* Image: fixed base size, zoom via CSS transform */}
                 <img
                   src={imageUrl}
                   alt="Crop preview"
                   draggable={false}
-                  className="absolute pointer-events-none"
+                  className="absolute pointer-events-none origin-center"
                   style={{
-                    width: scaledW,
-                    height: scaledH,
-                    left: imgX,
-                    top: imgY,
+                    width: baseDims.w,
+                    height: baseDims.h,
+                    left: (CROP_SIZE - baseDims.w) / 2 + pan.x,
+                    top: (CROP_SIZE - baseDims.h) / 2 + pan.y,
+                    transform: `scale(${zoom})`,
                   }}
                 />
               </div>
@@ -221,7 +213,7 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
               {/* Zoom slider */}
               <div className="flex items-center gap-3 w-full max-w-[280px]">
                 <button
-                  onClick={() => handleZoomChange(zoom - 0.2)}
+                  onClick={() => handleZoom(zoom - 0.2)}
                   disabled={zoom <= 1}
                   className="text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
                 >
@@ -233,11 +225,11 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
                   max="3"
                   step="0.05"
                   value={zoom}
-                  onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+                  onChange={(e) => handleZoom(parseFloat(e.target.value))}
                   className="flex-1 h-1.5 bg-border rounded-full appearance-none cursor-pointer accent-primary"
                 />
                 <button
-                  onClick={() => handleZoomChange(zoom + 0.2)}
+                  onClick={() => handleZoom(zoom + 0.2)}
                   disabled={zoom >= 3}
                   className="text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
                 >
@@ -247,9 +239,7 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
             </>
           )}
 
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
         </div>
 
         {/* Footer */}
