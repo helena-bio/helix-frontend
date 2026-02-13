@@ -595,7 +595,7 @@ export default function DashboardPage() {
           <Card>
             <CardContent className="p-8 text-center">
               <Microscope className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-md font-medium mb-2">
+              <p className="text-base font-medium mb-2">
                 {searchQuery ? 'No matching cases' : showAll ? 'No cases in organization' : 'No cases yet'}
               </p>
               <p className="text-md text-muted-foreground">
