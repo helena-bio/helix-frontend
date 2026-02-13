@@ -213,7 +213,7 @@ export function CasesList() {
           </Button>
 
           {/* Search */}
-          <div className="relative">
+          <div className="relative mb-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
@@ -228,7 +228,7 @@ export function CasesList() {
           <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5">
             <button
               className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-base transition-colors",
+                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-md transition-colors",
                 !showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setShowAll(false)}
@@ -238,7 +238,7 @@ export function CasesList() {
             </button>
             <button
               className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-base transition-colors",
+                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-md transition-colors",
                 showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setShowAll(true)}
