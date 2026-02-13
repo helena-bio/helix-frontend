@@ -117,7 +117,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
         <div className="text-center py-16">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
           <p className="text-base font-medium">Generating clinical interpretation...</p>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-md text-muted-foreground mt-1">
             AI is analyzing all available data. This may take 30-60 seconds.
           </p>
         </div>
