@@ -530,7 +530,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col min-h-full p-8">
-      <div className="w-full max-w-4xl mx-auto space-y-3">
+      <div className="w-full max-w-4xl mx-auto space-y-4">
         {/* Header */}
         <div className="text-center mb-5">
           <h1 className="text-3xl font-bold tracking-tight">
