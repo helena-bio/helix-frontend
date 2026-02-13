@@ -34,7 +34,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTeamMembers, useOrgInvitations } from '@/hooks/queries/use-admin'
-import { useChangeRole, useChangeStatus, useRevokeInvitation } from '@/hooks/mutations/use-admin-mutations'
+import { useChangeRole, useChangeStatus, useRevokeInvitation, useAdminResetPassword, useRemoveMember } from '@/hooks/mutations/use-admin-mutations'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -101,6 +101,8 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const changeRole = useChangeRole()
   const changeStatus = useChangeStatus()
+  const resetPassword = useAdminResetPassword()
+  const removeMemberMutation = useRemoveMember()
 
   const isSelf = member.id === currentUserId
   const role = roleConfig[member.role] || roleConfig.user
@@ -137,15 +139,29 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
   }, [changeStatus, member.id, member.status])
 
   const handleResetPassword = useCallback(() => {
-    toast.info('Password reset link sent to ' + member.email)
+    resetPassword.mutate(member.id, {
+      onSuccess: (data) => {
+        toast.success(`Temporary password for ${data.user_email}: ${data.temporary_password}`, { duration: 15000 })
+      },
+      onError: () => {
+        toast.error("Failed to reset password")
+      },
+    })
     setMenuOpen(false)
-  }, [member.email])
+  }, [resetPassword, member.id])
 
   const handleRemove = useCallback(() => {
-    toast.info('Remove member: coming soon')
+    removeMemberMutation.mutate(member.id, {
+      onSuccess: () => {
+        toast.success(`${member.full_name} removed from organization`)
+      },
+      onError: () => {
+        toast.error("Failed to remove member")
+      },
+    })
     setMenuOpen(false)
     setConfirmAction(null)
-  }, [])
+  }, [removeMemberMutation, member.id, member.full_name])
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors">

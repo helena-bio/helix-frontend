@@ -4,8 +4,7 @@
  * Endpoints for organization team management.
  * All endpoints require admin role.
  */
-
-import { get, put, del } from './client'
+import { get, put, post, del } from './client'
 
 // ============================================================================
 // TYPES
@@ -42,6 +41,12 @@ export interface OrgInvitationListResponse {
   total: number
 }
 
+export interface AdminResetPasswordResponse {
+  temporary_password: string
+  user_email: string
+  message: string
+}
+
 // ============================================================================
 // TEAM MEMBERS
 // ============================================================================
@@ -65,6 +70,18 @@ export async function changeUserStatus(
   status: string,
 ): Promise<TeamMember> {
   return put<TeamMember>(`/admin/team/${userId}/status`, { status })
+}
+
+export async function adminResetPassword(
+  userId: string,
+): Promise<AdminResetPasswordResponse> {
+  return post<AdminResetPasswordResponse>(`/admin/team/${userId}/reset-password`, {})
+}
+
+export async function removeMember(
+  userId: string,
+): Promise<void> {
+  return del<void>(`/admin/team/${userId}`)
 }
 
 // ============================================================================
