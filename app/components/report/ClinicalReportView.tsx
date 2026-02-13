@@ -246,7 +246,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
       {/* Report content */}
       <Card className="min-w-0 overflow-hidden">
         <CardContent className="px-6 pt-4 pb-6 min-w-0 overflow-hidden">
-          <div className="overflow-x-auto prose prose-sm max-w-none dark:prose-invert">
+          <div className="overflow-x-auto prose prose-sm max-w-none dark:prose-invert prose-h1:mt-0 prose-h1:mb-3 prose-h2:mt-4 prose-h2:mb-2 prose-table:my-2 prose-hr:my-4 prose-p:my-2">
             <MarkdownMessage content={content} isUser={false} />
           </div>
         </CardContent>
