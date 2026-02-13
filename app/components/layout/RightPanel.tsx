@@ -57,7 +57,7 @@ export function RightPanel({ children }: RightPanelProps) {
 
   // Default: Show module content (ModuleRouter)
   return (
-    <div className="h-full min-w-0 overflow-y-auto [scrollbar-gutter:stable] bg-background">
+    <div className="h-full min-w-0 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] bg-background">
       {children}
     </div>
   )
