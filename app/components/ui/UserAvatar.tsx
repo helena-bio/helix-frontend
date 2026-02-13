@@ -7,7 +7,7 @@
  */
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { cn } from '@helix/shared/lib/utils'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008'
@@ -59,6 +59,12 @@ export function UserAvatar({ fullName, userId, size = 'sm', className, version }
     return AVATAR_COLORS[index]
   }, [fullName])
 
+  // Reset image state when userId or version changes
+  useEffect(() => {
+    setImgError(false)
+    setImgLoaded(false)
+  }, [userId, version])
+
   const avatarUrl = userId
     ? `${API_URL}/auth/avatar/${userId}${version ? `?v=${version}` : ''}`
     : null
@@ -77,7 +83,7 @@ export function UserAvatar({ fullName, userId, size = 'sm', className, version }
       {initials}
       {showImage && (
         <img
-          key={`${avatarUrl}-${version}`}
+          key={`${userId}-${version}`}
           src={avatarUrl}
           alt={fullName}
           className={cn(
