@@ -5,6 +5,12 @@
  *
  * Renders the saved markdown interpretation with metadata about
  * interpretation level and modules used. Supports regeneration.
+ *
+ * Layout: Root div uses overflow-hidden to establish a containing block
+ * that forces text wrapping within the RightPanel boundary. This is
+ * necessary because markdown prose content (tables, long paragraphs)
+ * can push flex containers wider than their allocated space.
+ * DropdownMenu uses Radix portal so it is not clipped.
  */
 
 import { useState, useCallback } from 'react'
@@ -108,7 +114,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // Generating state
   if (isGenerating) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 overflow-hidden">
         <Header />
         <div className="text-center py-16">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
@@ -124,7 +130,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // Error state
   if (status === 'error') {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 overflow-hidden">
         <Header />
         <Card className="border-destructive">
           <CardContent className="p-6 text-center">
@@ -144,7 +150,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // No content yet
   if (!content) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 overflow-hidden">
         <Header />
         <Card>
           <CardContent className="p-6 text-center">
@@ -165,7 +171,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
 
   // Success - show report
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 overflow-hidden">
       {/* Header with actions */}
       <div className="flex items-start gap-4">
         <div className="p-3 rounded-lg bg-primary/10 shrink-0">
@@ -241,8 +247,8 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
 
       {/* Report content */}
       <Card className="min-w-0 overflow-hidden">
-        <CardContent className="px-6 pt-4 pb-6 min-w-0">
-          <div className="overflow-x-auto">
+        <CardContent className="px-6 pt-4 pb-6 min-w-0 overflow-hidden">
+          <div className="overflow-x-auto prose prose-sm max-w-none dark:prose-invert">
             <MarkdownMessage content={content} isUser={false} />
           </div>
         </CardContent>
