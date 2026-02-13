@@ -9,6 +9,11 @@
  *
  * Defaults: 45% left / 55% right
  * Minimums: 280px left (chat) / 360px right (variants table)
+ *
+ * Both panels use overflow-hidden to establish containing blocks.
+ * This prevents content (e.g. markdown tables, prose) from pushing
+ * flex items beyond their allocated percentage. Child components
+ * handle their own scrolling (RightPanel: overflow-y-auto, etc).
  */
 
 import { useRef, useState, useCallback } from 'react'
@@ -86,7 +91,7 @@ export function SplitView({ children }: SplitViewProps) {
     <div ref={containerRef} className="flex-1 flex h-full min-h-0">
       <div
         ref={leftRef}
-        className="h-full min-w-0"
+        className="h-full min-w-0 overflow-hidden"
         style={{ flex: `0 0 ${leftPercent}%` }}
       >
         <LeftPanel />
@@ -100,7 +105,7 @@ export function SplitView({ children }: SplitViewProps) {
 
       <div
         ref={rightRef}
-        className="h-full min-w-0"
+        className="h-full min-w-0 overflow-hidden"
         style={{ flex: `0 0 ${100 - leftPercent}%` }}
       >
         <RightPanel>
