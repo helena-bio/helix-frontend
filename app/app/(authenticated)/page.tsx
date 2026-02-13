@@ -276,12 +276,12 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
                 {session.genome_build}
               </Badge>
             )}
-            {showOwner && (
-              <div className="flex items-center gap-1.5">
-                <UserAvatar fullName={session.owner_name || 'Unknown'} userId={session.user_id} size="sm" version={avatarVersion} />
-                <span className="text-sm text-muted-foreground">{session.owner_name || 'Unknown'}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5">
+              <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
+              {session.owner_name && (
+                <span className="text-sm text-muted-foreground">{session.owner_name}</span>
+              )}
+            </div>
           </div>
 
           {/* Right: Date + Chevron */}
