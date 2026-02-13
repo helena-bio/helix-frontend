@@ -544,22 +544,22 @@ export default function DashboardPage() {
           <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 shrink-0">
             <button
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded text-md transition-colors",
                 !showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setShowAll(false)}
             >
-              <User className="h-3.5 w-3.5" />
+              <User className="h-4 w-4" />
               Mine
             </button>
             <button
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded text-md transition-colors",
                 showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setShowAll(true)}
             >
-              <Users className="h-3.5 w-3.5" />
+              <Users className="h-4 w-4" />
               All
             </button>
           </div>
