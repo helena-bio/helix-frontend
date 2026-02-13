@@ -23,7 +23,7 @@ import {
   X,
   Copy,
   UserPlus,
-  Clock,
+  Send,
   Ban,
   UserCheck,
   Search,
@@ -524,7 +524,7 @@ export function TeamMembersView() {
                 )}
                 onClick={() => setActiveTab('invitations')}
               >
-                <Clock className="h-4 w-4" />
+                <Send className="h-4 w-4" />
                 Pending
                 {pendingCount > 0 && (
                   <span className="text-xs bg-orange-100 text-orange-900 rounded-full px-1.5 py-0.5">{pendingCount}</span>
