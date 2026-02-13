@@ -10,7 +10,7 @@ import type { AnalysisSession } from '@/types/variant.types'
 
 export const casesKeys = {
   all: ['cases'] as const,
-  list: () => [...casesKeys.all, 'list'] as const,
+  list: (mine: boolean = true) => [...casesKeys.all, 'list', { mine }] as const,
 }
 
 export interface CasesResponse {
@@ -20,13 +20,13 @@ export interface CasesResponse {
 }
 
 /**
- * Fetch all cases for the authenticated user.
- * JWT provides user_id automatically via backend auth middleware.
+ * Fetch cases for the authenticated user's organization.
+ * mine=true: only my cases (default). mine=false: all org cases.
  */
-export function useCases() {
+export function useCases(mine: boolean = true) {
   return useQuery<CasesResponse>({
-    queryKey: casesKeys.list(),
-    queryFn: () => listCases(),
+    queryKey: casesKeys.list(mine),
+    queryFn: () => listCases({ mine }),
     staleTime: 30 * 1000,
     refetchOnMount: 'always',
   })

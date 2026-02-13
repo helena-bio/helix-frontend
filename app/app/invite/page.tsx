@@ -156,7 +156,7 @@ export default function InvitePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col overflow-y-auto">
       {/* Autofill override */}
       <style>{`
         input:-webkit-autofill,

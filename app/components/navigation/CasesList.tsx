@@ -1,13 +1,15 @@
 /**
  * CasesList Component
  *
- * Expandable list of user's analysis cases in the sidebar.
+ * Expandable list of analysis cases in the sidebar.
+ * - My Cases / All Cases toggle (org-wide visibility)
  * - Search filtering (client-side)
  * - Click completed case to load into analysis view
  * - Inline rename (pencil icon -> input -> Enter/Escape)
  * - Delete with inline confirmation
  * - Status indicator per case
  * - Active case highlighted
+ * - Owner name shown for other users' cases
  *
  * SESSION MANAGEMENT:
  * - Navigation is via router.push ONLY
@@ -31,6 +33,8 @@ import {
   CheckCircle2,
   Clock,
   Plus,
+  Users,
+  User,
 } from 'lucide-react'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -84,7 +88,9 @@ export function CasesList() {
   const router = useRouter()
   const { currentSessionId, setCurrentSessionId, setSelectedModule } = useSession()
   const { skipToAnalysis, resetJourney } = useJourney()
-  const { data, isLoading } = useCases()
+
+  const [showAll, setShowAll] = useState(false)
+  const { data, isLoading } = useCases(!showAll)
   const renameMutation = useRenameCase()
   const deleteMutation = useDeleteCase()
 
@@ -100,7 +106,8 @@ export function CasesList() {
   const filteredCases = cases.filter((c) => {
     if (!searchQuery) return true
     const name = getCaseDisplayName(c).toLowerCase()
-    return name.includes(searchQuery.toLowerCase())
+    const owner = (c.owner_name || '').toLowerCase()
+    return name.includes(searchQuery.toLowerCase()) || owner.includes(searchQuery.toLowerCase())
   })
 
   // Focus edit input when editing starts
@@ -193,6 +200,30 @@ export function CasesList() {
 
       {isOpen && (
         <div className="mt-1 space-y-1 px-2">
+          {/* My/All toggle */}
+          <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5">
+            <button
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-sm transition-colors",
+                !showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setShowAll(false)}
+            >
+              <User className="h-3.5 w-3.5" />
+              Mine
+            </button>
+            <button
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-sm transition-colors",
+                showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setShowAll(true)}
+            >
+              <Users className="h-3.5 w-3.5" />
+              All
+            </button>
+          </div>
+
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -222,7 +253,7 @@ export function CasesList() {
               </div>
             ) : filteredCases.length === 0 ? (
               <p className="text-md text-muted-foreground px-2 py-3 text-center">
-                {searchQuery ? 'No matches' : 'No cases yet'}
+                {searchQuery ? 'No matches' : showAll ? 'No cases in organization' : 'No cases yet'}
               </p>
             ) : (
               filteredCases.map((session) => {
@@ -294,9 +325,16 @@ export function CasesList() {
                           <p className="text-md font-medium truncate leading-tight">
                             {getCaseDisplayName(session)}
                           </p>
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            {formatRelativeDate(session.created_at)}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-sm text-muted-foreground">
+                              {formatRelativeDate(session.created_at)}
+                            </span>
+                            {showAll && session.owner_name && (
+                              <span className="text-sm text-muted-foreground truncate">
+                                &middot; {session.owner_name}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
                           <button

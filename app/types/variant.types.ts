@@ -92,6 +92,7 @@ export interface QCMetrics {
 export interface AnalysisSession {
   id: string
   user_id: string
+  organization_id: string
   case_label: string | null
   analysis_type: string
   status: 'pending' | 'validated' | 'processing' | 'completed' | 'failed'
@@ -102,6 +103,7 @@ export interface AnalysisSession {
   updated_at: string
   completed_at: string | null
   error_message: string | null
+  owner_name: string | null
 }
 
 export interface VariantFilters {
@@ -231,6 +233,33 @@ export interface GeneVariantsResponse {
   gene_symbol: string
   variant_count: number
   variants: VariantInGene[]
+}
+
+// =============================================================================
+// Collaboration Types
+// =============================================================================
+
+export interface NoteAuthor {
+  name: string
+  initials: string
+}
+
+export interface CaseNote {
+  id: string
+  user: NoteAuthor
+  variant_idx: number | null
+  text: string
+  created_at: string
+}
+
+export interface VariantOverride {
+  id: string
+  user: NoteAuthor
+  variant_idx: number
+  original_class: string
+  new_class: string
+  reason: string
+  created_at: string
 }
 
 export * from "./literature.types"

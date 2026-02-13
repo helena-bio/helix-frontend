@@ -12,6 +12,8 @@ import type {
   VariantFilters,
   GeneAggregatedResponse,
   GeneAggregatedFilters,
+  CaseNote,
+  VariantOverride,
 } from '@/types/variant.types'
 
 /**
@@ -54,6 +56,7 @@ export async function uploadVCFFile(
   return {
     id: response.session_id,
     user_id: '',
+    organization_id: '',
     case_label: caseLabel || file.name.replace(/\.vcf(\.gz)?$/, ''),
     analysis_type: response.analysis_type,
     status: response.status as AnalysisSession['status'],
@@ -64,6 +67,7 @@ export async function uploadVCFFile(
     updated_at: new Date().toISOString(),
     completed_at: null,
     error_message: null,
+    owner_name: null,
   }
 }
 
@@ -75,21 +79,25 @@ export async function getSession(sessionId: string): Promise<AnalysisSession> {
 }
 
 /**
- * List user's cases (sessions).
- * JWT provides user_id -- backend filters automatically.
+ * List cases (sessions) for the authenticated user's organization.
+ * mine=true: only my cases. mine=false: all org cases.
  */
 export async function listCases(
-  status?: string,
-  limit: number = 100,
-  offset: number = 0
+  options: {
+    mine?: boolean
+    status?: string
+    limit?: number
+    offset?: number
+  } = {}
 ): Promise<{ sessions: AnalysisSession[]; total_count: number; statistics: Record<string, any> }> {
+  const { mine = true, status, limit = 100, offset = 0 } = options
   const params = new URLSearchParams()
+  params.append('mine', String(mine))
   if (status) params.append('status', status)
   params.append('limit', String(limit))
   params.append('offset', String(offset))
 
-  const queryString = params.toString()
-  return get(`/sessions${queryString ? `?${queryString}` : ''}`)
+  return get(`/sessions?${params.toString()}`)
 }
 
 /**
@@ -109,6 +117,16 @@ export async function deleteCase(
   sessionId: string
 ): Promise<{ session_id: string; deleted: boolean; message: string }> {
   return del(`/sessions/${sessionId}`)
+}
+
+/**
+ * Reassign case ownership to another org member.
+ */
+export async function reassignCase(
+  sessionId: string,
+  newOwnerId: string
+): Promise<AnalysisSession> {
+  return post<AnalysisSession>(`/sessions/${sessionId}/reassign`, { owner_id: newOwnerId })
 }
 
 /**
@@ -283,4 +301,64 @@ export async function getGeneVariants(
   geneSymbol: string
 ): Promise<{ gene_symbol: string; variant_count: number; variants: any[] }> {
   return get(`/sessions/${sessionId}/variants/by-gene/${encodeURIComponent(geneSymbol)}`)
+}
+
+// =============================================================================
+// Collaboration API
+// =============================================================================
+
+/**
+ * List notes for a case, optionally filtered by variant.
+ */
+export async function listNotes(
+  sessionId: string,
+  variantIdx?: number
+): Promise<{ notes: CaseNote[]; total_count: number }> {
+  const params = new URLSearchParams()
+  if (variantIdx !== undefined) params.append('variant_idx', String(variantIdx))
+  const qs = params.toString()
+  return get(`/sessions/${sessionId}/notes${qs ? `?${qs}` : ''}`)
+}
+
+/**
+ * Add a note to a case or variant.
+ */
+export async function createNote(
+  sessionId: string,
+  text: string,
+  variantIdx?: number
+): Promise<CaseNote> {
+  return post<CaseNote>(`/sessions/${sessionId}/notes`, {
+    text,
+    variant_idx: variantIdx ?? null,
+  })
+}
+
+/**
+ * List variant overrides for a case, optionally filtered by variant.
+ */
+export async function listOverrides(
+  sessionId: string,
+  variantIdx?: number
+): Promise<{ overrides: VariantOverride[]; total_count: number }> {
+  const params = new URLSearchParams()
+  if (variantIdx !== undefined) params.append('variant_idx', String(variantIdx))
+  const qs = params.toString()
+  return get(`/sessions/${sessionId}/overrides${qs ? `?${qs}` : ''}`)
+}
+
+/**
+ * Reclassify a variant with clinical justification.
+ */
+export async function createOverride(
+  sessionId: string,
+  variantIdx: number,
+  newClass: string,
+  reason: string
+): Promise<VariantOverride> {
+  return post<VariantOverride>(`/sessions/${sessionId}/overrides`, {
+    variant_idx: variantIdx,
+    new_class: newClass,
+    reason,
+  })
 }
