@@ -31,7 +31,6 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
   const [error, setError] = useState('')
 
   const imgRef = useRef<HTMLImageElement | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   // Load file as data URL
   useEffect(() => {
@@ -48,45 +47,37 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
       img.src = url
     }
     reader.readAsDataURL(imageFile)
-
-    return () => {
-      setImageUrl(null)
-    }
   }, [imageFile])
 
-  // Base scale: fit shortest dimension to crop area
+  // Base scale: fit image so shortest side covers the crop area
   const baseScale = useMemo(() => {
     if (!naturalSize.w || !naturalSize.h) return 1
     return CROP_SIZE / Math.min(naturalSize.w, naturalSize.h)
   }, [naturalSize])
 
-  const displayScale = baseScale * zoom
-  const displayW = naturalSize.w * displayScale
-  const displayH = naturalSize.h * displayScale
+  const scale = baseScale * zoom
+  const scaledW = naturalSize.w * scale
+  const scaledH = naturalSize.h * scale
 
-  // Image position (top-left relative to container)
-  const imgLeft = (CROP_SIZE - displayW) / 2 + offset.x
-  const imgTop = (CROP_SIZE - displayH) / 2 + offset.y
-
-  // Clamp offset helper
-  const clampOffset = useCallback((ox: number, oy: number, currentZoom?: number) => {
-    const scale = baseScale * (currentZoom ?? zoom)
-    const dw = naturalSize.w * scale
-    const dh = naturalSize.h * scale
-    const maxX = Math.max(0, (dw - CROP_SIZE) / 2)
-    const maxY = Math.max(0, (dh - CROP_SIZE) / 2)
+  // Clamp offset so image always covers the crop circle
+  const clampOffset = useCallback((ox: number, oy: number, z?: number) => {
+    const s = baseScale * (z ?? zoom)
+    const sw = naturalSize.w * s
+    const sh = naturalSize.h * s
+    const maxX = Math.max(0, (sw - CROP_SIZE) / 2)
+    const maxY = Math.max(0, (sh - CROP_SIZE) / 2)
     return {
       x: Math.max(-maxX, Math.min(maxX, ox)),
       y: Math.max(-maxY, Math.min(maxY, oy)),
     }
   }, [baseScale, zoom, naturalSize])
 
-  // Clamp offset when zoom changes
+  // Re-clamp when zoom changes
   useEffect(() => {
     setOffset((prev) => clampOffset(prev.x, prev.y, zoom))
   }, [zoom, clampOffset])
 
-  // Pointer handlers for drag
+  // Drag handlers
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -104,19 +95,21 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
     setIsDragging(false)
   }, [])
 
-  // Zoom handler
-  const handleZoomChange = useCallback((newZoom: number) => {
-    setZoom(Math.max(1, Math.min(3, newZoom)))
+  const handleZoomChange = useCallback((v: number) => {
+    setZoom(Math.max(1, Math.min(3, Math.round(v * 20) / 20)))
   }, [])
 
-  // Mouse wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? -0.1 : 0.1
     handleZoomChange(zoom + delta)
   }, [zoom, handleZoomChange])
 
-  // Save: crop via canvas and upload
+  // Image position: centered + offset
+  const imgX = (CROP_SIZE - scaledW) / 2 + offset.x
+  const imgY = (CROP_SIZE - scaledH) / 2 + offset.y
+
+  // Save: crop to canvas, upload
   const handleSave = useCallback(async () => {
     if (!imgRef.current) return
     setSaving(true)
@@ -128,32 +121,27 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
       canvas.height = OUTPUT_SIZE
       const ctx = canvas.getContext('2d')!
 
-      // Calculate source rectangle in original image coordinates
-      const srcX = -imgLeft / displayScale
-      const srcY = -imgTop / displayScale
-      const srcW = CROP_SIZE / displayScale
-      const srcH = CROP_SIZE / displayScale
+      // Source rectangle in original image coordinates
+      const srcX = -imgX / scale
+      const srcY = -imgY / scale
+      const srcSize = CROP_SIZE / scale
 
       // Circular clip
       ctx.beginPath()
       ctx.arc(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, 0, Math.PI * 2)
       ctx.clip()
 
-      // Draw cropped portion
       ctx.drawImage(
         imgRef.current,
-        srcX, srcY, srcW, srcH,
+        srcX, srcY, srcSize, srcSize,
         0, 0, OUTPUT_SIZE, OUTPUT_SIZE
       )
 
-      // Export as WebP blob
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, 'image/webp', 0.9)
       )
-
       if (!blob) throw new Error('Failed to create image')
 
-      // Upload
       const formData = new FormData()
       formData.append('file', blob, 'avatar.webp')
 
@@ -174,7 +162,7 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
       setError(err instanceof Error ? err.message : 'Upload failed')
       setSaving(false)
     }
-  }, [imgLeft, imgTop, displayScale, onSave])
+  }, [imgX, imgY, scale, onSave])
 
   const imageReady = imageUrl && naturalSize.w > 0
 
@@ -182,7 +170,7 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
       <div className="fixed inset-0 bg-black/60" onClick={onCancel} />
 
-      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-[400px] mx-4 overflow-hidden">
+      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-[400px] mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="text-lg font-semibold text-foreground">Edit photo</h3>
@@ -202,60 +190,35 @@ export function AvatarCropModal({ imageFile, onSave, onCancel }: AvatarCropModal
             </div>
           ) : (
             <>
+              {/* Crop container with overflow hidden */}
               <div
-                ref={containerRef}
-                className="relative select-none"
-                style={{ width: CROP_SIZE, height: CROP_SIZE, cursor: isDragging ? 'grabbing' : 'grab' }}
+                className="relative select-none overflow-hidden rounded-full"
+                style={{
+                  width: CROP_SIZE,
+                  height: CROP_SIZE,
+                  cursor: isDragging ? 'grabbing' : 'grab',
+                }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
                 onWheel={handleWheel}
               >
-                {/* Image */}
                 <img
                   src={imageUrl}
                   alt="Crop preview"
                   draggable={false}
                   className="absolute pointer-events-none"
                   style={{
-                    width: displayW,
-                    height: displayH,
-                    left: imgLeft,
-                    top: imgTop,
+                    width: scaledW,
+                    height: scaledH,
+                    left: imgX,
+                    top: imgY,
                   }}
                 />
-
-                {/* Dark overlay with circular cutout */}
-                <svg
-                  className="absolute inset-0 pointer-events-none"
-                  width={CROP_SIZE}
-                  height={CROP_SIZE}
-                >
-                  <defs>
-                    <mask id="avatar-crop-mask">
-                      <rect width={CROP_SIZE} height={CROP_SIZE} fill="white" />
-                      <circle cx={CROP_SIZE / 2} cy={CROP_SIZE / 2} r={CROP_SIZE / 2} fill="black" />
-                    </mask>
-                  </defs>
-                  <rect
-                    width={CROP_SIZE}
-                    height={CROP_SIZE}
-                    fill="rgba(0,0,0,0.55)"
-                    mask="url(#avatar-crop-mask)"
-                  />
-                  <circle
-                    cx={CROP_SIZE / 2}
-                    cy={CROP_SIZE / 2}
-                    r={CROP_SIZE / 2 - 1}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.8)"
-                    strokeWidth="2"
-                  />
-                </svg>
               </div>
 
-              {/* Zoom control */}
+              {/* Zoom slider */}
               <div className="flex items-center gap-3 w-full max-w-[280px]">
                 <button
                   onClick={() => handleZoomChange(zoom - 0.2)}
