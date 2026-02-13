@@ -168,16 +168,16 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
     <div className="p-6 space-y-6">
       {/* Header with actions */}
       <div className="flex items-start gap-4">
-        <div className="p-3 rounded-lg bg-primary/10">
+        <div className="p-3 rounded-lg bg-primary/10 shrink-0">
           <FileText className="h-6 w-6 text-primary" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h1 className="text-3xl font-bold">Clinical Report</h1>
           <p className="text-base text-muted-foreground mt-1">
             AI-generated clinical interpretation based on all available analysis data
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -241,8 +241,10 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
 
       {/* Report content */}
       <Card className="min-w-0 overflow-hidden">
-        <CardContent className="px-6 pt-4 pb-6 overflow-x-auto">
-          <MarkdownMessage content={content} isUser={false} />
+        <CardContent className="px-6 pt-4 pb-6 min-w-0">
+          <div className="overflow-x-auto">
+            <MarkdownMessage content={content} isUser={false} />
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -253,10 +255,10 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
 function Header() {
   return (
     <div className="flex items-start gap-4">
-      <div className="p-3 rounded-lg bg-primary/10">
+      <div className="p-3 rounded-lg bg-primary/10 shrink-0">
         <FileText className="h-6 w-6 text-primary" />
       </div>
-      <div>
+      <div className="min-w-0">
         <h1 className="text-3xl font-bold">Clinical Report</h1>
         <p className="text-base text-muted-foreground mt-1">
           AI-generated clinical interpretation
