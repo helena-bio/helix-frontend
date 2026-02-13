@@ -27,6 +27,7 @@ import {
   FileText,
   Settings,
   LogOut,
+  ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -291,6 +292,25 @@ export function Sidebar() {
             <div className="flex-1 min-h-0 overflow-y-auto">
               <CasesList />
             </div>
+
+            {/* Admin Section - visible only for admin role */}
+            {user?.role === 'admin' && (
+              <div className="py-1 shrink-0 border-t border-border">
+                <p className="px-3 py-1.5 text-ml font-semibold text-muted-foreground uppercase tracking-wider">
+                  Admin
+                </p>
+                <div className="px-2">
+                  <Button
+                    variant={pathname === '/admin/team' ? 'secondary' : 'ghost'}
+                    className="w-full justify-start"
+                    onClick={() => router.push('/admin/team')}
+                  >
+                    <ShieldCheck className="h-5 w-5 shrink-0" />
+                    <span className="ml-3 text-base">Team Members</span>
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* User Menu */}
             <div className="border-t border-border p-2 shrink-0 relative" ref={menuRef}>
