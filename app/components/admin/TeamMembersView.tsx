@@ -177,7 +177,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
       {/* Suspend / Activate action */}
       <div className="w-24 shrink-0 flex justify-end">
         {!isSelf && (
-          {confirmAction ? (
+          confirmAction ? (
             <div className="flex items-center gap-1">
               <button
                 onClick={handleStatusChange}
@@ -216,7 +216,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                 </>
               )}
             </button>
-          )}
+          )
         )}
       </div>
     </div>
