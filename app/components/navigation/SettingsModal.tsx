@@ -25,7 +25,7 @@ type SettingsSection = 'general' | 'account'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008'
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, avatarVersion, bumpAvatarVersion } = useAuth()
   const [activeSection, setActiveSection] = useState<SettingsSection>('general')
 
   // Profile form
@@ -36,7 +36,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [profileError, setProfileError] = useState('')
 
   // Avatar
-  const [avatarVersion, setAvatarVersion] = useState(1)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [deletingAvatar, setDeletingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -105,7 +104,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const handleAvatarSaved = () => {
     setAvatarFile(null)
-    setAvatarVersion((v) => v + 1)
+    bumpAvatarVersion()
   }
 
   const handleAvatarDelete = async () => {
@@ -116,7 +115,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       })
-      setAvatarVersion((v) => v + 1)
+      bumpAvatarVersion()
     } catch {
       // Silent failure for delete
     } finally {

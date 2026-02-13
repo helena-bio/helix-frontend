@@ -68,7 +68,7 @@ export function Sidebar() {
   } = useSession()
 
   const { currentStep } = useJourney()
-  const { user, logout } = useAuth()
+  const { user, logout, avatarVersion } = useAuth()
   const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
   const { aggregatedResults: phenotypeData } = usePhenotypeResults()
   const { results: literatureData } = useLiteratureResults()
@@ -328,7 +328,7 @@ export function Sidebar() {
                 className="w-full justify-start hover:bg-accent"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               >
-                <UserAvatar fullName={userName} userId={user?.id} size="sm" />
+                <UserAvatar fullName={userName} userId={user?.id} size="sm" version={avatarVersion} />
                 <div className="ml-3 flex-1 text-left">
                   <div className="text-base font-medium">{userName}</div>
                   <div className="text-sm text-muted-foreground">Partner</div>
@@ -431,7 +431,7 @@ export function Sidebar() {
                       className="w-full justify-center px-0"
                       onClick={(e) => { e.stopPropagation(); setIsUserMenuOpen(!isUserMenuOpen) }}
                     >
-                      <UserAvatar fullName={userName} userId={user?.id} size="sm" />
+                      <UserAvatar fullName={userName} userId={user?.id} size="sm" version={avatarVersion} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">

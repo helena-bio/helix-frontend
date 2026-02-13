@@ -30,6 +30,8 @@ interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   refreshAuth: () => void;
   updateUser: (updates: Partial<User>) => void;
+  avatarVersion: number;
+  bumpAvatarVersion: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: false,
     isLoading: true,
   });
+  const [avatarVersion, setAvatarVersion] = useState(1);
 
   /**
    * Initialize auth state from stored cookie token.
@@ -142,11 +145,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  /**
+   * Increment avatar version to bust cache across all components.
+   */
+  const bumpAvatarVersion = useCallback(() => {
+    setAvatarVersion((v) => v + 1);
+  }, []);
+
   const value: AuthContextType = {
     ...authState,
     logout,
     refreshAuth,
     updateUser,
+    avatarVersion,
+    bumpAvatarVersion,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
