@@ -35,6 +35,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [profileError, setProfileError] = useState('')
 
   // Password form
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -50,6 +51,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setLastName(parts.slice(1).join(' ') || '')
       setProfileSuccess(false)
       setProfileError('')
+      setShowPasswordForm(false)
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
@@ -64,7 +66,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     { id: 'general', label: 'General' },
     { id: 'account', label: 'Account' },
   ]
-
 
   const handleProfileSave = async () => {
     if (!firstName.trim() || !lastName.trim()) {
@@ -150,12 +151,24 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      setTimeout(() => setPasswordSuccess(false), 3000)
+      setTimeout(() => {
+        setPasswordSuccess(false)
+        setShowPasswordForm(false)
+      }, 2000)
     } catch (err) {
       setPasswordError(err instanceof Error ? err.message : 'Failed to change password')
     } finally {
       setPasswordSaving(false)
     }
+  }
+
+  const handleCancelPassword = () => {
+    setShowPasswordForm(false)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordError('')
+    setPasswordSuccess(false)
   }
 
   return (
@@ -262,56 +275,82 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </button>
                 </div>
 
-                {/* Password change section */}
-                <div className="border-t border-border pt-6 space-y-4">
-                  <h3 className="text-lg font-semibold text-foreground">Change password</h3>
+                {/* Password section */}
+                <div className="border-t border-border pt-6">
+                  {!showPasswordForm ? (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">Password</h3>
+                        <p className="text-sm text-muted-foreground mt-1">Last changed: unknown</p>
+                      </div>
+                      <button
+                        onClick={() => setShowPasswordForm(true)}
+                        className="px-4 py-2 border border-border rounded-md text-base font-medium text-foreground hover:bg-accent transition-colors"
+                      >
+                        Change password
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-foreground">Change password</h3>
 
-                  <div>
-                    <label className="block text-md font-medium text-muted-foreground mb-1">Current password</label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-md font-medium text-muted-foreground mb-1">Current password</label>
+                        <input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-md font-medium text-muted-foreground mb-1">New password</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-md font-medium text-muted-foreground mb-1">New password</label>
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-md font-medium text-muted-foreground mb-1">Confirm new password</label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-md font-medium text-muted-foreground mb-1">Confirm new password</label>
+                        <input
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
 
-                  {passwordError && (
-                    <p className="text-base text-destructive">{passwordError}</p>
+                      {passwordError && (
+                        <p className="text-base text-destructive">{passwordError}</p>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handlePasswordChange}
+                          disabled={passwordSaving}
+                          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                        >
+                          {passwordSaving ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : passwordSuccess ? (
+                            <Check className="h-4 w-4" />
+                          ) : null}
+                          {passwordSuccess ? 'Password changed' : 'Update password'}
+                        </button>
+                        <button
+                          onClick={handleCancelPassword}
+                          disabled={passwordSaving}
+                          className="px-4 py-2 border border-border rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   )}
-
-                  <button
-                    onClick={handlePasswordChange}
-                    disabled={passwordSaving}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-                  >
-                    {passwordSaving ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : passwordSuccess ? (
-                      <Check className="h-4 w-4" />
-                    ) : null}
-                    {passwordSuccess ? 'Password changed' : 'Change password'}
-                  </button>
                 </div>
               </div>
             )}
