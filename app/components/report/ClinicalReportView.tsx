@@ -108,7 +108,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // Generating state
   if (isGenerating) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 min-w-0 overflow-hidden">
         <Header />
         <div className="text-center py-16">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
@@ -124,7 +124,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // Error state
   if (status === 'error') {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 min-w-0 overflow-hidden">
         <Header />
         <Card className="border-destructive">
           <CardContent className="p-6 text-center">
@@ -144,7 +144,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // No content yet
   if (!content) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 min-w-0 overflow-hidden">
         <Header />
         <Card>
           <CardContent className="p-6 text-center">
@@ -165,7 +165,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
 
   // Success - show report
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-w-0 overflow-hidden">
       {/* Header with actions */}
       <div className="flex items-start gap-4">
         <div className="p-3 rounded-lg bg-primary/10">
