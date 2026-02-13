@@ -402,13 +402,13 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {profile.consent.secondary_findings && (
-                      <Badge variant="outline" className="text-xs">Secondary Findings</Badge>
+                      <Badge variant="outline" className="text-sm">Secondary Findings</Badge>
                     )}
                     {profile.consent.carrier_results && (
-                      <Badge variant="outline" className="text-xs">Carrier Results</Badge>
+                      <Badge variant="outline" className="text-sm">Carrier Results</Badge>
                     )}
                     {profile.consent.pharmacogenomics && (
-                      <Badge variant="outline" className="text-xs">Pharmacogenomics</Badge>
+                      <Badge variant="outline" className="text-sm">Pharmacogenomics</Badge>
                     )}
                   </div>
                 </div>
