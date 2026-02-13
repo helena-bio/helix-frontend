@@ -255,7 +255,7 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
   }, [])
 
   return (
-    <Card className="gap-0">
+    <Card className="gap-0 py-0">
       <CardHeader
         className={cn(
           "py-3 transition-colors",
