@@ -247,9 +247,9 @@ export function Sidebar() {
             </div>
 
             {/* Modules Navigation (collapsible) */}
-            <div className="py-1 shrink-0">
+            <div className="border-t border-border py-1 shrink-0">
               <button
-                className="w-full flex items-center justify-between px-3 py-1.5 text-ml font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setIsModulesOpen(!isModulesOpen)}
               >
                 <span>Modules</span>
@@ -289,14 +289,14 @@ export function Sidebar() {
             </div>
 
             {/* Cases List (collapsible) */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto border-t border-border">
               <CasesList />
             </div>
 
             {/* Admin Section - visible only for admin role */}
             {user?.role === 'admin' && (
               <div className="py-1 shrink-0 border-t border-border">
-                <p className="px-3 py-1.5 text-ml font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="px-3 py-1.5 text-base font-semibold text-muted-foreground">
                   Admin
                 </p>
                 <div className="px-2">
