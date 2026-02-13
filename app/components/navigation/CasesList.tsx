@@ -37,6 +37,7 @@ import {
   User,
 } from 'lucide-react'
 import { useSession } from '@/contexts/SessionContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useCases } from '@/hooks/queries/use-cases'
 import { useRenameCase, useDeleteCase } from '@/hooks/mutations/use-case-mutations'
@@ -88,6 +89,7 @@ export function CasesList() {
   const router = useRouter()
   const { currentSessionId, setCurrentSessionId, setSelectedModule } = useSession()
   const { skipToAnalysis, resetJourney } = useJourney()
+  const { user } = useAuth()
 
   const [showAll, setShowAll] = useState(false)
   const { data, isLoading } = useCases(!showAll)
@@ -259,6 +261,7 @@ export function CasesList() {
               filteredCases.map((session) => {
                 const isActive = session.id === currentSessionId
                 const isCompleted = session.status === 'completed'
+                const isOwner = session.user_id === user?.id
                 const isEditing = editingId === session.id
                 const isDeleting = deletingId === session.id
 
@@ -336,7 +339,7 @@ export function CasesList() {
                             )}
                           </div>
                         </div>
-                        <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+                        <div className={cn("items-center gap-0.5 shrink-0", isOwner ? "hidden group-hover:flex" : "hidden")}>
                           <button
                             className="p-0.5 rounded hover:bg-accent"
                             onClick={(e) => handleStartRename(e, session)}
