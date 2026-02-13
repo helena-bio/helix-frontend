@@ -240,7 +240,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
       )}
 
       {/* Report content */}
-      <Card>
+      <Card className="overflow-hidden">
         <CardContent className="px-6 pt-4 pb-6 prose prose-sm dark:prose-invert max-w-none overflow-x-auto">
           <MarkdownMessage content={content} isUser={false} />
         </CardContent>
