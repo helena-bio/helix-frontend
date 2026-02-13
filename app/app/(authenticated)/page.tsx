@@ -279,8 +279,8 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
           </div>
           {/* Right: Avatar + Date + Chevron */}
           <div className="flex items-center gap-3">
-            <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="sm" version={avatarVersion} />
-            <span className="text-sm text-muted-foreground">
+            <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
+            <span className="text-md text-muted-foreground">
               {formatRelativeDate(session.created_at)}
             </span>
             {isCompleted && (
@@ -296,7 +296,7 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
           {isLoadingProfile && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
-              <span className="text-sm text-muted-foreground">Loading clinical profile...</span>
+              <span className="text-md text-muted-foreground">Loading clinical profile...</span>
             </div>
           )}
 
