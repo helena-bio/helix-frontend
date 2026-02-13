@@ -25,6 +25,7 @@ import {
   Download,
   Sparkles,
   User,
+  Users,
   Shield,
   FileText,
   Dna,
@@ -150,11 +151,12 @@ const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }>
 interface CaseCardProps {
   session: AnalysisSession
   rank: number
+  showOwner: boolean
   memoryCache: React.MutableRefObject<Map<string, ClinicalProfileData>>
   onNavigate: (session: AnalysisSession) => void
 }
 
-function CaseCard({ session, rank, memoryCache, onNavigate }: CaseCardProps) {
+function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [profile, setProfile] = useState<ClinicalProfileData | null>(null)
@@ -259,7 +261,7 @@ function CaseCard({ session, rank, memoryCache, onNavigate }: CaseCardProps) {
         onClick={handleExpand}
       >
         <div className="flex items-center justify-between">
-          {/* Left: Rank + Name + Status + Genome Build */}
+          {/* Left: Rank + Name + Status + Genome Build + Owner */}
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
             <span className="text-lg font-semibold">{getCaseDisplayName(session)}</span>
@@ -270,6 +272,12 @@ function CaseCard({ session, rank, memoryCache, onNavigate }: CaseCardProps) {
             {session.genome_build && (
               <Badge variant="secondary" className="text-sm">
                 {session.genome_build}
+              </Badge>
+            )}
+            {showOwner && session.owner_name && (
+              <Badge variant="outline" className="text-sm text-muted-foreground">
+                <User className="h-3 w-3 mr-1" />
+                {session.owner_name}
               </Badge>
             )}
           </div>
@@ -486,7 +494,9 @@ export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuth()
   const { skipToAnalysis } = useJourney()
-  const { data, isLoading } = useCases()
+
+  const [showAll, setShowAll] = useState(false)
+  const { data, isLoading } = useCases(!showAll)
 
   const cases = data?.sessions ?? []
   const [searchQuery, setSearchQuery] = useState('')
@@ -496,7 +506,8 @@ export default function DashboardPage() {
   const filteredCases = cases.filter((session) => {
     if (!searchQuery) return true
     const name = getCaseDisplayName(session).toLowerCase()
-    return name.includes(searchQuery.toLowerCase())
+    const owner = (session.owner_name || '').toLowerCase()
+    return name.includes(searchQuery.toLowerCase()) || owner.includes(searchQuery.toLowerCase())
   })
 
   const handleNewCase = () => {
@@ -528,16 +539,40 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search cases..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-10 pl-9 pr-3 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+        {/* Mine/All toggle + Search */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 shrink-0">
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                !showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setShowAll(false)}
+            >
+              <User className="h-3.5 w-3.5" />
+              Mine
+            </button>
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setShowAll(true)}
+            >
+              <Users className="h-3.5 w-3.5" />
+              All
+            </button>
+          </div>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search cases..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-9 pr-3 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
         </div>
 
         {/* Loading */}
@@ -553,7 +588,7 @@ export default function DashboardPage() {
             <CardContent className="p-8 text-center">
               <Microscope className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-base font-medium mb-2">
-                {searchQuery ? 'No matching cases' : 'No cases yet'}
+                {searchQuery ? 'No matching cases' : showAll ? 'No cases in organization' : 'No cases yet'}
               </p>
               <p className="text-sm text-muted-foreground">
                 {searchQuery ? 'Try a different search term.' : 'Start by uploading a VCF file.'}
@@ -568,12 +603,14 @@ export default function DashboardPage() {
             <p className="text-md text-muted-foreground">
               {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
               {searchQuery && ' matching filter'}
+              {showAll && ' across organization'}
             </p>
             {filteredCases.map((session, idx) => (
               <CaseCard
                 key={session.id}
                 session={session}
                 rank={idx + 1}
+                showOwner={showAll}
                 memoryCache={memoryCache}
                 onNavigate={handleNavigate}
               />
