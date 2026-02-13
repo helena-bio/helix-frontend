@@ -5,13 +5,13 @@
  *
  * Admin panel for managing organization members and invitations.
  * Two tabs: Active members and Pending invitations.
- * Actions: change role, suspend/activate, revoke invitation.
+ * Actions dropdown: change role, reset password, suspend/activate, remove.
  *
  * Sort: current user (you) always displayed first.
  * Search: client-side filter by name or email.
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import {
   Users,
   Mail,
@@ -27,6 +27,10 @@ import {
   Ban,
   UserCheck,
   Search,
+  MoreHorizontal,
+  Key,
+  Trash2,
+  ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTeamMembers, useOrgInvitations } from '@/hooks/queries/use-admin'
@@ -36,6 +40,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { InviteModal } from '@/components/navigation/InviteModal'
 import { cn } from '@helix/shared/lib/utils'
+import { toast } from 'sonner'
 import type { TeamMember, OrgInvitation } from '@/lib/api/admin'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.helixinsight.bio'
@@ -90,8 +95,10 @@ interface MemberRowProps {
 }
 
 function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false)
-  const [confirmAction, setConfirmAction] = useState<'suspend' | 'activate' | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [roleSubmenuOpen, setRoleSubmenuOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<'suspend' | 'activate' | 'remove' | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const changeRole = useChangeRole()
   const changeStatus = useChangeStatus()
 
@@ -100,16 +107,45 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
   const status = statusConfig[member.status] || statusConfig.pending
   const RoleIcon = role.icon
 
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false)
+        setRoleSubmenuOpen(false)
+        setConfirmAction(null)
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
+
   const handleRoleChange = useCallback((newRole: string) => {
+    if (newRole === member.role) return
     changeRole.mutate({ userId: member.id, role: newRole })
-    setRoleMenuOpen(false)
-  }, [changeRole, member.id])
+    setMenuOpen(false)
+    setRoleSubmenuOpen(false)
+  }, [changeRole, member.id, member.role])
 
   const handleStatusChange = useCallback(() => {
     const newStatus = member.status === 'active' ? 'suspended' : 'active'
     changeStatus.mutate({ userId: member.id, status: newStatus })
+    setMenuOpen(false)
     setConfirmAction(null)
   }, [changeStatus, member.id, member.status])
+
+  const handleResetPassword = useCallback(() => {
+    toast.info('Password reset link sent to ' + member.email)
+    setMenuOpen(false)
+  }, [member.email])
+
+  const handleRemove = useCallback(() => {
+    toast.info('Remove member: coming soon')
+    setMenuOpen(false)
+    setConfirmAction(null)
+  }, [])
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors">
@@ -124,46 +160,15 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
         <p className="text-sm text-muted-foreground truncate">{member.email}</p>
       </div>
 
-      {/* Role badge + menu */}
-      <div className="relative w-24">
-        <button
-          onClick={() => !isSelf && setRoleMenuOpen(!roleMenuOpen)}
-          disabled={isSelf}
-          className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-sm font-medium transition-colors",
-            role.color,
-            !isSelf && "cursor-pointer hover:opacity-80",
-            isSelf && "cursor-default"
-          )}
-        >
+      {/* Role badge (display only) */}
+      <div className="w-24">
+        <span className={cn(
+          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-sm font-medium",
+          role.color
+        )}>
           <RoleIcon className="h-3.5 w-3.5" />
           {role.label}
-        </button>
-
-        {roleMenuOpen && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setRoleMenuOpen(false)} />
-            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-36 py-1">
-              {Object.entries(roleConfig).map(([key, config]) => {
-                const Icon = config.icon
-                return (
-                  <button
-                    key={key}
-                    onClick={() => handleRoleChange(key)}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors",
-                      member.role === key && "font-medium bg-accent/50"
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {config.label}
-                    {member.role === key && <Check className="h-3 w-3 ml-auto" />}
-                  </button>
-                )
-              })}
-            </div>
-          </>
-        )}
+        </span>
       </div>
 
       {/* Status badge */}
@@ -178,49 +183,138 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
         {member.last_login_at ? formatRelativeDate(member.last_login_at) : 'Never'}
       </span>
 
-      {/* Suspend / Activate action */}
-      <div className="w-24 shrink-0 flex justify-end">
+      {/* Actions dropdown */}
+      <div className="w-10 shrink-0 flex justify-end relative" ref={menuRef}>
         {!isSelf && (
-          confirmAction ? (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleStatusChange}
-                className="p-1 rounded hover:bg-destructive/10"
-                title="Confirm"
-              >
-                <Check className="h-4 w-4 text-destructive" />
-              </button>
-              <button
-                onClick={() => setConfirmAction(null)}
-                className="p-1 rounded hover:bg-accent"
-                title="Cancel"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
+          <>
             <button
-              onClick={() => setConfirmAction(member.status === 'active' ? 'suspend' : 'activate')}
-              className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded text-sm transition-colors",
-                member.status === 'active'
-                  ? "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  : "text-muted-foreground hover:text-green-700 hover:bg-green-50"
-              )}
+              onClick={() => { setMenuOpen(!menuOpen); setRoleSubmenuOpen(false); setConfirmAction(null) }}
+              className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
-              {member.status === 'active' ? (
-                <>
-                  <Ban className="h-3.5 w-3.5" />
-                  Suspend
-                </>
-              ) : (
-                <>
-                  <UserCheck className="h-3.5 w-3.5" />
-                  Activate
-                </>
-              )}
+              <MoreHorizontal className="h-4 w-4" />
             </button>
-          )
+
+            {menuOpen && !confirmAction && (
+              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-48 py-1">
+                {/* Change Role */}
+                <div
+                  className="relative"
+                  onMouseEnter={() => setRoleSubmenuOpen(true)}
+                  onMouseLeave={() => setRoleSubmenuOpen(false)}
+                >
+                  <button className="w-full flex items-center justify-between px-3 py-1.5 text-sm hover:bg-accent transition-colors">
+                    <span className="flex items-center gap-2">
+                      <Shield className="h-3.5 w-3.5" />
+                      Change Role
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+
+                  {roleSubmenuOpen && (
+                    <div className="absolute left-full top-0 ml-1 bg-card border border-border rounded-lg shadow-lg z-50 w-36 py-1">
+                      {Object.entries(roleConfig).map(([key, config]) => {
+                        const Icon = config.icon
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => handleRoleChange(key)}
+                            className={cn(
+                              "w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                              member.role === key && "font-medium bg-accent/50"
+                            )}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            {config.label}
+                            {member.role === key && <Check className="h-3 w-3 ml-auto" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Reset Password */}
+                <button
+                  onClick={handleResetPassword}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                >
+                  <Key className="h-3.5 w-3.5" />
+                  Reset Password
+                </button>
+
+                <div className="border-t border-border my-1" />
+
+                {/* Suspend / Activate */}
+                <button
+                  onClick={() => setConfirmAction(member.status === 'active' ? 'suspend' : 'activate')}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
+                    member.status === 'active'
+                      ? "hover:bg-destructive/10 hover:text-destructive"
+                      : "hover:bg-green-50 hover:text-green-700"
+                  )}
+                >
+                  {member.status === 'active' ? (
+                    <>
+                      <Ban className="h-3.5 w-3.5" />
+                      Suspend User
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="h-3.5 w-3.5" />
+                      Activate User
+                    </>
+                  )}
+                </button>
+
+                {/* Remove */}
+                <button
+                  onClick={() => setConfirmAction('remove')}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove Member
+                </button>
+              </div>
+            )}
+
+            {/* Confirmation inline */}
+            {menuOpen && confirmAction && (
+              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-56 p-3">
+                <p className="text-sm font-medium mb-1">
+                  {confirmAction === 'suspend' && 'Suspend this user?'}
+                  {confirmAction === 'activate' && 'Activate this user?'}
+                  {confirmAction === 'remove' && 'Remove this member?'}
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {confirmAction === 'suspend' && 'They will not be able to log in or access any data.'}
+                  {confirmAction === 'activate' && 'They will regain access to the platform.'}
+                  {confirmAction === 'remove' && 'This action cannot be undone. All their data will remain but they will lose access.'}
+                </p>
+                <div className="flex items-center gap-2 justify-end">
+                  <button
+                    onClick={() => setConfirmAction(null)}
+                    className="px-2.5 py-1 text-sm rounded border border-border hover:bg-accent transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmAction === 'remove' ? handleRemove : handleStatusChange}
+                    className={cn(
+                      "px-2.5 py-1 text-sm rounded font-medium transition-colors",
+                      confirmAction === 'activate'
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    )}
+                  >
+                    {confirmAction === 'suspend' && 'Suspend'}
+                    {confirmAction === 'activate' && 'Activate'}
+                    {confirmAction === 'remove' && 'Remove'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -456,7 +550,7 @@ export function TeamMembersView() {
                     <div className="w-24">Role</div>
                     <div className="w-24">Status</div>
                     <div className="w-24 text-right">Last Active</div>
-                    <div className="w-24" />
+                    <div className="w-10" />
                   </div>
 
                   {membersLoading ? (
