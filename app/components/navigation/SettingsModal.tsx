@@ -230,7 +230,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative bg-card border border-border rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-[80vh] overflow-hidden">
+      <div className="relative bg-card border border-border rounded-lg shadow-lg w-full max-w-5xl mx-4 max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-foreground">Settings</h2>
@@ -243,7 +243,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Body: Left nav + Right content */}
-        <div className="flex h-[520px]">
+        <div className="flex h-[620px]">
           {/* Left navigation */}
           <nav className="w-48 border-r border-border p-3 space-y-1 shrink-0">
             {sections.map((section) => (
