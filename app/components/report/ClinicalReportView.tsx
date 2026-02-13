@@ -108,7 +108,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // Generating state
   if (isGenerating) {
     return (
-      <div className="p-6 space-y-6 w-full max-w-full overflow-hidden">
+      <div className="p-6 space-y-6">
         <Header />
         <div className="text-center py-16">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
@@ -124,7 +124,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // Error state
   if (status === 'error') {
     return (
-      <div className="p-6 space-y-6 w-full max-w-full overflow-hidden">
+      <div className="p-6 space-y-6">
         <Header />
         <Card className="border-destructive">
           <CardContent className="p-6 text-center">
@@ -144,7 +144,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
   // No content yet
   if (!content) {
     return (
-      <div className="p-6 space-y-6 w-full max-w-full overflow-hidden">
+      <div className="p-6 space-y-6">
         <Header />
         <Card>
           <CardContent className="p-6 text-center">
@@ -165,7 +165,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
 
   // Success - show report
   return (
-    <div className="p-6 space-y-6 w-full max-w-full overflow-hidden">
+    <div className="p-6 space-y-6">
       {/* Header with actions */}
       <div className="flex items-start gap-4">
         <div className="p-3 rounded-lg bg-primary/10">
@@ -240,8 +240,8 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
       )}
 
       {/* Report content */}
-      <Card className="overflow-hidden">
-        <CardContent className="px-6 pt-4 pb-6 prose prose-sm dark:prose-invert max-w-none overflow-x-auto">
+      <Card className="min-w-0 overflow-hidden">
+        <CardContent className="px-6 pt-4 pb-6 overflow-x-auto">
           <MarkdownMessage content={content} isUser={false} />
         </CardContent>
       </Card>
