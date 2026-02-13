@@ -347,10 +347,47 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       // Save clinical notes to context
       setClinicalNotes(localClinicalNotes)
 
-      // Save entire profile to disk (NDJSON)
-      // Small delay to let React state updates propagate to context
-      await new Promise(resolve => setTimeout(resolve, 0))
-      await saveProfile()
+      // Build complete profile data and pass directly to saveProfile
+      // to avoid stale closure issue (React state updates are async)
+      await saveProfile({
+        demographics,
+        modules: {
+          enable_screening: enableScreening,
+          enable_phenotype_matching: enablePhenotypeMatching,
+        },
+        ethnicity: enableScreening && ethnicity ? {
+          primary: ethnicity,
+          note: ethnicityNote || undefined,
+        } : undefined,
+        clinical_context: enableScreening && indication ? {
+          indication,
+          indication_details: indicationDetails || undefined,
+          family_history: {
+            has_affected_relatives: hasFamilyHistory,
+            consanguinity: hasConsanguinity,
+            details: familyHistoryDetails || undefined,
+          },
+        } : undefined,
+        reproductive: {
+          is_pregnant: isPregnant,
+          gestational_age_weeks: gestationalAge ? parseInt(gestationalAge, 10) : undefined,
+          family_planning: familyPlanning,
+        },
+        sample_info: enableScreening && sampleType ? {
+          sample_type: sampleType,
+          has_parental_samples: hasParentalSamples,
+          has_affected_sibling: hasAffectedSibling,
+        } : undefined,
+        consent: {
+          secondary_findings: consentSecondaryFindings,
+          carrier_results: consentCarrierResults,
+          pharmacogenomics: consentPharmacogenomics,
+        },
+        phenotype: {
+          hpo_terms: hpoTerms,
+          clinical_notes: localClinicalNotes || undefined,
+        },
+      })
 
       toast.success('Clinical profile saved')
       setShowAnalysis(true)

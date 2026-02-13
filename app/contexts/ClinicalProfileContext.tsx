@@ -75,7 +75,7 @@ interface ClinicalProfileContextValue {
   setClinicalNotes: (notes: string) => void
 
   // Actions - disk persistence
-  saveProfile: () => Promise<void>
+  saveProfile: (overrideData?: any) => Promise<void>
 
   // Computed
   hpoTermIds: string[]
@@ -192,28 +192,27 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   }, [])
 
   // Save entire profile to disk
-  const saveProfile = useCallback(async () => {
+  const saveProfile = useCallback(async (overrideData?: any) => {
     if (!sessionId) throw new Error('No session ID')
 
-    await saveMutation.mutateAsync({
-      sessionId,
-      data: {
-        demographics,
-        modules: {
-          enable_screening: enableScreening,
-          enable_phenotype_matching: enablePhenotypeMatching,
-        },
-        ethnicity: ethnicity || undefined,
-        clinical_context: clinicalContext || undefined,
-        reproductive,
-        sample_info: sampleInfo || undefined,
-        consent,
-        phenotype: {
-          hpo_terms: localHPOTerms,
-          clinical_notes: localClinicalNotes || undefined,
-        },
+    const data = overrideData || {
+      demographics,
+      modules: {
+        enable_screening: enableScreening,
+        enable_phenotype_matching: enablePhenotypeMatching,
       },
-    })
+      ethnicity: ethnicity || undefined,
+      clinical_context: clinicalContext || undefined,
+      reproductive,
+      sample_info: sampleInfo || undefined,
+      consent,
+      phenotype: {
+        hpo_terms: localHPOTerms,
+        clinical_notes: localClinicalNotes || undefined,
+      },
+    }
+
+    await saveMutation.mutateAsync({ sessionId, data })
   }, [
     sessionId, saveMutation,
     demographics, enableScreening, enablePhenotypeMatching,
