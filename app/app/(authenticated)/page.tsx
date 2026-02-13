@@ -314,7 +314,7 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
                     <User className="h-4 w-4 text-muted-foreground" />
                     <p className="text-base font-semibold">Demographics</p>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-md">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-base">
                     {profile.demographics.sex && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Sex</span>
