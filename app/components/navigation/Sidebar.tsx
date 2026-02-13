@@ -18,7 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Home,
+  LayoutDashboard,
+  Plus,
   FolderOpen,
   Microscope,
   Shield,
@@ -65,10 +66,11 @@ export function Sidebar() {
     isSidebarOpen,
     toggleSidebar,
     selectedModule,
+    setCurrentSessionId,
     setSelectedModule,
   } = useSession()
 
-  const { currentStep } = useJourney()
+  const { currentStep, resetJourney } = useJourney()
   const { user, logout, avatarVersion } = useAuth()
   const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
   const { aggregatedResults: phenotypeData } = usePhenotypeResults()
@@ -232,8 +234,8 @@ export function Sidebar() {
                 className="h-8 flex-1 justify-start mr-2"
                 onClick={() => router.push('/')}
               >
-                <Home className="h-4 w-4 shrink-0" />
-                <span className="ml-2 text-base">Home</span>
+                <LayoutDashboard className="h-4 w-4 shrink-0" />
+                <span className="ml-2 text-base">Dashboard</span>
               </Button>
 
               <Button
@@ -243,6 +245,18 @@ export function Sidebar() {
                 className="h-8 w-8 shrink-0"
               >
                 <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* New Case */}
+            <div className="px-2 shrink-0">
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-8"
+                onClick={() => { setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                <span className="ml-2 text-base">New Case</span>
               </Button>
             </div>
 
@@ -369,11 +383,11 @@ export function Sidebar() {
                       className="w-full justify-center px-0 h-8"
                       onClick={(e) => { e.stopPropagation(); router.push('/') }}
                     >
-                      <Home className="h-4 w-4" />
+                      <LayoutDashboard className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">
-                    <p className="text-sm">Home</p>
+                    <p className="text-sm">Dashboard</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

@@ -202,15 +202,6 @@ export function CasesList() {
 
       {isOpen && (
         <div className="mt-1 space-y-1.5 px-2">
-          {/* New Case button */}
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-            onClick={handleNewCase}
-          >
-            <Plus className="h-4 w-4 shrink-0" />
-            <span className="ml-2 text-base">New Case</span>
-          </Button>
 
           {/* Search */}
           <div className="relative">
