@@ -49,6 +49,7 @@ import { cn } from '@helix/shared/lib/utils'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 import type { AnalysisSession } from '@/types/variant.types'
 import { getDashboardGreeting } from '@/lib/constants/dashboard-greetings'
+import { UserAvatar } from '@/components/ui/UserAvatar'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
 
@@ -157,6 +158,7 @@ interface CaseCardProps {
 }
 
 function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCardProps) {
+  const { avatarVersion } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [profile, setProfile] = useState<ClinicalProfileData | null>(null)
@@ -275,10 +277,10 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
               </Badge>
             )}
             {showOwner && session.owner_name && (
-              <Badge variant="outline" className="text-sm text-muted-foreground">
-                <User className="h-3 w-3 mr-1" />
-                {session.owner_name}
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                <UserAvatar fullName={session.owner_name} userId={session.user_id} size="sm" version={avatarVersion} />
+                <span className="text-sm text-muted-foreground">{session.owner_name}</span>
+              </div>
             )}
           </div>
 
@@ -492,7 +494,7 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, avatarVersion } = useAuth()
   const { skipToAnalysis } = useJourney()
 
   const [showAll, setShowAll] = useState(false)
