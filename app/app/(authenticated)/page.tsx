@@ -423,7 +423,7 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
               )}
 
               {/* Actions */}
-              <div className="pt-2 border-t flex items-center gap-2">
+              <div className="pt-2 pb-3 border-t flex items-center gap-2">
                 <Button
                   variant="default"
                   size="sm"
