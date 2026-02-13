@@ -6,9 +6,12 @@
  * Admin panel for managing organization members and invitations.
  * Two tabs: Active members and Pending invitations.
  * Actions: change role, suspend/activate, revoke invitation.
+ *
+ * Sort: current user (you) always displayed first.
+ * Search: client-side filter by name or email.
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   Users,
   Mail,
@@ -23,6 +26,7 @@ import {
   Clock,
   Ban,
   UserCheck,
+  Search,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTeamMembers, useOrgInvitations } from '@/hooks/queries/use-admin'
@@ -283,14 +287,21 @@ function InvitationRow({ invitation }: InvitationRowProps) {
         </p>
       </div>
 
-      <Badge variant="outline" className={cn("text-sm", roleConfig[invitation.role]?.color || '')}>
-        {roleConfig[invitation.role]?.label || invitation.role}
-      </Badge>
+      {/* Role */}
+      <div className="w-20">
+        <Badge variant="outline" className={cn("text-sm", roleConfig[invitation.role]?.color || '')}>
+          {roleConfig[invitation.role]?.label || invitation.role}
+        </Badge>
+      </div>
 
-      <Badge variant="outline" className={cn("text-sm", statusColor)}>
-        {isPending ? formatExpiryDate(invitation.expires_at) : invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)}
-      </Badge>
+      {/* Status */}
+      <div className="w-28">
+        <Badge variant="outline" className={cn("text-sm", statusColor)}>
+          {isPending ? formatExpiryDate(invitation.expires_at) : invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)}
+        </Badge>
+      </div>
 
+      {/* Actions */}
       <div className="flex items-center gap-1 w-24 shrink-0 justify-end">
         {isPending && (
           <>
@@ -334,6 +345,7 @@ export function TeamMembersView() {
   const { user, avatarVersion } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('members')
   const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { data: teamData, isLoading: membersLoading } = useTeamMembers()
   const { data: invData, isLoading: invLoading } = useOrgInvitations()
@@ -342,63 +354,102 @@ export function TeamMembersView() {
   const invitations = invData?.invitations ?? []
   const pendingCount = invitations.filter(i => i.status === 'pending').length
 
+  // Sort: current user first, then alphabetical. Filter by search.
+  const sortedMembers = useMemo(() => {
+    const filtered = members.filter((m) => {
+      if (!searchQuery) return true
+      const q = searchQuery.toLowerCase()
+      return m.full_name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
+    })
+    return filtered.sort((a, b) => {
+      if (a.id === user?.id) return -1
+      if (b.id === user?.id) return 1
+      return a.full_name.localeCompare(b.full_name)
+    })
+  }, [members, user?.id, searchQuery])
+
+  // Filter invitations by search
+  const filteredInvitations = useMemo(() => {
+    if (!searchQuery) return invitations
+    const q = searchQuery.toLowerCase()
+    return invitations.filter((i) => i.email.toLowerCase().includes(q))
+  }, [invitations, searchQuery])
+
   return (
     <>
       <div className="flex flex-col min-h-full p-8">
         <div className="w-full max-w-4xl mx-auto space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Team Members</h1>
-              <p className="text-base text-muted-foreground mt-1">
-                Manage your organization's team
-              </p>
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Team Members</h1>
+            <p className="text-base text-muted-foreground mt-1">
+              Manage your organization's team
+            </p>
+          </div>
+
+          {/* Tabs + Search + Invite */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 shrink-0">
+              <button
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                  activeTab === 'members'
+                    ? "bg-background shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setActiveTab('members')}
+              >
+                <Users className="h-4 w-4" />
+                Active
+                {members.length > 0 && (
+                  <span className="text-xs bg-muted rounded-full px-1.5 py-0.5">{members.length}</span>
+                )}
+              </button>
+              <button
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                  activeTab === 'invitations'
+                    ? "bg-background shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setActiveTab('invitations')}
+              >
+                <Clock className="h-4 w-4" />
+                Pending
+                {pendingCount > 0 && (
+                  <span className="text-xs bg-orange-100 text-orange-900 rounded-full px-1.5 py-0.5">{pendingCount}</span>
+                )}
+              </button>
             </div>
+
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder={activeTab === 'members' ? 'Search members...' : 'Search invitations...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            {/* Invite button */}
             <button
               onClick={() => setInviteModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
             >
               <UserPlus className="h-4 w-4" />
               Invite Member
             </button>
           </div>
 
-          <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 w-fit">
-            <button
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
-                activeTab === 'members'
-                  ? "bg-background shadow-sm font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              onClick={() => setActiveTab('members')}
-            >
-              <Users className="h-4 w-4" />
-              Active
-              {members.length > 0 && (
-                <span className="text-xs bg-muted rounded-full px-1.5 py-0.5">{members.length}</span>
-              )}
-            </button>
-            <button
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
-                activeTab === 'invitations'
-                  ? "bg-background shadow-sm font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              onClick={() => setActiveTab('invitations')}
-            >
-              <Clock className="h-4 w-4" />
-              Pending Invitations
-              {pendingCount > 0 && (
-                <span className="text-xs bg-orange-100 text-orange-900 rounded-full px-1.5 py-0.5">{pendingCount}</span>
-              )}
-            </button>
-          </div>
-
+          {/* Content */}
           <Card className="py-0 gap-0">
             <CardContent className="p-0">
               {activeTab === 'members' && (
                 <>
+                  {/* Column headers */}
                   <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-sm text-muted-foreground font-medium">
                     <div className="w-8 shrink-0" />
                     <div className="flex-1">Member</div>
@@ -412,14 +463,16 @@ export function TeamMembersView() {
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
-                  ) : members.length === 0 ? (
+                  ) : sortedMembers.length === 0 ? (
                     <div className="text-center py-12">
                       <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-                      <p className="text-base text-muted-foreground">No team members found</p>
+                      <p className="text-base text-muted-foreground">
+                        {searchQuery ? 'No matching members' : 'No team members found'}
+                      </p>
                     </div>
                   ) : (
                     <div className="divide-y divide-border">
-                      {members.map((member) => (
+                      {sortedMembers.map((member) => (
                         <MemberRow
                           key={member.id}
                           member={member}
@@ -434,6 +487,7 @@ export function TeamMembersView() {
 
               {activeTab === 'invitations' && (
                 <>
+                  {/* Column headers */}
                   <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-sm text-muted-foreground font-medium">
                     <div className="w-8 shrink-0" />
                     <div className="flex-1">Email</div>
@@ -446,20 +500,24 @@ export function TeamMembersView() {
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
-                  ) : invitations.length === 0 ? (
+                  ) : filteredInvitations.length === 0 ? (
                     <div className="text-center py-12">
                       <Mail className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-                      <p className="text-base text-muted-foreground">No invitations</p>
-                      <button
-                        onClick={() => setInviteModalOpen(true)}
-                        className="mt-3 text-sm text-primary hover:underline"
-                      >
-                        Send your first invitation
-                      </button>
+                      <p className="text-base text-muted-foreground">
+                        {searchQuery ? 'No matching invitations' : 'No invitations'}
+                      </p>
+                      {!searchQuery && (
+                        <button
+                          onClick={() => setInviteModalOpen(true)}
+                          className="mt-3 text-sm text-primary hover:underline"
+                        >
+                          Send your first invitation
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="divide-y divide-border">
-                      {invitations.map((inv) => (
+                      {filteredInvitations.map((inv) => (
                         <InvitationRow key={inv.id} invitation={inv} />
                       ))}
                     </div>
