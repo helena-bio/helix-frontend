@@ -5,10 +5,11 @@
 
 'use client'
 
+import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText, UserPlus } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -35,6 +36,7 @@ import {
   downloadPhenotypeFindingsReport,
   downloadVariantFindingsReport,
 } from '@/lib/utils/download-report'
+import { InviteModal } from './InviteModal'
 
 function getStepIcon(status: StepStatus) {
   switch (status) {
@@ -69,7 +71,11 @@ export function Header() {
   const { currentSessionId } = useSession()
   const { content: interpretation, hasInterpretation, status: interpretationStatus } = useClinicalInterpretation()
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
-  const { logout } = useAuth()
+  const { user, logout } = useAuth()
+
+  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+
+  const isAdmin = user?.role === 'admin'
 
   // Show journey steps only on /upload route
   const showJourneySteps = pathname === '/upload'
@@ -141,179 +147,208 @@ export function Header() {
   const showDownloadReport = isAnalysisComplete
 
   return (
-    <div className="h-full flex items-center gap-6 overflow-hidden">
-      {/* Logo - Bulb first, then text */}
-      <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
-        <Image
-          src="/images/logos/logo_bulb.svg"
-          alt=""
-          width={32}
-          height={40}
-          className="h-11 w-auto"
-        />
-        <Image
-          src="/images/logos/logo_helix.svg"
-          alt="Helix Insight"
-          width={160}
-          height={48}
-          className="h-10 w-auto"
-        />
-      </Link>
+    <>
+      <div className="h-full flex items-center gap-6 overflow-hidden">
+        {/* Logo - Bulb first, then text */}
+        <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
+          <Image
+            src="/images/logos/logo_bulb.svg"
+            alt=""
+            width={32}
+            height={40}
+            className="h-11 w-auto"
+          />
+          <Image
+            src="/images/logos/logo_helix.svg"
+            alt="Helix Insight"
+            width={160}
+            height={48}
+            className="h-10 w-auto"
+          />
+        </Link>
 
-      {/* Workflow progress - Only during upload workflow */}
-      {showJourneySteps ? (
-        <div className="flex-1 flex items-center justify-center gap-3 overflow-x-auto px-4">
-          {JOURNEY_STEPS.map((step, index) => {
-            const status = getVisualStatus(step.id)
-            const Icon = getStepIcon(status)
-            const isClickable = canNavigateTo(step.id)
+        {/* Workflow progress - Only during upload workflow */}
+        {showJourneySteps ? (
+          <div className="flex-1 flex items-center justify-center gap-3 overflow-x-auto px-4">
+            {JOURNEY_STEPS.map((step, index) => {
+              const status = getVisualStatus(step.id)
+              const Icon = getStepIcon(status)
+              const isClickable = canNavigateTo(step.id)
 
-            return (
-              <div key={step.id} className="flex items-center gap-3">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => handleStepClick(step.id)}
-                        disabled={!isClickable}
-                        className={cn(
-                          'flex items-center gap-2 min-w-0 transition-opacity',
-                          isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'
-                        )}
-                      >
-                        <Icon
+              return (
+                <div key={step.id} className="flex items-center gap-3">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleStepClick(step.id)}
+                          disabled={!isClickable}
                           className={cn(
-                            'h-5 w-5 shrink-0',
-                            getIconColor(status)
+                            'flex items-center gap-2 min-w-0 transition-opacity',
+                            isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed'
                           )}
-                        />
-                        <p className="text-base font-medium whitespace-nowrap">
-                          {step.label}
-                        </p>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-sm">{step.description}</p>
-                      {!isClickable && (
-                        <p className="text-xs text-background/70 mt-1">
-                          Complete previous steps first
-                        </p>
+                        >
+                          <Icon
+                            className={cn(
+                              'h-5 w-5 shrink-0',
+                              getIconColor(status)
+                            )}
+                          />
+                          <p className="text-base font-medium whitespace-nowrap">
+                            {step.label}
+                          </p>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-sm">{step.description}</p>
+                        {!isClickable && (
+                          <p className="text-xs text-background/70 mt-1">
+                            Complete previous steps first
+                          </p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  {index < JOURNEY_STEPS.length - 1 && (
+                    <div
+                      className={cn(
+                        'w-20 h-0.5',
+                        getLineColor(status)
                       )}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                {index < JOURNEY_STEPS.length - 1 && (
-                  <div
-                    className={cn(
-                      'w-20 h-0.5',
-                      getLineColor(status)
-                    )}
-                  />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="flex-1" />
-      )}
-
-      {/* Right side buttons */}
-      <div className="flex items-center gap-3 shrink-0 mr-6">
-        {showDownloadReport && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-sm"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download Report
-                <ChevronDown className="h-3 w-3 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-60">
-              {/* Variant Findings - always available when analysis complete */}
-              <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
-                Variant Findings
-              </DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={handleDownloadVariantFindings}
-                className="cursor-pointer text-md"
-              >
-                <FileText className="h-3 w-3 mr-2" />
-                PDF
-              </DropdownMenuItem>
-
-              {hasPhenotypeResults && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
-                    Phenotype Findings
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={handleDownloadPhenotypeFindings}
-                    className="cursor-pointer text-md"
-                  >
-                    <FileText className="h-3 w-3 mr-2" />
-                    PDF
-                  </DropdownMenuItem>
-                </>
-              )}
-
-              {hasClinicalInterpretation && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
-                    Clinical Interpretation
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={() => handleDownloadReport('pdf')}
-                    className="cursor-pointer text-md"
-                  >
-                    <Download className="h-3 w-3 mr-2" />
-                    PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDownloadReport('docx')}
-                    className="cursor-pointer text-md"
-                  >
-                    <Download className="h-3 w-3 mr-2" />
-                    DOCX
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDownloadReport('md')}
-                    className="cursor-pointer text-md"
-                  >
-                    <Download className="h-3 w-3 mr-2" />
-                    Markdown
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="flex-1" />
         )}
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={logout}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              >
-                <LogOut className="h-6 w-6" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-sm">Sign out</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {/* Right side buttons */}
+        <div className="flex items-center gap-3 shrink-0 mr-6">
+          {showDownloadReport && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-sm"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Report
+                  <ChevronDown className="h-3 w-3 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                {/* Variant Findings - always available when analysis complete */}
+                <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
+                  Variant Findings
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={handleDownloadVariantFindings}
+                  className="cursor-pointer text-md"
+                >
+                  <FileText className="h-3 w-3 mr-2" />
+                  PDF
+                </DropdownMenuItem>
+
+                {hasPhenotypeResults && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
+                      Phenotype Findings
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={handleDownloadPhenotypeFindings}
+                      className="cursor-pointer text-md"
+                    >
+                      <FileText className="h-3 w-3 mr-2" />
+                      PDF
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {hasClinicalInterpretation && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="pl-8 text-base text-muted-foreground font-normal">
+                      Clinical Interpretation
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={() => handleDownloadReport('pdf')}
+                      className="cursor-pointer text-md"
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDownloadReport('docx')}
+                      className="cursor-pointer text-md"
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      DOCX
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDownloadReport('md')}
+                      className="cursor-pointer text-md"
+                    >
+                      <Download className="h-3 w-3 mr-2" />
+                      Markdown
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Invite button - admin only */}
+          {isAdmin && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setInviteModalOpen(true)}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  >
+                    <UserPlus className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">Invite team member</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={logout}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="h-6 w-6" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-sm">Sign out</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
-    </div>
+
+      {/* Invite modal */}
+      <InviteModal
+        isOpen={inviteModalOpen}
+        onClose={() => setInviteModalOpen(false)}
+      />
+    </>
   )
 }
