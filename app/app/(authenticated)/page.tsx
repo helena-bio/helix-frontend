@@ -608,7 +608,7 @@ export default function DashboardPage() {
         {/* Case Cards */}
         {!isLoading && filteredCases.length > 0 && (
           <div className="space-y-3">
-            <p className="text-md text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
               {searchQuery && ' matching filter'}
               {showAll && ' across organization'}
