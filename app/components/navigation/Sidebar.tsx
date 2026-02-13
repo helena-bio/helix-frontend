@@ -328,7 +328,7 @@ export function Sidebar() {
                 className="w-full justify-start hover:bg-accent"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               >
-                <UserAvatar fullName={userName} size="sm" />
+                <UserAvatar fullName={userName} userId={user?.id} size="sm" />
                 <div className="ml-3 flex-1 text-left">
                   <div className="text-base font-medium">{userName}</div>
                   <div className="text-sm text-muted-foreground">Partner</div>
@@ -431,7 +431,7 @@ export function Sidebar() {
                       className="w-full justify-center px-0"
                       onClick={(e) => { e.stopPropagation(); setIsUserMenuOpen(!isUserMenuOpen) }}
                     >
-                      <UserAvatar fullName={userName} size="sm" />
+                      <UserAvatar fullName={userName} userId={user?.id} size="sm" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">

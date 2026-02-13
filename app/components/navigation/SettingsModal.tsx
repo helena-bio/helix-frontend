@@ -3,16 +3,17 @@
 /**
  * Settings Modal
  *
- * Editable user profile and password change.
+ * Editable user profile, avatar upload, and password change.
  * Left navigation with sections, right content area.
- * Calls PUT /auth/profile and PUT /auth/password endpoints.
+ * Calls PUT /auth/profile, POST /auth/avatar, PUT /auth/password endpoints.
  */
 
-import { useState, useEffect } from 'react'
-import { X, Check, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Check, Loader2, Camera, Trash2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { tokenUtils } from '@/lib/auth/token'
 import { UserAvatar } from '@/components/ui/UserAvatar'
+import { AvatarCropModal } from '@/components/ui/AvatarCropModal'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -34,6 +35,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [profileError, setProfileError] = useState('')
 
+  // Avatar
+  const [avatarVersion, setAvatarVersion] = useState(1)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [deletingAvatar, setDeletingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // Password form
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
@@ -51,6 +58,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setLastName(parts.slice(1).join(' ') || '')
       setProfileSuccess(false)
       setProfileError('')
+      setAvatarFile(null)
       setShowPasswordForm(false)
       setCurrentPassword('')
       setNewPassword('')
@@ -66,6 +74,55 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     { id: 'general', label: 'General' },
     { id: 'account', label: 'Account' },
   ]
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate type
+    const allowed = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowed.includes(file.type)) {
+      setProfileError('Please select a JPEG, PNG, or WebP image')
+      return
+    }
+
+    // Validate size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('Image must be smaller than 5MB')
+      return
+    }
+
+    setProfileError('')
+    setAvatarFile(file)
+
+    // Reset input so same file can be selected again
+    e.target.value = ''
+  }
+
+  const handleAvatarSaved = () => {
+    setAvatarFile(null)
+    setAvatarVersion((v) => v + 1)
+  }
+
+  const handleAvatarDelete = async () => {
+    setDeletingAvatar(true)
+    try {
+      const token = tokenUtils.get()
+      await fetch(`${API_URL}/auth/avatar`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      setAvatarVersion((v) => v + 1)
+    } catch {
+      // Silent failure for delete
+    } finally {
+      setDeletingAvatar(false)
+    }
+  }
 
   const handleProfileSave = async () => {
     if (!firstName.trim() || !lastName.trim()) {
@@ -96,7 +153,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         throw new Error(data.detail || 'Failed to update profile')
       }
 
-      // Update UI immediately (JWT refreshes on next login)
       updateUser({
         full_name: `${firstName.trim()} ${lastName.trim()}`,
       })
@@ -212,12 +268,39 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground">Profile</h3>
 
-                {/* Avatar + Email (read-only) */}
+                {/* Avatar with upload overlay */}
                 <div className="flex items-center gap-4">
-                  <UserAvatar fullName={user?.full_name || "User"} size="lg" />
+                  <div className="relative group">
+                    <div className="cursor-pointer" onClick={handleAvatarClick}>
+                      <UserAvatar
+                        fullName={user?.full_name || "User"}
+                        userId={user?.id}
+                        size="xl"
+                        version={avatarVersion}
+                      />
+                      <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
+                  </div>
                   <div>
                     <p className="text-base font-medium text-foreground">{user?.full_name || 'User'}</p>
                     <p className="text-md text-muted-foreground">{user?.email || ''}</p>
+                    <button
+                      onClick={handleAvatarDelete}
+                      disabled={deletingAvatar}
+                      className="flex items-center gap-1 mt-1 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      {deletingAvatar ? 'Removing...' : 'Remove photo'}
+                    </button>
                   </div>
                 </div>
 
@@ -373,14 +456,21 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       Partner
                     </div>
                   </div>
-
-
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Avatar crop modal */}
+      {avatarFile && (
+        <AvatarCropModal
+          imageFile={avatarFile}
+          onSave={handleAvatarSaved}
+          onCancel={() => setAvatarFile(null)}
+        />
+      )}
     </div>
   )
 }

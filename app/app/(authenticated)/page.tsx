@@ -586,11 +586,11 @@ export default function DashboardPage() {
         {!isLoading && filteredCases.length === 0 && (
           <Card>
             <CardContent className="p-8 text-center">
-              <Microscope className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-base font-medium mb-2">
+              <Microscope className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <p className="text-md font-medium mb-2">
                 {searchQuery ? 'No matching cases' : showAll ? 'No cases in organization' : 'No cases yet'}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-md text-muted-foreground">
                 {searchQuery ? 'Try a different search term.' : 'Start by uploading a VCF file.'}
               </p>
             </CardContent>
