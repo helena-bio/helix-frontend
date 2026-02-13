@@ -121,7 +121,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
       </div>
 
       {/* Role badge + menu */}
-      <div className="relative">
+      <div className="relative w-24">
         <button
           onClick={() => !isSelf && setRoleMenuOpen(!roleMenuOpen)}
           disabled={isSelf}
@@ -163,9 +163,11 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
       </div>
 
       {/* Status badge */}
-      <Badge variant="outline" className={cn("text-sm", status.color)}>
-        {status.label}
-      </Badge>
+      <div className="w-24">
+        <Badge variant="outline" className={cn("text-sm", status.color)}>
+          {status.label}
+        </Badge>
+      </div>
 
       {/* Last login */}
       <span className="text-sm text-muted-foreground w-24 text-right shrink-0">
@@ -173,8 +175,8 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
       </span>
 
       {/* Suspend / Activate action */}
-      {!isSelf && (
-        <div className="w-24 shrink-0 flex justify-end">
+      <div className="w-24 shrink-0 flex justify-end">
+        {!isSelf && (
           {confirmAction ? (
             <div className="flex items-center gap-1">
               <button
@@ -215,8 +217,8 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
               )}
             </button>
           )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
