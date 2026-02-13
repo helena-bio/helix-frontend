@@ -532,19 +532,13 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-full p-8">
       <div className="w-full max-w-4xl mx-auto space-y-8">
         {/* Header */}
-        <div className="relative">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {greeting.title}
-            </h1>
-            <p className="text-base text-muted-foreground mt-1">
-              {greeting.subtitle}
-            </p>
-          </div>
-          <Button onClick={handleNewCase} className="absolute right-0 top-1/2 -translate-y-1/2">
-            <Plus className="h-4 w-4 mr-2" />
-            <span className="text-base">New Case</span>
-          </Button>
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {greeting.title}
+          </h1>
+          <p className="text-base text-muted-foreground mt-1">
+            {greeting.subtitle}
+          </p>
         </div>
 
         {/* Mine/All toggle + Search */}
@@ -608,11 +602,17 @@ export default function DashboardPage() {
         {/* Case Cards */}
         {!isLoading && filteredCases.length > 0 && (
           <div className="space-y-3">
-            <p className="text-base text-muted-foreground">
-              {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
-              {searchQuery && ' matching filter'}
-              {showAll && ' across organization'}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-base text-muted-foreground">
+                {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
+                {searchQuery && ' matching filter'}
+                {showAll && ' across organization'}
+              </p>
+              <Button onClick={handleNewCase}>
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="text-base">New Case</span>
+              </Button>
+            </div>
             {filteredCases.map((session, idx) => (
               <CaseCard
                 key={session.id}
