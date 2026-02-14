@@ -243,7 +243,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Body: Left nav + Right content */}
-        <div className="flex h-[620px]">
+        <div className="flex max-h-[calc(80vh-60px)]">
           {/* Left navigation */}
           <nav className="w-48 border-r border-border p-3 space-y-1 shrink-0">
             {sections.map((section) => (
