@@ -30,6 +30,8 @@ import {
   Loader2,
   Search,
   Pencil,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { platformApi } from '@/lib/api/platform'
@@ -40,7 +42,8 @@ import type {
   CreateOrganizationRequest,
   UpdateOrganizationRequest,
 } from '@/lib/api/platform'
-import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@helix/shared/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@helix/shared/lib/utils'
@@ -371,6 +374,92 @@ function OverviewContent() {
 // ORGANIZATIONS
 // =========================================================================
 
+interface OrgCardProps {
+  org: PlatformOrganization
+  onEdit: (org: PlatformOrganization) => void
+}
+
+function OrgCard({ org, onEdit }: OrgCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const tier = TIER_CONFIG[org.partner_tier] || TIER_CONFIG.standard
+  const stat = STATUS_CONFIG[org.status] || STATUS_CONFIG.active
+
+  return (
+    <Card className="gap-0 py-0">
+      <CardHeader
+        className="py-3 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <span className="text-base font-semibold">{org.name}</span>
+            <Badge variant="outline" className={cn("text-sm", tier.color)}>
+              {tier.label}
+            </Badge>
+            <Badge variant="outline" className={cn("text-sm", stat.color)}>
+              {stat.label}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-md text-muted-foreground">
+              {org.member_count} member{org.member_count !== 1 ? 's' : ''}
+            </span>
+            <span className="text-md text-muted-foreground">
+              {formatDate(org.created_at)}
+            </span>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+      </CardHeader>
+
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-base">
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Contact Email</p>
+              <p className="font-medium">{org.contact_email || 'Not set'}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Website</p>
+              {org.website_url ? (
+                <a href={org.website_url.startsWith('http') ? org.website_url : 'https://' + org.website_url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline flex items-center gap-1">
+                  {org.website_url}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              ) : (
+                <p className="font-medium text-muted-foreground">Not set</p>
+              )}
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Slug</p>
+              <p className="font-medium font-mono text-md">{org.slug}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Members</p>
+              <p className="font-medium">{org.member_count} user{org.member_count !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+
+          <div className="pt-2 pb-3 border-t flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              className="text-sm"
+              onClick={(e) => { e.stopPropagation(); onEdit(org) }}
+            >
+              <Pencil className="h-3 w-3 mr-1" />
+              Edit Organization
+            </Button>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  )
+}
+
 function OrganizationsContent() {
   const [orgs, setOrgs] = useState<PlatformOrganization[]>([])
   const [loading, setLoading] = useState(true)
@@ -403,11 +492,15 @@ function OrganizationsContent() {
   }
 
   if (loading) {
-    return <div className="text-md text-muted-foreground">Loading organizations...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Organizations</h3>
         <button
@@ -431,93 +524,29 @@ function OrganizationsContent() {
         />
       </div>
 
-      <Card className="py-0 gap-0">
-        <CardContent className="p-0">
-          {/* Column headers */}
-          <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
-            <div className="w-8 shrink-0" />
-            <div className="flex-1">Organization</div>
-            <div className="w-36">Tier</div>
-            <div className="w-24">Status</div>
-            <div className="w-20 text-right">Members</div>
-            <div className="w-24 text-right">Created</div>
-            <div className="w-10" />
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="text-center py-12">
-              <Building2 className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-base text-muted-foreground">
-                {search ? 'No organizations match your search.' : 'No organizations found.'}
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {filtered.map((org) => {
-                const tier = TIER_CONFIG[org.partner_tier] || TIER_CONFIG.standard
-                const stat = STATUS_CONFIG[org.status] || STATUS_CONFIG.active
-
-                return (
-                  <div
-                    key={org.id}
-                    className="flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors group"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-base font-medium truncate">{org.name}</p>
-                        {org.website_url && (
-                          
-                            <a href={org.website_url.startsWith('http') ? org.website_url : 'https://' + org.website_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-foreground shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        )}
-                      </div>
-                      <p className="text-md text-muted-foreground truncate">{org.contact_email}</p>
-                    </div>
-
-                    <div className="w-36">
-                      <Badge variant="outline" className={cn("text-md", tier.color)}>
-                        {tier.label}
-                      </Badge>
-                    </div>
-
-                    <div className="w-24">
-                      <Badge variant="outline" className={cn("text-md", stat.color)}>
-                        {stat.label}
-                      </Badge>
-                    </div>
-
-                    <div className="w-20 text-right">
-                      <span className="text-base font-medium">{org.member_count}</span>
-                    </div>
-
-                    <div className="w-24 text-right">
-                      <span className="text-md text-muted-foreground">{formatDate(org.created_at)}</span>
-                    </div>
-
-                    <div className="w-10 flex justify-end">
-                      <button
-                        onClick={() => setEditOrg(org)}
-                        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Building2 className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-base font-medium mb-2">
+              {search ? 'No matching organizations' : 'No organizations found'}
+            </p>
+            <p className="text-md text-muted-foreground">
+              {search ? 'Try a different search term.' : 'Create your first organization to get started.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-base text-muted-foreground">
+            {filtered.length} organization{filtered.length !== 1 ? 's' : ''}
+            {search && ' matching filter'}
+          </p>
+          {filtered.map((org) => (
+            <OrgCard key={org.id} org={org} onEdit={setEditOrg} />
+          ))}
+        </div>
+      )}
 
       {/* Modals */}
       {showCreate && (
@@ -534,6 +563,87 @@ function OrganizationsContent() {
 // =========================================================================
 // USERS
 // =========================================================================
+
+interface UserCardProps {
+  user: PlatformUser
+}
+
+function UserCard({ user: u }: UserCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const stat = STATUS_CONFIG[u.status] || STATUS_CONFIG.active
+  const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1)
+
+  return (
+    <Card className="gap-0 py-0">
+      <CardHeader
+        className="py-3 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <UserAvatar fullName={u.full_name} userId={u.id} size="md" />
+            <span className="text-base font-semibold">{u.full_name}</span>
+            {u.is_platform_admin && (
+              <Shield className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+            )}
+            <Badge variant="outline" className={cn("text-sm", stat.color)}>
+              {stat.label}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-md text-muted-foreground">{u.organization_name}</span>
+            <span className="text-md text-muted-foreground">{formatRelative(u.last_login_at)}</span>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+      </CardHeader>
+
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-base">
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Email</p>
+              <p className="font-medium">{u.email}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Organization</p>
+              <p className="font-medium">{u.organization_name}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Role</p>
+              <p className="font-medium">{roleLabel}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Last Login</p>
+              <p className="font-medium">{formatRelative(u.last_login_at)}</p>
+            </div>
+            {u.is_platform_admin && (
+              <div>
+                <p className="text-md text-muted-foreground mb-0.5">Platform Role</p>
+                <div className="flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-amber-600" />
+                  <p className="font-medium">Platform Administrator</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-2 pb-3 border-t flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              className="text-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              View Profile
+            </Button>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  )
+}
 
 function UsersContent() {
   const [users, setUsers] = useState<PlatformUser[]>([])
@@ -556,11 +666,15 @@ function UsersContent() {
     : users
 
   if (loading) {
-    return <div className="text-md text-muted-foreground">Loading users...</div>
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h3 className="text-lg font-semibold text-foreground">All Users</h3>
 
       {/* Search */}
@@ -575,75 +689,32 @@ function UsersContent() {
         />
       </div>
 
-      <Card className="py-0 gap-0">
-        <CardContent className="p-0">
-          {/* Column headers */}
-          <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
-            <div className="w-8 shrink-0" />
-            <div className="flex-1">User</div>
-            <div className="w-36">Organization</div>
-            <div className="w-24">Role</div>
-            <div className="w-24">Status</div>
-            <div className="w-24 text-right">Last Login</div>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="text-center py-12">
-              <Users2 className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-base text-muted-foreground">
-                {search ? 'No users match your search.' : 'No users found.'}
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {filtered.map((u) => {
-                const stat = STATUS_CONFIG[u.status] || STATUS_CONFIG.active
-                const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1)
-
-                return (
-                  <div
-                    key={u.id}
-                    className="flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors"
-                  >
-                    <UserAvatar fullName={u.full_name} userId={u.id} size="md" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-base font-medium truncate">{u.full_name}</p>
-                        {u.is_platform_admin && (
-                          <Shield className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-md text-muted-foreground truncate">{u.email}</p>
-                    </div>
-
-                    <div className="w-36">
-                      <p className="text-md text-muted-foreground truncate">{u.organization_name}</p>
-                    </div>
-
-                    <div className="w-24">
-                      <span className="text-md font-medium">{roleLabel}</span>
-                    </div>
-
-                    <div className="w-24">
-                      <Badge variant="outline" className={cn("text-md", stat.color)}>
-                        {stat.label}
-                      </Badge>
-                    </div>
-
-                    <div className="w-24 text-right">
-                      <span className="text-md text-muted-foreground">{formatRelative(u.last_login_at)}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Users2 className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-base font-medium mb-2">
+              {search ? 'No matching users' : 'No users found'}
+            </p>
+            <p className="text-md text-muted-foreground">
+              {search ? 'Try a different search term.' : 'Invite members to get started.'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-base text-muted-foreground">
+            {filtered.length} user{filtered.length !== 1 ? 's' : ''}
+            {search && ' matching filter'}
+          </p>
+          {filtered.map((u) => (
+            <UserCard key={u.id} user={u} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
-
 
 // =========================================================================
 // ACTIVITY (placeholder)
