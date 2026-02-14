@@ -320,7 +320,7 @@ export default function InvitePage() {
 
                 {/* Organization (read-only) */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label className="block text-base font-medium text-foreground">
                     Organization
                   </label>
                   <div className="flex items-center gap-2 h-10 rounded-md border border-border bg-muted/30 px-3">
@@ -331,7 +331,7 @@ export default function InvitePage() {
 
                 {/* Email (read-only) */}
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-foreground">
+                  <label className="block text-base font-medium text-foreground">
                     Email address
                   </label>
                   <div className="flex items-center gap-2 h-10 rounded-md border border-border bg-muted/30 px-3">
@@ -343,7 +343,7 @@ export default function InvitePage() {
                 {/* Name row */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <label htmlFor="firstName" className="block text-sm font-medium text-foreground">
+                    <label htmlFor="firstName" className="block text-base font-medium text-foreground">
                       First name
                     </label>
                     <input
@@ -358,7 +358,7 @@ export default function InvitePage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label htmlFor="lastName" className="block text-sm font-medium text-foreground">
+                    <label htmlFor="lastName" className="block text-base font-medium text-foreground">
                       Last name
                     </label>
                     <input
@@ -376,7 +376,7 @@ export default function InvitePage() {
 
                 {/* Password */}
                 <div className="space-y-1.5">
-                  <label htmlFor="password" className="block text-sm font-medium text-foreground">
+                  <label htmlFor="password" className="block text-base font-medium text-foreground">
                     Password
                   </label>
                   <div className="relative">
@@ -423,7 +423,7 @@ export default function InvitePage() {
 
                 {/* Confirm password */}
                 <div className="space-y-1.5">
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
+                  <label htmlFor="confirmPassword" className="block text-base font-medium text-foreground">
                     Confirm password
                   </label>
                   <div className="relative">
@@ -448,10 +448,10 @@ export default function InvitePage() {
                     </button>
                   </div>
                   {confirmPassword.length > 0 && !passwordsMatch && (
-                    <p className="text-xs text-destructive mt-1">Passwords do not match</p>
+                    <p className="text-sm text-destructive mt-1">Passwords do not match</p>
                   )}
                   {passwordsMatch && (
-                    <p className="text-xs text-green-700 mt-1 flex items-center gap-1">
+                    <p className="text-sm text-green-700 mt-1 flex items-center gap-1">
                       <Check className="h-3 w-3" /> Passwords match
                     </p>
                   )}
@@ -460,13 +460,13 @@ export default function InvitePage() {
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                  className="w-full h-10 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
                 >
                   {pageState === 'submitting' && <Loader2 className="h-4 w-4 animate-spin" />}
                   {pageState === 'submitting' ? 'Creating account...' : 'Create Account'}
                 </button>
 
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-md text-muted-foreground text-center">
                   Already have an account?{' '}
                   <Link href="/login" className="text-primary hover:underline">
                     Sign in
