@@ -143,19 +143,19 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                 <p className="text-base font-medium">Invitation created</p>
               </div>
 
-              <p className="text-sm text-muted-foreground">
+              <p className="text-md text-muted-foreground">
                 Share this link with <span className="font-medium text-foreground">{email}</span> to
                 complete their registration. The invitation expires in 7 days.
               </p>
 
               {/* Invite link with copy */}
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-3 py-2 border border-border rounded-md bg-muted/30 text-sm text-muted-foreground truncate select-all">
+                <div className="flex-1 px-3 py-2 border border-border rounded-md bg-muted/30 text-md text-muted-foreground truncate select-all">
                   {inviteLink}
                 </div>
                 <button
                   onClick={handleCopy}
-                  className="shrink-0 px-3 py-2 border border-border rounded-md text-sm font-medium text-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
+                  className="shrink-0 px-3 py-2 border border-border rounded-md text-base font-medium text-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
                 >
                   {copied ? (
                     <>
@@ -175,13 +175,13 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
               <div className="flex items-center gap-3 pt-2">
                 <button
                   onClick={handleSendAnother}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
                 >
                   Invite another
                 </button>
                 <button
                   onClick={handleClose}
-                  className="px-4 py-2 border border-border rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className="px-4 py-2 border border-border rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   Done
                 </button>
@@ -189,13 +189,13 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-md text-muted-foreground">
                 Send an invitation to join <span className="font-medium text-foreground">{user?.organization_name || 'your organization'}</span>.
                 They will receive a link to create their account.
               </p>
 
               <div className="space-y-2">
-                <label htmlFor="invite-email" className="block text-sm font-medium text-foreground">
+                <label htmlFor="invite-email" className="block text-base font-medium text-foreground">
                   Email address
                 </label>
                 <input
@@ -212,14 +212,14 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
               </div>
 
               {error && (
-                <p className="text-sm text-destructive">{error}</p>
+                <p className="text-md text-destructive">{error}</p>
               )}
 
               <div className="flex items-center gap-3 pt-1">
                 <button
                   type="submit"
                   disabled={modalState === 'submitting'}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   {modalState === 'submitting' && <Loader2 className="h-4 w-4 animate-spin" />}
                   {modalState === 'submitting' ? 'Creating...' : 'Send Invitation'}
@@ -228,7 +228,7 @@ export function InviteModal({ isOpen, onClose }: InviteModalProps) {
                   type="button"
                   onClick={handleClose}
                   disabled={modalState === 'submitting'}
-                  className="px-4 py-2 border border-border rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                  className="px-4 py-2 border border-border rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
