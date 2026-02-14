@@ -226,6 +226,17 @@ export function Sidebar() {
         {isSidebarOpen ? (
           <div className="flex flex-col flex-1 min-h-0" style={{ animation: "slideInLeft 200ms ease-out" }}>
             {/* EXPANDED STATE */}
+            {/* New Case */}
+            <div className="px-2 py-2 shrink-0">
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-8"
+                onClick={() => { setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                <span className="ml-2 text-base">New Case</span>
+              </Button>
+            </div>
 
             {/* Header: Home button + Toggle button */}
             <div className="flex items-center justify-between px-2 py-2 h-[53px] shrink-0">
@@ -245,18 +256,6 @@ export function Sidebar() {
                 className="h-8 w-8 shrink-0"
               >
                 <ChevronLeft className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* New Case */}
-            <div className="px-2 shrink-0">
-              <Button
-                variant="ghost"
-                className="w-full justify-start h-8"
-                onClick={() => { setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
-              >
-                <Plus className="h-4 w-4 shrink-0" />
-                <span className="ml-2 text-base">New Case</span>
               </Button>
             </div>
 
