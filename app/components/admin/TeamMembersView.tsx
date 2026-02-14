@@ -34,7 +34,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTeamMembers, useOrgInvitations } from '@/hooks/queries/use-admin'
-import { useChangeRole, useChangeStatus, useRevokeInvitation, useAdminResetPassword, useRemoveMember } from '@/hooks/mutations/use-admin-mutations'
+import { useChangeRole, useChangeStatus, useRevokeInvitation, useDeleteInvitation, useAdminResetPassword, useRemoveMember } from '@/hooks/mutations/use-admin-mutations'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -349,6 +349,7 @@ function InvitationRow({ invitation }: InvitationRowProps) {
   const [copied, setCopied] = useState(false)
   const [confirmRevoke, setConfirmRevoke] = useState(false)
   const revokeMutation = useRevokeInvitation()
+  const deleteMutation = useDeleteInvitation()
 
   const isPending = invitation.status === 'pending'
   const isExpired = invitation.status === 'expired'
@@ -367,12 +368,14 @@ function InvitationRow({ invitation }: InvitationRowProps) {
     }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }, [inviteLink])
-
   const handleRevoke = useCallback(() => {
     revokeMutation.mutate(invitation.id)
     setConfirmRevoke(false)
   }, [revokeMutation, invitation.id])
+
+  const handleDelete = useCallback(() => {
+    deleteMutation.mutate(invitation.id)
+  }, [deleteMutation, invitation.id])
 
   const statusColor = isPending
     ? 'bg-orange-100 text-orange-900 border-orange-300'
@@ -422,26 +425,22 @@ function InvitationRow({ invitation }: InvitationRowProps) {
             >
               {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
-            {confirmRevoke ? (
-              <div className="flex items-center gap-0.5">
-                <button onClick={handleRevoke} className="p-1 rounded hover:bg-destructive/10" title="Confirm revoke">
-                  <Check className="h-4 w-4 text-destructive" />
-                </button>
-                <button onClick={() => setConfirmRevoke(false)} className="p-1 rounded hover:bg-accent" title="Cancel">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setConfirmRevoke(true)}
-                className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                title="Revoke invitation"
-              >
-                <Ban className="h-3.5 w-3.5" />
-              </button>
-            )}
+            <button
+              onClick={() => setConfirmRevoke(true)}
+              className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Revoke invitation"
+            >
+              <Ban className="h-3.5 w-3.5" />
+            </button>
           </>
         )}
+        <button
+          onClick={handleDelete}
+          className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          title="Delete invitation"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   )

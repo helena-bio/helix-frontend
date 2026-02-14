@@ -101,6 +101,12 @@ export async function revokeInvitation(
   return del<void>(`/admin/invitations/${invitationId}`)
 }
 
+export async function deleteInvitationPermanent(
+  invitationId: string,
+): Promise<void> {
+  return del<void>(`/admin/invitations/${invitationId}/permanent`)
+}
+
 // ============================================================================
 // ORGANIZATION
 // ============================================================================

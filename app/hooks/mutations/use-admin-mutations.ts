@@ -10,6 +10,7 @@ import {
   revokeInvitation,
   adminResetPassword,
   removeMember,
+  deleteInvitationPermanent,
 } from '@/lib/api/admin'
 import type { AdminResetPasswordResponse } from '@/lib/api/admin'
 
@@ -57,6 +58,16 @@ export function useRemoveMember() {
     mutationFn: (userId: string) => removeMember(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'team-members'] })
+    },
+  })
+}
+
+export function useDeleteInvitation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (invitationId: string) => deleteInvitationPermanent(invitationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'invitations'] })
     },
   })
 }
