@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText, Shield } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -74,6 +74,7 @@ export function Header() {
 
 
   const isAdmin = user?.role === 'admin'
+  const isPlatformAdmin = user?.is_platform_admin === true
 
   // Show journey steps only on /upload route
   const showJourneySteps = pathname === '/upload'
@@ -226,6 +227,18 @@ export function Header() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
+          {isPlatformAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-base font-medium"
+              onClick={() => router.push('/platform')}
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Platform
+            </Button>
+          )}
+
           {showDownloadReport && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

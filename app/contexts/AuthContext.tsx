@@ -18,6 +18,7 @@ interface User {
   organization_name: string;
   organization_id: string;
   role: string;
+  is_platform_admin: boolean;
 }
 
 interface AuthState {
@@ -50,6 +51,7 @@ function userFromPayload(payload: JWTPayload): User {
     organization_name: '',
     organization_id: payload.org_id,
     role: payload.role || '',
+    is_platform_admin: payload.is_platform_admin || false,
   };
 }
 
