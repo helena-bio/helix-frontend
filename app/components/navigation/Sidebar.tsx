@@ -15,7 +15,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import {
-  ChevronLeft,
+  PanelLeftClose,
   ChevronRight,
   ChevronDown,
   LayoutDashboard,
@@ -243,7 +243,7 @@ export function Sidebar() {
                 onClick={toggleSidebar}
                 className="h-8 w-8 shrink-0"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <PanelLeftClose className="h-4 w-4" />
               </Button>
             </div>
             {/* Dashboard */}
