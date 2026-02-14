@@ -431,82 +431,93 @@ function OrganizationsContent() {
         />
       </div>
 
-      <div className="border border-border rounded-lg overflow-hidden">
-        {/* Column headers */}
-        <div className="flex items-center gap-4 px-5 py-3 border-b border-border bg-muted/30 text-md text-muted-foreground font-medium">
-          <div className="flex-1">Organization</div>
-          <div className="w-36">Tier</div>
-          <div className="w-24">Status</div>
-          <div className="w-20 text-right">Members</div>
-          <div className="w-28 text-right">Created</div>
-          <div className="w-10" />
-        </div>
-
-        {filtered.map((org) => {
-          const tier = TIER_CONFIG[org.partner_tier] || TIER_CONFIG.standard
-          const stat = STATUS_CONFIG[org.status] || STATUS_CONFIG.active
-
-          return (
-            <div
-              key={org.id}
-              className="flex items-center gap-4 px-5 py-3 border-b border-border last:border-b-0 hover:bg-accent/30 transition-colors group"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-medium truncate">{org.name}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-md text-muted-foreground truncate">{org.contact_email}</p>
-                  {org.website_url && (
-                    
-                      <a href={org.website_url.startsWith('http') ? org.website_url : 'https://' + org.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-md text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              <div className="w-36">
-                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium", tier.color)}>
-                  {tier.label}
-                </span>
-              </div>
-
-              <div className="w-24">
-                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium", stat.color)}>
-                  {stat.label}
-                </span>
-              </div>
-
-              <div className="w-20 text-right">
-                <span className="text-base font-medium">{org.member_count}</span>
-              </div>
-
-              <div className="w-28 text-right">
-                <span className="text-md text-muted-foreground">{formatDate(org.created_at)}</span>
-              </div>
-
-              <div className="w-10 text-right">
-                <button
-                  onClick={() => setEditOrg(org)}
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )
-        })}
-
-        {filtered.length === 0 && (
-          <div className="px-5 py-8 text-center text-md text-muted-foreground">
-            {search ? 'No organizations match your search.' : 'No organizations found.'}
+      <Card className="py-0 gap-0">
+        <CardContent className="p-0">
+          {/* Column headers */}
+          <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
+            <div className="w-8 shrink-0" />
+            <div className="flex-1">Organization</div>
+            <div className="w-36">Tier</div>
+            <div className="w-24">Status</div>
+            <div className="w-20 text-right">Members</div>
+            <div className="w-24 text-right">Created</div>
+            <div className="w-10" />
           </div>
-        )}
-      </div>
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+              <p className="text-base text-muted-foreground">
+                {search ? 'No organizations match your search.' : 'No organizations found.'}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {filtered.map((org) => {
+                const tier = TIER_CONFIG[org.partner_tier] || TIER_CONFIG.standard
+                const stat = STATUS_CONFIG[org.status] || STATUS_CONFIG.active
+
+                return (
+                  <div
+                    key={org.id}
+                    className="flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors group"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-base font-medium truncate">{org.name}</p>
+                        {org.website_url && (
+                          
+                            href={org.website_url.startsWith('http') ? org.website_url : 'https://' + org.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-foreground shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                      </div>
+                      <p className="text-md text-muted-foreground truncate">{org.contact_email}</p>
+                    </div>
+
+                    <div className="w-36">
+                      <Badge variant="outline" className={cn("text-md", tier.color)}>
+                        {tier.label}
+                      </Badge>
+                    </div>
+
+                    <div className="w-24">
+                      <Badge variant="outline" className={cn("text-md", stat.color)}>
+                        {stat.label}
+                      </Badge>
+                    </div>
+
+                    <div className="w-20 text-right">
+                      <span className="text-base font-medium">{org.member_count}</span>
+                    </div>
+
+                    <div className="w-24 text-right">
+                      <span className="text-md text-muted-foreground">{formatDate(org.created_at)}</span>
+                    </div>
+
+                    <div className="w-10 flex justify-end">
+                      <button
+                        onClick={() => setEditOrg(org)}
+                        className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Modals */}
       {showCreate && (
