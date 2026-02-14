@@ -28,7 +28,7 @@ import {
   FileText,
   Settings,
   LogOut,
-  ShieldCheck,
+  Users2,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -318,7 +318,7 @@ export function Sidebar() {
                     className="w-full justify-start"
                     onClick={() => router.push('/admin/team')}
                   >
-                    <ShieldCheck className="h-5 w-5 shrink-0" />
+                    <Users2 className="h-5 w-5 shrink-0" />
                     <span className="ml-3 text-base">Team Members</span>
                   </Button>
                 </div>
