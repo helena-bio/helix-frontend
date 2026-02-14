@@ -307,7 +307,7 @@ export function Sidebar() {
 
             {/* Admin Section - visible only for admin role */}
             {user?.role === 'admin' && (
-              <div className="py-1 shrink-0 border-t border-border">
+              <div className="py-1 shrink-0">
                 <button
                   className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
                   onClick={() => setIsAdminOpen(!isAdminOpen)}
