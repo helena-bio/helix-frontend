@@ -173,13 +173,13 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
             <span className="text-xs text-muted-foreground">(you)</span>
           )}
         </div>
-        <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+        <p className="text-md text-muted-foreground truncate">{member.email}</p>
       </div>
 
       {/* Role badge (display only) */}
       <div className="w-24">
         <span className={cn(
-          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-sm font-medium",
+          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-md font-medium",
           role.color
         )}>
           <RoleIcon className="h-3.5 w-3.5" />
@@ -189,13 +189,13 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
 
       {/* Status badge */}
       <div className="w-24">
-        <Badge variant="outline" className={cn("text-sm", status.color)}>
+        <Badge variant="outline" className={cn("text-md", status.color)}>
           {status.label}
         </Badge>
       </div>
 
       {/* Last login */}
-      <span className="text-sm text-muted-foreground w-24 text-right shrink-0">
+      <span className="text-md text-muted-foreground w-24 text-right shrink-0">
         {member.last_login_at ? formatRelativeDate(member.last_login_at) : 'Never'}
       </span>
 
@@ -218,7 +218,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                   onMouseEnter={() => setRoleSubmenuOpen(true)}
                   onMouseLeave={() => setRoleSubmenuOpen(false)}
                 >
-                  <button className="w-full flex items-center justify-between px-3 py-1.5 text-sm hover:bg-accent transition-colors">
+                  <button className="w-full flex items-center justify-between px-3 py-1.5 text-md hover:bg-accent transition-colors">
                     <span className="flex items-center gap-2">
                       <Shield className="h-3.5 w-3.5" />
                       Change Role
@@ -235,7 +235,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                             key={key}
                             onClick={() => handleRoleChange(key)}
                             className={cn(
-                              "w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                              "w-full flex items-center gap-2 px-3 py-1.5 text-md hover:bg-accent transition-colors",
                               member.role === key && "font-medium bg-accent/50"
                             )}
                           >
@@ -252,7 +252,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                 {/* Reset Password */}
                 <button
                   onClick={handleResetPassword}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-md hover:bg-accent transition-colors"
                 >
                   <Key className="h-3.5 w-3.5" />
                   Reset Password
@@ -264,7 +264,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                 <button
                   onClick={() => setConfirmAction(member.status === 'active' ? 'suspend' : 'activate')}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
+                    "w-full flex items-center gap-2 px-3 py-1.5 text-md transition-colors",
                     member.status === 'active'
                       ? "hover:bg-destructive/10 hover:text-destructive"
                       : "hover:bg-green-50 hover:text-green-700"
@@ -286,7 +286,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                 {/* Remove */}
                 <button
                   onClick={() => setConfirmAction('remove')}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-md text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   Remove Member
@@ -302,7 +302,7 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                   {confirmAction === 'activate' && 'Activate this user?'}
                   {confirmAction === 'remove' && 'Remove this member?'}
                 </p>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-md text-muted-foreground mb-3">
                   {confirmAction === 'suspend' && 'They will not be able to log in or access any data.'}
                   {confirmAction === 'activate' && 'They will regain access to the platform.'}
                   {confirmAction === 'remove' && 'This action cannot be undone. All their data will remain but they will lose access.'}
@@ -310,14 +310,14 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
                 <div className="flex items-center gap-2 justify-end">
                   <button
                     onClick={() => setConfirmAction(null)}
-                    className="px-2.5 py-1 text-sm rounded border border-border hover:bg-accent transition-colors"
+                    className="px-2.5 py-1 text-md rounded border border-border hover:bg-accent transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={confirmAction === 'remove' ? handleRemove : handleStatusChange}
                     className={cn(
-                      "px-2.5 py-1 text-sm rounded font-medium transition-colors",
+                      "px-2.5 py-1 text-md rounded font-medium transition-colors",
                       confirmAction === 'activate'
                         ? "bg-green-600 text-white hover:bg-green-700"
                         : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -394,7 +394,7 @@ function InvitationRow({ invitation }: InvitationRowProps) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-base font-medium truncate">{invitation.email}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           {invitation.invited_by_name ? `Invited by ${invitation.invited_by_name}` : 'Invited'}
           {' -- '}
           {formatRelativeDate(invitation.created_at)}
@@ -403,14 +403,14 @@ function InvitationRow({ invitation }: InvitationRowProps) {
 
       {/* Role */}
       <div className="w-20">
-        <Badge variant="outline" className={cn("text-sm", roleConfig[invitation.role]?.color || '')}>
+        <Badge variant="outline" className={cn("text-md", roleConfig[invitation.role]?.color || '')}>
           {roleConfig[invitation.role]?.label || invitation.role}
         </Badge>
       </div>
 
       {/* Status */}
       <div className="w-28">
-        <Badge variant="outline" className={cn("text-sm", statusColor)}>
+        <Badge variant="outline" className={cn("text-md", statusColor)}>
           {isPending ? formatExpiryDate(invitation.expires_at) : invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)}
         </Badge>
       </div>
@@ -502,7 +502,7 @@ export function TeamMembersView() {
             <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 shrink-0">
               <button
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-base transition-colors",
                   activeTab === 'members'
                     ? "bg-background shadow-sm font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -517,7 +517,7 @@ export function TeamMembersView() {
               </button>
               <button
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-base transition-colors",
                   activeTab === 'invitations'
                     ? "bg-background shadow-sm font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -540,14 +540,14 @@ export function TeamMembersView() {
                 placeholder={activeTab === 'members' ? 'Search members...' : 'Search invitations...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full h-10 pl-9 pr-3 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
 
             {/* Invite button */}
             <button
               onClick={() => setInviteModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors shrink-0"
             >
               <UserPlus className="h-4 w-4" />
               Invite Member
@@ -560,7 +560,7 @@ export function TeamMembersView() {
               {activeTab === 'members' && (
                 <>
                   {/* Column headers */}
-                  <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-sm text-muted-foreground font-medium">
+                  <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
                     <div className="w-8 shrink-0" />
                     <div className="flex-1">Member</div>
                     <div className="w-24">Role</div>
@@ -598,7 +598,7 @@ export function TeamMembersView() {
               {activeTab === 'invitations' && (
                 <>
                   {/* Column headers */}
-                  <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-sm text-muted-foreground font-medium">
+                  <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
                     <div className="w-8 shrink-0" />
                     <div className="flex-1">Email</div>
                     <div className="w-20">Role</div>
@@ -619,7 +619,7 @@ export function TeamMembersView() {
                       {!searchQuery && (
                         <button
                           onClick={() => setInviteModalOpen(true)}
-                          className="mt-3 text-sm text-primary hover:underline"
+                          className="mt-3 text-md text-primary hover:underline"
                         >
                           Send your first invitation
                         </button>
