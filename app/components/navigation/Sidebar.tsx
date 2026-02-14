@@ -261,7 +261,7 @@ export function Sidebar() {
             {/* Modules Navigation (collapsible) */}
             <div className="border-t border-border py-1 shrink-0">
               <button
-                className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
                 onClick={() => setIsModulesOpen(!isModulesOpen)}
               >
                 <span>Modules</span>
@@ -309,7 +309,7 @@ export function Sidebar() {
             {user?.role === 'admin' && (
               <div className="py-1 shrink-0 border-t border-border">
                 <button
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
                   onClick={() => setIsAdminOpen(!isAdminOpen)}
                 >
                   <span>Admin</span>

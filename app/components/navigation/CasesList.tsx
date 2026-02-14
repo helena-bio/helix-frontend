@@ -181,7 +181,7 @@ export function CasesList() {
     <div className="py-1">
       {/* Section header */}
       <button
-        className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span>Cases</span>
