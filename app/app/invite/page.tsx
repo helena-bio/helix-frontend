@@ -134,7 +134,7 @@ export default function InvitePage() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        throw new Error(data?.detail || `Registration failed (${response.status})`);
+        throw new Error(data?.error?.message || data?.detail || `Registration failed (${response.status})`);
       }
 
       const data: AcceptResponse = await response.json();
@@ -352,7 +352,7 @@ export default function InvitePage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={pageState === 'submitting'}
-                    placeholder="At least 8 characters"
+                    placeholder="Min 8 chars, uppercase, number, special"
                     className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                   />
                 </div>
