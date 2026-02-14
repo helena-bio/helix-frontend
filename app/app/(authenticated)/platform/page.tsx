@@ -4,25 +4,22 @@
  * Platform Admin Page
  *
  * Full platform visibility and control panel.
+ * Layout matches Settings: centered max-w-4xl, left text nav, right content.
  * Only accessible by users with is_platform_admin flag.
- * Sub-sections: Overview, Organizations, Users, Activity.
  */
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  BarChart3,
   Building2,
   Users2,
-  Activity,
-  ArrowLeft,
-  Globe,
-  UserCheck,
-  UserX,
   Clock,
+  UserX,
   Shield,
   ExternalLink,
   Plus,
+  Activity,
+  ArrowLeft,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { platformApi } from '@/lib/api/platform'
@@ -36,11 +33,11 @@ import { cn } from '@helix/shared/lib/utils'
 
 type Section = 'overview' | 'organizations' | 'users' | 'activity'
 
-const NAV_ITEMS: { id: Section; label: string; icon: typeof BarChart3 }[] = [
-  { id: 'overview', label: 'Overview', icon: BarChart3 },
-  { id: 'organizations', label: 'Organizations', icon: Building2 },
-  { id: 'users', label: 'Users', icon: Users2 },
-  { id: 'activity', label: 'Activity', icon: Activity },
+const SECTIONS: { id: Section; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'organizations', label: 'Organizations' },
+  { id: 'users', label: 'Users' },
+  { id: 'activity', label: 'Activity' },
 ]
 
 function formatDate(dateStr: string): string {
@@ -78,10 +75,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 
 
 // =========================================================================
-// OVERVIEW SECTION
+// OVERVIEW
 // =========================================================================
 
-function OverviewSection() {
+function OverviewContent() {
   const [data, setData] = useState<PlatformOverview | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -101,47 +98,20 @@ function OverviewSection() {
   }
 
   const cards = [
-    {
-      label: 'Organizations',
-      value: data.total_organizations,
-      sub: `${data.active_organizations} active`,
-      icon: Building2,
-      color: 'text-blue-600',
-    },
-    {
-      label: 'Total Users',
-      value: data.total_users,
-      sub: `${data.active_users} active`,
-      icon: Users2,
-      color: 'text-green-600',
-    },
-    {
-      label: 'Pending Users',
-      value: data.pending_users,
-      sub: 'Awaiting activation',
-      icon: Clock,
-      color: 'text-yellow-600',
-    },
-    {
-      label: 'Suspended',
-      value: data.suspended_users + data.suspended_organizations,
-      sub: `${data.suspended_users} users, ${data.suspended_organizations} orgs`,
-      icon: UserX,
-      color: 'text-red-600',
-    },
+    { label: 'Organizations', value: data.total_organizations, sub: `${data.active_organizations} active`, icon: Building2, color: 'text-blue-600' },
+    { label: 'Total Users', value: data.total_users, sub: `${data.active_users} active`, icon: Users2, color: 'text-green-600' },
+    { label: 'Pending Users', value: data.pending_users, sub: 'Awaiting activation', icon: Clock, color: 'text-yellow-600' },
+    { label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: `${data.suspended_users} users, ${data.suspended_organizations} orgs`, icon: UserX, color: 'text-red-600' },
   ]
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">Platform Metrics</h2>
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-foreground">Platform Metrics</h3>
       <div className="grid grid-cols-2 gap-4">
         {cards.map((card) => {
           const Icon = card.icon
           return (
-            <div
-              key={card.label}
-              className="border border-border rounded-lg p-5 bg-card"
-            >
+            <div key={card.label} className="border border-border rounded-lg p-5 bg-card">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-md text-muted-foreground">{card.label}</span>
                 <Icon className={cn("h-5 w-5", card.color)} />
@@ -158,10 +128,10 @@ function OverviewSection() {
 
 
 // =========================================================================
-// ORGANIZATIONS SECTION
+// ORGANIZATIONS
 // =========================================================================
 
-function OrganizationsSection() {
+function OrganizationsContent() {
   const [orgs, setOrgs] = useState<PlatformOrganization[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -177,9 +147,9 @@ function OrganizationsSection() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Organizations</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-foreground">Organizations</h3>
         <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors">
           <Plus className="h-4 w-4" />
           New Organization
@@ -196,7 +166,6 @@ function OrganizationsSection() {
           <div className="w-28 text-right">Created</div>
         </div>
 
-        {/* Rows */}
         {orgs.map((org) => {
           const tier = TIER_CONFIG[org.partner_tier] || TIER_CONFIG.standard
           const stat = STATUS_CONFIG[org.status] || STATUS_CONFIG.active
@@ -224,19 +193,13 @@ function OrganizationsSection() {
               </div>
 
               <div className="w-36">
-                <span className={cn(
-                  "inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium",
-                  tier.color
-                )}>
+                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium", tier.color)}>
                   {tier.label}
                 </span>
               </div>
 
               <div className="w-24">
-                <span className={cn(
-                  "inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium",
-                  stat.color
-                )}>
+                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium", stat.color)}>
                   {stat.label}
                 </span>
               </div>
@@ -264,10 +227,10 @@ function OrganizationsSection() {
 
 
 // =========================================================================
-// USERS SECTION
+// USERS
 // =========================================================================
 
-function UsersSection() {
+function UsersContent() {
   const [users, setUsers] = useState<PlatformUser[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -283,8 +246,8 @@ function UsersSection() {
   }
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">All Users</h2>
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-foreground">All Users</h3>
 
       <div className="border border-border rounded-lg overflow-hidden">
         {/* Column headers */}
@@ -296,7 +259,6 @@ function UsersSection() {
           <div className="w-28 text-right">Last Login</div>
         </div>
 
-        {/* Rows */}
         {users.map((u) => {
           const stat = STATUS_CONFIG[u.status] || STATUS_CONFIG.active
           const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1)
@@ -325,10 +287,7 @@ function UsersSection() {
               </div>
 
               <div className="w-24">
-                <span className={cn(
-                  "inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium",
-                  stat.color
-                )}>
+                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium", stat.color)}>
                   {stat.label}
                 </span>
               </div>
@@ -352,13 +311,13 @@ function UsersSection() {
 
 
 // =========================================================================
-// ACTIVITY SECTION (placeholder)
+// ACTIVITY (placeholder)
 // =========================================================================
 
-function ActivitySection() {
+function ActivityContent() {
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">Activity Log</h2>
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-foreground">Activity Log</h3>
       <div className="border border-border rounded-lg p-8 text-center">
         <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
         <p className="text-base text-muted-foreground">Cross-organization audit log coming soon.</p>
@@ -369,7 +328,7 @@ function ActivitySection() {
 
 
 // =========================================================================
-// MAIN PAGE
+// MAIN
 // =========================================================================
 
 export default function PlatformPage() {
@@ -377,7 +336,6 @@ export default function PlatformPage() {
   const { user } = useAuth()
   const [activeSection, setActiveSection] = useState<Section>('overview')
 
-  // Guard: redirect non-platform admins
   if (!user?.is_platform_admin) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -387,51 +345,45 @@ export default function PlatformPage() {
   }
 
   return (
-    <div className="h-full flex">
-      {/* Sub-navigation */}
-      <div className="w-56 border-r border-border bg-card shrink-0 flex flex-col">
-        <div className="px-4 pt-5 pb-3">
+    <div className="flex-1 overflow-y-auto">
+      <div className="w-full max-w-5xl mx-auto px-6 py-8">
+        <div className="flex items-center gap-3 mb-1">
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-md text-muted-foreground hover:text-foreground transition-colors"
+            className="text-md text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to app
           </button>
-          <h1 className="text-lg font-semibold mt-3">Platform Admin</h1>
+          <h2 className="text-3xl font-semibold text-foreground">Platform</h2>
         </div>
+        <p className="text-base text-muted-foreground mb-8 ml-7">System-wide visibility and control</p>
 
-        <nav className="px-2 space-y-0.5">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon
-            const isActive = activeSection === item.id
-
-            return (
+        <div className="flex gap-8">
+          {/* Left navigation */}
+          <nav className="w-44 shrink-0 space-y-1">
+            {SECTIONS.map((section) => (
               <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
+                key={section.id}
+                onClick={() => setActiveSection(section.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2 rounded-md text-base transition-colors",
-                  isActive
-                    ? "bg-accent font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  "w-full text-left px-3 py-2 rounded-md text-base transition-colors",
+                  activeSection === section.id
+                    ? "bg-accent text-foreground font-medium"
+                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                 )}
               >
-                <Icon className="h-4.5 w-4.5 shrink-0" />
-                {item.label}
+                {section.label}
               </button>
-            )
-          })}
-        </nav>
-      </div>
+            ))}
+          </nav>
 
-      {/* Content area */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-4xl">
-          {activeSection === 'overview' && <OverviewSection />}
-          {activeSection === 'organizations' && <OrganizationsSection />}
-          {activeSection === 'users' && <UsersSection />}
-          {activeSection === 'activity' && <ActivitySection />}
+          {/* Right content */}
+          <div className="flex-1 min-w-0">
+            {activeSection === 'overview' && <OverviewContent />}
+            {activeSection === 'organizations' && <OrganizationsContent />}
+            {activeSection === 'users' && <UsersContent />}
+            {activeSection === 'activity' && <ActivityContent />}
+          </div>
         </div>
       </div>
     </div>
