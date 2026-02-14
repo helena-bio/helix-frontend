@@ -70,7 +70,7 @@ export interface UpdateOrganizationRequest {
 
 export const platformApi = {
   async getOverview(): Promise<PlatformOverview> {
-    const res = await fetch(`${API_URL}/api/v1/platform/overview`, {
+    const res = await fetch(`${API_URL}/platform/overview`, {
       headers: authHeaders(),
     })
     if (!res.ok) throw new Error(`Failed to fetch overview (${res.status})`)
@@ -78,7 +78,7 @@ export const platformApi = {
   },
 
   async listOrganizations(): Promise<{ organizations: PlatformOrganization[]; total: number }> {
-    const res = await fetch(`${API_URL}/api/v1/platform/organizations`, {
+    const res = await fetch(`${API_URL}/platform/organizations`, {
       headers: authHeaders(),
     })
     if (!res.ok) throw new Error(`Failed to fetch organizations (${res.status})`)
@@ -86,7 +86,7 @@ export const platformApi = {
   },
 
   async getOrganization(id: string): Promise<PlatformOrganization> {
-    const res = await fetch(`${API_URL}/api/v1/platform/organizations/${id}`, {
+    const res = await fetch(`${API_URL}/platform/organizations/${id}`, {
       headers: authHeaders(),
     })
     if (!res.ok) throw new Error(`Failed to fetch organization (${res.status})`)
@@ -94,7 +94,7 @@ export const platformApi = {
   },
 
   async createOrganization(data: CreateOrganizationRequest): Promise<PlatformOrganization> {
-    const res = await fetch(`${API_URL}/api/v1/platform/organizations`, {
+    const res = await fetch(`${API_URL}/platform/organizations`, {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify(data),
@@ -107,7 +107,7 @@ export const platformApi = {
   },
 
   async updateOrganization(id: string, data: UpdateOrganizationRequest): Promise<PlatformOrganization> {
-    const res = await fetch(`${API_URL}/api/v1/platform/organizations/${id}`, {
+    const res = await fetch(`${API_URL}/platform/organizations/${id}`, {
       method: 'PATCH',
       headers: authHeaders(),
       body: JSON.stringify(data),
@@ -120,7 +120,7 @@ export const platformApi = {
   },
 
   async listUsers(): Promise<{ users: PlatformUser[]; total: number }> {
-    const res = await fetch(`${API_URL}/api/v1/platform/users`, {
+    const res = await fetch(`${API_URL}/platform/users`, {
       headers: authHeaders(),
     })
     if (!res.ok) throw new Error(`Failed to fetch users (${res.status})`)
