@@ -45,7 +45,7 @@ import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
 import { useLiteratureResults } from '@/contexts/LiteratureResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
-import { SettingsModal } from './SettingsModal'
+
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { CasesList } from './CasesList'
 import { cn } from '@helix/shared/lib/utils'
@@ -87,7 +87,6 @@ export function Sidebar() {
   const pathname = usePathname()
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isModulesOpen, setIsModulesOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -198,7 +197,7 @@ export function Sidebar() {
 
   const handleOpenSettings = () => {
     setIsUserMenuOpen(false)
-    setIsSettingsOpen(true)
+    router.push('/settings')
   }
 
   // When collapsed, clicking anywhere on sidebar opens it
@@ -502,8 +501,6 @@ export function Sidebar() {
         )}
       </aside>
 
-      {/* Settings Modal */}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
   )
 }
