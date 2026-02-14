@@ -100,3 +100,37 @@ export async function revokeInvitation(
 ): Promise<void> {
   return del<void>(`/admin/invitations/${invitationId}`)
 }
+
+// ============================================================================
+// ORGANIZATION
+// ============================================================================
+
+export interface OrganizationDetails {
+  id: string
+  name: string
+  slug: string
+  partner_tier: string
+  status: string
+  logo_url: string | null
+  website_url: string | null
+  contact_email: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface UpdateOrganizationRequest {
+  name?: string
+  website_url?: string
+  contact_email?: string
+  logo_url?: string
+}
+
+export async function fetchOrganization(): Promise<OrganizationDetails> {
+  return get<OrganizationDetails>(`/admin/organization`)
+}
+
+export async function updateOrganization(
+  data: UpdateOrganizationRequest,
+): Promise<OrganizationDetails> {
+  return put<OrganizationDetails>(`/admin/organization`, data)
+}

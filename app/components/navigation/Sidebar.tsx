@@ -29,6 +29,7 @@ import {
   Settings,
   LogOut,
   Users2,
+  Building2,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -309,7 +310,15 @@ export function Sidebar() {
                 <p className="px-3 py-1.5 text-base font-semibold text-muted-foreground">
                   Admin
                 </p>
-                <div className="px-2">
+                <div className="px-2 space-y-0.5">
+                  <Button
+                    variant={pathname === '/admin/organization' ? 'secondary' : 'ghost'}
+                    className="w-full justify-start"
+                    onClick={() => router.push('/admin/organization')}
+                  >
+                    <Building2 className="h-5 w-5 shrink-0" />
+                    <span className="ml-3 text-base">Organization</span>
+                  </Button>
                   <Button
                     variant={pathname === '/admin/team' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
