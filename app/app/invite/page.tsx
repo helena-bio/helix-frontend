@@ -11,11 +11,11 @@
  */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { AlertCircle, Loader2, Building2, Mail, Check } from 'lucide-react';
+import { AlertCircle, Loader2, Building2, Mail, Check, Eye, EyeOff } from 'lucide-react';
 import { tokenUtils } from '@/lib/auth/token';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -45,6 +45,30 @@ interface AcceptResponse {
 
 type PageState = 'loading' | 'ready' | 'invalid' | 'expired' | 'submitting' | 'success';
 
+interface PasswordRequirement {
+  label: string;
+  met: boolean;
+}
+
+function usePasswordValidation(password: string): {
+  requirements: PasswordRequirement[];
+  isValid: boolean;
+} {
+  return useMemo(() => {
+    const requirements: PasswordRequirement[] = [
+      { label: 'At least 8 characters', met: password.length >= 8 },
+      { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
+      { label: 'One lowercase letter', met: /[a-z]/.test(password) },
+      { label: 'One number', met: /\d/.test(password) },
+      { label: 'One special character (!@#$%^&*)', met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+    ];
+    return {
+      requirements,
+      isValid: requirements.every((r) => r.met),
+    };
+  }, [password]);
+}
+
 export default function InvitePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,7 +84,13 @@ export default function InvitePage() {
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
+  const { requirements, isValid: passwordValid } = usePasswordValidation(password);
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -105,13 +135,12 @@ export default function InvitePage() {
     e.preventDefault();
     setError('');
 
-    // Validation
     if (!firstName.trim() || !lastName.trim()) {
       setError('First name and last name are required');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (!passwordValid) {
+      setError('Password does not meet all requirements');
       return;
     }
     if (password !== confirmPassword) {
@@ -139,13 +168,11 @@ export default function InvitePage() {
 
       const data: AcceptResponse = await response.json();
 
-      // Save JWT and update auth state
       tokenUtils.save(data.access_token);
       refreshAuth();
 
       setPageState('success');
 
-      // Brief pause to show success, then redirect
       setTimeout(() => {
         router.push('/');
       }, 1500);
@@ -154,6 +181,13 @@ export default function InvitePage() {
       setPageState('ready');
     }
   };
+
+  const canSubmit =
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    passwordValid &&
+    passwordsMatch &&
+    pageState !== 'submitting';
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-y-auto">
@@ -168,7 +202,7 @@ export default function InvitePage() {
         }
       `}</style>
 
-      {/* Header - matches login page */}
+      {/* Header */}
       <header className="h-14 border-b border-border bg-card shrink-0">
         <div className="h-full flex items-center gap-6 overflow-hidden">
           <Link href="https://helixinsight.bio" className="flex items-center gap-2 shrink-0 pl-6">
@@ -276,114 +310,163 @@ export default function InvitePage() {
             </div>
 
             <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
                   <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
                     <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
-                    <p className="text-base text-destructive">{error}</p>
+                    <p className="text-sm text-destructive">{error}</p>
                   </div>
                 )}
 
                 {/* Organization (read-only) */}
-                <div className="space-y-2">
-                  <label className="block text-base font-medium text-foreground">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-foreground">
                     Organization
                   </label>
-                  <div className="flex items-center gap-2 h-11 rounded-md border border-border bg-muted/30 px-3">
+                  <div className="flex items-center gap-2 h-10 rounded-md border border-border bg-muted/30 px-3">
                     <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-base text-muted-foreground">{invitation.organization_name}</span>
+                    <span className="text-sm text-muted-foreground">{invitation.organization_name}</span>
                   </div>
                 </div>
 
                 {/* Email (read-only) */}
-                <div className="space-y-2">
-                  <label className="block text-base font-medium text-foreground">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-medium text-foreground">
                     Email address
                   </label>
-                  <div className="flex items-center gap-2 h-11 rounded-md border border-border bg-muted/30 px-3">
+                  <div className="flex items-center gap-2 h-10 rounded-md border border-border bg-muted/30 px-3">
                     <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-base text-muted-foreground">{invitation.email}</span>
+                    <span className="text-sm text-muted-foreground">{invitation.email}</span>
                   </div>
                 </div>
 
-                {/* First name */}
-                <div className="space-y-2">
-                  <label htmlFor="firstName" className="block text-base font-medium text-foreground">
-                    First name
-                  </label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    disabled={pageState === 'submitting'}
-                    placeholder="Enter your first name"
-                    className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                  />
-                </div>
-
-                {/* Last name */}
-                <div className="space-y-2">
-                  <label htmlFor="lastName" className="block text-base font-medium text-foreground">
-                    Last name
-                  </label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    disabled={pageState === 'submitting'}
-                    placeholder="Enter your last name"
-                    className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                  />
+                {/* Name row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-foreground">
+                      First name
+                    </label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      disabled={pageState === 'submitting'}
+                      placeholder="First name"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-foreground">
+                      Last name
+                    </label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      disabled={pageState === 'submitting'}
+                      placeholder="Last name"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                    />
+                  </div>
                 </div>
 
                 {/* Password */}
-                <div className="space-y-2">
-                  <label htmlFor="password" className="block text-base font-medium text-foreground">
+                <div className="space-y-1.5">
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground">
                     Password
                   </label>
-                  <input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={pageState === 'submitting'}
-                    placeholder="Min 8 chars, uppercase, number, special"
-                    className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                  />
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setPasswordTouched(true); }}
+                      disabled={pageState === 'submitting'}
+                      placeholder="Create a strong password"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+
+                  {/* Password requirements checklist */}
+                  {passwordTouched && (
+                    <div className="mt-2 space-y-1">
+                      {requirements.map((req) => (
+                        <div key={req.label} className="flex items-center gap-2">
+                          <div className={`h-3.5 w-3.5 rounded-full flex items-center justify-center ${
+                            req.met ? 'bg-green-600' : 'bg-border'
+                          }`}>
+                            {req.met && <Check className="h-2.5 w-2.5 text-white" />}
+                          </div>
+                          <span className={`text-xs ${
+                            req.met ? 'text-green-700' : 'text-muted-foreground'
+                          }`}>
+                            {req.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Confirm password */}
-                <div className="space-y-2">
-                  <label htmlFor="confirmPassword" className="block text-base font-medium text-foreground">
+                <div className="space-y-1.5">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
                     Confirm password
                   </label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={pageState === 'submitting'}
-                    placeholder="Repeat your password"
-                    className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                  />
+                  <div className="relative">
+                    <input
+                      id="confirmPassword"
+                      type={showConfirm ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onPaste={(e) => e.preventDefault()}
+                      disabled={pageState === 'submitting'}
+                      placeholder="Re-enter your password"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {confirmPassword.length > 0 && !passwordsMatch && (
+                    <p className="text-xs text-destructive mt-1">Passwords do not match</p>
+                  )}
+                  {passwordsMatch && (
+                    <p className="text-xs text-green-700 mt-1 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> Passwords match
+                    </p>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  disabled={pageState === 'submitting'}
-                  className="w-full h-11 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  disabled={!canSubmit}
+                  className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
                 >
                   {pageState === 'submitting' && <Loader2 className="h-4 w-4 animate-spin" />}
                   {pageState === 'submitting' ? 'Creating account...' : 'Create Account'}
                 </button>
 
-                <p className="text-sm text-muted-foreground text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   Already have an account?{' '}
                   <Link href="/login" className="text-primary hover:underline">
                     Sign in
@@ -395,7 +478,7 @@ export default function InvitePage() {
         )}
       </main>
 
-      {/* Footer - matches login page */}
+      {/* Footer */}
       <footer className="border-t border-border bg-card">
         <div className="px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
