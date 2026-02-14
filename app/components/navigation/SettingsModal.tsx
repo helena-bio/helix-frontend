@@ -343,36 +343,33 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     <p className="text-base text-destructive">{profileError}</p>
                   )}
 
-                  <button
-                    onClick={handleProfileSave}
-                    disabled={profileSaving}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-                  >
-                    {profileSaving ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : profileSuccess ? (
-                      <Check className="h-4 w-4" />
-                    ) : null}
-                    {profileSuccess ? 'Saved' : 'Save changes'}
-                  </button>
-                </div>
-
-                {/* Password section */}
-                <div className="border-t border-border pt-6">
-                  {!showPasswordForm ? (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground">Password</h3>
-                        <p className="text-sm text-muted-foreground mt-1">Last changed: unknown</p>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleProfileSave}
+                      disabled={profileSaving}
+                      className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      {profileSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : profileSuccess ? (
+                        <Check className="h-4 w-4" />
+                      ) : null}
+                      {profileSuccess ? 'Saved' : 'Save changes'}
+                    </button>
+                    {!showPasswordForm && (
                       <button
                         onClick={() => setShowPasswordForm(true)}
                         className="px-4 py-2 border border-border rounded-md text-base font-medium text-foreground hover:bg-accent transition-colors"
                       >
                         Change password
                       </button>
-                    </div>
-                  ) : (
+                    )}
+                  </div>
+                </div>
+
+                {/* Password form (expandable) */}
+                {showPasswordForm && (
+                  <div className="border-t border-border pt-6">
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-foreground">Change password</h3>
 
