@@ -323,7 +323,7 @@ export function Sidebar() {
             )}
 
             {/* User Menu */}
-            <div className="border-t border-border p-2 shrink-0 relative" ref={menuRef}>
+            <div className="border-t border-border shrink-0 relative" ref={menuRef}>
               {/* Dropdown Menu - opens upward */}
               {isUserMenuOpen && (
                 <div className="absolute bottom-full left-2 right-2 mb-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
@@ -355,7 +355,7 @@ export function Sidebar() {
 
               <Button
                 variant="ghost"
-                className="w-full justify-start hover:bg-accent"
+                className="w-full justify-start hover:bg-accent rounded-none px-4 py-3 h-auto"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               >
                 <UserAvatar fullName={userName} userId={user?.id} size="md" version={avatarVersion} />
