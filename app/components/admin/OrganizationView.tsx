@@ -107,7 +107,7 @@ export function OrganizationView() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-semibold text-foreground">Organization</h1>
-          <p className="text-md text-muted-foreground mt-1">Manage your organization settings</p>
+          <p className="text-base text-muted-foreground mt-1">Manage your organization settings</p>
         </div>
 
         {/* Organization Info Card */}
@@ -118,7 +118,7 @@ export function OrganizationView() {
             </div>
             <div>
               <p className="text-lg font-semibold text-foreground">{org?.name}</p>
-              <p className="text-md text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 {tierLabel(org?.partner_tier || '')} &middot; Member since {formatDate(org?.created_at || '')}
               </p>
             </div>
