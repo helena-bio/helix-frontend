@@ -226,29 +226,16 @@ export function Sidebar() {
         {isSidebarOpen ? (
           <div className="flex flex-col flex-1 min-h-0" style={{ animation: "slideInLeft 200ms ease-out" }}>
             {/* EXPANDED STATE */}
-            {/* New Case */}
-            <div className="px-2 pt-2 pb-0 shrink-0">
+            {/* New Case + Toggle */}
+            <div className="flex items-center justify-between px-2 pt-2 pb-0 shrink-0">
               <Button
                 variant="ghost"
-                className="w-full justify-start h-8"
+                className="h-8 flex-1 justify-start mr-2"
                 onClick={() => { setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
               >
                 <Plus className="h-4 w-4 shrink-0" />
                 <span className="ml-2 text-base">New Case</span>
               </Button>
-            </div>
-
-            {/* Header: Home button + Toggle button */}
-            <div className="flex items-center justify-between px-2 py-1 h-auto shrink-0">
-              <Button
-                variant={isHome ? 'secondary' : 'ghost'}
-                className="h-8 flex-1 justify-start mr-2"
-                onClick={() => router.push('/')}
-              >
-                <LayoutDashboard className="h-4 w-4 shrink-0" />
-                <span className="ml-2 text-base">Dashboard</span>
-              </Button>
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -256,6 +243,17 @@ export function Sidebar() {
                 className="h-8 w-8 shrink-0"
               >
                 <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+            {/* Dashboard */}
+            <div className="px-2 shrink-0">
+              <Button
+                variant={isHome ? 'secondary' : 'ghost'}
+                className="w-full justify-start h-8"
+                onClick={() => router.push('/')}
+              >
+                <LayoutDashboard className="h-4 w-4 shrink-0" />
+                <span className="ml-2 text-base">Dashboard</span>
               </Button>
             </div>
 
