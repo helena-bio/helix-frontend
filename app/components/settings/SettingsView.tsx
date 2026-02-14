@@ -216,29 +216,29 @@ export function SettingsView() {
   }
 
   return (
-    <div className="flex-1 overflow-hidden">
-      <div className="h-full flex">
-        {/* Left navigation */}
-        <nav className="w-48 border-r border-border p-4 space-y-1 shrink-0">
-          <h2 className="text-3xl font-semibold text-foreground mb-6 px-3">Settings</h2>
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => handleSectionChange(section.id)}
-              className={`w-full text-left px-3 py-2 rounded-md text-base transition-colors ${
-                activeSection === section.id
-                  ? 'bg-accent text-foreground font-medium'
-                  : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-              }`}
-            >
-              {section.label}
-            </button>
-          ))}
-        </nav>
+    <div className="flex-1 overflow-y-auto">
+      <div className="w-full max-w-4xl mx-auto px-6 py-8">
+        <h2 className="text-3xl font-semibold text-foreground mb-8">Settings</h2>
+        <div className="flex gap-8">
+          {/* Left navigation */}
+          <nav className="w-44 shrink-0 space-y-1">
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => handleSectionChange(section.id)}
+                className={`w-full text-left px-3 py-2 rounded-md text-base transition-colors ${
+                  activeSection === section.id
+                    ? 'bg-accent text-foreground font-medium'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                }`}
+              >
+                {section.label}
+              </button>
+            ))}
+          </nav>
 
-        {/* Right content */}
-        <div className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-2xl">
+          {/* Right content */}
+          <div className="flex-1 min-w-0">
             {activeSection === 'general' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground">Profile</h3>
