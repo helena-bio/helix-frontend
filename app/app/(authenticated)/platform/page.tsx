@@ -4,11 +4,17 @@
  * Platform Admin Page
  *
  * Full platform visibility and control panel.
- * Layout matches Settings: centered max-w-4xl, left text nav, right content.
+ * Layout matches Settings: centered max-w-5xl, left text nav, right content.
  * Only accessible by users with is_platform_admin flag.
+ *
+ * Sections:
+ * - Overview: key metrics cards
+ * - Organizations: CRUD with search, create/edit modals
+ * - Users: cross-org user list with search
+ * - Activity: audit log (placeholder)
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Building2,
@@ -20,6 +26,10 @@ import {
   Plus,
   Activity,
   ArrowLeft,
+  X,
+  Loader2,
+  Search,
+  Pencil,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { platformApi } from '@/lib/api/platform'
@@ -27,6 +37,8 @@ import type {
   PlatformOverview,
   PlatformOrganization,
   PlatformUser,
+  CreateOrganizationRequest,
+  UpdateOrganizationRequest,
 } from '@/lib/api/platform'
 import { cn } from '@helix/shared/lib/utils'
 
@@ -52,13 +64,25 @@ function formatRelative(dateStr: string | null): string {
   if (!dateStr) return 'Never'
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return mins + 'm ago'
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return hours + 'h ago'
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
+  if (days < 7) return days + 'd ago'
   return formatDate(dateStr)
 }
+
+const TIER_OPTIONS = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'premium', label: 'Premium' },
+  { value: 'founding_partner', label: 'Founding Partner' },
+]
+
+const STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'suspended', label: 'Suspended' },
+  { value: 'inactive', label: 'Inactive' },
+]
 
 const TIER_CONFIG: Record<string, { label: string; color: string }> = {
   founding_partner: { label: 'Founding Partner', color: 'bg-amber-100 text-amber-800 border-amber-300' },
@@ -71,6 +95,219 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   suspended: { label: 'Suspended', color: 'bg-red-100 text-red-800 border-red-300' },
   inactive: { label: 'Inactive', color: 'bg-gray-100 text-gray-600 border-gray-300' },
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+
+// =========================================================================
+// MODAL BACKDROP
+// =========================================================================
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+
+// =========================================================================
+// ORGANIZATION FORM MODAL (Create + Edit)
+// =========================================================================
+
+interface OrgFormProps {
+  org?: PlatformOrganization | null
+  onClose: () => void
+  onSaved: () => void
+}
+
+function OrgFormModal({ org, onClose, onSaved }: OrgFormProps) {
+  const isEdit = !!org
+  const [name, setName] = useState(org?.name || '')
+  const [slug, setSlug] = useState(org?.slug || '')
+  const [tier, setTier] = useState(org?.partner_tier || 'standard')
+  const [orgStatus, setOrgStatus] = useState(org?.status || 'active')
+  const [contactEmail, setContactEmail] = useState(org?.contact_email || '')
+  const [websiteUrl, setWebsiteUrl] = useState(org?.website_url || '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [autoSlug, setAutoSlug] = useState(!isEdit)
+
+  const handleNameChange = (value: string) => {
+    setName(value)
+    if (autoSlug && !isEdit) {
+      setSlug(slugify(value))
+    }
+  }
+
+  const handleSlugChange = (value: string) => {
+    setAutoSlug(false)
+    setSlug(slugify(value))
+  }
+
+  const handleSave = async () => {
+    if (!name.trim()) { setError('Organization name is required'); return }
+    if (!slug.trim()) { setError('Slug is required'); return }
+    if (!contactEmail.trim()) { setError('Contact email is required'); return }
+
+    setSaving(true)
+    setError('')
+
+    try {
+      if (isEdit && org) {
+        await platformApi.updateOrganization(org.id, {
+          name: name.trim(),
+          partner_tier: tier,
+          status: orgStatus,
+          contact_email: contactEmail.trim(),
+          website_url: websiteUrl.trim() || undefined,
+        })
+      } else {
+        await platformApi.createOrganization({
+          name: name.trim(),
+          slug: slug.trim(),
+          partner_tier: tier,
+          contact_email: contactEmail.trim(),
+          website_url: websiteUrl.trim() || undefined,
+        })
+      }
+      onSaved()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Operation failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <div className="px-6 py-5">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-foreground">
+            {isEdit ? 'Edit Organization' : 'New Organization'}
+          </h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-md font-medium text-muted-foreground mb-1">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              placeholder="Cell Genetics"
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-11"
+            />
+          </div>
+
+          <div>
+            <label className="block text-md font-medium text-muted-foreground mb-1">Slug</label>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              placeholder="cell-genetics"
+              disabled={isEdit}
+              className={cn(
+                "w-full px-3 py-2 border border-border rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary h-11",
+                isEdit ? "bg-muted/30 text-muted-foreground" : "bg-background text-foreground"
+              )}
+            />
+            {!isEdit && (
+              <p className="text-sm text-muted-foreground mt-1">URL-friendly identifier. Cannot be changed later.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-md font-medium text-muted-foreground mb-1">Contact email</label>
+            <input
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="office@example.com"
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-11"
+            />
+          </div>
+
+          <div>
+            <label className="block text-md font-medium text-muted-foreground mb-1">Website</label>
+            <input
+              type="text"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              placeholder="example.com"
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-11"
+            />
+          </div>
+
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-md font-medium text-muted-foreground mb-1">Tier</label>
+              <select
+                value={tier}
+                onChange={(e) => setTier(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-11"
+              >
+                {TIER_OPTIONS.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {isEdit && (
+              <div className="flex-1">
+                <label className="block text-md font-medium text-muted-foreground mb-1">Status</label>
+                <select
+                  value={orgStatus}
+                  onChange={(e) => setOrgStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-11"
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <p className="text-base text-destructive">{error}</p>
+          )}
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isEdit ? 'Save Changes' : 'Create Organization'}
+            </button>
+            <button
+              onClick={onClose}
+              disabled={saving}
+              className="px-4 py-2 border border-border rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
 }
 
 
@@ -98,10 +335,10 @@ function OverviewContent() {
   }
 
   const cards = [
-    { label: 'Organizations', value: data.total_organizations, sub: `${data.active_organizations} active`, icon: Building2, color: 'text-blue-600' },
-    { label: 'Total Users', value: data.total_users, sub: `${data.active_users} active`, icon: Users2, color: 'text-green-600' },
+    { label: 'Organizations', value: data.total_organizations, sub: data.active_organizations + ' active', icon: Building2, color: 'text-blue-600' },
+    { label: 'Total Users', value: data.total_users, sub: data.active_users + ' active', icon: Users2, color: 'text-green-600' },
     { label: 'Pending Users', value: data.pending_users, sub: 'Awaiting activation', icon: Clock, color: 'text-yellow-600' },
-    { label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: `${data.suspended_users} users, ${data.suspended_organizations} orgs`, icon: UserX, color: 'text-red-600' },
+    { label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: data.suspended_users + ' users, ' + data.suspended_organizations + ' orgs', icon: UserX, color: 'text-red-600' },
   ]
 
   return (
@@ -134,13 +371,33 @@ function OverviewContent() {
 function OrganizationsContent() {
   const [orgs, setOrgs] = useState<PlatformOrganization[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [showCreate, setShowCreate] = useState(false)
+  const [editOrg, setEditOrg] = useState<PlatformOrganization | null>(null)
 
-  useEffect(() => {
+  const loadOrgs = useCallback(() => {
+    setLoading(true)
     platformApi.listOrganizations()
       .then((res) => setOrgs(res.organizations))
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { loadOrgs() }, [loadOrgs])
+
+  const filtered = search.trim()
+    ? orgs.filter((o) =>
+        o.name.toLowerCase().includes(search.toLowerCase()) ||
+        (o.contact_email || '').toLowerCase().includes(search.toLowerCase()) ||
+        o.slug.toLowerCase().includes(search.toLowerCase())
+      )
+    : orgs
+
+  const handleSaved = () => {
+    setShowCreate(false)
+    setEditOrg(null)
+    loadOrgs()
+  }
 
   if (loading) {
     return <div className="text-md text-muted-foreground">Loading organizations...</div>
@@ -150,10 +407,25 @@ function OrganizationsContent() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Organizations</h3>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors">
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
+        >
           <Plus className="h-4 w-4" />
           New Organization
         </button>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search organizations..."
+          className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-10"
+        />
       </div>
 
       <div className="border border-border rounded-lg overflow-hidden">
@@ -164,16 +436,17 @@ function OrganizationsContent() {
           <div className="w-24">Status</div>
           <div className="w-20 text-right">Members</div>
           <div className="w-28 text-right">Created</div>
+          <div className="w-10" />
         </div>
 
-        {orgs.map((org) => {
+        {filtered.map((org) => {
           const tier = TIER_CONFIG[org.partner_tier] || TIER_CONFIG.standard
           const stat = STATUS_CONFIG[org.status] || STATUS_CONFIG.active
 
           return (
             <div
               key={org.id}
-              className="flex items-center gap-4 px-5 py-3 border-b border-border last:border-b-0 hover:bg-accent/30 transition-colors"
+              className="flex items-center gap-4 px-5 py-3 border-b border-border last:border-b-0 hover:bg-accent/30 transition-colors group"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-base font-medium truncate">{org.name}</p>
@@ -181,10 +454,11 @@ function OrganizationsContent() {
                   <p className="text-md text-muted-foreground truncate">{org.contact_email}</p>
                   {org.website_url && (
                     
-                      <a href={org.website_url.startsWith('http') ? org.website_url : `https://${org.website_url}`}
+                      <a href={org.website_url.startsWith('http') ? org.website_url : 'https://' + org.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-md text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
@@ -211,16 +485,33 @@ function OrganizationsContent() {
               <div className="w-28 text-right">
                 <span className="text-md text-muted-foreground">{formatDate(org.created_at)}</span>
               </div>
+
+              <div className="w-10 text-right">
+                <button
+                  onClick={() => setEditOrg(org)}
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors opacity-0 group-hover:opacity-100"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )
         })}
 
-        {orgs.length === 0 && (
+        {filtered.length === 0 && (
           <div className="px-5 py-8 text-center text-md text-muted-foreground">
-            No organizations found.
+            {search ? 'No organizations match your search.' : 'No organizations found.'}
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      {showCreate && (
+        <OrgFormModal onClose={() => setShowCreate(false)} onSaved={handleSaved} />
+      )}
+      {editOrg && (
+        <OrgFormModal org={editOrg} onClose={() => setEditOrg(null)} onSaved={handleSaved} />
+      )}
     </div>
   )
 }
@@ -233,6 +524,7 @@ function OrganizationsContent() {
 function UsersContent() {
   const [users, setUsers] = useState<PlatformUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     platformApi.listUsers()
@@ -241,6 +533,14 @@ function UsersContent() {
       .finally(() => setLoading(false))
   }, [])
 
+  const filtered = search.trim()
+    ? users.filter((u) =>
+        u.full_name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase()) ||
+        u.organization_name.toLowerCase().includes(search.toLowerCase())
+      )
+    : users
+
   if (loading) {
     return <div className="text-md text-muted-foreground">Loading users...</div>
   }
@@ -248,6 +548,18 @@ function UsersContent() {
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-foreground">All Users</h3>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search users..."
+          className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-10"
+        />
+      </div>
 
       <div className="border border-border rounded-lg overflow-hidden">
         {/* Column headers */}
@@ -259,7 +571,7 @@ function UsersContent() {
           <div className="w-28 text-right">Last Login</div>
         </div>
 
-        {users.map((u) => {
+        {filtered.map((u) => {
           const stat = STATUS_CONFIG[u.status] || STATUS_CONFIG.active
           const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1)
 
@@ -299,9 +611,9 @@ function UsersContent() {
           )
         })}
 
-        {users.length === 0 && (
+        {filtered.length === 0 && (
           <div className="px-5 py-8 text-center text-md text-muted-foreground">
-            No users found.
+            {search ? 'No users match your search.' : 'No users found.'}
           </div>
         )}
       </div>
