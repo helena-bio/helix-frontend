@@ -301,7 +301,7 @@ export function Sidebar() {
             </div>
 
             {/* Cases List (collapsible) */}
-            <div className="flex-1 min-h-0 overflow-y-auto border-t border-border">
+            <div className="flex-1 min-h-0 overflow-y-auto border-t border-b border-border">
               <CasesList />
             </div>
 
