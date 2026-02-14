@@ -227,7 +227,7 @@ export function Sidebar() {
           <div className="flex flex-col flex-1 min-h-0" style={{ animation: "slideInLeft 200ms ease-out" }}>
             {/* EXPANDED STATE */}
             {/* New Case */}
-            <div className="px-2 py-2 shrink-0">
+            <div className="px-2 pt-2 pb-0 shrink-0">
               <Button
                 variant="ghost"
                 className="w-full justify-start h-8"
@@ -239,7 +239,7 @@ export function Sidebar() {
             </div>
 
             {/* Header: Home button + Toggle button */}
-            <div className="flex items-center justify-between px-2 py-2 h-[53px] shrink-0">
+            <div className="flex items-center justify-between px-2 py-1 h-auto shrink-0">
               <Button
                 variant={isHome ? 'secondary' : 'ghost'}
                 className="h-8 flex-1 justify-start mr-2"
