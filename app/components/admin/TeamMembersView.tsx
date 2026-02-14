@@ -297,12 +297,12 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
             {/* Confirmation inline */}
             {menuOpen && confirmAction && (
               <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-56 p-3">
-                <p className="text-sm font-medium mb-1">
+                <p className="text-md font-medium mb-1">
                   {confirmAction === 'suspend' && 'Suspend this user?'}
                   {confirmAction === 'activate' && 'Activate this user?'}
                   {confirmAction === 'remove' && 'Remove this member?'}
                 </p>
-                <p className="text-xs text-muted-foreground mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   {confirmAction === 'suspend' && 'They will not be able to log in or access any data.'}
                   {confirmAction === 'activate' && 'They will regain access to the platform.'}
                   {confirmAction === 'remove' && 'This action cannot be undone. All their data will remain but they will lose access.'}
