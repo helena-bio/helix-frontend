@@ -368,6 +368,7 @@ function InvitationRow({ invitation }: InvitationRowProps) {
     }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }, [inviteLink])
   const handleRevoke = useCallback(() => {
     revokeMutation.mutate(invitation.id)
     setConfirmRevoke(false)
