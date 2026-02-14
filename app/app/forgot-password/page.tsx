@@ -1,49 +1,23 @@
 /**
- * Login Page
+ * Forgot Password Page
  *
- * Authenticates against User Management Service (port 9008).
- * Stores JWT in cookie for cross-subdomain compatibility.
- * Uses same visual header/footer as marketing site.
+ * Requests password reset email. Always shows success message
+ * regardless of whether email exists (prevents enumeration).
  */
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { AlertCircle } from 'lucide-react';
-import { tokenUtils } from '@/lib/auth/token';
-import { useAuth } from '@/contexts/AuthContext';
+import { AlertCircle, ArrowLeft, Mail } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008';
 
-interface LoginResponse {
-  access_token: string;
-  token_type: string;
-  user: {
-    id: string;
-    email: string;
-    full_name: string;
-    organization_name: string;
-    organization_id: string;
-    role: string;
-  };
-}
-
-export default function LoginPage() {
-  const router = useRouter();
-  const { refreshAuth } = useAuth();
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (tokenUtils.isValid()) {
-      router.push('/');
-    }
-  }, [router]);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,10 +25,10 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
       });
 
       if (!response.ok) {
@@ -62,23 +36,14 @@ export default function LoginPage() {
         const message =
           errorData?.error?.message ||
           errorData?.detail ||
-          errorData?.message ||
-          'Invalid email or password';
+          'Something went wrong. Please try again.';
         throw new Error(message);
       }
 
-      const data: LoginResponse = await response.json();
-
-      // Save JWT to cookie (shared domain with marketing site)
-      tokenUtils.save(data.access_token);
-
-      // Update AuthContext with new token data
-      refreshAuth();
-
-      // Redirect to dashboard
-      router.push('/');
+      setIsSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -96,7 +61,7 @@ export default function LoginPage() {
         }
       `}</style>
 
-      {/* Header - matches marketing site, without Partner Login */}
+      {/* Header */}
       <header className="h-14 border-b border-border bg-card shrink-0">
         <div className="h-full flex items-center gap-6 overflow-hidden">
           <Link href="https://helixinsight.bio" className="flex items-center gap-2 shrink-0 pl-6">
@@ -134,79 +99,100 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
-              Sign in to continue your analysis
+              Reset your password
             </h1>
             <p className="text-base text-muted-foreground">
-              Secure access to AI-powered variant interpretation
+              Enter your email to receive a password reset link
             </p>
           </div>
 
           <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                  <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
-                  <p className="text-base text-destructive">{error}</p>
+            {isSubmitted ? (
+              <div className="space-y-6">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Mail className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-base font-medium text-foreground">
+                      Check your email
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      If an account exists for <span className="font-medium text-foreground">{email}</span>,
+                      we sent a password reset link. The link expires in 30 minutes.
+                    </p>
+                  </div>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-base font-medium text-foreground">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                  placeholder="Enter your email"
-                  className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="block text-base font-medium text-foreground">
-                    Password
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                <div className="pt-2 space-y-3">
+                  <button
+                    onClick={() => {
+                      setIsSubmitted(false);
+                      setEmail('');
+                    }}
+                    className="w-full h-11 rounded-md border border-border bg-background text-foreground text-base font-medium hover:bg-secondary/50 transition-colors"
                   >
-                    Forgot password?
+                    Try a different email
+                  </button>
+
+                  <Link
+                    href="/login"
+                    className="flex items-center justify-center gap-2 w-full h-11 rounded-md text-md text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to sign in
                   </Link>
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  placeholder="Enter your password"
-                  className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-                />
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                    <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+                    <p className="text-base text-destructive">{error}</p>
+                  </div>
+                )}
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-11 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Signing in...' : 'Sign In'}
-              </button>
-            </form>
+                <div className="space-y-2">
+                  <label htmlFor="email" className="block text-base font-medium text-foreground">
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    placeholder="Enter your email"
+                    className="block w-full h-11 rounded-md border border-border bg-background px-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-11 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center gap-2 w-full h-11 rounded-md text-md text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to sign in
+                </Link>
+              </form>
+            )}
           </div>
         </div>
       </main>
 
-      {/* Footer - matches marketing site */}
+      {/* Footer */}
       <footer className="border-t border-border bg-card">
         <div className="px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
