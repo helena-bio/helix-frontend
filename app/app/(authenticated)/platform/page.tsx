@@ -40,6 +40,9 @@ import type {
   CreateOrganizationRequest,
   UpdateOrganizationRequest,
 } from '@/lib/api/platform'
+import { Card, CardContent } from '@/components/ui/card'
+import { UserAvatar } from '@/components/ui/UserAvatar'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@helix/shared/lib/utils'
 
 
@@ -561,62 +564,71 @@ function UsersContent() {
         />
       </div>
 
-      <div className="border border-border rounded-lg overflow-hidden">
-        {/* Column headers */}
-        <div className="flex items-center gap-4 px-5 py-3 border-b border-border bg-muted/30 text-md text-muted-foreground font-medium">
-          <div className="flex-1">User</div>
-          <div className="w-40">Organization</div>
-          <div className="w-24">Role</div>
-          <div className="w-24">Status</div>
-          <div className="w-28 text-right">Last Login</div>
-        </div>
-
-        {filtered.map((u) => {
-          const stat = STATUS_CONFIG[u.status] || STATUS_CONFIG.active
-          const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1)
-
-          return (
-            <div
-              key={u.id}
-              className="flex items-center gap-4 px-5 py-3 border-b border-border last:border-b-0 hover:bg-accent/30 transition-colors"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-base font-medium truncate">{u.full_name}</p>
-                  {u.is_platform_admin && (
-                    <Shield className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                  )}
-                </div>
-                <p className="text-md text-muted-foreground truncate">{u.email}</p>
-              </div>
-
-              <div className="w-40">
-                <p className="text-md text-muted-foreground truncate">{u.organization_name}</p>
-              </div>
-
-              <div className="w-24">
-                <span className="text-md font-medium">{roleLabel}</span>
-              </div>
-
-              <div className="w-24">
-                <span className={cn("inline-flex items-center px-2.5 py-1 rounded-md border text-md font-medium", stat.color)}>
-                  {stat.label}
-                </span>
-              </div>
-
-              <div className="w-28 text-right">
-                <span className="text-md text-muted-foreground">{formatRelative(u.last_login_at)}</span>
-              </div>
-            </div>
-          )
-        })}
-
-        {filtered.length === 0 && (
-          <div className="px-5 py-8 text-center text-md text-muted-foreground">
-            {search ? 'No users match your search.' : 'No users found.'}
+      <Card className="py-0 gap-0">
+        <CardContent className="p-0">
+          {/* Column headers */}
+          <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
+            <div className="w-8 shrink-0" />
+            <div className="flex-1">User</div>
+            <div className="w-36">Organization</div>
+            <div className="w-24">Role</div>
+            <div className="w-24">Status</div>
+            <div className="w-24 text-right">Last Login</div>
           </div>
-        )}
-      </div>
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-12">
+              <Users2 className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+              <p className="text-base text-muted-foreground">
+                {search ? 'No users match your search.' : 'No users found.'}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {filtered.map((u) => {
+                const stat = STATUS_CONFIG[u.status] || STATUS_CONFIG.active
+                const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1)
+
+                return (
+                  <div
+                    key={u.id}
+                    className="flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors"
+                  >
+                    <UserAvatar fullName={u.full_name} userId={u.id} size="md" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-base font-medium truncate">{u.full_name}</p>
+                        {u.is_platform_admin && (
+                          <Shield className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-md text-muted-foreground truncate">{u.email}</p>
+                    </div>
+
+                    <div className="w-36">
+                      <p className="text-md text-muted-foreground truncate">{u.organization_name}</p>
+                    </div>
+
+                    <div className="w-24">
+                      <span className="text-md font-medium">{roleLabel}</span>
+                    </div>
+
+                    <div className="w-24">
+                      <Badge variant="outline" className={cn("text-md", stat.color)}>
+                        {stat.label}
+                      </Badge>
+                    </div>
+
+                    <div className="w-24 text-right">
+                      <span className="text-md text-muted-foreground">{formatRelative(u.last_login_at)}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
