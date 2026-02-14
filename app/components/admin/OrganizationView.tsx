@@ -118,7 +118,7 @@ export function OrganizationView() {
             </div>
             <div>
               <p className="text-lg font-semibold text-foreground">{org?.name}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-md text-muted-foreground">
                 {tierLabel(org?.partner_tier || '')} &middot; Member since {formatDate(org?.created_at || '')}
               </p>
             </div>
@@ -127,7 +127,7 @@ export function OrganizationView() {
           {/* Editable fields */}
           <div className="space-y-4">
             <div>
-              <label className="block text-md font-medium text-muted-foreground mb-1">Organization name</label>
+              <label className="block text-base font-medium text-muted-foreground mb-1">Organization name</label>
               <input
                 type="text"
                 value={name}
@@ -137,7 +137,7 @@ export function OrganizationView() {
             </div>
 
             <div>
-              <label className="block text-md font-medium text-muted-foreground mb-1">Contact email</label>
+              <label className="block text-base font-medium text-muted-foreground mb-1">Contact email</label>
               <input
                 type="email"
                 value={contactEmail}
@@ -148,7 +148,7 @@ export function OrganizationView() {
             </div>
 
             <div>
-              <label className="block text-md font-medium text-muted-foreground mb-1">Website</label>
+              <label className="block text-base font-medium text-muted-foreground mb-1">Website</label>
               <input
                 type="url"
                 value={websiteUrl}
@@ -160,21 +160,21 @@ export function OrganizationView() {
 
             {/* Read-only fields */}
             <div>
-              <label className="block text-md font-medium text-muted-foreground mb-1">Slug</label>
+              <label className="block text-base font-medium text-muted-foreground mb-1">Slug</label>
               <div className="px-3 py-2 border border-border rounded-md bg-muted/30 text-base text-muted-foreground">
                 {org?.slug || '-'}
               </div>
             </div>
 
             <div>
-              <label className="block text-md font-medium text-muted-foreground mb-1">Partner tier</label>
+              <label className="block text-base font-medium text-muted-foreground mb-1">Partner tier</label>
               <div className="px-3 py-2 border border-border rounded-md bg-muted/30 text-base text-muted-foreground">
                 {tierLabel(org?.partner_tier || '')}
               </div>
             </div>
 
             <div>
-              <label className="block text-md font-medium text-muted-foreground mb-1">Status</label>
+              <label className="block text-base font-medium text-muted-foreground mb-1">Status</label>
               <div className="px-3 py-2 border border-border rounded-md bg-muted/30 text-base text-muted-foreground capitalize">
                 {org?.status || '-'}
               </div>
