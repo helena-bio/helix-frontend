@@ -247,7 +247,7 @@ export function Sidebar() {
               </Button>
             </div>
             {/* Dashboard */}
-            <div className="px-2 shrink-0">
+            <div className="px-2 pb-1 shrink-0">
               <Button
                 variant={isHome ? 'secondary' : 'ghost'}
                 className="w-full justify-start h-8"
