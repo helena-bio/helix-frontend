@@ -181,7 +181,7 @@ function OrganizationsContent() {
                   <p className="text-md text-muted-foreground truncate">{org.contact_email}</p>
                   {org.website_url && (
                     
-                      href={org.website_url.startsWith('http') ? org.website_url : `https://${org.website_url}`}
+                      <a href={org.website_url.startsWith('http') ? org.website_url : `https://${org.website_url}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-md text-muted-foreground hover:text-foreground shrink-0"
