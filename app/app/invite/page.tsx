@@ -314,7 +314,7 @@ export default function InvitePage() {
                 {error && (
                   <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
                     <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
-                    <p className="text-sm text-destructive">{error}</p>
+                    <p className="text-md text-destructive">{error}</p>
                   </div>
                 )}
 
@@ -325,7 +325,7 @@ export default function InvitePage() {
                   </label>
                   <div className="flex items-center gap-2 h-10 rounded-md border border-border bg-muted/30 px-3">
                     <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm text-muted-foreground">{invitation.organization_name}</span>
+                    <span className="text-md text-muted-foreground">{invitation.organization_name}</span>
                   </div>
                 </div>
 
@@ -336,7 +336,7 @@ export default function InvitePage() {
                   </label>
                   <div className="flex items-center gap-2 h-10 rounded-md border border-border bg-muted/30 px-3">
                     <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm text-muted-foreground">{invitation.email}</span>
+                    <span className="text-md text-muted-foreground">{invitation.email}</span>
                   </div>
                 </div>
 
@@ -354,7 +354,7 @@ export default function InvitePage() {
                       onChange={(e) => setFirstName(e.target.value)}
                       disabled={pageState === 'submitting'}
                       placeholder="First name"
-                      className="block w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -369,7 +369,7 @@ export default function InvitePage() {
                       onChange={(e) => setLastName(e.target.value)}
                       disabled={pageState === 'submitting'}
                       placeholder="Last name"
-                      className="block w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export default function InvitePage() {
                       onChange={(e) => { setPassword(e.target.value); setPasswordTouched(true); }}
                       disabled={pageState === 'submitting'}
                       placeholder="Create a strong password"
-                      className="block w-full h-10 rounded-md border border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 pr-10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                     />
                     <button
                       type="button"
@@ -410,7 +410,7 @@ export default function InvitePage() {
                           }`}>
                             {req.met && <Check className="h-2.5 w-2.5 text-white" />}
                           </div>
-                          <span className={`text-xs ${
+                          <span className={`text-sm ${
                             req.met ? 'text-green-700' : 'text-muted-foreground'
                           }`}>
                             {req.label}
@@ -436,7 +436,7 @@ export default function InvitePage() {
                       onPaste={(e) => e.preventDefault()}
                       disabled={pageState === 'submitting'}
                       placeholder="Re-enter your password"
-                      className="block w-full h-10 rounded-md border border-border bg-background px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                      className="block w-full h-10 rounded-md border border-border bg-background px-3 pr-10 text-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                     />
                     <button
                       type="button"
