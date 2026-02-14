@@ -424,14 +424,14 @@ function InvitationRow({ invitation }: InvitationRowProps) {
               className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               title="Copy invite link"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-4.5 w-4.5 text-green-600" /> : <Copy className="h-4.5 w-4.5" />}
             </button>
             <button
               onClick={() => setConfirmRevoke(true)}
               className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               title="Revoke invitation"
             >
-              <Ban className="h-3.5 w-3.5" />
+              <Ban className="h-4.5 w-4.5" />
             </button>
           </>
         )}
@@ -440,7 +440,7 @@ function InvitationRow({ invitation }: InvitationRowProps) {
           className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
           title="Delete invitation"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-4.5 w-4.5" />
         </button>
       </div>
     </div>
