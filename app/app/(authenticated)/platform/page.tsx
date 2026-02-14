@@ -470,7 +470,7 @@ function OrganizationsContent() {
                         <p className="text-base font-medium truncate">{org.name}</p>
                         {org.website_url && (
                           
-                            href={org.website_url.startsWith('http') ? org.website_url : 'https://' + org.website_url}
+                            <a href={org.website_url.startsWith('http') ? org.website_url : 'https://' + org.website_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-muted-foreground hover:text-foreground shrink-0"
