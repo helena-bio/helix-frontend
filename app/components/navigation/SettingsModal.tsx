@@ -429,8 +429,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         </button>
                       </div>
                     </div>
+                  </div>
                   )}
-                </div>
               </div>
             )}
 
