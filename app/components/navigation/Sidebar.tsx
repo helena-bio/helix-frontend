@@ -89,6 +89,7 @@ export function Sidebar() {
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isModulesOpen, setIsModulesOpen] = useState(true)
+  const [isAdminOpen, setIsAdminOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const menuRef = useRef<HTMLDivElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
@@ -307,10 +308,21 @@ export function Sidebar() {
             {/* Admin Section - visible only for admin role */}
             {user?.role === 'admin' && (
               <div className="py-1 shrink-0 border-t border-border">
-                <p className="px-3 py-1.5 text-base font-semibold text-muted-foreground">
-                  Admin
-                </p>
-                <div className="px-2 space-y-0.5">
+                <button
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setIsAdminOpen(!isAdminOpen)}
+                >
+                  <span>Admin</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 transition-transform duration-200",
+                      !isAdminOpen && "-rotate-90"
+                    )}
+                  />
+                </button>
+
+                {isAdminOpen && (
+                <div className="mt-1 px-2 space-y-0.5">
                   <Button
                     variant={pathname === '/admin/organization' ? 'secondary' : 'ghost'}
                     className="w-full justify-start"
@@ -328,6 +340,7 @@ export function Sidebar() {
                     <span className="ml-3 text-base">Team Members</span>
                   </Button>
                 </div>
+                )}
               </div>
             )}
 
