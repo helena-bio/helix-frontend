@@ -301,13 +301,13 @@ export function Sidebar() {
             </div>
 
             {/* Cases List (collapsible) */}
-            <div className="flex-1 min-h-0 overflow-y-auto border-t border-b border-border">
+            <div className="flex-1 min-h-0 overflow-y-auto border-t border-border">
               <CasesList />
             </div>
 
             {/* Admin Section - visible only for admin role */}
             {user?.role === 'admin' && (
-              <div className="py-1 shrink-0">
+              <div className="py-1 shrink-0 border-t border-border">
                 <button
                   className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
                   onClick={() => setIsAdminOpen(!isAdminOpen)}
