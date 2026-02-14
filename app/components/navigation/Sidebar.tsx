@@ -371,6 +371,24 @@ export function Sidebar() {
           <>
             {/* COLLAPSED STATE */}
             {/* Icons at top */}
+              <div className="px-1 pt-2 shrink-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-center px-0 h-8"
+                        onClick={(e) => { e.stopPropagation(); setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p className="text-sm">New Case</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             <div className="px-1 py-2 shrink-0">
               <TooltipProvider>
                 <Tooltip>
