@@ -341,10 +341,10 @@ function OverviewContent() {
   }
 
   const cards = [
-    { label: 'Organizations', value: data.total_organizations, sub: data.active_organizations + ' active', icon: Building2, color: 'text-blue-600' },
-    { label: 'Total Users', value: data.total_users, sub: data.active_users + ' active', icon: Users2, color: 'text-green-600' },
-    { label: 'Pending Users', value: data.pending_users, sub: 'Awaiting activation', icon: Clock, color: 'text-yellow-600' },
-    { label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: data.suspended_users + ' users, ' + data.suspended_organizations + ' orgs', icon: UserX, color: 'text-red-600' },
+    { label: 'Organizations', value: data.total_organizations, sub: data.active_organizations + ' active', icon: Building2 },
+    { label: 'Total Users', value: data.total_users, sub: data.active_users + ' active', icon: Users2 },
+    { label: 'Pending Users', value: data.pending_users, sub: 'Awaiting activation', icon: Clock },
+    { label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: data.suspended_users + ' users, ' + data.suspended_organizations + ' orgs', icon: UserX },
   ]
 
   return (
@@ -355,9 +355,9 @@ function OverviewContent() {
           const Icon = card.icon
           return (
             <div key={card.label} className="border border-border rounded-lg p-5 bg-card">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-md text-muted-foreground">{card.label}</span>
-                <Icon className={cn("h-5 w-5", card.color)} />
+              <div className="flex items-center gap-2 mb-3">
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-base font-semibold">{card.label}</span>
               </div>
               <p className="text-3xl font-bold tracking-tight">{card.value}</p>
               <p className="text-md text-muted-foreground mt-1">{card.sub}</p>
