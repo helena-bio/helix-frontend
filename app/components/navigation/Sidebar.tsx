@@ -22,7 +22,7 @@ import {
   Plus,
   FolderOpen,
   Microscope,
-  Shield,
+  ScanSearch,
   Dna,
   BookOpen,
   FileText,
@@ -164,7 +164,7 @@ export function Sidebar() {
     {
       id: 'vus',
       name: 'Clinical Screening',
-      icon: Shield,
+      icon: ScanSearch,
       checkEnabled: () => isAnalysisComplete && (enableScreening || hasScreeningData),
     },
     {
