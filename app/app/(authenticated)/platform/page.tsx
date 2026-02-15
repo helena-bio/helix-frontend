@@ -32,6 +32,7 @@ import {
   Pencil,
   ChevronDown,
   ChevronUp,
+  Eye,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { platformApi } from '@/lib/api/platform'
@@ -377,12 +378,16 @@ function OverviewContent() {
 interface OrgCardProps {
   org: PlatformOrganization
   onEdit: (org: PlatformOrganization) => void
+  onSwitch: (org: PlatformOrganization) => void
+  isSwitching: string | null
 }
 
-function OrgCard({ org, onEdit }: OrgCardProps) {
+function OrgCard({ org, onEdit, onSwitch, isSwitching }: OrgCardProps) {
+  const { user } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const tier = TIER_CONFIG[org.partner_tier] || TIER_CONFIG.standard
   const stat = STATUS_CONFIG[org.status] || STATUS_CONFIG.active
+  const isOwnOrg = user?.organization_id === org.id
 
   return (
     <Card className="gap-0 py-0">
@@ -453,6 +458,22 @@ function OrgCard({ org, onEdit }: OrgCardProps) {
               <Pencil className="h-3 w-3 mr-1" />
               Edit Organization
             </Button>
+            {!isOwnOrg && org.status === 'active' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm"
+                disabled={isSwitching !== null}
+                onClick={(e) => { e.stopPropagation(); onSwitch(org) }}
+              >
+                {isSwitching === org.id ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Eye className="h-3 w-3 mr-1" />
+                )}
+                View as Organization
+              </Button>
+            )}
           </div>
         </CardContent>
       )}
@@ -461,11 +482,14 @@ function OrgCard({ org, onEdit }: OrgCardProps) {
 }
 
 function OrganizationsContent() {
+  const { switchOrganization } = useAuth()
   const [orgs, setOrgs] = useState<PlatformOrganization[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [editOrg, setEditOrg] = useState<PlatformOrganization | null>(null)
+  const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null)
+  const [switchError, setSwitchError] = useState('')
 
   const loadOrgs = useCallback(() => {
     setLoading(true)
@@ -489,6 +513,17 @@ function OrganizationsContent() {
     setShowCreate(false)
     setEditOrg(null)
     loadOrgs()
+  }
+
+  const handleSwitch = async (org: PlatformOrganization) => {
+    setSwitchingOrgId(org.id)
+    setSwitchError('')
+    try {
+      await switchOrganization(org.id)
+    } catch (err) {
+      setSwitchError(err instanceof Error ? err.message : 'Failed to switch')
+      setSwitchingOrgId(null)
+    }
   }
 
   if (loading) {
@@ -524,6 +559,10 @@ function OrganizationsContent() {
         />
       </div>
 
+      {switchError && (
+        <p className="text-base text-destructive">{switchError}</p>
+      )}
+
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
@@ -543,7 +582,13 @@ function OrganizationsContent() {
             {search && ' matching filter'}
           </p>
           {filtered.map((org) => (
-            <OrgCard key={org.id} org={org} onEdit={setEditOrg} />
+            <OrgCard
+              key={org.id}
+              org={org}
+              onEdit={setEditOrg}
+              onSwitch={handleSwitch}
+              isSwitching={switchingOrgId}
+            />
           ))}
         </div>
       )}

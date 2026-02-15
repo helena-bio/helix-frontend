@@ -18,6 +18,8 @@ export interface JWTPayload {
   full_name: string;
   role: string;
   is_platform_admin: boolean;
+  impersonating?: boolean;
+  real_org_id?: string;
   exp: number;
   iat: number;
   type: string;

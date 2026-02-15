@@ -7,6 +7,7 @@
  * Compatible with marketing site SSO via shared cookie domain.
  *
  * Layout structure:
+ * - ImpersonationBanner: amber bar when viewing as another org (conditional)
  * - Header: Header (always visible)
  * - Sidebar: Always visible (modules disabled until analysis complete)
  * - Content area:
@@ -26,7 +27,7 @@
  * - Layout picks up searchParams change and updates context
  */
 
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Header } from '@/components/navigation/Header'
@@ -42,6 +43,7 @@ import {
 } from '@/contexts'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
@@ -51,6 +53,51 @@ import { tokenUtils } from '@/lib/auth/token'
 interface AuthenticatedLayoutProps {
   children: ReactNode
 }
+
+
+// =========================================================================
+// IMPERSONATION BANNER
+// =========================================================================
+
+function ImpersonationBanner() {
+  const { impersonation, exitSwitch } = useAuth()
+  const [exiting, setExiting] = useState(false)
+
+  if (!impersonation.active) return null
+
+  const handleExit = async () => {
+    setExiting(true)
+    try {
+      await exitSwitch()
+    } catch (err) {
+      console.error('Failed to exit impersonation:', err)
+      setExiting(false)
+    }
+  }
+
+  return (
+    <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 shrink-0">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <p className="text-base text-amber-900">
+          Viewing as <span className="font-semibold">{impersonation.organizationName || 'another organization'}</span>
+        </p>
+        <button
+          onClick={handleExit}
+          disabled={exiting}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-base font-medium text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-md transition-colors disabled:opacity-50"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          {exiting ? 'Returning...' : 'Exit to Platform'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+
+// =========================================================================
+// LAYOUT CONTENT (inner, needs provider tree)
+// =========================================================================
 
 /**
  * Inner layout that can access VariantsResultsContext
@@ -188,6 +235,9 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
             <VariantsResultsProvider sessionId={currentSessionId}>
               <LiteratureResultsProvider sessionId={currentSessionId}>
                 <div className="h-screen flex flex-col">
+                  {/* Impersonation Banner -- above everything */}
+                  <ImpersonationBanner />
+
                   {/* Header - Journey Panel with Logo */}
                   <header className="h-14 border-b border-border bg-card shrink-0 sticky top-0 z-50">
                     <Header />

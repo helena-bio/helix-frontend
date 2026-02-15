@@ -68,6 +68,31 @@ export interface UpdateOrganizationRequest {
   logo_url?: string
 }
 
+export interface SwitchOrganizationResponse {
+  token: string
+  organization: {
+    id: string
+    name: string
+    slug: string
+  }
+  user: {
+    id: string
+    email: string
+    full_name: string
+    role: string
+    is_platform_admin: boolean
+  }
+}
+
+export interface ExitSwitchResponse {
+  token: string
+  organization: {
+    id: string
+    name: string
+    slug: string
+  }
+}
+
 export const platformApi = {
   async getOverview(): Promise<PlatformOverview> {
     const res = await fetch(`${API_URL}/platform/overview`, {
@@ -124,6 +149,30 @@ export const platformApi = {
       headers: authHeaders(),
     })
     if (!res.ok) throw new Error(`Failed to fetch users (${res.status})`)
+    return res.json()
+  },
+
+  async switchOrganization(orgId: string): Promise<SwitchOrganizationResponse> {
+    const res = await fetch(`${API_URL}/platform/organizations/${orgId}/switch`, {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      throw new Error(err?.detail || `Failed to switch organization (${res.status})`)
+    }
+    return res.json()
+  },
+
+  async exitSwitch(): Promise<ExitSwitchResponse> {
+    const res = await fetch(`${API_URL}/platform/switch/exit`, {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      throw new Error(err?.detail || `Failed to exit switch (${res.status})`)
+    }
     return res.json()
   },
 }
