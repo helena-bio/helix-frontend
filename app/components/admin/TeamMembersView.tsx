@@ -5,7 +5,7 @@
  *
  * Admin panel for managing organization members and invitations.
  * Two tabs: Active members and Pending invitations.
- * Actions dropdown: change role, reset password, suspend/activate, remove.
+ * Expandable card pattern matching dashboard CaseCard.
  *
  * Sort: current user (you) always displayed first.
  * Search: client-side filter by name or email.
@@ -27,17 +27,18 @@ import {
   Ban,
   UserCheck,
   Search,
-  MoreHorizontal,
   Key,
   Trash2,
-  ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTeamMembers, useOrgInvitations } from '@/hooks/queries/use-admin'
 import { useChangeRole, useChangeStatus, useRevokeInvitation, useDeleteInvitation, useAdminResetPassword, useRemoveMember } from '@/hooks/mutations/use-admin-mutations'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@helix/shared/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { InviteModal } from '@/components/navigation/InviteModal'
 import { cn } from '@helix/shared/lib/utils'
 import { toast } from 'sonner'
@@ -54,7 +55,7 @@ function formatRelativeDate(dateStr: string): string {
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffDays < 7) return diffDays + 'd ago'
   return date.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -69,7 +70,7 @@ function formatExpiryDate(dateStr: string): string {
   if (diffDays < 0) return 'Expired'
   if (diffDays === 0) return 'Expires today'
   if (diffDays === 1) return 'Expires tomorrow'
-  return `Expires in ${diffDays}d`
+  return 'Expires in ' + diffDays + 'd'
 }
 
 const roleConfig: Record<string, { label: string; icon: typeof Shield; color: string }> = {
@@ -84,21 +85,20 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-orange-100 text-orange-900 border-orange-300' },
 }
 
+
 // ============================================================================
-// MEMBER ROW
+// MEMBER CARD
 // ============================================================================
 
-interface MemberRowProps {
+interface MemberCardProps {
   member: TeamMember
   currentUserId: string | undefined
   avatarVersion: number
 }
 
-function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [roleSubmenuOpen, setRoleSubmenuOpen] = useState(false)
+function MemberCard({ member, currentUserId, avatarVersion }: MemberCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'suspend' | 'activate' | 'remove' | null>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
   const changeRole = useChangeRole()
   const changeStatus = useChangeStatus()
   const resetPassword = useAdminResetPassword()
@@ -109,243 +109,222 @@ function MemberRow({ member, currentUserId, avatarVersion }: MemberRowProps) {
   const status = statusConfig[member.status] || statusConfig.pending
   const RoleIcon = role.icon
 
-  // Close menu on outside click
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false)
-        setRoleSubmenuOpen(false)
-        setConfirmAction(null)
-      }
-    }
-    if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [menuOpen])
-
   const handleRoleChange = useCallback((newRole: string) => {
     if (newRole === member.role) return
     changeRole.mutate({ userId: member.id, role: newRole })
-    setMenuOpen(false)
-    setRoleSubmenuOpen(false)
   }, [changeRole, member.id, member.role])
 
   const handleStatusChange = useCallback(() => {
     const newStatus = member.status === 'active' ? 'suspended' : 'active'
     changeStatus.mutate({ userId: member.id, status: newStatus })
-    setMenuOpen(false)
     setConfirmAction(null)
   }, [changeStatus, member.id, member.status])
 
   const handleResetPassword = useCallback(() => {
     resetPassword.mutate(member.id, {
       onSuccess: (data) => {
-        toast.success(`Temporary password for ${data.user_email}: ${data.temporary_password}`, { duration: 15000 })
+        toast.success('Temporary password for ' + data.user_email + ': ' + data.temporary_password, { duration: 15000 })
       },
       onError: () => {
         toast.error("Failed to reset password")
       },
     })
-    setMenuOpen(false)
   }, [resetPassword, member.id])
 
   const handleRemove = useCallback(() => {
     removeMemberMutation.mutate(member.id, {
       onSuccess: () => {
-        toast.success(`${member.full_name} removed from organization`)
+        toast.success(member.full_name + ' removed from organization')
       },
       onError: () => {
         toast.error("Failed to remove member")
       },
     })
-    setMenuOpen(false)
     setConfirmAction(null)
   }, [removeMemberMutation, member.id, member.full_name])
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors">
-      <UserAvatar fullName={member.full_name} userId={member.id} size="md" version={avatarVersion} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-base font-medium truncate">{member.full_name}</p>
-          {isSelf && (
-            <span className="text-xs text-muted-foreground">(you)</span>
-          )}
+    <Card className="gap-0 py-0">
+      <CardHeader
+        className="py-3 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <UserAvatar fullName={member.full_name} userId={member.id} size="md" version={avatarVersion} />
+            <span className="text-base font-semibold">{member.full_name}</span>
+            {isSelf && (
+              <span className="text-xs text-muted-foreground">(you)</span>
+            )}
+            <span className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-sm font-medium",
+              role.color
+            )}>
+              <RoleIcon className="h-3.5 w-3.5" />
+              {role.label}
+            </span>
+            <Badge variant="outline" className={cn("text-sm", status.color)}>
+              {status.label}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-md text-muted-foreground">
+              {member.last_login_at ? formatRelativeDate(member.last_login_at) : 'Never'}
+            </span>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
         </div>
-        <p className="text-md text-muted-foreground truncate">{member.email}</p>
-      </div>
+      </CardHeader>
 
-      {/* Role badge (display only) */}
-      <div className="w-24">
-        <span className={cn(
-          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-md font-medium",
-          role.color
-        )}>
-          <RoleIcon className="h-3.5 w-3.5" />
-          {role.label}
-        </span>
-      </div>
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-base">
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Email</p>
+              <p className="font-medium">{member.email}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Role</p>
+              <div className="flex items-center gap-1.5">
+                <RoleIcon className="h-3.5 w-3.5" />
+                <p className="font-medium">{role.label}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Status</p>
+              <p className="font-medium capitalize">{member.status}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Last Active</p>
+              <p className="font-medium">{member.last_login_at ? formatRelativeDate(member.last_login_at) : 'Never'}</p>
+            </div>
+          </div>
 
-      {/* Status badge */}
-      <div className="w-24">
-        <Badge variant="outline" className={cn("text-md", status.color)}>
-          {status.label}
-        </Badge>
-      </div>
+          {/* Actions */}
+          {!isSelf && !confirmAction && (
+            <div className="pt-2 pb-3 border-t flex items-center gap-2 flex-wrap">
+              {/* Role buttons */}
+              <div className="flex items-center gap-1.5 mr-2">
+                <span className="text-md text-muted-foreground">Role:</span>
+                {Object.entries(roleConfig).map(([key, config]) => {
+                  const Icon = config.icon
+                  return (
+                    <Button
+                      key={key}
+                      variant={member.role === key ? "default" : "outline"}
+                      size="sm"
+                      className="text-sm"
+                      onClick={(e) => { e.stopPropagation(); handleRoleChange(key) }}
+                    >
+                      <Icon className="h-3 w-3 mr-1" />
+                      {config.label}
+                    </Button>
+                  )
+                })}
+              </div>
 
-      {/* Last login */}
-      <span className="text-md text-muted-foreground w-24 text-right shrink-0">
-        {member.last_login_at ? formatRelativeDate(member.last_login_at) : 'Never'}
-      </span>
-
-      {/* Actions dropdown */}
-      <div className="w-10 shrink-0 flex justify-end relative" ref={menuRef}>
-        {!isSelf && (
-          <>
-            <button
-              onClick={() => { setMenuOpen(!menuOpen); setRoleSubmenuOpen(false); setConfirmAction(null) }}
-              className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-
-            {menuOpen && !confirmAction && (
-              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-48 py-1">
-                {/* Change Role */}
-                <div
-                  className="relative"
-                  onMouseEnter={() => setRoleSubmenuOpen(true)}
-                  onMouseLeave={() => setRoleSubmenuOpen(false)}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-sm"
+                  onClick={(e) => { e.stopPropagation(); handleResetPassword() }}
                 >
-                  <button className="w-full flex items-center justify-between px-3 py-1.5 text-md hover:bg-accent transition-colors">
-                    <span className="flex items-center gap-2">
-                      <Shield className="h-3.5 w-3.5" />
-                      Change Role
-                    </span>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-
-                  {roleSubmenuOpen && (
-                    <div className="absolute left-full top-0 ml-1 bg-card border border-border rounded-lg shadow-lg z-50 w-36 py-1">
-                      {Object.entries(roleConfig).map(([key, config]) => {
-                        const Icon = config.icon
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => handleRoleChange(key)}
-                            className={cn(
-                              "w-full flex items-center gap-2 px-3 py-1.5 text-md hover:bg-accent transition-colors",
-                              member.role === key && "font-medium bg-accent/50"
-                            )}
-                          >
-                            <Icon className="h-3.5 w-3.5" />
-                            {config.label}
-                            {member.role === key && <Check className="h-3 w-3 ml-auto" />}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Reset Password */}
-                <button
-                  onClick={handleResetPassword}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-md hover:bg-accent transition-colors"
-                >
-                  <Key className="h-3.5 w-3.5" />
+                  <Key className="h-3 w-3 mr-1" />
                   Reset Password
-                </button>
+                </Button>
 
-                <div className="border-t border-border my-1" />
-
-                {/* Suspend / Activate */}
-                <button
-                  onClick={() => setConfirmAction(member.status === 'active' ? 'suspend' : 'activate')}
+                <Button
+                  variant="outline"
+                  size="sm"
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-1.5 text-md transition-colors",
+                    "text-sm",
                     member.status === 'active'
-                      ? "hover:bg-destructive/10 hover:text-destructive"
-                      : "hover:bg-green-50 hover:text-green-700"
+                      ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      : "text-green-700 hover:bg-green-50 hover:text-green-700"
                   )}
+                  onClick={(e) => { e.stopPropagation(); setConfirmAction(member.status === 'active' ? 'suspend' : 'activate') }}
                 >
                   {member.status === 'active' ? (
-                    <>
-                      <Ban className="h-3.5 w-3.5" />
-                      Suspend User
-                    </>
+                    <><Ban className="h-3 w-3 mr-1" />Suspend</>
                   ) : (
-                    <>
-                      <UserCheck className="h-3.5 w-3.5" />
-                      Activate User
-                    </>
+                    <><UserCheck className="h-3 w-3 mr-1" />Activate</>
                   )}
-                </button>
+                </Button>
 
-                {/* Remove */}
-                <button
-                  onClick={() => setConfirmAction('remove')}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-md text-destructive hover:bg-destructive/10 transition-colors"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); setConfirmAction('remove') }}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Remove Member
-                </button>
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Remove
+                </Button>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Confirmation inline */}
-            {menuOpen && confirmAction && (
-              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 w-56 p-3">
-                <p className="text-md font-medium mb-1">
-                  {confirmAction === 'suspend' && 'Suspend this user?'}
-                  {confirmAction === 'activate' && 'Activate this user?'}
-                  {confirmAction === 'remove' && 'Remove this member?'}
-                </p>
-                <p className="text-md text-muted-foreground mb-3">
-                  {confirmAction === 'suspend' && 'They will not be able to log in or access any data.'}
-                  {confirmAction === 'activate' && 'They will regain access to the platform.'}
-                  {confirmAction === 'remove' && 'This action cannot be undone. All their data will remain but they will lose access.'}
-                </p>
-                <div className="flex items-center gap-2 justify-end">
-                  <button
-                    onClick={() => setConfirmAction(null)}
-                    className="px-2.5 py-1 text-md rounded border border-border hover:bg-accent transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmAction === 'remove' ? handleRemove : handleStatusChange}
-                    className={cn(
-                      "px-2.5 py-1 text-md rounded font-medium transition-colors",
-                      confirmAction === 'activate'
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    )}
-                  >
-                    {confirmAction === 'suspend' && 'Suspend'}
-                    {confirmAction === 'activate' && 'Activate'}
-                    {confirmAction === 'remove' && 'Remove'}
-                  </button>
-                </div>
+          {/* Confirm action */}
+          {!isSelf && confirmAction && (
+            <div className="pt-2 pb-3 border-t">
+              <p className="text-base font-medium mb-1">
+                {confirmAction === 'suspend' && 'Suspend this user?'}
+                {confirmAction === 'activate' && 'Activate this user?'}
+                {confirmAction === 'remove' && 'Remove this member?'}
+              </p>
+              <p className="text-md text-muted-foreground mb-3">
+                {confirmAction === 'suspend' && 'They will not be able to log in or access any data.'}
+                {confirmAction === 'activate' && 'They will regain access to the platform.'}
+                {confirmAction === 'remove' && 'This action cannot be undone. All their data will remain but they will lose access.'}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-sm"
+                  onClick={(e) => { e.stopPropagation(); setConfirmAction(null) }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant={confirmAction === 'activate' ? 'default' : 'destructive'}
+                  size="sm"
+                  className="text-sm"
+                  onClick={(e) => { e.stopPropagation(); confirmAction === 'remove' ? handleRemove() : handleStatusChange() }}
+                >
+                  {confirmAction === 'suspend' && 'Suspend'}
+                  {confirmAction === 'activate' && 'Activate'}
+                  {confirmAction === 'remove' && 'Remove'}
+                </Button>
               </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+            </div>
+          )}
+
+          {/* Self - no actions */}
+          {isSelf && (
+            <div className="pt-2 pb-3 border-t">
+              <p className="text-md text-muted-foreground">This is your account. Manage your profile in Settings.</p>
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
   )
 }
 
+
 // ============================================================================
-// INVITATION ROW
+// INVITATION CARD
 // ============================================================================
 
-interface InvitationRowProps {
+interface InvitationCardProps {
   invitation: OrgInvitation
+  onOpenInvite: () => void
 }
 
-function InvitationRow({ invitation }: InvitationRowProps) {
+function InvitationCard({ invitation, onOpenInvite }: InvitationCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
   const [confirmRevoke, setConfirmRevoke] = useState(false)
   const revokeMutation = useRevokeInvitation()
@@ -353,7 +332,7 @@ function InvitationRow({ invitation }: InvitationRowProps) {
 
   const isPending = invitation.status === 'pending'
   const isExpired = invitation.status === 'expired'
-  const inviteLink = `${APP_URL}/invite?token=${invitation.token}`
+  const inviteLink = APP_URL + '/invite?token=' + invitation.token
 
   const handleCopy = useCallback(async () => {
     try {
@@ -367,8 +346,10 @@ function InvitationRow({ invitation }: InvitationRowProps) {
       document.body.removeChild(textarea)
     }
     setCopied(true)
+    toast.success('Invite link copied')
     setTimeout(() => setCopied(false), 2000)
   }, [inviteLink])
+
   const handleRevoke = useCallback(() => {
     revokeMutation.mutate(invitation.id)
     setConfirmRevoke(false)
@@ -384,68 +365,125 @@ function InvitationRow({ invitation }: InvitationRowProps) {
     ? 'bg-gray-100 text-gray-500 border-gray-300'
     : 'bg-green-100 text-green-900 border-green-300'
 
+  const statusLabel = isPending
+    ? formatExpiryDate(invitation.expires_at)
+    : invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)
+
   return (
-    <div className={cn(
-      "flex items-center gap-4 px-4 py-3 hover:bg-accent/30 transition-colors",
-      isExpired && "opacity-60"
-    )}>
-      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-        <Mail className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-base font-medium truncate">{invitation.email}</p>
-        <p className="text-md text-muted-foreground">
-          {invitation.invited_by_name ? `Invited by ${invitation.invited_by_name}` : 'Invited'}
-          {' -- '}
-          {formatRelativeDate(invitation.created_at)}
-        </p>
-      </div>
+    <Card className={cn("gap-0 py-0", isExpired && "opacity-60")}>
+      <CardHeader
+        className="py-3 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <span className="text-base font-semibold">{invitation.email}</span>
+            <Badge variant="outline" className={cn("text-sm", roleConfig[invitation.role]?.color || '')}>
+              {roleConfig[invitation.role]?.label || invitation.role}
+            </Badge>
+            <Badge variant="outline" className={cn("text-sm", statusColor)}>
+              {statusLabel}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-md text-muted-foreground">
+              {formatRelativeDate(invitation.created_at)}
+            </span>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+      </CardHeader>
 
-      {/* Role */}
-      <div className="w-20">
-        <Badge variant="outline" className={cn("text-md", roleConfig[invitation.role]?.color || '')}>
-          {roleConfig[invitation.role]?.label || invitation.role}
-        </Badge>
-      </div>
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-base">
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Email</p>
+              <p className="font-medium">{invitation.email}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Invited By</p>
+              <p className="font-medium">{invitation.invited_by_name || 'Unknown'}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Role</p>
+              <p className="font-medium">{roleConfig[invitation.role]?.label || invitation.role}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground mb-0.5">Status</p>
+              <p className="font-medium">{statusLabel}</p>
+            </div>
+          </div>
 
-      {/* Status */}
-      <div className="w-28">
-        <Badge variant="outline" className={cn("text-md", statusColor)}>
-          {isPending ? formatExpiryDate(invitation.expires_at) : invitation.status.charAt(0).toUpperCase() + invitation.status.slice(1)}
-        </Badge>
-      </div>
+          {!confirmRevoke && (
+            <div className="pt-2 pb-3 border-t flex items-center gap-2">
+              {isPending && (
+                <>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="text-sm"
+                    onClick={(e) => { e.stopPropagation(); handleCopy() }}
+                  >
+                    {copied ? <Check className="h-3 w-3 mr-1 text-green-400" /> : <Copy className="h-3 w-3 mr-1" />}
+                    {copied ? 'Copied' : 'Copy Link'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); setConfirmRevoke(true) }}
+                  >
+                    <Ban className="h-3 w-3 mr-1" />
+                    Revoke
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-sm text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={(e) => { e.stopPropagation(); handleDelete() }}
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Delete
+              </Button>
+            </div>
+          )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 w-24 shrink-0 justify-end">
-        {isPending && (
-          <>
-            <button
-              onClick={handleCopy}
-              className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              title="Copy invite link"
-            >
-              {copied ? <Check className="h-4.5 w-4.5 text-green-600" /> : <Copy className="h-4.5 w-4.5" />}
-            </button>
-            <button
-              onClick={() => setConfirmRevoke(true)}
-              className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-              title="Revoke invitation"
-            >
-              <Ban className="h-4.5 w-4.5" />
-            </button>
-          </>
-        )}
-        <button
-          onClick={handleDelete}
-          className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-          title="Delete invitation"
-        >
-          <Trash2 className="h-4.5 w-4.5" />
-        </button>
-      </div>
-    </div>
+          {confirmRevoke && (
+            <div className="pt-2 pb-3 border-t">
+              <p className="text-base font-medium mb-1">Revoke this invitation?</p>
+              <p className="text-md text-muted-foreground mb-3">The invite link will no longer work.</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-sm"
+                  onClick={(e) => { e.stopPropagation(); setConfirmRevoke(false) }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="text-sm"
+                  onClick={(e) => { e.stopPropagation(); handleRevoke() }}
+                >
+                  Revoke
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
   )
 }
+
 
 // ============================================================================
 // MAIN VIEW
@@ -555,87 +593,86 @@ export function TeamMembersView() {
           </div>
 
           {/* Content */}
-          <Card className="py-0 gap-0">
-            <CardContent className="p-0">
-              {activeTab === 'members' && (
-                <>
-                  {/* Column headers */}
-                  <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
-                    <div className="w-8 shrink-0" />
-                    <div className="flex-1">Member</div>
-                    <div className="w-24">Role</div>
-                    <div className="w-24">Status</div>
-                    <div className="w-24 text-right">Last Active</div>
-                    <div className="w-10" />
-                  </div>
-
-                  {membersLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : sortedMembers.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-                      <p className="text-base text-muted-foreground">
-                        {searchQuery ? 'No matching members' : 'No team members found'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {sortedMembers.map((member) => (
-                        <MemberRow
-                          key={member.id}
-                          member={member}
-                          currentUserId={user?.id}
-                          avatarVersion={avatarVersion}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
+          {activeTab === 'members' && (
+            <>
+              {membersLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : sortedMembers.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <Users className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-base font-medium mb-2">
+                      {searchQuery ? 'No matching members' : 'No team members found'}
+                    </p>
+                    <p className="text-md text-muted-foreground">
+                      {searchQuery ? 'Try a different search term.' : 'Invite members to get started.'}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-base text-muted-foreground">
+                    {sortedMembers.length} member{sortedMembers.length !== 1 ? 's' : ''}
+                    {searchQuery && ' matching filter'}
+                  </p>
+                  {sortedMembers.map((member) => (
+                    <MemberCard
+                      key={member.id}
+                      member={member}
+                      currentUserId={user?.id}
+                      avatarVersion={avatarVersion}
+                    />
+                  ))}
+                </div>
               )}
+            </>
+          )}
 
-              {activeTab === 'invitations' && (
-                <>
-                  {/* Column headers */}
-                  <div className="flex items-center gap-4 px-4 py-2 border-b border-border text-md text-muted-foreground font-medium">
-                    <div className="w-8 shrink-0" />
-                    <div className="flex-1">Email</div>
-                    <div className="w-20">Role</div>
-                    <div className="w-28">Status</div>
-                    <div className="w-24" />
-                  </div>
-
-                  {invLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : filteredInvitations.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Mail className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-                      <p className="text-base text-muted-foreground">
-                        {searchQuery ? 'No matching invitations' : 'No invitations'}
-                      </p>
-                      {!searchQuery && (
-                        <button
-                          onClick={() => setInviteModalOpen(true)}
-                          className="mt-3 text-md text-primary hover:underline"
-                        >
-                          Send your first invitation
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-border">
-                      {filteredInvitations.map((inv) => (
-                        <InvitationRow key={inv.id} invitation={inv} />
-                      ))}
-                    </div>
-                  )}
-                </>
+          {activeTab === 'invitations' && (
+            <>
+              {invLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredInvitations.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <Mail className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <p className="text-base font-medium mb-2">
+                      {searchQuery ? 'No matching invitations' : 'No invitations'}
+                    </p>
+                    <p className="text-md text-muted-foreground">
+                      {searchQuery ? 'Try a different search term.' : ''}
+                    </p>
+                    {!searchQuery && (
+                      <button
+                        onClick={() => setInviteModalOpen(true)}
+                        className="mt-3 text-md text-primary hover:underline"
+                      >
+                        Send your first invitation
+                      </button>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-base text-muted-foreground">
+                    {filteredInvitations.length} invitation{filteredInvitations.length !== 1 ? 's' : ''}
+                    {searchQuery && ' matching filter'}
+                  </p>
+                  {filteredInvitations.map((inv) => (
+                    <InvitationCard
+                      key={inv.id}
+                      invitation={inv}
+                      onOpenInvite={() => setInviteModalOpen(true)}
+                    />
+                  ))}
+                </div>
               )}
-            </CardContent>
-          </Card>
+            </>
+          )}
         </div>
       </div>
 
