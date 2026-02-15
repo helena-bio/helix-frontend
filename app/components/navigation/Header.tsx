@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText, LayoutDashboard, Shield } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText, Gauge, Shield } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -234,7 +234,7 @@ export function Header() {
               className="h-8 text-base font-medium"
               onClick={() => router.push('/platform')}
             >
-              <LayoutDashboard className="h-4 w-4 mr-2" />
+              <Gauge className="h-4 w-4 mr-2" />
               Platform
             </Button>
           )}
