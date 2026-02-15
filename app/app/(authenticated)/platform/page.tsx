@@ -569,6 +569,7 @@ interface UserCardProps {
 }
 
 function UserCard({ user: u }: UserCardProps) {
+  const { avatarVersion } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const stat = STATUS_CONFIG[u.status] || STATUS_CONFIG.active
   const roleLabel = u.role.charAt(0).toUpperCase() + u.role.slice(1)
@@ -581,7 +582,7 @@ function UserCard({ user: u }: UserCardProps) {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <UserAvatar fullName={u.full_name} userId={u.id} size="md" />
+            <UserAvatar fullName={u.full_name} userId={u.id} size="md" version={avatarVersion} />
             <span className="text-base font-semibold">{u.full_name}</span>
             {u.is_platform_admin && (
               <Shield className="h-3.5 w-3.5 text-amber-600 shrink-0" />
