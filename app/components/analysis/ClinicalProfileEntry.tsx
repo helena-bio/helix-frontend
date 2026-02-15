@@ -230,6 +230,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       try {
         await addHPOTerm(term)
         toast.success('Added: ' + term.name)
+        setSearchQuery("")
+        setShowSearchPopover(false)
         searchInputRef.current?.focus()
       } catch (error) {
         console.error('Failed to add term:', error)
