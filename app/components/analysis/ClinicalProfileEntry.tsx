@@ -133,7 +133,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hasPrefilledRef = useRef(false)
-  const debouncedQuery = useDebounce(searchQuery, 300)
+  const debouncedQuery = useDebounce(searchQuery, 150)
 
   const { data: searchResults, isLoading: isSearching } = useHPOSearch(debouncedQuery, {
     enabled: debouncedQuery.length >= 2,
