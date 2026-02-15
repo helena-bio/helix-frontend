@@ -30,6 +30,7 @@ import {
   LogOut,
   Users2,
   Building2,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -77,7 +78,7 @@ export function Sidebar() {
   const { aggregatedResults: phenotypeData } = usePhenotypeResults()
   const { results: literatureData } = useLiteratureResults()
   const { status: screeningStatus } = useScreeningResults()
-  const { hasInterpretation } = useClinicalInterpretation()
+  const { hasInterpretation, isGenerating } = useClinicalInterpretation()
 
   // Data presence overrides enablement flags for completed cases
   const hasPhenotypeData = !!(phenotypeData && phenotypeData.length > 0)
@@ -279,6 +280,7 @@ export function Sidebar() {
                     const Icon = module.icon
                     const isEnabled = module.checkEnabled ? module.checkEnabled() : true
                     const isSelected = selectedModule === module.id
+                    const isReportGenerating = module.id === 'report' && isGenerating
 
                     return (
                       <Button
@@ -286,12 +288,17 @@ export function Sidebar() {
                         variant={isSelected ? 'secondary' : 'ghost'}
                         className={cn(
                           "w-full justify-start",
-                          !isEnabled && "opacity-50 cursor-not-allowed"
+                          !isEnabled && !isReportGenerating && "opacity-50 cursor-not-allowed",
+                          isReportGenerating && "cursor-wait"
                         )}
                         onClick={() => handleModuleClick(module.id, isEnabled)}
                         disabled={!isEnabled}
                       >
-                        <Icon className="h-5 w-5 shrink-0" />
+                        {isReportGenerating ? (
+                          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" />
+                        ) : (
+                          <Icon className="h-5 w-5 shrink-0" />
+                        )}
                         <span className="ml-3 text-base">{module.name}</span>
                       </Button>
                     )
@@ -435,6 +442,7 @@ export function Sidebar() {
                 const Icon = module.icon
                 const isEnabled = module.checkEnabled ? module.checkEnabled() : true
                 const isSelected = selectedModule === module.id
+                const isReportGenerating = module.id === 'report' && isGenerating
 
                 return (
                   <TooltipProvider key={module.id}>
@@ -444,19 +452,28 @@ export function Sidebar() {
                           variant={isSelected ? 'secondary' : 'ghost'}
                           className={cn(
                             "w-full justify-center px-0",
-                            !isEnabled && "opacity-50 cursor-not-allowed"
+                            !isEnabled && !isReportGenerating && "opacity-50 cursor-not-allowed",
+                            isReportGenerating && "cursor-wait"
                           )}
                           onClick={(e) => { e.stopPropagation(); handleModuleClick(module.id, isEnabled) }}
                           disabled={!isEnabled}
                         >
-                          <Icon className="h-5 w-5" />
+                          {isReportGenerating ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                          ) : (
+                            <Icon className="h-5 w-5" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="right">
                         <p className="text-sm">{module.name}</p>
                         {!isEnabled && (
                           <p className="text-xs text-muted-foreground">
-                            {isAnalysisComplete ? '(Not enabled)' : '(Analysis required)'}
+                            {module.id === 'report' && isReportGenerating
+                              ? '(Generating...)'
+                              : isAnalysisComplete
+                                ? '(Not enabled)'
+                                : '(Analysis required)'}
                           </p>
                         )}
                       </TooltipContent>

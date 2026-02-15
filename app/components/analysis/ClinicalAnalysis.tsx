@@ -7,7 +7,10 @@
  * 1. Phenotype Matching (if enabled + HPO terms) - runs FIRST
  * 2. Screening Analysis (if enabled) - age-aware prioritization
  * 3. Literature Search (if phenotype enabled) - for top genes
- * 4. Navigate to split view → Clinical Interpretation starts in ChatPanel
+ * 4. Navigate to split view immediately
+ *
+ * Clinical Interpretation runs in background after navigation.
+ * Sidebar shows spinner on Clinical Report until AI completes.
  *
  * NOTE: Variants streaming already done in ProcessingFlow!
  */
@@ -34,7 +37,6 @@ import {
   Dna,
   Filter,
   BookOpen,
-  FileText,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -74,13 +76,6 @@ const ALL_STAGES: AnalysisStage[] = [
     description: 'Searching publications for key genes',
     required: false,
   },
-  {
-    id: 'interpretation',
-    name: 'Clinical Interpretation',
-    icon: <FileText className="h-4 w-4" />,
-    description: 'AI-powered clinical analysis report',
-    required: false,
-  },
 ]
 
 type StageStatus = 'pending' | 'running' | 'completed' | 'skipped' | 'failed'
@@ -94,7 +89,6 @@ export function ClinicalAnalysis({
     phenotype: 'pending',
     screening: 'pending',
     literature: 'pending',
-    interpretation: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -118,13 +112,12 @@ export function ClinicalAnalysis({
   const activeStages = ALL_STAGES.filter(stage => {
     if (stage.id === 'phenotype') return enablePhenotypeMatching
     if (stage.id === 'screening') return enableScreening
-    if (stage.id === 'literature') return enablePhenotypeMatching // Literature depends on phenotype
-    if (stage.id === 'interpretation') return true // Always runs as final stage
+    if (stage.id === 'literature') return enablePhenotypeMatching
     return false
   })
 
   const calculateProgress = useCallback((): number => {
-    if (activeStages.length === 0) return 100 // No modules enabled, instant complete
+    if (activeStages.length === 0) return 100
 
     const activeStatuses = activeStages.map(s => stageStatuses[s.id])
     const completed = activeStatuses.filter(s => s === 'completed' || s === 'skipped').length
@@ -331,38 +324,30 @@ export function ClinicalAnalysis({
           updateStageStatus('literature', 'skipped')
         }
 
-        // Stage 4: Clinical Interpretation (always runs)
-        setCurrentStage('interpretation')
-        updateStageStatus('interpretation', 'running')
+        // Fire clinical interpretation in background (non-blocking)
+        // Sidebar shows spinner on Clinical Report until complete
+        console.log('='.repeat(80))
+        console.log('CLINICAL INTERPRETATION - Starting in background')
+        console.log('='.repeat(80))
 
-        try {
-          console.log('='.repeat(80))
-          console.log('CLINICAL INTERPRETATION - Generating AI report')
-          console.log('='.repeat(80))
+        generateInterpretation(sessionId)
+          .then(() => {
+            console.log('='.repeat(80))
+            console.log('CLINICAL INTERPRETATION COMPLETE (background)')
+            console.log('='.repeat(80))
+            toast.success('Clinical interpretation completed')
+          })
+          .catch((error) => {
+            console.error('Clinical interpretation failed (background):', error)
+            toast.warning('Clinical interpretation failed - you can regenerate later')
+          })
 
-          await generateInterpretation(sessionId)
-
-          console.log('='.repeat(80))
-          console.log('CLINICAL INTERPRETATION COMPLETE')
-          console.log('='.repeat(80))
-
-          updateStageStatus('interpretation', 'completed')
-          toast.success('Clinical interpretation generated')
-        } catch (error) {
-          console.error('Clinical interpretation failed:', error)
-          updateStageStatus('interpretation', 'failed')
-          toast.warning('Clinical interpretation failed - you can regenerate later')
-        }
-
-        // Pipeline complete - navigate to split view
+        // Navigate to split view immediately -- do not wait for interpretation
         setCurrentStage(null)
 
         console.log('='.repeat(80))
         console.log('PIPELINE COMPLETE - Navigating to split view')
-        console.log('Enabled modules completed:')
-        if (enablePhenotypeMatching) console.log('  ✓ Phenotype results loaded')
-        if (enableScreening) console.log('  ✓ Screening results loaded')
-        console.log('Clinical interpretation will start in ChatPanel')
+        console.log('Clinical interpretation continues in background')
         console.log('='.repeat(80))
 
         toast.success('Analysis pipeline complete')
@@ -406,7 +391,6 @@ export function ClinicalAnalysis({
         ? `Streaming Screening Results (${screeningProgress}%)`
         : 'Running Clinical Screening',
       literature: 'Searching Literature',
-      interpretation: 'Generating Clinical Interpretation',
     }
     return stageNames[currentStage] || 'Processing...'
   }, [currentStage, screeningProgress])
@@ -554,7 +538,7 @@ export function ClinicalAnalysis({
         {activeStages.length > 0 && (
           <Alert>
             <AlertDescription className="text-base">
-              {activeStages.map(s => s.name).join(' → ')} → AI interpretation
+              {activeStages.map(s => s.name).join(' -> ')}
             </AlertDescription>
           </Alert>
         )}
