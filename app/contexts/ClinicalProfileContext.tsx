@@ -46,8 +46,10 @@ interface ClinicalProfileContextValue {
   // Module enablement
   enableScreening: boolean
   enablePhenotypeMatching: boolean
+  enableClinicalReport: boolean
   setEnableScreening: (enabled: boolean) => void
   setEnablePhenotypeMatching: (enabled: boolean) => void
+  setEnableClinicalReport: (enabled: boolean) => void
 
   // Local state
   demographics: Demographics
@@ -95,9 +97,10 @@ interface ClinicalProfileProviderProps {
 }
 
 export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfileProviderProps) {
-  // Module enablement (default: both disabled)
+  // Module enablement (default: all disabled)
   const [enableScreening, setEnableScreening] = useState(false)
   const [enablePhenotypeMatching, setEnablePhenotypeMatching] = useState(false)
+  const [enableClinicalReport, setEnableClinicalReport] = useState(false)
 
   // Local state
   const [demographics, setDemographics] = useState<Demographics>({ sex: 'female' })
@@ -135,6 +138,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     if (savedProfile.modules) {
       setEnableScreening(savedProfile.modules.enable_screening)
       setEnablePhenotypeMatching(savedProfile.modules.enable_phenotype_matching)
+      setEnableClinicalReport(savedProfile.modules.enable_clinical_report ?? false)
     }
 
     if (savedProfile.ethnicity) setEthnicity(savedProfile.ethnicity)
@@ -200,6 +204,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       modules: {
         enable_screening: enableScreening,
         enable_phenotype_matching: enablePhenotypeMatching,
+        enable_clinical_report: enableClinicalReport,
       },
       ethnicity: ethnicity || undefined,
       clinical_context: clinicalContext || undefined,
@@ -215,7 +220,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     await saveMutation.mutateAsync({ sessionId, data })
   }, [
     sessionId, saveMutation,
-    demographics, enableScreening, enablePhenotypeMatching,
+    demographics, enableScreening, enablePhenotypeMatching, enableClinicalReport,
     ethnicity, clinicalContext, reproductive, sampleInfo, consent,
     localHPOTerms, localClinicalNotes,
   ])
@@ -258,8 +263,10 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     isProfileLoaded,
     enableScreening,
     enablePhenotypeMatching,
+    enableClinicalReport,
     setEnableScreening,
     setEnablePhenotypeMatching,
+    setEnableClinicalReport,
     demographics,
     ethnicity,
     clinicalContext,

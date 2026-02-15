@@ -97,6 +97,7 @@ export function ClinicalAnalysis({
   const { nextStep } = useJourney()
   const {
     enableScreening,
+    enableClinicalReport,
     enablePhenotypeMatching,
     getCompleteProfile,
     hpoTerms
@@ -324,27 +325,26 @@ export function ClinicalAnalysis({
           updateStageStatus('literature', 'skipped')
         }
 
-        // Fire clinical interpretation in background (non-blocking)
-        // Sidebar shows spinner on Clinical Report until complete
-        console.log('='.repeat(80))
-        console.log('CLINICAL INTERPRETATION - Starting in background')
-        console.log('='.repeat(80))
+        // Fire clinical interpretation in background (only if user opted in)
+        if (enableClinicalReport) {
+          console.log("=".repeat(80))
+          console.log("CLINICAL INTERPRETATION - Starting in background")
+          console.log("=".repeat(80))
 
-        generateInterpretation(sessionId)
-          .then(() => {
-            console.log('='.repeat(80))
-            console.log('CLINICAL INTERPRETATION COMPLETE (background)')
-            console.log('='.repeat(80))
-            toast.success('Clinical interpretation completed')
-          })
-          .catch((error) => {
-            console.error('Clinical interpretation failed (background):', error)
-            toast.warning('Clinical interpretation failed - you can regenerate later')
-          })
-
-        // Navigate to split view immediately -- do not wait for interpretation
-        setCurrentStage(null)
-
+          generateInterpretation(sessionId)
+            .then(() => {
+              console.log("=".repeat(80))
+              console.log("CLINICAL INTERPRETATION COMPLETE (background)")
+              console.log("=".repeat(80))
+              toast.success("Clinical interpretation completed")
+            })
+            .catch((error) => {
+              console.error("Clinical interpretation failed (background):", error)
+              toast.warning("Clinical interpretation failed - you can regenerate later")
+            })
+        } else {
+          console.log("Clinical report not enabled - skipping interpretation")
+        }
         console.log('='.repeat(80))
         console.log('PIPELINE COMPLETE - Navigating to split view')
         console.log('Clinical interpretation continues in background')
@@ -365,6 +365,7 @@ export function ClinicalAnalysis({
   }, [
     sessionId,
     enableScreening,
+    enableClinicalReport,
     enablePhenotypeMatching,
     getCompleteProfile,
     hpoTerms,

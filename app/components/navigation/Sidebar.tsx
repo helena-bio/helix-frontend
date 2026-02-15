@@ -74,7 +74,7 @@ export function Sidebar() {
 
   const { currentStep, resetJourney } = useJourney()
   const { user, logout, avatarVersion } = useAuth()
-  const { enableScreening, enablePhenotypeMatching } = useClinicalProfileContext()
+  const { enableScreening, enablePhenotypeMatching, enableClinicalReport } = useClinicalProfileContext()
   const { aggregatedResults: phenotypeData } = usePhenotypeResults()
   const { results: literatureData } = useLiteratureResults()
   const { status: screeningStatus } = useScreeningResults()
@@ -184,7 +184,7 @@ export function Sidebar() {
       id: 'report',
       name: 'Clinical Report',
       icon: FileText,
-      checkEnabled: () => isAnalysisComplete && hasInterpretation,
+      checkEnabled: () => isAnalysisComplete,
     },
   ]
 

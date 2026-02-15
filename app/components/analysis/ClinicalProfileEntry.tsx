@@ -8,7 +8,7 @@
  *
  * STRUCTURE:
  * 1. Demographics (Required) - age, sex
- * 2. Analysis Modules (Opt-in) - enable screening, enable phenotype matching
+ * 2. Analysis Modules (Opt-in) - enable screening, enable phenotype matching, enable clinical report
  * 3. Clinical Information (For Screening) - shown if screening enabled
  * 4. Phenotype Information (For Phenotype Matching) - shown if phenotype enabled
  * 5. Result Preferences (Optional) - consent options
@@ -17,7 +17,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, Stethoscope, Settings, Filter
+  ArrowRight, Loader2, User, Stethoscope, Settings, Filter, FileText
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -64,8 +64,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const {
     enableScreening,
     enablePhenotypeMatching,
+    enableClinicalReport,
     setEnableScreening,
     setEnablePhenotypeMatching,
+    setEnableClinicalReport,
     hpoTerms,
     clinicalNotes,
     addHPOTerm,
@@ -354,6 +356,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         modules: {
           enable_screening: enableScreening,
           enable_phenotype_matching: enablePhenotypeMatching,
+          enable_clinical_report: enableClinicalReport,
         },
         ethnicity: enableScreening && ethnicity ? {
           primary: ethnicity,
@@ -405,6 +408,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     sex,
     enableScreening,
     enablePhenotypeMatching,
+    enableClinicalReport,
     ethnicity,
     ethnicityNote,
     indication,
@@ -566,6 +570,25 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Match variants to patient symptoms using HPO terms
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+              <input
+                type="checkbox"
+                checked={enableClinicalReport}
+                onChange={(e) => setEnableClinicalReport(e.target.checked)}
+                className="w-5 h-5 mt-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="text-base font-medium">AI Clinical Report</span>
+                  <Badge variant="outline" className="text-xs">Optional</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  AI-generated clinical interpretation based on all analysis results
                 </p>
               </div>
             </label>

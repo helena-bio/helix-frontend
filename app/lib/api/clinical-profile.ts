@@ -24,6 +24,7 @@ import type {
 export interface ModulesData {
   enable_screening: boolean
   enable_phenotype_matching: boolean
+  enable_clinical_report?: boolean
 }
 
 /**
