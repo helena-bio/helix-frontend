@@ -585,7 +585,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   <span className="text-base font-medium">AI Clinical Report</span>
-                  <Badge variant="outline" className="text-xs">Optional</Badge>
+                  <Badge variant="outline" className="text-xs">Recommended</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   AI-generated clinical interpretation based on all analysis results

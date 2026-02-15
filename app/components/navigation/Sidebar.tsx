@@ -184,7 +184,7 @@ export function Sidebar() {
       id: 'report',
       name: 'Clinical Report',
       icon: FileText,
-      checkEnabled: () => isAnalysisComplete,
+      checkEnabled: () => isAnalysisComplete && (!enableClinicalReport || hasInterpretation),
     },
   ]
 
