@@ -356,10 +356,10 @@ function OverviewContent() {
           return (
             <div key={card.label} className="border border-border rounded-lg p-5 bg-card">
               <div className="flex items-center gap-2 mb-3">
-                <Icon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-base font-semibold">{card.label}</span>
+                <Icon className="h-5 w-5 text-muted-foreground" />
+                <span className="text-lg font-semibold">{card.label}</span>
               </div>
-              <p className="text-3xl font-bold tracking-tight">{card.value}</p>
+              <p className="text-xl font-bold tracking-tight">{card.value}</p>
               <p className="text-md text-muted-foreground mt-1">{card.sub}</p>
             </div>
           )
