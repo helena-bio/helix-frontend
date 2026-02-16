@@ -17,7 +17,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, Stethoscope, ScanSearch, Settings, FileText,
+  ArrowRight, Loader2, User, ScanSearch, Settings, FileText,
   Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -682,73 +682,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   </CardContent>
                 </Card>
 
-                {/* Analysis Modules */}
-                <Card className="border-primary/30">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Analysis Modules</CardTitle>
-                    <p className="text-md text-muted-foreground">
-                      Select which analysis modules to run
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={enableScreening}
-                        onChange={(e) => setEnableScreening(e.target.checked)}
-                        className="w-5 h-5 mt-0.5"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Filter className="h-4 w-4" />
-                          <span className="text-base font-medium">Clinical Screening</span>
-                          <Badge variant="outline" className="text-md">Recommended</Badge>
-                        </div>
-                        <p className="text-md text-muted-foreground mt-1">
-                          Age-aware variant prioritization with clinical actionability tiers
-                        </p>
-                      </div>
-                    </label>
-
-                    <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={enablePhenotypeMatching}
-                        onChange={(e) => setEnablePhenotypeMatching(e.target.checked)}
-                        className="w-5 h-5 mt-0.5"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Dna className="h-4 w-4" />
-                          <span className="text-base font-medium">Phenotype Matching</span>
-                          <Badge variant="outline" className="text-md">Optional</Badge>
-                        </div>
-                        <p className="text-md text-muted-foreground mt-1">
-                          Match variants to patient symptoms using HPO terms
-                        </p>
-                      </div>
-                    </label>
-
-                    <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={enableClinicalReport}
-                        onChange={(e) => setEnableClinicalReport(e.target.checked)}
-                        className="w-5 h-5 mt-0.5"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="text-base font-medium">AI Clinical Report</span>
-                          <Badge variant="outline" className="text-md">Recommended</Badge>
-                        </div>
-                        <p className="text-md text-muted-foreground mt-1">
-                          AI-generated clinical interpretation based on all analysis results
-                        </p>
-                      </div>
-                    </label>
-                  </CardContent>
-                </Card>
               </div>
             )}
 
@@ -757,7 +690,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4" />
+                    <ScanSearch className="h-4 w-4" />
                     Clinical Information
                     <Badge variant="outline" className="ml-2 text-md">For Screening</Badge>
                   </CardTitle>
