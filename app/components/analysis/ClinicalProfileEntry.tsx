@@ -529,12 +529,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           {/* SIDEBAR                                                      */}
           {/* =========================================================== */}
           <div className="w-64 shrink-0 space-y-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Modules</CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <nav className="space-y-1">
+            <nav className="space-y-1">
                   {sidebarItems.map((item) => (
                     <button
                       key={item.id}
