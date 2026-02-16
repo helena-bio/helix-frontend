@@ -148,7 +148,7 @@ export default function HowItWorksPage() {
                     <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold text-primary-foreground">{i + 1}</span>
                     </div>
-                    <span className="text-sm text-foreground font-medium">{label}</span>
+                    <span className="text-base text-foreground font-medium">{label}</span>
                   </div>
                   {i < pipelineOverview.length - 1 && (
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40 mx-0.5 hidden sm:block" />
