@@ -17,7 +17,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, Stethoscope, Settings, Filter, FileText,
+  ArrowRight, Loader2, User, Stethoscope, ScanSearch, Settings, FileText,
   Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,7 +54,7 @@ import { toast } from 'sonner'
 // TYPES
 // =========================================================================
 
-type SectionId = 'patient' | 'clinical' | 'phenotype' | 'preferences'
+type SectionId = 'patient' | 'clinical' | 'phenotype' | 'ai-report' | 'preferences'
 
 interface HPOTerm {
   hpo_id: string
@@ -68,6 +68,9 @@ interface SidebarItem {
   icon: React.ReactNode
   badge?: React.ReactNode
   disabled: boolean
+  checked?: boolean
+  onToggle?: (checked: boolean) => void
+  hasPanel?: boolean
 }
 
 interface ClinicalProfileEntryProps {
@@ -221,6 +224,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     if (activeSection === 'clinical' && !enableScreening) setActiveSection('patient')
     if (activeSection === 'phenotype' && !enablePhenotypeMatching) setActiveSection('patient')
     if (activeSection === 'preferences' && !enableScreening) setActiveSection('patient')
+    if (activeSection === 'ai-report') setActiveSection('patient')
   }, [enableScreening, enablePhenotypeMatching, activeSection])
 
   // Auto-open popover when search query has results
@@ -259,30 +263,47 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         ? <Check className="h-3.5 w-3.5 text-primary" />
         : <Badge variant="outline" className="text-xs px-1.5 py-0">Required</Badge>,
       disabled: false,
+      hasPanel: true,
     },
     {
       id: 'clinical',
-      label: 'Clinical Info',
-      icon: <Stethoscope className="h-4 w-4" />,
+      label: 'Clinical Screening',
+      icon: <ScanSearch className="h-4 w-4" />,
       badge: enableScreening && clinicalInfoFilled
         ? <Check className="h-3.5 w-3.5 text-primary" />
         : undefined,
       disabled: !enableScreening,
+      checked: enableScreening,
+      onToggle: (v) => setEnableScreening(v),
+      hasPanel: true,
     },
     {
       id: 'phenotype',
-      label: 'Phenotype',
+      label: 'Phenotype Matching',
       icon: <Dna className="h-4 w-4" />,
       badge: enablePhenotypeMatching && phenotypeCount > 0
         ? <Badge variant="secondary" className="text-xs px-1.5 py-0">{phenotypeCount}</Badge>
         : undefined,
       disabled: !enablePhenotypeMatching,
+      checked: enablePhenotypeMatching,
+      onToggle: (v) => setEnablePhenotypeMatching(v),
+      hasPanel: true,
+    },
+    {
+      id: 'ai-report',
+      label: 'Clinical Report',
+      icon: <FileText className="h-4 w-4" />,
+      disabled: false,
+      checked: enableClinicalReport,
+      onToggle: (v) => setEnableClinicalReport(v),
+      hasPanel: false,
     },
     {
       id: 'preferences',
       label: 'Preferences',
       icon: <Settings className="h-4 w-4" />,
       disabled: !enableScreening,
+      hasPanel: true,
     },
   ]
 
@@ -525,19 +546,37 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   {sidebarItems.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => !item.disabled && setActiveSection(item.id)}
+                      onClick={() => {
+                        if (item.hasPanel && !item.disabled) {
+                          setActiveSection(item.id)
+                        } else if (!item.hasPanel && item.onToggle) {
+                          item.onToggle(!item.checked)
+                        }
+                      }}
                       className={`
                         w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
                         text-left text-base font-medium transition-colors
                         ${item.disabled
                           ? 'text-muted-foreground/40 cursor-not-allowed'
-                          : activeSection === item.id
+                          : activeSection === item.id && item.hasPanel
                             ? 'bg-primary/10 text-primary'
                             : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                         }
                       `}
                     >
                       <div className="flex items-center gap-2">
+                        {item.onToggle !== undefined && (
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={(e) => {
+                              e.stopPropagation()
+                              item.onToggle!(e.target.checked)
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 shrink-0"
+                          />
+                        )}
                         {item.icon}
                         <span>{item.label}</span>
                       </div>
