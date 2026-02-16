@@ -7,3 +7,4 @@ export { SecurityComplianceSection } from './SecurityComplianceSection';
 export { RequestDemoModal } from './RequestDemoModal';
 export { LoginModal } from './LoginModal';
 export { DatabaseIntegrationsSection } from './DatabaseIntegrationsSection';
+export { RequestDemoButton } from './RequestDemoButton'

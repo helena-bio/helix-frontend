@@ -1,6 +1,6 @@
 import { Header, Footer } from '@/components'
 import Link from 'next/link'
-import { RequestDemoButton } from './RequestDemoButton'
+import { RequestDemoButton } from '@/components/marketing/RequestDemoButton'
 import {
   ShieldCheck, Layers, ClipboardCheck, Activity,
   BookOpen, Target, Brain, Search, RefreshCw,

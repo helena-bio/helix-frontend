@@ -1,16 +1,37 @@
 "use client"
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 import { useDemoModal, useLoginModal } from '@/contexts'
+
+const platformLinks = [
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/for-geneticists', label: 'For Geneticists' },
+]
 
 export function Header() {
   const { openModal } = useDemoModal()
   const { openModal: openLoginModal } = useLoginModal()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isPlatformOpen, setIsPlatformOpen] = useState(false)
+  const [isMobilePlatformOpen, setIsMobilePlatformOpen] = useState(false)
+  const platformRef = useRef<HTMLDivElement>(null)
 
-  const closeMobileMenu = () => setIsMobileMenuOpen(false)
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+    setIsMobilePlatformOpen(false)
+  }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (platformRef.current && !platformRef.current.contains(event.target as Node)) {
+        setIsPlatformOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-card">
@@ -37,11 +58,32 @@ export function Header() {
 
         {/* Desktop navigation */}
         <nav className="hidden md:flex flex-1 items-center justify-end gap-8 mr-6">
+          {/* Platform dropdown */}
+          <div ref={platformRef} className="relative">
+            <button
+              onClick={() => setIsPlatformOpen(!isPlatformOpen)}
+              className="flex items-center gap-1 text-base text-foreground hover:text-primary transition-colors"
+            >
+              Platform
+              <ChevronDown className={`w-4 h-4 transition-transform ${isPlatformOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isPlatformOpen && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2">
+                {platformLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="block px-4 py-2 text-base text-foreground hover:text-primary hover:bg-muted/50 transition-colors"
+                    onClick={() => setIsPlatformOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors">
             About
-          </Link>
-          <Link href="/how-it-works" className="text-base text-foreground hover:text-primary transition-colors">
-            How It Works
           </Link>
           <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
             Contact
@@ -80,19 +122,34 @@ export function Header() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-card border-b border-border shadow-lg">
           <nav className="flex flex-col px-6 py-4 space-y-4">
+            {/* Mobile platform section */}
+            <button
+              onClick={() => setIsMobilePlatformOpen(!isMobilePlatformOpen)}
+              className="flex items-center gap-1 text-base text-foreground hover:text-primary transition-colors py-2"
+            >
+              Platform
+              <ChevronDown className={`w-4 h-4 transition-transform ${isMobilePlatformOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isMobilePlatformOpen && (
+              <div className="flex flex-col pl-4 space-y-3">
+                {platformLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                    onClick={closeMobileMenu}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
             <Link
               href="/about"
               className="text-base text-foreground hover:text-primary transition-colors py-2"
               onClick={closeMobileMenu}
             >
               About
-            </Link>
-            <Link
-              href="/how-it-works"
-              className="text-base text-foreground hover:text-primary transition-colors py-2"
-              onClick={closeMobileMenu}
-            >
-              How It Works
             </Link>
             <Link
               href="/contact"
