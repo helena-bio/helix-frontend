@@ -1,5 +1,6 @@
 import { Header, Footer } from '@/components'
 import Link from 'next/link'
+import { RequestDemoButton } from './RequestDemoButton'
 import {
   ShieldCheck, Layers, ClipboardCheck, Activity,
   BookOpen, Target, Brain, Search, RefreshCw,
@@ -292,12 +293,7 @@ export default function HowItWorksPage() {
               Request a demo to see how Helix Insight processes a real genome -- from VCF upload to clinical report.
             </p>
             <div className="flex items-center justify-center gap-4">
-              <Link
-                href="/contact"
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
-              >
-                Request a Demo
-              </Link>
+                <RequestDemoButton />
               <Link
                 href="/contact"
                 className="px-6 py-3 border border-border text-foreground rounded-md text-base font-medium hover:bg-muted transition-colors"
