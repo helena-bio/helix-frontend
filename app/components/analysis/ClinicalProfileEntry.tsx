@@ -17,7 +17,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, ScanSearch, FileText,
+  ArrowRight, Loader2, User, ScanSearch, FileText, Info,
   Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Popover, PopoverContent, PopoverTrigger } from '@helix/shared/components/ui/popover'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HPOTermCard } from './HPOTermCard'
 import { HelixLoader } from '@/components/ui/helix-loader'
 import { ClinicalAnalysis } from './ClinicalAnalysis'
@@ -529,7 +530,19 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           {/* SIDEBAR                                                      */}
           {/* =========================================================== */}
           <div className="w-64 shrink-0 space-y-6">
-            <nav className="space-y-1">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold">Modules</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-md">Select which modules to include in the analysis</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <nav className="space-y-1">
                   {sidebarItems.map((item) => (
                     <button
                       key={item.id}
@@ -584,7 +597,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       </div>
                     </button>
                   ))}
-            </nav>
+              </nav>
+            </div>
 
             {/* Continue button */}
             <Button
