@@ -17,7 +17,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, ScanSearch, FileText, Info,
+  ArrowRight, Loader2, User, Microscope, ScanSearch, FileText, Info,
   Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -257,8 +257,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const sidebarItems: SidebarItem[] = [
     {
       id: 'patient',
-      label: 'Patient',
-      icon: <User className="h-5 w-5" />,
+      label: 'Variant Analysis',
+      icon: <Microscope className="h-5 w-5" />,
       badge: demographicsComplete
         ? <Check className="h-3.5 w-3.5 text-primary" />
         : <Badge variant="outline" className="text-xs px-1.5 py-0">Required</Badge>,
