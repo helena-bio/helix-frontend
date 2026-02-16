@@ -17,7 +17,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
-  ArrowRight, Loader2, User, ScanSearch, Settings, FileText,
+  ArrowRight, Loader2, User, ScanSearch, FileText,
   Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -54,7 +54,7 @@ import { toast } from 'sonner'
 // TYPES
 // =========================================================================
 
-type SectionId = 'patient' | 'clinical' | 'phenotype' | 'ai-report' | 'preferences'
+type SectionId = 'patient' | 'clinical' | 'phenotype' | 'ai-report'
 
 interface HPOTerm {
   hpo_id: string
@@ -223,7 +223,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   useEffect(() => {
     if (activeSection === 'clinical' && !enableScreening) setActiveSection('patient')
     if (activeSection === 'phenotype' && !enablePhenotypeMatching) setActiveSection('patient')
-    if (activeSection === 'preferences' && !enableScreening) setActiveSection('patient')
     if (activeSection === 'ai-report') setActiveSection('patient')
   }, [enableScreening, enablePhenotypeMatching, activeSection])
 
@@ -297,13 +296,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       checked: enableClinicalReport,
       onToggle: (v) => setEnableClinicalReport(v),
       hasPanel: false,
-    },
-    {
-      id: 'preferences',
-      label: 'Preferences',
-      icon: <Settings className="h-5 w-5" />,
-      disabled: !enableScreening,
-      hasPanel: true,
     },
   ]
 
@@ -869,6 +861,40 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       </div>
                     </div>
                   )}
+
+                  {/* Result Preferences */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Result Preferences</Label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={consentSecondaryFindings}
+                          onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Report ACMG Secondary Findings</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={consentCarrierResults}
+                          onChange={(e) => setConsentCarrierResults(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Report carrier status for recessive conditions</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={consentPharmacogenomics}
+                          onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Include pharmacogenomics results</span>
+                      </label>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -1033,52 +1059,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
               </Card>
             )}
 
-            {/* ----- PREFERENCES SECTION ----- */}
-            {activeSection === 'preferences' && enableScreening && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    Result Preferences
-                    <Badge variant="outline" className="ml-2 text-md">Optional</Badge>
-                  </CardTitle>
-                  <p className="text-md text-muted-foreground">
-                    Configure which types of findings to include in your report
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={consentSecondaryFindings}
-                        onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Report ACMG Secondary Findings</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={consentCarrierResults}
-                        onChange={(e) => setConsentCarrierResults(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Report carrier status for recessive conditions</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={consentPharmacogenomics}
-                        onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Include pharmacogenomics results</span>
-                    </label>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
           </div>
         </div>
       </div>
