@@ -584,9 +584,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       </div>
                     </button>
                   ))}
-                </nav>
-              </CardContent>
-            </Card>
+            </nav>
 
             {/* Continue button */}
             <Button
