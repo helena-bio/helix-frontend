@@ -258,7 +258,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     {
       id: 'patient',
       label: 'Patient',
-      icon: <User className="h-4 w-4" />,
+      icon: <User className="h-5 w-5" />,
       badge: demographicsComplete
         ? <Check className="h-3.5 w-3.5 text-primary" />
         : <Badge variant="outline" className="text-xs px-1.5 py-0">Required</Badge>,
@@ -268,7 +268,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     {
       id: 'clinical',
       label: 'Clinical Screening',
-      icon: <ScanSearch className="h-4 w-4" />,
+      icon: <ScanSearch className="h-5 w-5" />,
       badge: enableScreening && clinicalInfoFilled
         ? <Check className="h-3.5 w-3.5 text-primary" />
         : undefined,
@@ -280,7 +280,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     {
       id: 'phenotype',
       label: 'Phenotype Matching',
-      icon: <Dna className="h-4 w-4" />,
+      icon: <Dna className="h-5 w-5" />,
       badge: enablePhenotypeMatching && phenotypeCount > 0
         ? <Badge variant="secondary" className="text-xs px-1.5 py-0">{phenotypeCount}</Badge>
         : undefined,
@@ -292,7 +292,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     {
       id: 'ai-report',
       label: 'Clinical Report',
-      icon: <FileText className="h-4 w-4" />,
+      icon: <FileText className="h-5 w-5" />,
       disabled: false,
       checked: enableClinicalReport,
       onToggle: (v) => setEnableClinicalReport(v),
@@ -301,7 +301,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     {
       id: 'preferences',
       label: 'Preferences',
-      icon: <Settings className="h-4 w-4" />,
+      icon: <Settings className="h-5 w-5" />,
       disabled: !enableScreening,
       hasPanel: true,
     },
@@ -536,7 +536,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           {/* =========================================================== */}
           {/* SIDEBAR                                                      */}
           {/* =========================================================== */}
-          <div className="w-56 shrink-0 space-y-6">
+          <div className="w-64 shrink-0 space-y-6">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">Modules</CardTitle>
@@ -564,23 +564,37 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         }
                       `}
                     >
-                      <div className="flex items-center gap-2">
-                        {item.onToggle !== undefined && (
-                          <input
-                            type="checkbox"
-                            checked={item.checked}
-                            onChange={(e) => {
-                              e.stopPropagation()
-                              item.onToggle!(e.target.checked)
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-4 h-4 shrink-0"
-                          />
-                        )}
+                      <div className="flex items-center gap-2.5">
                         {item.icon}
                         <span>{item.label}</span>
                       </div>
-                      {item.badge && !item.disabled && <span className="shrink-0">{item.badge}</span>}
+                      <div className="shrink-0 flex items-center">
+                        {item.onToggle !== undefined ? (
+                          <div
+                            role="switch"
+                            aria-checked={item.checked}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              item.onToggle!(!item.checked)
+                            }}
+                            className={`
+                              relative inline-flex h-5 w-9 items-center rounded-full
+                              transition-colors cursor-pointer
+                              ${item.checked ? 'bg-primary' : 'bg-muted-foreground/30'}
+                            `}
+                          >
+                            <span
+                              className={`
+                                inline-block h-3.5 w-3.5 rounded-full bg-white
+                                transition-transform shadow-sm
+                                ${item.checked ? 'translate-x-[18px]' : 'translate-x-[3px]'}
+                              `}
+                            />
+                          </div>
+                        ) : item.badge && !item.disabled ? (
+                          <span>{item.badge}</span>
+                        ) : null}
+                      </div>
                     </button>
                   ))}
                 </nav>
