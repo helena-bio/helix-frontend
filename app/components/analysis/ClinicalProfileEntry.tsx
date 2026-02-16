@@ -3,14 +3,15 @@
 /**
  * ClinicalProfileEntry Component - Patient Clinical Profile
  *
- * Sidebar + content panel layout. Sidebar shows sections as navigation
- * with completion indicators. Content panel shows the active section.
+ * Sidebar + content panel layout. Sidebar shows all sections with
+ * completion indicators. Sections tied to disabled modules appear
+ * grayed out and are not clickable.
  *
  * SECTIONS:
  * 1. Patient (always) - demographics + module selection
- * 2. Clinical Info (if screening enabled) - ethnicity, context, family, sample
- * 3. Phenotype (if phenotype matching enabled) - HPO search, AI assist, notes
- * 4. Preferences (if screening enabled) - consent options
+ * 2. Clinical Info (requires screening) - ethnicity, context, family, sample
+ * 3. Phenotype (requires phenotype matching) - HPO search, AI assist, notes
+ * 4. Preferences (requires screening) - consent options
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -66,7 +67,7 @@ interface SidebarItem {
   label: string
   icon: React.ReactNode
   badge?: React.ReactNode
-  visible: boolean
+  disabled: boolean
 }
 
 interface ClinicalProfileEntryProps {
@@ -246,7 +247,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const phenotypeCount = hpoTerms.length
 
   // =========================================================================
-  // SIDEBAR ITEMS
+  // SIDEBAR ITEMS -- always all visible, disabled when module is off
   // =========================================================================
 
   const sidebarItems: SidebarItem[] = [
@@ -257,35 +258,33 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       badge: demographicsComplete
         ? <Check className="h-3.5 w-3.5 text-primary" />
         : <Badge variant="outline" className="text-xs px-1.5 py-0">Required</Badge>,
-      visible: true,
+      disabled: false,
     },
     {
       id: 'clinical',
       label: 'Clinical Info',
       icon: <Stethoscope className="h-4 w-4" />,
-      badge: clinicalInfoFilled
+      badge: enableScreening && clinicalInfoFilled
         ? <Check className="h-3.5 w-3.5 text-primary" />
         : undefined,
-      visible: enableScreening,
+      disabled: !enableScreening,
     },
     {
       id: 'phenotype',
       label: 'Phenotype',
       icon: <Dna className="h-4 w-4" />,
-      badge: phenotypeCount > 0
+      badge: enablePhenotypeMatching && phenotypeCount > 0
         ? <Badge variant="secondary" className="text-xs px-1.5 py-0">{phenotypeCount}</Badge>
         : undefined,
-      visible: enablePhenotypeMatching,
+      disabled: !enablePhenotypeMatching,
     },
     {
       id: 'preferences',
       label: 'Preferences',
       icon: <Settings className="h-4 w-4" />,
-      visible: enableScreening,
+      disabled: !enableScreening,
     },
   ]
-
-  const visibleItems = sidebarItems.filter(item => item.visible)
 
   // =========================================================================
   // HANDLERS
@@ -497,590 +496,597 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   return (
     <div className="flex items-start justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-4xl flex gap-8">
+      <div className="w-full max-w-4xl space-y-6">
 
-        {/* ============================================================= */}
-        {/* SIDEBAR                                                        */}
-        {/* ============================================================= */}
-        <div className="w-56 shrink-0 space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <HelixLoader size="xs" speed={3} animated={isSaving} />
-            <div>
-              <h1 className="text-lg font-bold leading-tight">Clinical Profile</h1>
-              <p className="text-sm text-muted-foreground">Patient data</p>
-            </div>
+        {/* Header -- restored above layout */}
+        <div className="flex items-center justify-center gap-4">
+          <HelixLoader size="xs" speed={3} animated={isSaving} />
+          <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight">Clinical Profile</h1>
+            <p className="text-base text-muted-foreground">
+              Clinical data for variant analysis
+            </p>
           </div>
-
-          {/* Navigation */}
-          <nav className="space-y-1">
-            {visibleItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`
-                  w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
-                  text-left text-sm font-medium transition-colors
-                  ${activeSection === item.id
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  }
-                `}
-              >
-                <div className="flex items-center gap-2">
-                  {item.icon}
-                  <span>{item.label}</span>
-                </div>
-                {item.badge && <span className="shrink-0">{item.badge}</span>}
-              </button>
-            ))}
-          </nav>
-
-          {/* Continue button */}
-          <Button
-            onClick={handleContinue}
-            disabled={!hasRequiredFormData || isSaving}
-            className="w-full"
-            size="lg"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                <span className="text-sm">Saving...</span>
-              </>
-            ) : (
-              <>
-                <span className="text-sm">Continue to Analysis</span>
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </>
-            )}
-          </Button>
         </div>
 
-        {/* ============================================================= */}
-        {/* CONTENT PANEL                                                  */}
-        {/* ============================================================= */}
-        <div className="flex-1 min-w-0">
+        {/* Two-column layout */}
+        <div className="flex gap-8">
 
-          {/* ----- PATIENT SECTION ----- */}
-          {activeSection === 'patient' && (
-            <div className="space-y-6">
-              {/* Demographics */}
+          {/* =========================================================== */}
+          {/* SIDEBAR                                                      */}
+          {/* =========================================================== */}
+          <div className="w-56 shrink-0 space-y-6">
+            <nav className="space-y-1">
+              {sidebarItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => !item.disabled && setActiveSection(item.id)}
+                  className={`
+                    w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
+                    text-left text-base font-medium transition-colors
+                    ${item.disabled
+                      ? 'text-muted-foreground/40 cursor-not-allowed'
+                      : activeSection === item.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2">
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && !item.disabled && <span className="shrink-0">{item.badge}</span>}
+                </button>
+              ))}
+            </nav>
+
+            {/* Continue button */}
+            <Button
+              onClick={handleContinue}
+              disabled={!hasRequiredFormData || isSaving}
+              className="w-full"
+              size="lg"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <span className="text-base">Saving...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-base">Continue to Analysis</span>
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* =========================================================== */}
+          {/* CONTENT PANEL                                                */}
+          {/* =========================================================== */}
+          <div className="flex-1 min-w-0">
+
+            {/* ----- PATIENT SECTION ----- */}
+            {activeSection === 'patient' && (
+              <div className="space-y-6">
+                {/* Demographics */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Patient Demographics
+                      <Badge variant="outline" className="ml-2 text-md">Required</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-base">Age *</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="age-years" className="text-md text-muted-foreground">Years</Label>
+                          <Input
+                            id="age-years"
+                            type="number"
+                            min="0"
+                            max="150"
+                            value={ageYears}
+                            onChange={(e) => setAgeYears(e.target.value)}
+                            placeholder="e.g. 35"
+                            className="text-base"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="age-days" className="text-md text-muted-foreground">Days (for infants)</Label>
+                          <Input
+                            id="age-days"
+                            type="number"
+                            min="0"
+                            max="365"
+                            value={ageDays}
+                            onChange={(e) => setAgeDays(e.target.value)}
+                            placeholder="e.g. 90"
+                            className="text-base"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-base">Sex *</Label>
+                      <div className="flex gap-4">
+                        <Button
+                          type="button"
+                          variant={sex === 'female' ? 'default' : 'outline'}
+                          onClick={() => setSex('female')}
+                          className="flex-1 text-base"
+                        >
+                          Female
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={sex === 'male' ? 'default' : 'outline'}
+                          onClick={() => setSex('male')}
+                          className="flex-1 text-base"
+                        >
+                          Male
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Analysis Modules */}
+                <Card className="border-primary/30">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Analysis Modules</CardTitle>
+                    <p className="text-md text-muted-foreground">
+                      Select which analysis modules to run
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={enableScreening}
+                        onChange={(e) => setEnableScreening(e.target.checked)}
+                        className="w-5 h-5 mt-0.5"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4" />
+                          <span className="text-base font-medium">Clinical Screening</span>
+                          <Badge variant="outline" className="text-md">Recommended</Badge>
+                        </div>
+                        <p className="text-md text-muted-foreground mt-1">
+                          Age-aware variant prioritization with clinical actionability tiers
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={enablePhenotypeMatching}
+                        onChange={(e) => setEnablePhenotypeMatching(e.target.checked)}
+                        className="w-5 h-5 mt-0.5"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Dna className="h-4 w-4" />
+                          <span className="text-base font-medium">Phenotype Matching</span>
+                          <Badge variant="outline" className="text-md">Optional</Badge>
+                        </div>
+                        <p className="text-md text-muted-foreground mt-1">
+                          Match variants to patient symptoms using HPO terms
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={enableClinicalReport}
+                        onChange={(e) => setEnableClinicalReport(e.target.checked)}
+                        className="w-5 h-5 mt-0.5"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          <span className="text-base font-medium">AI Clinical Report</span>
+                          <Badge variant="outline" className="text-md">Recommended</Badge>
+                        </div>
+                        <p className="text-md text-muted-foreground mt-1">
+                          AI-generated clinical interpretation based on all analysis results
+                        </p>
+                      </div>
+                    </label>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* ----- CLINICAL INFO SECTION ----- */}
+            {activeSection === 'clinical' && enableScreening && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Patient Demographics
-                    <Badge variant="outline" className="ml-2 text-xs">Required</Badge>
+                    <Stethoscope className="h-4 w-4" />
+                    Clinical Information
+                    <Badge variant="outline" className="ml-2 text-md">For Screening</Badge>
                   </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-base">Age *</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="age-years" className="text-sm text-muted-foreground">Years</Label>
-                        <Input
-                          id="age-years"
-                          type="number"
-                          min="0"
-                          max="150"
-                          value={ageYears}
-                          onChange={(e) => setAgeYears(e.target.value)}
-                          placeholder="e.g. 35"
-                          className="text-base"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="age-days" className="text-sm text-muted-foreground">Days (for infants)</Label>
-                        <Input
-                          id="age-days"
-                          type="number"
-                          min="0"
-                          max="365"
-                          value={ageDays}
-                          onChange={(e) => setAgeDays(e.target.value)}
-                          placeholder="e.g. 90"
-                          className="text-base"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-base">Sex *</Label>
-                    <div className="flex gap-4">
-                      <Button
-                        type="button"
-                        variant={sex === 'female' ? 'default' : 'outline'}
-                        onClick={() => setSex('female')}
-                        className="flex-1"
-                      >
-                        Female
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={sex === 'male' ? 'default' : 'outline'}
-                        onClick={() => setSex('male')}
-                        className="flex-1"
-                      >
-                        Male
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Analysis Modules */}
-              <Card className="border-primary/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Analysis Modules</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Select which analysis modules to run
+                  <p className="text-md text-muted-foreground">
+                    Ethnicity, clinical context, and family history improve screening accuracy
                   </p>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={enableScreening}
-                      onChange={(e) => setEnableScreening(e.target.checked)}
-                      className="w-5 h-5 mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Filter className="h-4 w-4" />
-                        <span className="text-base font-medium">Clinical Screening</span>
-                        <Badge variant="outline" className="text-xs">Recommended</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Age-aware variant prioritization with clinical actionability tiers
-                      </p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={enablePhenotypeMatching}
-                      onChange={(e) => setEnablePhenotypeMatching(e.target.checked)}
-                      className="w-5 h-5 mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Dna className="h-4 w-4" />
-                        <span className="text-base font-medium">Phenotype Matching</span>
-                        <Badge variant="outline" className="text-xs">Optional</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Match variants to patient symptoms using HPO terms
-                      </p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={enableClinicalReport}
-                      onChange={(e) => setEnableClinicalReport(e.target.checked)}
-                      className="w-5 h-5 mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span className="text-base font-medium">AI Clinical Report</span>
-                        <Badge variant="outline" className="text-xs">Recommended</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        AI-generated clinical interpretation based on all analysis results
-                      </p>
-                    </div>
-                  </label>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* ----- CLINICAL INFO SECTION ----- */}
-          {activeSection === 'clinical' && enableScreening && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Stethoscope className="h-4 w-4" />
-                  Clinical Information
-                  <Badge variant="outline" className="ml-2 text-xs">For Screening</Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Ethnicity, clinical context, and family history improve screening accuracy
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Ethnicity */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Ethnicity & Ancestry</Label>
-                  <Select value={ethnicity} onValueChange={(val) => setEthnicityLocal(val as Ethnicity)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select ethnicity (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(ETHNICITY_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Textarea
-                    value={ethnicityNote}
-                    onChange={(e) => setEthnicityNote(e.target.value)}
-                    placeholder="Additional ancestry notes (optional)"
-                    className="text-base"
-                    rows={2}
-                  />
-                </div>
-
-                {/* Clinical Context */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Clinical Context</Label>
-                  <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Proactive Health Screening" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(INDICATION_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Textarea
-                    value={indicationDetails}
-                    onChange={(e) => setIndicationDetails(e.target.value)}
-                    placeholder="Additional details (optional)"
-                    className="text-base"
-                    rows={2}
-                  />
-                </div>
-
-                {/* Family History */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Family History</Label>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasFamilyHistory}
-                        onChange={(e) => setHasFamilyHistory(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Known family history of genetic conditions</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasConsanguinity}
-                        onChange={(e) => setHasConsanguinity(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Consanguineous parents</span>
-                    </label>
-                  </div>
-                  {(hasFamilyHistory || hasConsanguinity) && (
-                    <Textarea
-                      value={familyHistoryDetails}
-                      onChange={(e) => setFamilyHistoryDetails(e.target.value)}
-                      placeholder="Family history details..."
-                      className="text-base"
-                      rows={3}
-                    />
-                  )}
-                </div>
-
-                {/* Sample Information */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">Sample Information</Label>
-                  <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select sample type (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
-                        <SelectItem key={key} value={key}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasParentalSamples}
-                        onChange={(e) => setHasParentalSamples(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Parental samples available</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={hasAffectedSibling}
-                        onChange={(e) => setHasAffectedSibling(e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-base">Affected sibling available</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Reproductive Context (only if female) */}
-                {sex === 'female' && (
+                <CardContent className="space-y-6">
+                  {/* Ethnicity */}
                   <div className="space-y-3">
-                    <Label className="text-base font-medium">Reproductive Context</Label>
+                    <Label className="text-base font-medium">Ethnicity & Ancestry</Label>
+                    <Select value={ethnicity} onValueChange={(val) => setEthnicityLocal(val as Ethnicity)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ethnicity (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(ETHNICITY_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Textarea
+                      value={ethnicityNote}
+                      onChange={(e) => setEthnicityNote(e.target.value)}
+                      placeholder="Additional ancestry notes (optional)"
+                      className="text-base"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Clinical Context */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Clinical Context</Label>
+                    <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Proactive Health Screening" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(INDICATION_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Textarea
+                      value={indicationDetails}
+                      onChange={(e) => setIndicationDetails(e.target.value)}
+                      placeholder="Additional details (optional)"
+                      className="text-base"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Family History */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Family History</Label>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={isPregnant}
-                          onChange={(e) => setIsPregnant(e.target.checked)}
+                          checked={hasFamilyHistory}
+                          onChange={(e) => setHasFamilyHistory(e.target.checked)}
                           className="w-4 h-4"
                         />
-                        <span className="text-base">Patient is pregnant</span>
+                        <span className="text-base">Known family history of genetic conditions</span>
                       </label>
-                      {isPregnant && (
-                        <Input
-                          type="number"
-                          min="0"
-                          max="42"
-                          value={gestationalAge}
-                          onChange={(e) => setGestationalAge(e.target.value)}
-                          placeholder="Gestational age (weeks)"
-                          className="text-base ml-6"
-                        />
-                      )}
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={familyPlanning}
-                          onChange={(e) => setFamilyPlanning(e.target.checked)}
+                          checked={hasConsanguinity}
+                          onChange={(e) => setHasConsanguinity(e.target.checked)}
                           className="w-4 h-4"
                         />
-                        <span className="text-base">Family planning considerations</span>
+                        <span className="text-base">Consanguineous parents</span>
+                      </label>
+                    </div>
+                    {(hasFamilyHistory || hasConsanguinity) && (
+                      <Textarea
+                        value={familyHistoryDetails}
+                        onChange={(e) => setFamilyHistoryDetails(e.target.value)}
+                        placeholder="Family history details..."
+                        className="text-base"
+                        rows={3}
+                      />
+                    )}
+                  </div>
+
+                  {/* Sample Information */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-medium">Sample Information</Label>
+                    <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select sample type (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasParentalSamples}
+                          onChange={(e) => setHasParentalSamples(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Parental samples available</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={hasAffectedSibling}
+                          onChange={(e) => setHasAffectedSibling(e.target.checked)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-base">Affected sibling available</span>
                       </label>
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
-          {/* ----- PHENOTYPE SECTION ----- */}
-          {activeSection === 'phenotype' && enablePhenotypeMatching && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Dna className="h-4 w-4" />
-                  Phenotype Information
-                  <Badge variant="outline" className="ml-2 text-xs">For Phenotype Matching</Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Add patient symptoms (HPO terms) for phenotype-based variant matching
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Search Phenotypes */}
-                <div>
-                  <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
-                  <Popover open={showSearchPopover} onOpenChange={setShowSearchPopover} modal={false}>
-                    <PopoverTrigger asChild>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          ref={searchInputRef}
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search phenotype or HPO term..."
-                          className="pl-9 pr-9 text-base"
-                        />
-                        {isSearching && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  {/* Reproductive Context (only if female) */}
+                  {sex === 'female' && (
+                    <div className="space-y-3">
+                      <Label className="text-base font-medium">Reproductive Context</Label>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isPregnant}
+                            onChange={(e) => setIsPregnant(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Patient is pregnant</span>
+                        </label>
+                        {isPregnant && (
+                          <Input
+                            type="number"
+                            min="0"
+                            max="42"
+                            value={gestationalAge}
+                            onChange={(e) => setGestationalAge(e.target.value)}
+                            placeholder="Gestational age (weeks)"
+                            className="text-base ml-6"
+                          />
                         )}
-                        {searchQuery && !isSearching && (
-                          <button
-                            onClick={clearSearch}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={familyPlanning}
+                            onChange={(e) => setFamilyPlanning(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Family planning considerations</span>
+                        </label>
                       </div>
-                    </PopoverTrigger>
-                    {filteredSuggestions.length > 0 && (
-                      <PopoverContent
-                        className="p-2 max-h-80 overflow-y-auto"
-                        align="start"
-                        style={{ width: 'var(--radix-popover-trigger-width)' }}
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                      >
-                        <div className="space-y-1">
-                          {filteredSuggestions.map((term) => (
-                            <button
-                              key={term.hpo_id}
-                              onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
-                              className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base font-medium">{term.name}</span>
-                                  <span className="text-sm text-muted-foreground">({term.hpo_id})</span>
-                                </div>
-                                {term.definition && (
-                                  <p className="text-md text-muted-foreground mt-1 line-clamp-2">
-                                    {term.definition.replace(/^"/, '').replace(/".*$/, '')}
-                                  </p>
-                                )}
-                              </div>
-                              <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
-                            </button>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    )}
-                  </Popover>
-                </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-                {/* AI Assist */}
-                <Card className="border-primary/20 bg-primary/5">
-                  <Collapsible open={showAIAssist} onOpenChange={setShowAIAssist}>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between p-3 h-auto hover:bg-primary/10"
-                      >
-                        <div className="flex items-center gap-2 text-primary">
-                          <Sparkles className="h-4 w-4" />
-                          <span className="text-base font-medium">Suggest HPO terms from free text</span>
+            {/* ----- PHENOTYPE SECTION ----- */}
+            {activeSection === 'phenotype' && enablePhenotypeMatching && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Dna className="h-4 w-4" />
+                    Phenotype Information
+                    <Badge variant="outline" className="ml-2 text-md">For Phenotype Matching</Badge>
+                  </CardTitle>
+                  <p className="text-md text-muted-foreground">
+                    Add patient symptoms (HPO terms) for phenotype-based variant matching
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Search Phenotypes */}
+                  <div>
+                    <label className="text-base font-medium mb-2 block">Search Phenotypes</label>
+                    <Popover open={showSearchPopover} onOpenChange={setShowSearchPopover} modal={false}>
+                      <PopoverTrigger asChild>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            ref={searchInputRef}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search phenotype or HPO term..."
+                            className="pl-9 pr-9 text-base"
+                          />
+                          {isSearching && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                          {searchQuery && !isSearching && (
+                            <button
+                              onClick={clearSearch}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
-                        {showAIAssist ? (
-                          <ChevronUp className="h-4 w-4 text-primary" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-primary" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-3 pb-3 space-y-3">
-                        <Textarea
-                          value={aiInput}
-                          onChange={(e) => setAiInput(e.target.value)}
-                          placeholder="Example: Child with epilepsy, developmental delay and hypotonia"
-                          className="min-h-[80px] bg-background text-base"
-                        />
-                        <Button
-                          onClick={handleGenerateSuggestions}
-                          disabled={!aiInput.trim() || extractMutation.isPending}
-                          size="sm"
-                          className="w-full"
+                      </PopoverTrigger>
+                      {filteredSuggestions.length > 0 && (
+                        <PopoverContent
+                          className="p-2 max-h-80 overflow-y-auto"
+                          align="start"
+                          style={{ width: 'var(--radix-popover-trigger-width)' }}
+                          onOpenAutoFocus={(e) => e.preventDefault()}
                         >
-                          {extractMutation.isPending ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              <span className="text-base">Extracting...</span>
-                            </>
+                          <div className="space-y-1">
+                            {filteredSuggestions.map((term) => (
+                              <button
+                                key={term.hpo_id}
+                                onClick={() => handleAddTerm({ hpo_id: term.hpo_id, name: term.name, definition: term.definition })}
+                                className="w-full text-left p-3 hover:bg-accent rounded flex items-start justify-between group"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-base font-medium">{term.name}</span>
+                                    <span className="text-md text-muted-foreground">({term.hpo_id})</span>
+                                  </div>
+                                  {term.definition && (
+                                    <p className="text-md text-muted-foreground mt-1 line-clamp-2">
+                                      {term.definition.replace(/^"/, '').replace(/".*$/, '')}
+                                    </p>
+                                  )}
+                                </div>
+                                <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2" />
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      )}
+                    </Popover>
+                  </div>
+
+                  {/* AI Assist */}
+                  <Card className="border-primary/20 bg-primary/5">
+                    <Collapsible open={showAIAssist} onOpenChange={setShowAIAssist}>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-between p-3 h-auto hover:bg-primary/10"
+                        >
+                          <div className="flex items-center gap-2 text-primary">
+                            <Sparkles className="h-4 w-4" />
+                            <span className="text-base font-medium">Suggest HPO terms from free text</span>
+                          </div>
+                          {showAIAssist ? (
+                            <ChevronUp className="h-4 w-4 text-primary" />
                           ) : (
-                            <>
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              <span className="text-base">Generate Suggestions</span>
-                            </>
+                            <ChevronDown className="h-4 w-4 text-primary" />
                           )}
                         </Button>
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </Card>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="px-3 pb-3 space-y-3">
+                          <Textarea
+                            value={aiInput}
+                            onChange={(e) => setAiInput(e.target.value)}
+                            placeholder="Example: Child with epilepsy, developmental delay and hypotonia"
+                            className="min-h-[80px] bg-background text-base"
+                          />
+                          <Button
+                            onClick={handleGenerateSuggestions}
+                            disabled={!aiInput.trim() || extractMutation.isPending}
+                            size="sm"
+                            className="w-full text-base"
+                          >
+                            {extractMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Extracting...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-4 w-4 mr-2" />
+                                Generate Suggestions
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
 
-                {/* Clinical Notes */}
-                <div className="space-y-2">
-                  <Label className="text-base font-medium">Additional Clinical Notes</Label>
-                  <Textarea
-                    value={localClinicalNotes}
-                    onChange={(e) => setLocalClinicalNotes(e.target.value)}
-                    placeholder="e.g. Patient has recurrent febrile seizures..."
-                    className="min-h-[100px] text-base bg-background"
-                  />
-                </div>
-
-                {/* Selected HPO Terms */}
-                {hpoTerms.length > 0 ? (
+                  {/* Clinical Notes */}
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Selected Phenotypes ({hpoTerms.length})</p>
-                    {hpoTerms.map((term) => (
-                      <HPOTermCard
-                        key={term.hpo_id}
-                        hpoId={term.hpo_id}
-                        name={term.name}
-                        definition={term.definition}
-                        onRemove={handleRemoveTerm}
-                      />
-                    ))}
+                    <Label className="text-base font-medium">Additional Clinical Notes</Label>
+                    <Textarea
+                      value={localClinicalNotes}
+                      onChange={(e) => setLocalClinicalNotes(e.target.value)}
+                      placeholder="e.g. Patient has recurrent febrile seizures..."
+                      className="min-h-[100px] text-base bg-background"
+                    />
                   </div>
-                ) : (
-                  <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                    <p className="text-sm text-muted-foreground">No phenotypes selected</p>
-                    <p className="text-xs text-muted-foreground mt-1">Search and add HPO terms above</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
-          {/* ----- PREFERENCES SECTION ----- */}
-          {activeSection === 'preferences' && enableScreening && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  Result Preferences
-                  <Badge variant="outline" className="ml-2 text-xs">Optional</Badge>
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Configure which types of findings to include in your report
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={consentSecondaryFindings}
-                      onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-base">Report ACMG Secondary Findings</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={consentCarrierResults}
-                      onChange={(e) => setConsentCarrierResults(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-base">Report carrier status for recessive conditions</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={consentPharmacogenomics}
-                      onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-base">Include pharmacogenomics results</span>
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  {/* Selected HPO Terms */}
+                  {hpoTerms.length > 0 ? (
+                    <div className="space-y-2">
+                      <p className="text-md font-medium">Selected Phenotypes ({hpoTerms.length})</p>
+                      {hpoTerms.map((term) => (
+                        <HPOTermCard
+                          key={term.hpo_id}
+                          hpoId={term.hpo_id}
+                          name={term.name}
+                          definition={term.definition}
+                          onRemove={handleRemoveTerm}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                      <p className="text-md text-muted-foreground">No phenotypes selected</p>
+                      <p className="text-sm text-muted-foreground mt-1">Search and add HPO terms above</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ----- PREFERENCES SECTION ----- */}
+            {activeSection === 'preferences' && enableScreening && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Result Preferences
+                    <Badge variant="outline" className="ml-2 text-md">Optional</Badge>
+                  </CardTitle>
+                  <p className="text-md text-muted-foreground">
+                    Configure which types of findings to include in your report
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consentSecondaryFindings}
+                        onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Report ACMG Secondary Findings</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consentCarrierResults}
+                        onChange={(e) => setConsentCarrierResults(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Report carrier status for recessive conditions</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={consentPharmacogenomics}
+                        onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-base">Include pharmacogenomics results</span>
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
     </div>
