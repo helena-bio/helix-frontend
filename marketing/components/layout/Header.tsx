@@ -68,7 +68,7 @@ export function Header() {
               <ChevronDown className={`w-4 h-4 transition-transform ${isPlatformOpen ? 'rotate-180' : ''}`} />
             </button>
             {isPlatformOpen && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2">
+              <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
                 {platformLinks.map((link) => (
                   <Link
                     key={link.href}
