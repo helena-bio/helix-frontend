@@ -4,6 +4,12 @@
  * Manages user session state using cookie-based JWT tokens.
  * Compatible with marketing site authentication (shared cookie domain).
  *
+ * REFRESH STRATEGY:
+ * A proactive timer fires at 80% of access token lifetime (24 min for 30 min tokens).
+ * On fire, it calls POST /auth/refresh with the stored refresh token.
+ * This keeps the session alive transparently while the user is active.
+ * The refresh token itself lasts 7 days -- the session survives browser restarts.
+ *
  * IMPERSONATION:
  * Platform admins can switch to another organization's context.
  * Original token is stored in sessionStorage (cleared on tab close).
@@ -11,13 +17,17 @@
  */
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { tokenUtils } from '@/lib/auth/token';
 import type { JWTPayload } from '@/lib/auth/token';
 import { platformApi } from '@/lib/api/platform';
 
 const ORIGINAL_TOKEN_KEY = 'helix_original_token';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008';
+
+/** Refresh at 80% of token lifetime (e.g., 24 min for 30 min tokens). */
+const REFRESH_THRESHOLD = 0.8;
 
 interface User {
   id: string;
@@ -54,11 +64,8 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008';
-
 /**
  * Build User object from JWT payload.
- * All identity fields are now embedded in the token.
  */
 function userFromPayload(payload: JWTPayload): User {
   return {
@@ -100,40 +107,122 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     organizationId: '',
   });
 
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /**
-   * Initialize auth state from stored cookie token.
+   * Clear the proactive refresh timer.
    */
-  useEffect(() => {
-    if (tokenUtils.isValid()) {
-      const payload = tokenUtils.decode();
-
-      setAuthState({
-        user: payload ? userFromPayload(payload) : null,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-
-      // Restore impersonation state if token has impersonating claim
-      if (payload) {
-        setImpersonation(getImpersonationFromPayload(payload));
-      }
-    } else {
-      tokenUtils.remove();
-      setAuthState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
     }
   }, []);
 
   /**
-   * Logout -- invalidate session on backend, clear cookie, redirect.
+   * Perform a silent token refresh.
+   * Called proactively by timer and reactively on auth init with near-expiry tokens.
+   */
+  const performSilentRefresh = useCallback(async () => {
+    const refreshToken = tokenUtils.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!response.ok) return false;
+
+      const data = await response.json();
+      tokenUtils.save(data.access_token);
+      if (data.refresh_token) {
+        tokenUtils.saveRefreshToken(data.refresh_token);
+      }
+
+      // Update auth state with potentially refreshed user data
+      const payload = tokenUtils.decode();
+      if (payload) {
+        setAuthState({
+          user: userFromPayload(payload),
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  /**
+   * Schedule the next proactive refresh.
+   * Fires at 80% of remaining access token lifetime.
+   */
+  const scheduleRefresh = useCallback(() => {
+    clearRefreshTimer();
+
+    const secondsLeft = tokenUtils.secondsUntilExpiry();
+    if (secondsLeft <= 0) return;
+
+    // Schedule at 80% of lifetime (e.g., 24 min into a 30 min token)
+    const delayMs = Math.max(secondsLeft * REFRESH_THRESHOLD * 1000, 10_000);
+
+    refreshTimerRef.current = setTimeout(async () => {
+      const success = await performSilentRefresh();
+      if (success) {
+        scheduleRefresh(); // Schedule next refresh
+      }
+    }, delayMs);
+  }, [clearRefreshTimer, performSilentRefresh]);
+
+  /**
+   * Initialize auth state from stored cookie token.
+   */
+  useEffect(() => {
+    const init = async () => {
+      if (tokenUtils.isValid()) {
+        const payload = tokenUtils.decode();
+        setAuthState({
+          user: payload ? userFromPayload(payload) : null,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        if (payload) {
+          setImpersonation(getImpersonationFromPayload(payload));
+        }
+        scheduleRefresh();
+      } else if (tokenUtils.hasValidRefreshToken()) {
+        // Access token expired but refresh token is still valid -- refresh now
+        const success = await performSilentRefresh();
+        if (success) {
+          scheduleRefresh();
+        } else {
+          tokenUtils.remove();
+          setAuthState({ user: null, isAuthenticated: false, isLoading: false });
+        }
+      } else {
+        tokenUtils.remove();
+        setAuthState({ user: null, isAuthenticated: false, isLoading: false });
+      }
+    };
+
+    init();
+
+    return () => clearRefreshTimer();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * Logout -- invalidate session on backend, clear cookies, redirect.
    */
   const logout = useCallback(async () => {
+    clearRefreshTimer();
+
     try {
       const token = tokenUtils.get();
-
       if (token) {
         await fetch(`${API_URL}/auth/logout`, {
           method: 'POST',
@@ -141,28 +230,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-        }).catch(() => {
-          // Backend logout failure is non-blocking
-        });
+        }).catch(() => {});
       }
     } finally {
       tokenUtils.remove();
-      // Clean up impersonation state
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem(ORIGINAL_TOKEN_KEY);
       }
       setImpersonation({ active: false, organizationName: '', organizationId: '' });
-      setAuthState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+      setAuthState({ user: null, isAuthenticated: false, isLoading: false });
       router.push('/login');
     }
-  }, [router]);
+  }, [router, clearRefreshTimer]);
 
   /**
-   * Refresh auth state from cookie.
+   * Refresh auth state from cookie and reschedule timer.
    */
   const refreshAuth = useCallback(() => {
     if (tokenUtils.isValid()) {
@@ -175,20 +257,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (payload) {
         setImpersonation(getImpersonationFromPayload(payload));
       }
+      scheduleRefresh();
     } else {
       tokenUtils.remove();
-      setAuthState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
+      clearRefreshTimer();
+      setAuthState({ user: null, isAuthenticated: false, isLoading: false });
       setImpersonation({ active: false, organizationName: '', organizationId: '' });
     }
-  }, []);
+  }, [scheduleRefresh, clearRefreshTimer]);
 
   /**
    * Update user state directly (e.g. after profile edit).
-   * Does not change JWT -- next login will get fresh token.
    */
   const updateUser = useCallback((updates: Partial<User>) => {
     setAuthState((prev) => ({
@@ -206,28 +285,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Switch platform admin context to target organization.
-   *
-   * 1. Store current token in sessionStorage (cleared on tab close)
-   * 2. Call backend to get impersonation token
-   * 3. Save new token to cookie
-   * 4. Update auth state to reflect target org
-   * 5. Navigate to dashboard
    */
   const switchOrganization = useCallback(async (orgId: string) => {
     const currentToken = tokenUtils.get();
     if (!currentToken) throw new Error('No active session');
 
-    // Store original token for exit
     if (typeof window !== 'undefined') {
       sessionStorage.setItem(ORIGINAL_TOKEN_KEY, currentToken);
     }
 
     const result = await platformApi.switchOrganization(orgId);
-
-    // Save impersonation token
     tokenUtils.save(result.token);
 
-    // Update auth state
     setAuthState({
       user: {
         id: result.user.id,
@@ -248,35 +317,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       organizationId: result.organization.id,
     });
 
-    // Navigate to dashboard of target org
+    scheduleRefresh();
     router.push('/');
-  }, [router]);
+  }, [router, scheduleRefresh]);
 
   /**
    * Exit impersonation and return to admin's real organization.
-   *
-   * Strategy: restore original token from sessionStorage.
-   * Falls back to backend exit endpoint if sessionStorage is empty.
    */
   const exitSwitch = useCallback(async () => {
     let restoredToken: string | null = null;
 
-    // Try sessionStorage first (instant, no network)
     if (typeof window !== 'undefined') {
       restoredToken = sessionStorage.getItem(ORIGINAL_TOKEN_KEY);
       sessionStorage.removeItem(ORIGINAL_TOKEN_KEY);
     }
 
     if (restoredToken) {
-      // Restore original token directly
       tokenUtils.save(restoredToken);
     } else {
-      // Fallback: ask backend for new token scoped to real org
       const result = await platformApi.exitSwitch();
       tokenUtils.save(result.token);
     }
 
-    // Refresh auth state from restored token
     const payload = tokenUtils.decode();
     setAuthState({
       user: payload ? userFromPayload(payload) : null,
@@ -285,10 +347,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     setImpersonation({ active: false, organizationName: '', organizationId: '' });
-
-    // Navigate back to platform
+    scheduleRefresh();
     router.push('/platform');
-  }, [router]);
+  }, [router, scheduleRefresh]);
 
   const value: AuthContextType = {
     ...authState,

@@ -2,7 +2,7 @@
  * Login Page
  *
  * Authenticates against User Management Service (port 9008).
- * Stores JWT in cookie for cross-subdomain compatibility.
+ * Stores JWT access + refresh tokens in cookies.
  * Uses same visual header/footer as marketing site.
  */
 'use client';
@@ -19,7 +19,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008';
 
 interface LoginResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
+  expires_in: number;
   user: {
     id: string;
     email: string;
@@ -27,6 +29,7 @@ interface LoginResponse {
     organization_name: string;
     organization_id: string;
     role: string;
+    is_platform_admin: boolean;
   };
 }
 
@@ -70,8 +73,11 @@ export default function LoginPage() {
 
       const data: LoginResponse = await response.json();
 
-      // Save JWT to cookie (shared domain with marketing site)
+      // Save access token to cookie
       tokenUtils.save(data.access_token);
+
+      // Save refresh token to cookie (7-day lifetime)
+      tokenUtils.saveRefreshToken(data.refresh_token);
 
       // Update AuthContext with new token data
       refreshAuth();

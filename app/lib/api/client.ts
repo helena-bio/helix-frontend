@@ -1,9 +1,9 @@
 /**
  * Base HTTP Client for Helix Insight API
- * Follows Lumiere pattern with proper error handling
  *
  * Reads JWT from cookie (shared with marketing site).
- * On 401 response, clears cookie and redirects to /login.
+ * On 401 response, attempts silent refresh before redirecting to /login.
+ * Concurrent 401s share a single refresh call (mutex pattern).
  */
 
 import { tokenUtils } from '@/lib/auth/token'
@@ -29,6 +29,62 @@ export class TimeoutError extends Error {
   }
 }
 
+// =========================================================================
+// SILENT REFRESH MUTEX
+// =========================================================================
+
+let refreshPromise: Promise<boolean> | null = null
+
+/**
+ * Attempt to refresh the access token using the stored refresh token.
+ * Returns true if refresh succeeded, false otherwise.
+ * Concurrent calls share the same in-flight promise.
+ */
+async function attemptTokenRefresh(): Promise<boolean> {
+  // If a refresh is already in progress, wait for it
+  if (refreshPromise) {
+    return refreshPromise
+  }
+
+  const refreshToken = tokenUtils.getRefreshToken()
+  if (!refreshToken) {
+    return false
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+
+      if (!response.ok) {
+        return false
+      }
+
+      const data = await response.json()
+      tokenUtils.save(data.access_token)
+
+      if (data.refresh_token) {
+        tokenUtils.saveRefreshToken(data.refresh_token)
+      }
+
+      return true
+    } catch {
+      return false
+    } finally {
+      refreshPromise = null
+    }
+  })()
+
+  return refreshPromise
+}
+
+// =========================================================================
+// REQUEST HELPERS
+// =========================================================================
+
 function getAuthToken(): string | null {
   return tokenUtils.get()
 }
@@ -40,8 +96,6 @@ function getHeaders(additionalHeaders?: HeadersInit): HeadersInit {
   }
 
   // Always send token if it exists -- let the server validate expiry.
-  // Previously this checked tokenUtils.isValid() which silently dropped
-  // the Authorization header when close to expiry, causing 401 cascades.
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
@@ -79,8 +133,8 @@ async function fetchWithTimeout(
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    // Handle 401 -- token expired or invalid
     if (response.status === 401) {
+      // Do NOT attempt refresh here -- handled by apiRequest retry logic
       tokenUtils.remove()
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.href = '/login'
@@ -113,6 +167,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return undefined as T
 }
 
+// =========================================================================
+// MAIN API REQUEST (with silent refresh on 401)
+// =========================================================================
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -127,8 +185,30 @@ export async function apiRequest<T>(
     timeout
   )
 
+  // On 401, try silent refresh then retry ONCE
+  if (response.status === 401) {
+    const refreshed = await attemptTokenRefresh()
+
+    if (refreshed) {
+      // Retry with new access token
+      const retryHeaders = getHeaders(options.headers)
+      const retryResponse = await fetchWithTimeout(
+        url,
+        { ...options, headers: retryHeaders },
+        timeout
+      )
+      return handleResponse<T>(retryResponse)
+    }
+
+    // Refresh failed -- fall through to handleResponse which redirects to /login
+  }
+
   return handleResponse<T>(response)
 }
+
+// =========================================================================
+// CONVENIENCE METHODS
+// =========================================================================
 
 export async function get<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'GET' })
@@ -168,7 +248,10 @@ export async function del<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, { method: 'DELETE' })
 }
 
-// File upload helper (without progress)
+// =========================================================================
+// FILE UPLOAD (without progress)
+// =========================================================================
+
 export async function uploadFile<T>(
   endpoint: string,
   file: File,
@@ -200,7 +283,10 @@ export async function uploadFile<T>(
   return handleResponse<T>(response)
 }
 
-// File upload with progress tracking
+// =========================================================================
+// FILE UPLOAD WITH PROGRESS
+// =========================================================================
+
 export async function uploadFileWithProgress<T>(
   endpoint: string,
   file: File,
