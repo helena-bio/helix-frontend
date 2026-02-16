@@ -516,30 +516,37 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           {/* SIDEBAR                                                      */}
           {/* =========================================================== */}
           <div className="w-56 shrink-0 space-y-6">
-            <nav className="space-y-1">
-              {sidebarItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => !item.disabled && setActiveSection(item.id)}
-                  className={`
-                    w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
-                    text-left text-base font-medium transition-colors
-                    ${item.disabled
-                      ? 'text-muted-foreground/40 cursor-not-allowed'
-                      : activeSection === item.id
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-2">
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && !item.disabled && <span className="shrink-0">{item.badge}</span>}
-                </button>
-              ))}
-            </nav>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Modules</CardTitle>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <nav className="space-y-1">
+                  {sidebarItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => !item.disabled && setActiveSection(item.id)}
+                      className={`
+                        w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg
+                        text-left text-base font-medium transition-colors
+                        ${item.disabled
+                          ? 'text-muted-foreground/40 cursor-not-allowed'
+                          : activeSection === item.id
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-2">
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </div>
+                      {item.badge && !item.disabled && <span className="shrink-0">{item.badge}</span>}
+                    </button>
+                  ))}
+                </nav>
+              </CardContent>
+            </Card>
 
             {/* Continue button */}
             <Button
