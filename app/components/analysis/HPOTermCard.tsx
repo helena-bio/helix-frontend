@@ -59,7 +59,7 @@ export function HPOTermCard({
         <CollapsibleTrigger asChild>
           <div className="flex items-center justify-between gap-3 p-3 cursor-pointer">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Badge variant="outline" className="text-xs font-mono flex-shrink-0">
+              <Badge variant="outline" className="text-sm font-mono flex-shrink-0">
                 {hpoId}
               </Badge>
               <span className="text-md font-medium truncate">{name}</span>
@@ -93,15 +93,15 @@ export function HPOTermCard({
           <div className="px-3 pb-3 pt-0">
             <div className="pl-3 border-l-2 border-primary/30">
               {showLoading ? (
-                <p className="text-sm text-muted-foreground italic">
+                <p className="text-md text-muted-foreground italic">
                   Loading definition...
                 </p>
               ) : definition ? (
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-md text-muted-foreground leading-relaxed">
                   {definition}
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground italic">
+                <p className="text-md text-muted-foreground italic">
                   No definition available
                 </p>
               )}

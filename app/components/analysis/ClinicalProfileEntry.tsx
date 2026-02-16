@@ -857,10 +857,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className="text-base font-medium">{term.name}</span>
-                                    <span className="text-xs text-muted-foreground">({term.hpo_id})</span>
+                                    <span className="text-sm text-muted-foreground">({term.hpo_id})</span>
                                   </div>
                                   {term.definition && (
-                                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                    <p className="text-md text-muted-foreground mt-1 line-clamp-2">
                                       {term.definition.replace(/^"/, '').replace(/".*$/, '')}
                                     </p>
                                   )}
