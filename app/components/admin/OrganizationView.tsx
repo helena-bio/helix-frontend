@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react'
 import { Check, Loader2, Building2 } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { fetchOrganization, updateOrganization, OrganizationDetails } from '@/lib/api/admin'
 
 export function OrganizationView() {
@@ -111,7 +112,8 @@ export function OrganizationView() {
         </div>
 
         {/* Organization Info Card */}
-        <div className="border border-border rounded-lg p-6 space-y-6">
+        <Card>
+          <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-14 w-14 rounded-lg bg-accent flex items-center justify-center">
               <Building2 className="h-7 w-7 text-muted-foreground" />
@@ -197,7 +199,8 @@ export function OrganizationView() {
               {saveSuccess ? 'Saved' : 'Save changes'}
             </button>
           </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

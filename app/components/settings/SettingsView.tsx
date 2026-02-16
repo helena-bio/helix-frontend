@@ -239,10 +239,9 @@ export function SettingsView() {
           </nav>
 
           {/* Right content */}
-          <div className="flex-1 min-w-0">
+          <Card className="flex-1 min-w-0">
+            <CardContent>
             {activeSection === 'general' && (
-              <Card>
-                <CardContent>
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground">Profile</h3>
 
@@ -411,13 +410,9 @@ export function SettingsView() {
                   </div>
                 )}
               </div>
-                </CardContent>
-              </Card>
             )}
 
             {activeSection === 'account' && (
-              <Card>
-                <CardContent>
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground">Account</h3>
 
@@ -437,10 +432,9 @@ export function SettingsView() {
                   </div>
                 </div>
               </div>
-                </CardContent>
-              </Card>
             )}
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
