@@ -1,67 +1,11 @@
 import { Header, Footer } from '@/components'
 import Link from 'next/link'
 import { RequestDemoButton } from '@/components/marketing/RequestDemoButton'
-import {
-  Microscope, Clock, BrainCircuit, Stethoscope,
-  Database, BookOpen, GitCompare, FileCheck,
-  ShieldCheck, UserCheck, MessageSquare, HeartPulse,
-  Lightbulb, TrendingUp, Users, Layers
-} from 'lucide-react'
 
 export const metadata = {
   title: 'For Geneticists | Helix Insight',
-  description: 'Helix Insight amplifies your clinical expertise. Evidence gathering in minutes, so you can focus on what only you can do -- clinical interpretation.',
+  description: 'Helix Insight is built for geneticists -- not instead of them. Evidence gathering in minutes, clinical decisions always yours.',
 }
-
-const helixDoes = [
-  { icon: Database, text: 'Cross-references ClinVar, gnomAD, dbNSFP, and ClinGen in seconds' },
-  { icon: BookOpen, text: 'Searches millions of PubMed publications for relevant literature' },
-  { icon: GitCompare, text: 'Maps ACMG/AMP criteria against variant evidence systematically' },
-  { icon: Layers, text: 'Matches patient phenotype (HPO) against gene-disease profiles' },
-  { icon: FileCheck, text: 'Formats structured reports with full evidence attribution' },
-  { icon: Clock, text: 'Completes evidence preparation in minutes, not days' },
-]
-
-const geneticistDoes = [
-  { icon: BrainCircuit, text: 'Applies clinical judgment that no algorithm can replicate' },
-  { icon: Stethoscope, text: 'Integrates patient history, family context, and clinical presentation' },
-  { icon: Microscope, text: 'Evaluates edge cases where guidelines require expert interpretation' },
-  { icon: UserCheck, text: 'Makes the final classification decision on every variant' },
-  { icon: MessageSquare, text: 'Communicates findings to patients and referring physicians' },
-  { icon: HeartPulse, text: 'Determines clinical actionability and management recommendations' },
-]
-
-const neverDoes = [
-  'Make a diagnostic decision',
-  'Override your clinical judgment',
-  'Classify a variant without your confirmation',
-  'Replace the context only you have about your patient',
-  'Communicate results to patients or clinicians',
-  'Determine treatment or management plans',
-]
-
-const amplifies = [
-  {
-    icon: Lightbulb,
-    title: 'Deeper Evidence Access',
-    description: 'Every variant is annotated with 60+ data points from established databases. Literature search covers millions of publications with pre-extracted gene and variant mentions. You see more evidence than manual search could surface in a day.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Consistent, Reproducible Workflow',
-    description: 'The same variant gets the same evidence package every time -- no missed databases, no overlooked publications. Your clinical interpretation is built on a complete, standardized foundation rather than what time permitted.',
-  },
-  {
-    icon: Users,
-    title: 'More Time for Complex Cases',
-    description: 'When routine evidence gathering takes minutes instead of hours, you have time for the cases that actually need your expertise -- rare variants, conflicting evidence, novel gene-disease associations, and challenging phenotypes.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Full Audit Trail',
-    description: 'Every database queried, every criterion applied, every publication cited is documented. When you sign a report, you can trace exactly where each piece of evidence came from. Your professional reputation is backed by complete transparency.',
-  },
-]
 
 export default function ForGeneticistsPage() {
   return (
@@ -73,230 +17,108 @@ export default function ForGeneticistsPage() {
         <section className="pt-28 pb-16 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h1 className="text-3xl font-bold tracking-tight text-primary">
-              Your Expertise Is Irreplaceable. Your Time Is Not.
+              Built for Geneticists
             </h1>
             <p className="text-base text-muted-foreground leading-relaxed">
-              Interpreting genetic variants requires years of specialized training, deep clinical knowledge, and the kind of judgment that cannot be automated. What can be automated is the hours spent cross-referencing databases, searching literature, and compiling evidence before your interpretation begins.
-            </p>
-            <p className="text-base text-muted-foreground leading-relaxed">
-              Helix Insight handles the evidence gathering. You do what only you can do.
+              Not instead of them.
             </p>
           </div>
         </section>
 
-        {/* The Real Bottleneck */}
+        {/* The work nobody talks about */}
         <section className="py-16 px-6 bg-muted/30">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
-                The Real Bottleneck
-              </h2>
-              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Clinical variant interpretation is not slow because geneticists think slowly. It is slow because evidence gathering is manual, repetitive, and time-consuming.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-card border border-border rounded-lg p-8 space-y-6">
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-foreground">Without Helix Insight</p>
-                  <p className="text-md text-muted-foreground">Per case, typical workflow</p>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">ClinVar lookup per variant</span>
-                    <span className="text-base font-medium text-foreground">~2 hours</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">PubMed literature search</span>
-                    <span className="text-base font-medium text-foreground">~3 hours</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">gnomAD frequency checks</span>
-                    <span className="text-base font-medium text-foreground">~1 hour</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">ACMG criteria mapping</span>
-                    <span className="text-base font-medium text-foreground">~2 hours</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">Report compilation</span>
-                    <span className="text-base font-medium text-foreground">~1 hour</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-3">
-                    <span className="text-base font-semibold text-foreground">Total evidence gathering</span>
-                    <span className="text-base font-bold text-foreground">5 -- 10 days</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-card border-2 border-primary/30 rounded-lg p-8 space-y-6">
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-foreground">With Helix Insight</p>
-                  <p className="text-md text-muted-foreground">Same case, same rigor</p>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">Automated evidence gathering</span>
-                    <span className="text-base font-medium text-primary">~30 minutes</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">Your clinical review</span>
-                    <span className="text-base font-medium text-foreground">30 -- 60 minutes</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-border">
-                    <span className="text-base text-muted-foreground">Your interpretation</span>
-                    <span className="text-base font-medium text-foreground">Your expertise</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-3">
-                    <span className="text-base font-semibold text-foreground">Total time to report</span>
-                    <span className="text-base font-bold text-primary">Under 2 hours</span>
-                  </div>
-                </div>
-                <p className="text-md text-muted-foreground text-center pt-2">
-                  Same evidence. Same standards. Your clinical judgment throughout.
-                </p>
-              </div>
-            </div>
+          <div className="max-w-3xl mx-auto space-y-6">
+            <h2 className="text-3xl font-bold text-primary text-center">
+              The Work Nobody Talks About
+            </h2>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              You spent years learning to interpret genetic variants. You understand the clinical nuance behind a VUS that sits right on the edge of pathogenicity. You know when a family history changes everything. You have the instinct to pause on a variant that looks benign on paper but does not fit the clinical picture.
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              And yet, most of your working hours are not spent doing any of that. They are spent copying variant identifiers into ClinVar. Scrolling through gnomAD for population frequencies. Running the same PubMed searches you ran last week for a different patient. Manually mapping ACMG criteria against evidence you already gathered but need to document again. Formatting reports.
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              This is not clinical genetics. This is data entry with a PhD.
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              Helix Insight was built by people who understand that distinction. The system handles the repetitive evidence gathering -- the database lookups, the literature searches, the criteria mapping, the report formatting. Not because these tasks are unimportant, but because they do not require the thing that makes you irreplaceable: your clinical judgment.
+            </p>
           </div>
         </section>
 
-        {/* Side by Side: What Each Does */}
+        {/* What does not change */}
         <section className="py-16 px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
-                Clear Division of Responsibility
-              </h2>
-              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Helix Insight is a tool, not a colleague. It has a clearly defined scope -- and everything outside that scope is yours.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Helix Column */}
-              <div className="space-y-4">
-                <div className="bg-muted/50 rounded-lg px-6 py-3 text-center">
-                  <p className="text-lg font-semibold text-foreground">What Helix Insight Does</p>
-                  <p className="text-md text-muted-foreground">Automated evidence gathering</p>
-                </div>
-                <div className="space-y-3">
-                  {helixDoes.map((item) => {
-                    const Icon = item.icon
-                    return (
-                      <div key={item.text} className="flex items-start gap-3 bg-card border border-border rounded-lg p-4">
-                        <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                          <Icon className="w-5 h-5 text-primary" />
-                        </div>
-                        <p className="text-base text-muted-foreground leading-relaxed">{item.text}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Geneticist Column */}
-              <div className="space-y-4">
-                <div className="bg-primary/10 rounded-lg px-6 py-3 text-center">
-                  <p className="text-lg font-semibold text-foreground">What You Do</p>
-                  <p className="text-md text-primary">Clinical expertise that cannot be automated</p>
-                </div>
-                <div className="space-y-3">
-                  {geneticistDoes.map((item) => {
-                    const Icon = item.icon
-                    return (
-                      <div key={item.text} className="flex items-start gap-3 bg-card border border-border rounded-lg p-4">
-                        <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                          <Icon className="w-5 h-5 text-primary" />
-                        </div>
-                        <p className="text-base text-muted-foreground leading-relaxed">{item.text}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
+          <div className="max-w-3xl mx-auto space-y-6">
+            <h2 className="text-3xl font-bold text-primary text-center">
+              What Does Not Change
+            </h2>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              You still review every variant. You still make the classification decision. You still decide what is clinically actionable for this specific patient with this specific history. You still sign the report. The system does not make diagnostic decisions -- not because it cannot be built to try, but because that is not what clinical genetics needs. Clinical genetics needs your expertise applied to better-prepared evidence. That is what Helix Insight provides.
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              Every ACMG criterion the system applies is traceable. Every literature reference links to its PMID. Every phenotype match shows you exactly which HPO terms contributed to the score. If you disagree with any finding, you override it. The final report carries your name, your interpretation, your professional judgment. The system is the research assistant. You are the geneticist.
+            </p>
           </div>
         </section>
 
-        {/* Your Expertise Amplified */}
+        {/* What does change */}
         <section className="py-16 px-6 bg-muted/30">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
-                Your Expertise, Amplified
-              </h2>
-              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Helix Insight does not make geneticists faster by cutting corners. It makes them faster by removing the bottleneck that has nothing to do with clinical skill.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {amplifies.map((item) => {
-                const Icon = item.icon
-                return (
-                  <div key={item.title} className="bg-card border border-border rounded-lg p-8 space-y-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
-                        <Icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          {item.title}
-                        </h3>
-                        <p className="text-base text-muted-foreground leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+          <div className="max-w-3xl mx-auto space-y-6">
+            <h2 className="text-3xl font-bold text-primary text-center">
+              What Does Change
+            </h2>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              You stop spending hours on evidence gathering that adds no clinical value beyond what the first 15 minutes already gave you. You stop worrying about whether you missed a publication because you did not have time to search one more database. You stop re-doing the same gnomAD lookups for the fifth time this week.
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              Instead, you open a case and the evidence is already there. Sixty data points per variant, pulled from ClinVar, gnomAD, dbNSFP, ClinGen, and millions of PubMed publications. Phenotype correlations computed against the HPO ontology. ACMG criteria pre-mapped with full transparency into why each criterion was applied. Everything organized, everything cited, everything auditable.
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              You spend your time where it matters -- reviewing the evidence, thinking about the case, making decisions that only you can make. The complex cases that used to get rushed because three more were waiting in the queue now get the attention they deserve.
+            </p>
           </div>
         </section>
 
-        {/* What Helix Insight Never Does */}
+        {/* The question nobody asks out loud */}
         <section className="py-16 px-6">
+          <div className="max-w-3xl mx-auto space-y-6">
+            <h2 className="text-3xl font-bold text-primary text-center">
+              The Question Nobody Asks Out Loud
+            </h2>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              If a tool can gather evidence in 30 minutes, does the laboratory still need the same number of geneticists?
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              The honest answer: yes, and probably more. The bottleneck in clinical genetics has never been a shortage of tools. It has been a shortage of trained geneticists relative to the volume of cases. Laboratories are not turning away work because evidence gathering is too easy. They are turning away work because there are not enough hours in the day. Faster evidence preparation means each geneticist can review more cases, take on more complex analyses, and spend more time on the clinical interpretation that patients are actually waiting for.
+            </p>
+            <p className="text-base text-muted-foreground leading-relaxed text-justify">
+              This is not about doing the same work with fewer people. It is about doing more work -- better work -- with the people who are already there.
+            </p>
+          </div>
+        </section>
+
+        {/* Closing */}
+        <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
-                What Always Stays in Your Hands
-              </h2>
-              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                These are not limitations of the software. These are design decisions. Clinical genetics requires human judgment, and Helix Insight is built to respect that.
+            <div className="bg-card border border-border rounded-lg p-8 text-center space-y-4">
+              <p className="text-lg font-semibold text-foreground leading-relaxed">
+                The geneticist decides. Helix Insight does the research.
               </p>
-            </div>
-
-            <div className="bg-card border border-border rounded-lg p-8">
-              <p className="text-lg font-semibold text-foreground mb-6">Helix Insight will never:</p>
-              <div className="space-y-4">
-                {neverDoes.map((item) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <div className="w-6 h-6 border-2 border-primary/30 rounded flex items-center justify-center shrink-0 mt-0.5">
-                      <div className="w-2 h-2 bg-primary rounded-full" />
-                    </div>
-                    <p className="text-base text-muted-foreground leading-relaxed">{item}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-8 pt-6 border-t border-border">
-                <p className="text-base text-foreground font-medium text-center leading-relaxed">
-                  The geneticist decides. Helix Insight does the research.
-                </p>
-              </div>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                This is not a slogan. It is how the system is architected. Every pipeline stage produces traceable output. Every classification requires human confirmation. Every report carries your name, not ours.
+              </p>
             </div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="py-16 px-6 bg-muted/30">
+        <section className="py-16 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h2 className="text-3xl font-bold text-primary">
-              See How It Supports Your Workflow
+              See It for Yourself
             </h2>
             <p className="text-base text-muted-foreground">
-              Request a demo to see Helix Insight process a real case -- and see exactly what lands on your desk for review.
+              Request a demo and see exactly what lands on your desk -- the evidence, the citations, the full audit trail. Then decide if it is useful.
             </p>
             <div className="flex items-center justify-center gap-4">
               <RequestDemoButton />
