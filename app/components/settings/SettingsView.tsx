@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { tokenUtils } from '@/lib/auth/token'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { AvatarCropModal } from '@/components/ui/AvatarCropModal'
+import { Card, CardContent } from '@/components/ui/card'
 
 type SettingsSection = 'general' | 'account'
 
@@ -238,7 +239,8 @@ export function SettingsView() {
           </nav>
 
           {/* Right content */}
-          <div className="flex-1 min-w-0">
+          <Card className="flex-1 min-w-0">
+            <CardContent className="pt-6">
             {activeSection === 'general' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-foreground">Profile</h3>
@@ -431,7 +433,8 @@ export function SettingsView() {
                 </div>
               </div>
             )}
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

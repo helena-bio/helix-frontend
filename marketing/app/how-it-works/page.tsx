@@ -175,7 +175,7 @@ export default function HowItWorksPage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-lg font-bold text-primary">
+              <h2 className="text-3xl font-bold text-primary">
                 The Analysis Pipeline
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -246,7 +246,7 @@ export default function HowItWorksPage() {
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-lg font-bold text-primary">
+              <h2 className="text-3xl font-bold text-primary">
                 Built for Clinical Trust
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -285,7 +285,7 @@ export default function HowItWorksPage() {
         {/* CTA */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="text-lg font-bold text-primary">
+            <h2 className="text-3xl font-bold text-primary">
               See the Pipeline in Action
             </h2>
             <p className="text-base text-muted-foreground">
