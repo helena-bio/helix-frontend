@@ -547,13 +547,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     <button
                       key={item.id}
                       onClick={() => {
-                        if (item.onToggle) {
-                          const newState = !item.checked
-                          item.onToggle(newState)
-                          if (item.hasPanel) {
-                            setActiveSection(newState ? item.id : 'patient')
-                          }
-                        } else if (item.hasPanel && !item.disabled) {
+                        if (item.hasPanel && !item.disabled) {
                           setActiveSection(item.id)
                         }
                       }}
@@ -579,7 +573,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                             aria-checked={item.checked}
                             onClick={(e) => {
                               e.stopPropagation()
-                              item.onToggle!(!item.checked)
+                              const newState = !item.checked
+                              item.onToggle!(newState)
+                              if (item.hasPanel) {
+                                setActiveSection(newState ? item.id : 'patient')
+                              }
                             }}
                             className={`
                               relative inline-flex h-5 w-9 items-center rounded-full

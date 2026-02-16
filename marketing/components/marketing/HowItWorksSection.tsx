@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Upload, Sparkles, FileText, ArrowRight } from 'lucide-react'
 
 const steps = [
@@ -67,6 +68,17 @@ export function HowItWorksSection() {
               </>
             )
           })}
+        </div>
+
+        {/* Link to detailed pipeline page */}
+        <div className="text-center mt-12">
+          <Link
+            href="/how-it-works"
+            className="inline-flex items-center gap-2 text-base text-primary hover:text-primary/80 font-medium transition-colors"
+          >
+            Learn more about our analysis pipeline
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </section>

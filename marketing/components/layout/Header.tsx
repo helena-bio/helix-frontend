@@ -40,6 +40,9 @@ export function Header() {
           <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors">
             About
           </Link>
+          <Link href="/how-it-works" className="text-base text-foreground hover:text-primary transition-colors">
+            How It Works
+          </Link>
           <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
             Contact
           </Link>
@@ -83,6 +86,13 @@ export function Header() {
               onClick={closeMobileMenu}
             >
               About
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="text-base text-foreground hover:text-primary transition-colors py-2"
+              onClick={closeMobileMenu}
+            >
+              How It Works
             </Link>
             <Link
               href="/contact"
