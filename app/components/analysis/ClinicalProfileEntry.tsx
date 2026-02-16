@@ -547,10 +547,14 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     <button
                       key={item.id}
                       onClick={() => {
-                        if (item.hasPanel && !item.disabled) {
+                        if (item.onToggle) {
+                          const newState = !item.checked
+                          item.onToggle(newState)
+                          if (item.hasPanel) {
+                            setActiveSection(newState ? item.id : 'patient')
+                          }
+                        } else if (item.hasPanel && !item.disabled) {
                           setActiveSection(item.id)
-                        } else if (!item.hasPanel && item.onToggle) {
-                          item.onToggle(!item.checked)
                         }
                       }}
                       className={`
