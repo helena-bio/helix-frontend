@@ -20,7 +20,7 @@ interface TableSectionProps {
 export function TableSection({ sessionId, onVariantClick }: TableSectionProps) {
   const { activeFilters, setPage } = useVariantsFilter()
 
-  console.log('🔄 TableSection render') // Debug log
+  console.log('[TableSection] render')
 
   // Subscribe to data - this WILL cause re-renders
   const { data, isLoading, error, isFetching } = useVariants(sessionId, activeFilters)

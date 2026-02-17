@@ -157,6 +157,14 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             {variant.chromosome}:{variant.position?.toLocaleString()}
             <span className="ml-2">{truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}</span>
           </p>
+          {/* HGVS notation - visible in collapsed preview */}
+          {(variant.hgvs_cdna || variant.hgvs_protein) && (
+            <p className="text-sm font-mono text-foreground/70 truncate mt-0.5" title={[variant.hgvs_cdna, variant.hgvs_protein].filter(Boolean).join(' | ')}>
+              {variant.hgvs_cdna && <span>{truncateSequence(variant.hgvs_cdna, 40)}</span>}
+              {variant.hgvs_cdna && variant.hgvs_protein && <span className="mx-1.5 text-muted-foreground">|</span>}
+              {variant.hgvs_protein && <span>{truncateSequence(variant.hgvs_protein, 30)}</span>}
+            </p>
+          )}
           <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
         </div>
         <div className="flex items-center gap-3">

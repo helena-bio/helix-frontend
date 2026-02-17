@@ -21,7 +21,7 @@ interface VariantsListProps {
 function VariantsListInner({ sessionId, onVariantClick }: VariantsListProps) {
   const { activeFilters } = useVariantsFilter()
 
-  console.log('📋 VariantsListInner render') // Debug log
+  console.log('[VariantsList] VariantsListInner render')
 
   // We need isFetching and data for FilterSection header
   // But we query with staleTime to minimize re-fetches
@@ -41,7 +41,7 @@ function VariantsListInner({ sessionId, onVariantClick }: VariantsListProps) {
       </CardHeader>
 
       {/* Table Section - Data consumer, re-renders on data change */}
-      <TableSection 
+      <TableSection
         sessionId={sessionId}
         onVariantClick={onVariantClick}
       />
@@ -51,7 +51,7 @@ function VariantsListInner({ sessionId, onVariantClick }: VariantsListProps) {
 
 // Main exported component
 export function VariantsList({ sessionId, onVariantClick }: VariantsListProps) {
-  console.log('🌳 VariantsList (Provider) render') // Debug log
+  console.log('[VariantsList] Provider render')
 
   return (
     <VariantsFilterProvider>
