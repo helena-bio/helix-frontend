@@ -565,7 +565,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   if (phase === 'qc_results' && qcResults) {
     // Check if genome build is supported
     const isGRCh37 = qcResults.genomeBuild === 'GRCh37'
-    const isSupported = qcResults.genomeBuild === 'GRCh38'
+    const isSupported = qcResults.genomeBuild === 'GRCh38' || isGRCh37
 
     return (
       <div className="flex flex-col min-h-[600px] p-8">
@@ -648,7 +648,12 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-ml font-semibold mb-1">Status</p>
-                  {isSupported ? (
+                  {isGRCh37 ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-amber-600" />
+                      <p className="text-base text-amber-600">Valid (auto-convert)</p>
+                    </div>
+                  ) : isSupported ? (
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600" />
                       <p className="text-base text-green-600">Valid</p>
@@ -662,13 +667,13 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 </div>
               </div>
 
-              {/* GRCh37 Warning */}
+              {/* GRCh37 Info - auto-conversion notice */}
               {isGRCh37 && (
-                <Alert variant="destructive" className="mt-4">
-                  <AlertCircle className="h-4 w-4" />
+                <Alert className="mt-4 border-amber-300 bg-amber-50 text-amber-900">
+                  <Info className="h-4 w-4 text-amber-600" />
                   <AlertDescription className="text-base">
-                    GRCh37 genome build is not supported. This system requires GRCh38 (hg38) VCF files.
-                    Please convert your VCF to GRCh38 using tools like Picard LiftoverVcf or CrossMap.
+                    GRCh37 (hg19) genome build detected. The file will be automatically converted
+                    to GRCh38 (hg38) during processing using coordinate liftover. No action required.
                   </AlertDescription>
                 </Alert>
               )}
