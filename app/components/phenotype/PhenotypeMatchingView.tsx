@@ -241,7 +241,7 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
   return (
     <Card className="gap-0">
       <CardHeader
-        className="cursor-pointer hover:bg-accent/50 transition-colors py-2"
+        className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={handleExpand}
       >
         <div className="flex items-center justify-between">

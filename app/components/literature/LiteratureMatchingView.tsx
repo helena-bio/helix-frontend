@@ -312,7 +312,7 @@ function GeneSection({ group, rank, onViewDetails }: GeneSectionProps) {
   return (
     <Card>
       <CardHeader
-        className="cursor-pointer hover:bg-accent/50 transition-colors py-2"
+        className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         {/* Flex layout with justify-between */}
