@@ -320,6 +320,7 @@ export function Sidebar() {
               <CasesList isOpen={isCasesOpen} onToggle={() => { setIsCasesOpen(!isCasesOpen); if (!isCasesOpen) setIsModulesOpen(false) }} />
             </div>
 
+            {!isCasesOpen && <div className="flex-1" />}
             {/* Admin Section - visible only for admin role */}
             {user?.role === 'admin' && (
               <div className="py-1 shrink-0 border-t border-border">
