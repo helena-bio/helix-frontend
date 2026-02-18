@@ -368,6 +368,7 @@ function TierCard({ count, tier, label, tooltip, isSelected, onClick, colorClass
 
 export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps) {
   const [geneFilter, setGeneFilter] = useState('')
+  const [isPhenoOpen, setIsPhenoOpen] = useState(false)
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
@@ -467,9 +468,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold">Clinical Phenotype Matching</h1>
-          <p className="text-base text-muted-foreground mt-1">
-            Prioritize variants by combined clinical evidence: pathogenicity, impact, phenotype match, and frequency.
-          </p>
         </div>
 
         {status === 'success' && hasResults && (
@@ -545,49 +543,50 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </div>
       )}
 
-      {/* Patient Phenotypes - Read Only */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            Patient Phenotypes
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            {isLoadingProfile || (!isProfileLoaded && selectedTerms.length === 0) ? (
-              <div className="flex items-center gap-2 py-4 justify-center">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <span className="text-base text-muted-foreground">Loading phenotypes...</span>
-              </div>
-            ) : selectedTerms.length === 0 ? (
-              <p className="text-base text-muted-foreground py-4 text-center">
-                No phenotypes defined for this case.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {selectedTerms.map((term) => (
-                  <Badge
-                    key={term.hpo_id}
-                    variant="secondary"
-                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
-                  >
-                    {term.name}
+      {/* Patient Phenotypes - Collapsible */}
+          <Card className="gap-0">
+            <CardHeader
+              className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
+              onClick={() => setIsPhenoOpen(!isPhenoOpen)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-base font-medium">Patient Phenotypes</span>
+                  <Badge variant="secondary" className="text-sm">
+                    {selectedTerms.length} term{selectedTerms.length !== 1 ? 's' : ''}
                   </Badge>
-                ))}
+                </div>
+                {isPhenoOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </div>
+            </CardHeader>
+            {isPhenoOpen && (
+              <CardContent>
+                {isLoadingProfile || (!isProfileLoaded && selectedTerms.length === 0) ? (
+                  <div className="flex items-center gap-2 py-4 justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Loading phenotypes...</span>
+                  </div>
+                ) : selectedTerms.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    No phenotypes defined for this case.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTerms.map((term) => (
+                      <Badge
+                        key={term.hpo_id}
+                        variant="secondary"
+                        className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
+                      >
+                        {term.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
             )}
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground">
-              Clinical Priority Score = ACMG (35%) + Impact (25%) + Phenotype (25%) + Frequency (15%).
-              Results are saved to DuckDB and loaded automatically.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </Card>
 
       {/* Loading State */}
       {(status === 'loading' || (isLoading && !aggregatedResults)) && (
@@ -638,16 +637,21 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
               onChange={(e) => setGeneFilter(e.target.value)}
               className="max-w-xs text-md"
             />
-            <span className="text-md text-muted-foreground">
-              Showing {visibleResults.length} of {filteredResults.length} genes
-              {tierFilter !== 'all' && ` (filtered by ${tierFilter})`}
-            </span>
-          </div>
-
-          <p className="text-md text-muted-foreground">
-            Sorted by Clinical Priority Score. Higher scores indicate stronger clinical relevance.
-            {tierFilter !== 'all' && ' Showing only variants matching selected tier.'}
-          </p>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-sm text-muted-foreground cursor-default inline-flex items-center gap-1">
+                      Showing {visibleResults.length} of {filteredResults.length} genes
+                      {tierFilter !== 'all' && ` (filtered by ${tierFilter})`}
+                      <Info className="h-3.5 w-3.5 opacity-50" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-sm max-w-xs">
+                    <p>Sorted by Clinical Priority Score. Higher scores indicate stronger clinical relevance.
+                    {tierFilter !== 'all' && ' Showing only variants matching selected tier.'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
           {/* Gene Cards */}
           {visibleResults.map((geneResult, idx) => (
