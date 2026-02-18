@@ -647,7 +647,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       {/* Impact Filter Pills */}
       {hasResults && (
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Impact:</span>
+          
           {[
             { key: "HIGH" as ImpactFilter, label: "HIGH", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-900" },
             { key: "MODERATE" as ImpactFilter, label: "MOD", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
