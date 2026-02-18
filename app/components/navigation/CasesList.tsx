@@ -84,8 +84,12 @@ function getCaseDisplayName(session: AnalysisSession): string {
   return session.id.slice(0, 8)
 }
 
+interface CasesListProps {
+  isOpen: boolean
+  onToggle: () => void
+}
 
-export function CasesList() {
+export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const router = useRouter()
   const { currentSessionId, setCurrentSessionId, setSelectedModule } = useSession()
   const { skipToAnalysis, resetJourney } = useJourney()
@@ -96,7 +100,6 @@ export function CasesList() {
   const renameMutation = useRenameCase()
   const deleteMutation = useDeleteCase()
 
-  const [isOpen, setIsOpen] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -182,7 +185,7 @@ export function CasesList() {
       {/* Section header */}
       <button
         className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={onToggle}
       >
         <span>Cases</span>
         <div className="flex items-center gap-1.5">

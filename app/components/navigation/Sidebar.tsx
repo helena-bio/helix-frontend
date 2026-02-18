@@ -91,6 +91,7 @@ export function Sidebar() {
 
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isModulesOpen, setIsModulesOpen] = useState(true)
+  const [isCasesOpen, setIsCasesOpen] = useState(true)
   const [isAdminOpen, setIsAdminOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -270,7 +271,7 @@ export function Sidebar() {
             <div className="border-t border-border py-1 shrink-0">
               <button
                 className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
-                onClick={() => setIsModulesOpen(!isModulesOpen)}
+                onClick={() => { setIsModulesOpen(!isModulesOpen); if (!isModulesOpen) setIsCasesOpen(false) }}
               >
                 <span>Modules</span>
                 <ChevronDown
@@ -315,8 +316,8 @@ export function Sidebar() {
             </div>
 
             {/* Cases List (collapsible) */}
-            <div className="flex-1 min-h-0 overflow-y-auto border-t border-border">
-              <CasesList />
+            <div className={cn("border-t border-border", isCasesOpen ? "flex-1 min-h-0 overflow-y-auto" : "border-b shrink-0")}>
+              <CasesList isOpen={isCasesOpen} onToggle={() => { setIsCasesOpen(!isCasesOpen); if (!isCasesOpen) setIsModulesOpen(false) }} />
             </div>
 
             {/* Admin Section - visible only for admin role */}
