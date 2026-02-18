@@ -650,7 +650,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           
           {[
             { key: "HIGH" as ImpactFilter, label: "HIGH", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-900" },
-            { key: "MODERATE" as ImpactFilter, label: "MOD", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
+            { key: "MODERATE" as ImpactFilter, label: "MODERATE", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
             { key: "LOW" as ImpactFilter, label: "LOW", count: impactCounts.low, color: "border-yellow-200 bg-yellow-50 text-yellow-900" },
             { key: "MODIFIER" as ImpactFilter, label: "MODIFIER", count: impactCounts.modifier, color: "border-gray-200 bg-gray-50 text-gray-700" },
           ].map(({ key, label, count, color }) => (
