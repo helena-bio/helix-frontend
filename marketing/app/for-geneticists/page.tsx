@@ -80,9 +80,9 @@ export default function ForGeneticistsPage() {
                 className="w-full h-full object-cover"
                 controls
                 preload="metadata"
-                poster="/video/helixinsight_preview.jpg"
+                poster=""
               >
-                <source src="/video/helixinsight_preview.mp4" type="video/mp4" />
+                <source src="/video/Build_for_the_geneticists.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
