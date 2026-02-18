@@ -376,8 +376,8 @@ function TierCard({ count, label, tooltip, isSelected, onClick, colorClasses }: 
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <p className="text-ml font-semibold">{count.toLocaleString()}</p>
-        <p className="text-base font-semibold">{label}</p>
+        <p className="text-lg font-semibold">{count.toLocaleString()}</p>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
   )
