@@ -16,6 +16,6 @@ export function useClinicalProfile(sessionId: string | null) {
       return getClinicalProfile(sessionId)
     },
     enabled: !!sessionId,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 30,
   })
 }

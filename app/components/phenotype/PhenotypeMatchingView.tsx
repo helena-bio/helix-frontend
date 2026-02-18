@@ -387,7 +387,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     if (node) observerRef.current.observe(node)
   }, [])
 
-  const { hpoTerms } = useClinicalProfileContext()
+  const { hpoTerms, isLoadingProfile, isProfileLoaded } = useClinicalProfileContext()
   const {
     status,
     isLoading,
@@ -555,7 +555,12 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {selectedTerms.length === 0 ? (
+            {isLoadingProfile || (!isProfileLoaded && selectedTerms.length === 0) ? (
+              <div className="flex items-center gap-2 py-4 justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="text-base text-muted-foreground">Loading phenotypes...</span>
+              </div>
+            ) : selectedTerms.length === 0 ? (
               <p className="text-base text-muted-foreground py-4 text-center">
                 No phenotypes defined for this case.
               </p>
