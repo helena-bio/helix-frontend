@@ -266,7 +266,7 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, tierFilter }
         <div className="flex items-center justify-between">
           {/* Left: Rank + Gene + Tier + Variants + ACMG */}
           <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
+            <span className="text-lg font-semibold text-muted-foreground w-8">#{rank}</span>
             <span className="text-lg font-semibold w-16">{gene.gene_symbol}</span>
             <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(gene.best_tier)}`}>
               {formatTierDisplay(gene.best_tier)}
@@ -376,7 +376,7 @@ function TierCard({ count, label, tooltip, isSelected, onClick, colorClasses }: 
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <p className="text-ml font-bold">{count.toLocaleString()}</p>
+        <p className="text-ml font-semibold">{count.toLocaleString()}</p>
         <p className="text-base font-semibold">{label}</p>
       </CardContent>
     </Card>

@@ -319,7 +319,7 @@ function GeneSection({ group, rank, onViewDetails }: GeneSectionProps) {
         <div className="flex items-center justify-between">
           {/* Left: Rank + Gene + Tier + Publications + Phenotype Rank */}
           <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
+            <span className="text-lg font-semibold text-muted-foreground w-8">#{rank}</span>
             <span className="text-lg font-semibold w-16">{group.gene}</span>
             {group.clinicalTier && (
               <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(group.clinicalTier)}`}>

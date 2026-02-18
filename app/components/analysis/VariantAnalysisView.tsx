@@ -314,7 +314,7 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
         <div className="flex items-center justify-between">
           {/* Left: Rank + Gene + ACMG + Tier + Variants */}
           <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-muted-foreground w-8">#{rank}</span>
+            <span className="text-lg font-semibold text-muted-foreground w-8">#{rank}</span>
             <span className="text-lg font-semibold w-20">{gene.gene_symbol}</span>
             {gene.best_acmg_class && (
               <Badge variant="outline" className={`text-sm w-12 justify-center ${getACMGColor(gene.best_acmg_class)}`}>
