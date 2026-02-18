@@ -329,71 +329,8 @@ export async function createNote(
   variantIdx?: number
 ): Promise<CaseNote> {
   return post<CaseNote>(`/sessions/${sessionId}/notes`, {
-}
-
-/**
- * Update a note. Author only.
- */
-export async function updateNote(
-  sessionId: string,
-  noteId: string,
-  text: string
-): Promise<CaseNote> {
-  return patch<CaseNote>(`/sessions/${sessionId}/notes/${noteId}`, { text })
-}
-
-/**
- * Delete a note. Author only.
- */
-export async function deleteNote(
-  sessionId: string,
-  noteId: string
-): Promise<void> {
-  return del(`/sessions/${sessionId}/notes/${noteId}`)
     text,
-}
-
-/**
- * Update a note. Author only.
- */
-export async function updateNote(
-  sessionId: string,
-  noteId: string,
-  text: string
-): Promise<CaseNote> {
-  return patch<CaseNote>(`/sessions/${sessionId}/notes/${noteId}`, { text })
-}
-
-/**
- * Delete a note. Author only.
- */
-export async function deleteNote(
-  sessionId: string,
-  noteId: string
-): Promise<void> {
-  return del(`/sessions/${sessionId}/notes/${noteId}`)
     variant_idx: variantIdx ?? null,
-}
-
-/**
- * Update a note. Author only.
- */
-export async function updateNote(
-  sessionId: string,
-  noteId: string,
-  text: string
-): Promise<CaseNote> {
-  return patch<CaseNote>(`/sessions/${sessionId}/notes/${noteId}`, { text })
-}
-
-/**
- * Delete a note. Author only.
- */
-export async function deleteNote(
-  sessionId: string,
-  noteId: string
-): Promise<void> {
-  return del(`/sessions/${sessionId}/notes/${noteId}`)
   })
 }
 
