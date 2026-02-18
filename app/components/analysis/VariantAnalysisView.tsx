@@ -140,6 +140,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <StarButton variantIdx={variant.variant_idx} />
             {variant.acmg_class && (
               <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
                 {formatACMGDisplay(variant.acmg_class)}
@@ -249,7 +250,6 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 
           {/* View Details Button */}
           <div className="pt-2 border-t flex items-center gap-3">
-            <StarButton variantIdx={variant.variant_idx} />
             <Button
               variant="outline"
               size="sm"
