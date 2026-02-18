@@ -46,6 +46,7 @@ import {
   ConsequenceBadges,
 } from '@/components/shared'
 import type { SessionMatchResult } from '@/lib/api/hpo'
+import { getRarityBadge } from '@helix/shared/lib/utils'
 
 interface PhenotypeMatchingViewProps {
   sessionId: string
@@ -80,84 +81,73 @@ interface VariantCardProps {
 
 function VariantCard({ variant, onViewDetails }: VariantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const rarity = getRarityBadge(variant.gnomad_af)
 
   return (
     <div
-      className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+      className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
       onClick={() => setIsExpanded(!isExpanded)}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <Badge variant="outline" className={`text-sm ${getTierColor(variant.clinical_tier)}`}>
-              {formatTierDisplay(variant.clinical_tier)}
-            </Badge>
-            <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
-              {formatACMGDisplay(variant.acmg_class)}
-            </Badge>
-            <Badge variant="outline" className={`text-sm ${getImpactColor(variant.impact)}`}>
-              {variant.impact || 'Unknown'}
-            </Badge>
-            <Badge variant="outline" className={`text-sm ${getScoreColor(variant.clinical_priority_score)}`}>
-              {variant.clinical_priority_score.toFixed(1)}
-            </Badge>
-          </div>
-          <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
-          {variant.gnomad_af && (
-            <p className="text-sm text-muted-foreground mt-1">
-              <span className="font-mono">AF: {variant.gnomad_af.toExponential(2)}</span>
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-base font-medium">{variant.phenotype_match_score.toFixed(0)}%</p>
-            <p className="text-sm text-muted-foreground">HPO Match</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsExpanded(!isExpanded)
-            }}
-          >
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </div>
+      {/* Compact single-line row */}
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <Badge variant="outline" className={`text-sm ${getTierColor(variant.clinical_tier)}`}>
+          {formatTierDisplay(variant.clinical_tier)}
+        </Badge>
+        <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
+          {formatACMGDisplay(variant.acmg_class)}
+        </Badge>
+        <ConsequenceBadges consequence={variant.consequence} maxBadges={1} />
+        {variant.hgvs_protein && (
+          <span className="text-sm font-mono font-semibold text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
+            {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : variant.hgvs_protein}
+          </span>
+        )}
+        <Badge variant="outline" className={`text-sm ${rarity.color}`}>
+          {rarity.label}
+        </Badge>
+        <Badge className={`text-sm ${getScoreColor(variant.clinical_priority_score)}`}>
+          <TrendingUp className="h-3 w-3 mr-1" />
+          {variant.clinical_priority_score.toFixed(1)}
+        </Badge>
+        <div className="flex-1" />
+        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </div>
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="mt-4 space-y-4">
-          {/* Score Breakdown */}
-          <div>
-            <p className="text-base font-semibold mb-2">Score Breakdown</p>
-            <div className="grid grid-cols-2 gap-2 text-md">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">ACMG Weight</span>
-                <span>35%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Impact Weight</span>
-                <span>25%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Phenotype Weight</span>
-                <span>25%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Frequency Weight</span>
-                <span>15%</span>
-              </div>
+        <div className="px-3 pb-3 pt-1 space-y-4 border-t">
+          {/* Variant Details */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+            <div className="min-w-0">
+              <p className="text-md text-muted-foreground">HGVS Protein</p>
+              <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>{variant.hgvs_protein || '-'}</p>
+            </div>
+            <div className="min-w-0">
+              <p className="text-md text-muted-foreground">HGVS cDNA</p>
+              <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>{variant.hgvs_cdna || '-'}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground">Depth</p>
+              <p className="text-md">{variant.depth || '-'}</p>
+            </div>
+            <div>
+              <p className="text-md text-muted-foreground">Quality</p>
+              <p className="text-md">{variant.quality?.toFixed(1) || '-'}</p>
             </div>
           </div>
+
+          {/* gnomAD AF detail */}
+          {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 && (
+            <div>
+              <p className="text-md text-muted-foreground mb-1">gnomAD Allele Frequency</p>
+              <p className="text-md font-mono">{variant.gnomad_af.toExponential(2)} (1 in {Math.round(1 / variant.gnomad_af).toLocaleString()})</p>
+            </div>
+          )}
 
           {/* Individual HPO Matches */}
           {variant.individual_matches && variant.individual_matches.length > 0 && (
             <div>
-              <p className="text-base font-semibold mb-2">HPO Term Matches</p>
+              <p className="text-md text-muted-foreground mb-2">HPO Term Matches</p>
               <div className="space-y-1">
                 {variant.individual_matches
                   .filter(m => m.similarity_score > 0)
@@ -197,6 +187,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
   )
 }
 
+interface GeneSectionProps
 interface GeneSectionProps {
   geneResult: GeneAggregatedResult
   rank: number
