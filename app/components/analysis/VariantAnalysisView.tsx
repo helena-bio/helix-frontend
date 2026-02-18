@@ -49,6 +49,7 @@ import {
   StarButton,
 } from '@/components/shared'
 import type { GeneAggregated, VariantInGene } from '@/types/variant.types'
+import { formatCount } from '@/shared/lib/utils'
 
 interface VariantAnalysisViewProps {
   sessionId: string
@@ -417,7 +418,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <p className="text-lg font-semibold">{count.toLocaleString()}</p>
+        <TooltipProvider delayDuration={200}><Tooltip><TooltipTrigger asChild><p className="text-lg font-semibold cursor-default">{formatCount(count)}</p></TooltipTrigger><TooltipContent><p>{count.toLocaleString()} variants</p></TooltipContent></Tooltip></TooltipProvider>
         <p className="text-md font-medium">{label}</p>
       </CardContent>
     </Card>
@@ -643,42 +644,29 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
         </div>
       )}
 
-      {/* Impact Cards */}
+      {/* Impact Filter Pills */}
       {hasResults && (
-        <div className="grid grid-cols-4 gap-3">
-          <FilterCard
-            count={impactCounts.high}
-            label="HIGH"
-            tooltip="High impact variants - frameshift, stop gained, splice donor/acceptor"
-            isSelected={impactFilter === 'HIGH'}
-            onClick={() => handleImpactClick('HIGH')}
-            colorClasses="border-red-200 bg-red-50 text-red-900"
-          />
-          <FilterCard
-            count={impactCounts.moderate}
-            label="MODERATE"
-            tooltip="Moderate impact variants - missense, in-frame indels"
-            isSelected={impactFilter === 'MODERATE'}
-            onClick={() => handleImpactClick('MODERATE')}
-            colorClasses="border-orange-200 bg-orange-50 text-orange-900"
-          />
-          <FilterCard
-            count={impactCounts.low}
-            label="LOW"
-            tooltip="Low impact variants - synonymous, splice region"
-            isSelected={impactFilter === 'LOW'}
-            onClick={() => handleImpactClick('LOW')}
-            colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900"
-          />
-          <FilterCard
-            count={impactCounts.modifier}
-            label="MODIFIER"
-            tooltip="Modifier variants - intron, intergenic, UTR"
-            isSelected={impactFilter === 'MODIFIER'}
-            onClick={() => handleImpactClick('MODIFIER')}
-            colorClasses="border-gray-200 bg-gray-50 text-gray-700"
-          />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Impact:</span>
+          {[
+            { key: "HIGH" as ImpactFilter, label: "HIGH", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-900" },
+            { key: "MODERATE" as ImpactFilter, label: "MOD", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
+            { key: "LOW" as ImpactFilter, label: "LOW", count: impactCounts.low, color: "border-yellow-200 bg-yellow-50 text-yellow-900" },
+            { key: "MODIFIER" as ImpactFilter, label: "MODIFIER", count: impactCounts.modifier, color: "border-gray-200 bg-gray-50 text-gray-700" },
+          ].map(({ key, label, count, color }) => (
+            <button
+              key={key}
+              onClick={() => handleImpactClick(key)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-sm font-medium transition-all cursor-pointer ${color} ${
+                impactFilter === key ? "ring-2 ring-gray-400 ring-offset-1" : "hover:ring-1 hover:ring-gray-300"
+              }`}
+              title={`${count.toLocaleString()} ${label} impact variants`}
+            >
+              {label}<span className="opacity-70">·</span>{formatCount(count)}
+            </button>
+          ))}
         </div>
+      )}
       )}
 
       {/* Loading State */}
