@@ -244,36 +244,32 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
         className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
         onClick={handleExpand}
       >
-        <div className="flex items-center justify-between">
-          {/* Left: Rank + Gene + Tier + Variants */}
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground w-8">#{rank}</span>
-            <span className="text-base font-medium w-16">{geneResult.gene_symbol}</span>
-            <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(geneResult.best_tier)}`}>
-              {formatTierDisplay(geneResult.best_tier)}
-            </Badge>
-            <Badge variant="secondary" className="text-sm">
-              {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
-              {tierFilter !== 'all' && ` (${tierFilter})`}
-            </Badge>
-            {/* Matched terms count */}
-            {geneResult.best_matched_terms > 0 && (
-              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                {geneResult.best_matched_terms}/{geneResult.total_patient_terms} HPO matched
+          <div className="flex items-center justify-between">
+            {/* Left: Rank + Gene + Tier + Score */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground w-8">#{rank}</span>
+              <span className="text-base font-medium w-16">{geneResult.gene_symbol}</span>
+              <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(geneResult.best_tier)}`}>
+                {formatTierDisplay(geneResult.best_tier)}
               </Badge>
-            )}
-          </div>
+              <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
+                <TrendingUp className="h-3 w-3 mr-1" />
+                {geneResult.best_clinical_score.toFixed(1)}
+              </Badge>
+              {geneResult.best_matched_terms > 0 && (
+                <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                  {geneResult.best_matched_terms}/{geneResult.total_patient_terms} HPO matched
+                </Badge>
+              )}
+            </div>
 
-          {/* Right: Score + HPO + Chevron */}
-          <div className="flex items-center gap-2">
-            <Badge className={`text-sm ${getScoreColor(geneResult.best_clinical_score)}`}>
-              <TrendingUp className="h-3 w-3 mr-1" />
-              {geneResult.best_clinical_score.toFixed(1)}
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              HPO: {geneResult.best_phenotype_score.toFixed(0)}%
-            </span>
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {/* Right: Variant count + Chevron */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
+              </span>
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
           </div>
         </div>
       </CardHeader>
