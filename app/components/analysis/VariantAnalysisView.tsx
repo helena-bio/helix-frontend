@@ -150,9 +150,9 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             {formatACMGDisplay(variant.acmg_class)}
           </Badge>
         )}
-        <ConsequenceBadges consequence={variant.consequence} />
+        <ConsequenceBadges consequence={variant.consequence} maxBadges={1} />
         {variant.hgvs_protein && (
-          <span className="text-sm font-mono text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
+          <span className="text-sm font-mono font-medium text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
             {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
           </span>
         )}
