@@ -245,7 +245,7 @@ export function Header() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-sm"
+                  className="h-8 text-base font-medium"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download Report
