@@ -586,7 +586,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
           </p>
 
           {/* Variant Cards */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredVariants.map((variant) => (
               <ReviewVariantCard
                 key={variant.variant_idx}

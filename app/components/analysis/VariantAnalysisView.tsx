@@ -692,7 +692,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
 
       {/* Results */}
       {!isLoading && hasResults && (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* Filter */}
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-muted-foreground" />
