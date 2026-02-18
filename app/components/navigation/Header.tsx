@@ -231,7 +231,7 @@ export function Header() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 text-base font-medium"
+              className="h-8 text-md font-medium"
               onClick={() => router.push('/platform')}
             >
               <Shield className="h-4 w-4 mr-2" />
@@ -245,7 +245,7 @@ export function Header() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 text-base font-medium"
+                  className="h-8 text-md font-medium"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download Report
