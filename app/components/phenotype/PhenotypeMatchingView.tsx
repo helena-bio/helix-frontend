@@ -105,11 +105,11 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
         <Badge variant="outline" className={`text-sm ${rarity.color}`}>
           {rarity.label}
         </Badge>
+        <div className="flex-1" />
         <Badge className={`text-sm ${getScoreColor(variant.clinical_priority_score)}`}>
           <TrendingUp className="h-3 w-3 mr-1" />
           {variant.clinical_priority_score.toFixed(1)}
         </Badge>
-        <div className="flex-1" />
         {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </div>
 
