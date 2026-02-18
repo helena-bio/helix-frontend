@@ -38,6 +38,7 @@ import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/Pheno
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import {
   getACMGColor,
+  getZygosityBadge,
   getImpactColor,
   getTierColor,
   getScoreColor,
@@ -82,6 +83,7 @@ interface VariantCardProps {
 function VariantCard({ variant, onViewDetails }: VariantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const rarity = getRarityBadge(variant.gnomad_af)
+  const zygosity = getZygosityBadge(variant.genotype)
 
   return (
     <div
@@ -104,6 +106,9 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
         )}
         <Badge variant="outline" className={`text-sm ${rarity.color}`}>
           {rarity.label}
+        </Badge>
+        <Badge variant="outline" className={`text-sm ${zygosity.color}`}>
+          {zygosity.label}
         </Badge>
         <div className="flex-1" />
         <Badge className={`text-sm ${getScoreColor(variant.clinical_priority_score)}`}>
