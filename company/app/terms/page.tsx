@@ -13,7 +13,7 @@ export default function TermsOfServicePage() {
         <article className="max-w-4xl mx-auto space-y-10">
 
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold text-primary">Terms of Service</h1>
+            <h1 className="text-3xl font-semibold text-primary">Terms of Service</h1>
             <p className="text-sm text-muted-foreground">Last updated: February 2026</p>
             <p className="text-base text-foreground leading-relaxed">
               These Terms of Service (&quot;Terms&quot;) govern your access to and use of the Helix Insight platform operated by Helena Bioinformatics EOOD (&quot;Helena Bioinformatics&quot;, &quot;we&quot;, &quot;us&quot;). By accessing or using the platform, you agree to be bound by these Terms.

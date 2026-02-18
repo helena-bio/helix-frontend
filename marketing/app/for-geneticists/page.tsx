@@ -72,7 +72,7 @@ export default function ForGeneticistsPage() {
         {/* Hero with Video */}
         <section className="pt-28 pb-16 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-8">
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
+            <h1 className="text-3xl font-semibold tracking-tight text-primary">
               Your Expertise Is Irreplaceable. Your Time Is Not.
             </h1>
             <div className="w-full aspect-video bg-muted/30 border border-border rounded-lg overflow-hidden shadow-lg">
@@ -101,7 +101,7 @@ export default function ForGeneticistsPage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
+              <h2 className="text-3xl font-semibold text-primary">
                 The Real Bottleneck
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -138,7 +138,7 @@ export default function ForGeneticistsPage() {
                   </div>
                   <div className="flex justify-between items-center pt-3">
                     <span className="text-base font-semibold text-foreground">Total evidence gathering</span>
-                    <span className="text-base font-bold text-foreground">5 -- 10 days</span>
+                    <span className="text-base font-semibold text-foreground">5 -- 10 days</span>
                   </div>
                 </div>
               </div>
@@ -163,7 +163,7 @@ export default function ForGeneticistsPage() {
                   </div>
                   <div className="flex justify-between items-center pt-3">
                     <span className="text-base font-semibold text-foreground">Total time to report</span>
-                    <span className="text-base font-bold text-primary">Under 2 hours</span>
+                    <span className="text-base font-semibold text-primary">Under 2 hours</span>
                   </div>
                 </div>
                 <p className="text-md text-muted-foreground text-center pt-2">
@@ -178,7 +178,7 @@ export default function ForGeneticistsPage() {
         <section className="py-16 px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
+              <h2 className="text-3xl font-semibold text-primary">
                 Clear Division of Responsibility
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -236,7 +236,7 @@ export default function ForGeneticistsPage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
+              <h2 className="text-3xl font-semibold text-primary">
                 Your Expertise, Amplified
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -273,7 +273,7 @@ export default function ForGeneticistsPage() {
         <section className="py-16 px-6">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
+              <h2 className="text-3xl font-semibold text-primary">
                 What Always Stays in Your Hands
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -305,7 +305,7 @@ export default function ForGeneticistsPage() {
         {/* CTA */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl font-bold text-primary">
+            <h2 className="text-3xl font-semibold text-primary">
               See How It Supports Your Workflow
             </h2>
             <p className="text-base text-muted-foreground">

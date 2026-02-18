@@ -516,7 +516,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} animated={isSaving} />
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">Clinical Profile</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Clinical Profile</h1>
             <p className="text-base text-muted-foreground">
               Clinical data for variant analysis
             </p>

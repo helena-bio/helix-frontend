@@ -98,7 +98,7 @@ export function QCMetrics({
               <p className="text-sm text-muted-foreground mb-1">
                 Total Variants
               </p>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-semibold">
                 {metrics.total_variants.toLocaleString()}
               </p>
             </div>
@@ -121,7 +121,7 @@ export function QCMetrics({
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-semibold">
                 {metrics.ti_tv_ratio.toFixed(2)}
               </p>
             </div>
@@ -143,7 +143,7 @@ export function QCMetrics({
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-semibold">
                 {metrics.het_hom_ratio.toFixed(2)}
               </p>
             </div>
@@ -153,7 +153,7 @@ export function QCMetrics({
               <p className="text-sm text-muted-foreground mb-1">
                 Mean Depth
               </p>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-semibold">
                 {metrics.mean_depth.toFixed(1)}x
               </p>
             </div>

@@ -172,7 +172,7 @@ function HPOPhenotypeCard({ hpoId, name, index }: HPOPhenotypeCardProps) {
           <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-muted-foreground w-8">
+                <span className="text-lg font-semibold text-muted-foreground w-8">
                   #{index + 1}
                 </span>
                 <span className="text-lg font-semibold">{name}</span>
@@ -398,7 +398,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
         <div>
           <div className="flex items-baseline gap-3 flex-wrap">
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-semibold">
               {variant.gene_symbol || 'Unknown Gene'}
             </h2>
             <StarButton variantIdx={variantIdx} size="md" />
@@ -450,11 +450,11 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
                   <p className="text-base text-muted-foreground">Confidence</p>
-                  <p className="text-md font-bold">{variant.confidence_score?.toFixed(2) || '-'}</p>
+                  <p className="text-md font-semibold">{variant.confidence_score?.toFixed(2) || '-'}</p>
                 </div>
                 <div>
                   <p className="text-base text-muted-foreground">Priority Score</p>
-                  <p className="text-md font-bold">{variant.priority_score?.toFixed(1) || '-'}</p>
+                  <p className="text-md font-semibold">{variant.priority_score?.toFixed(1) || '-'}</p>
                 </div>
               </div>
             </CardContent>

@@ -250,7 +250,7 @@ export default function InvitePage() {
           <div className="w-full max-w-md text-center space-y-4">
             <div className="bg-card border border-border rounded-lg p-8 shadow-sm space-y-4">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
-              <h1 className="text-2xl font-bold text-foreground">Invalid Invitation</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Invalid Invitation</h1>
               <p className="text-base text-muted-foreground">
                 This invitation link is not valid. Please check the link or contact your administrator.
               </p>
@@ -269,7 +269,7 @@ export default function InvitePage() {
           <div className="w-full max-w-md text-center space-y-4">
             <div className="bg-card border border-border rounded-lg p-8 shadow-sm space-y-4">
               <AlertCircle className="h-12 w-12 text-orange-500 mx-auto" />
-              <h1 className="text-2xl font-bold text-foreground">Invitation Expired</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Invitation Expired</h1>
               <p className="text-base text-muted-foreground">
                 This invitation has expired or has already been used. Please contact your administrator for a new invitation.
               </p>
@@ -288,7 +288,7 @@ export default function InvitePage() {
           <div className="w-full max-w-md text-center space-y-4">
             <div className="bg-card border border-border rounded-lg p-8 shadow-sm space-y-4">
               <Check className="h-12 w-12 text-green-600 mx-auto" />
-              <h1 className="text-2xl font-bold text-foreground">Account Created</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Account Created</h1>
               <p className="text-base text-muted-foreground">
                 Welcome to Helix Insight. Redirecting to your dashboard...
               </p>
@@ -301,7 +301,7 @@ export default function InvitePage() {
         {(pageState === 'ready' || pageState === 'submitting') && invitation && (
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground mb-2">
                 Create your account
               </h1>
               <p className="text-base text-muted-foreground">

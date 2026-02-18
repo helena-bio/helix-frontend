@@ -15,7 +15,7 @@ export default function PartnersPage() {
         <div className="max-w-3xl mx-auto space-y-16">
 
           <section className="space-y-4">
-            <h1 className="text-3xl font-bold text-primary">Partners</h1>
+            <h1 className="text-3xl font-semibold text-primary">Partners</h1>
             <p className="text-base text-muted-foreground leading-relaxed">
               Our products are built alongside the professionals who use them. We partner with clinical laboratories and research institutions to ensure that what we ship meets the standards of real-world practice.
             </p>
@@ -39,7 +39,7 @@ export default function PartnersPage() {
           </section>
 
           <section className="border-t border-border pt-12 space-y-6">
-            <h2 className="text-3xl font-bold text-primary">Work With Us</h2>
+            <h2 className="text-3xl font-semibold text-primary">Work With Us</h2>
             <p className="text-base text-muted-foreground leading-relaxed">
               We are looking for clinical genetics laboratories for validation partnerships, research institutions for collaboration, and strategic partners who share our approach to AI-powered bioinformatics.
             </p>

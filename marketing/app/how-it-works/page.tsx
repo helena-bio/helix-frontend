@@ -134,7 +134,7 @@ export default function HowItWorksPage() {
         {/* Hero */}
         <section className="pt-28 pb-16 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
+            <h1 className="text-3xl font-semibold tracking-tight text-primary">
               How Helix Insight Works
             </h1>
             <p className="text-base text-muted-foreground leading-relaxed">
@@ -147,7 +147,7 @@ export default function HowItWorksPage() {
                 <div key={label} className="flex items-center">
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-full">
                     <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold text-primary-foreground">{i + 1}</span>
+                      <span className="text-xs font-semibold text-primary-foreground">{i + 1}</span>
                     </div>
                     <span className="text-base text-foreground font-medium">{label}</span>
                   </div>
@@ -176,7 +176,7 @@ export default function HowItWorksPage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
+              <h2 className="text-3xl font-semibold text-primary">
                 The Analysis Pipeline
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -199,7 +199,7 @@ export default function HowItWorksPage() {
                           <Icon className="w-7 h-7 text-primary" />
                         </div>
                         <div className="absolute -top-2 -right-2 w-7 h-7 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-xs font-bold text-primary-foreground">{step.number}</span>
+                          <span className="text-xs font-semibold text-primary-foreground">{step.number}</span>
                         </div>
                       </div>
 
@@ -247,7 +247,7 @@ export default function HowItWorksPage() {
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-bold text-primary">
+              <h2 className="text-3xl font-semibold text-primary">
                 Built for Clinical Trust
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
@@ -286,7 +286,7 @@ export default function HowItWorksPage() {
         {/* CTA */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl font-bold text-primary">
+            <h2 className="text-3xl font-semibold text-primary">
               See the Pipeline in Action
             </h2>
             <p className="text-base text-muted-foreground">

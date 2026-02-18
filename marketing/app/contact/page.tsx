@@ -17,7 +17,7 @@ export default function ContactPage() {
 
           {/* Header */}
           <section className="space-y-4 max-w-3xl mx-auto">
-            <h1 className="text-3xl font-bold text-primary text-center">Contact Us</h1>
+            <h1 className="text-3xl font-semibold text-primary text-center">Contact Us</h1>
             <p className="text-base text-muted-foreground leading-relaxed text-justify">
               Whether you are a clinical genetics laboratory exploring automation, a research institution interested in collaboration, or have general questions about Helix Insight -- we would like to hear from you.
             </p>
@@ -55,7 +55,7 @@ export default function ContactPage() {
 
           {/* Contact Form */}
           <section className="max-w-2xl mx-auto space-y-6">
-            <h2 className="text-3xl font-bold text-primary text-center">Send a Message</h2>
+            <h2 className="text-3xl font-semibold text-primary text-center">Send a Message</h2>
             <ContactForm />
           </section>
 

@@ -14,7 +14,7 @@ export default function ContactPage() {
         <div className="max-w-2xl mx-auto space-y-12">
 
           <section className="space-y-4">
-            <h1 className="text-3xl font-bold text-primary">Contact</h1>
+            <h1 className="text-3xl font-semibold text-primary">Contact</h1>
             <p className="text-base text-muted-foreground leading-relaxed">
               Whether you represent a clinical genetics laboratory, a research institution, or an organization interested in collaboration -- we would like to hear from you.
             </p>

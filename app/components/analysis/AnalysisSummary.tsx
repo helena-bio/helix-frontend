@@ -180,7 +180,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Variants</p>
-                <p className="text-2xl font-bold">{stats.total_variants.toLocaleString()}</p>
+                <p className="text-2xl font-semibold">{stats.total_variants.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -195,7 +195,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pathogenic / Likely Path.</p>
-                <p className="text-2xl font-bold">{clinicallySignificant.toLocaleString()}</p>
+                <p className="text-2xl font-semibold">{clinicallySignificant.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -210,7 +210,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">VUS</p>
-                <p className="text-2xl font-bold">
+                <p className="text-2xl font-semibold">
                   {(stats.classification_breakdown['Uncertain Significance'] || 0).toLocaleString()}
                 </p>
               </div>
@@ -227,7 +227,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Benign / Likely Benign</p>
-                <p className="text-2xl font-bold">
+                <p className="text-2xl font-semibold">
                   {((stats.classification_breakdown['Benign'] || 0) +
                     (stats.classification_breakdown['Likely Benign'] || 0)).toLocaleString()}
                 </p>
@@ -264,7 +264,7 @@ export function AnalysisSummary({ sessionId, onFilterByClass }: AnalysisSummaryP
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-bold">{item.count.toLocaleString()}</span>
+                      <span className="text-base font-semibold">{item.count.toLocaleString()}</span>
                       <span className="text-sm text-muted-foreground">
                         ({item.percentage.toFixed(1)}%)
                       </span>

@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
         <article className="max-w-4xl mx-auto space-y-10">
 
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold text-primary">Privacy Policy</h1>
+            <h1 className="text-3xl font-semibold text-primary">Privacy Policy</h1>
             <p className="text-sm text-muted-foreground">Last updated: February 2026</p>
             <p className="text-base text-foreground leading-relaxed">
               Helena Bioinformatics EOOD (&quot;Helena Bioinformatics&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the Helix Insight platform. This Privacy Policy explains how we collect, use, store, and protect personal data, including genomic data, in compliance with the EU General Data Protection Regulation (GDPR) and applicable Bulgarian data protection legislation.

@@ -14,7 +14,7 @@ export default function JoinUsPage() {
         <div className="max-w-3xl mx-auto space-y-16">
 
           <section className="space-y-6">
-            <h1 className="text-3xl font-bold text-primary">Join Us</h1>
+            <h1 className="text-3xl font-semibold text-primary">Join Us</h1>
             <p className="text-base text-muted-foreground leading-relaxed">
               Helix Insight is built by a focused team. We are not actively hiring at this time, but we are always interested in connecting with people who want to work at the intersection of artificial intelligence and clinical genomics.
             </p>

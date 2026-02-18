@@ -266,7 +266,7 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
         <div className="flex items-center justify-between">
           {/* Left: Rank + Name + Status + Genome Build + Owner */}
           <div className="flex items-center gap-3">
-            <span className="text-ml font-bold text-muted-foreground w-8">#{rank}</span>
+            <span className="text-ml font-semibold text-muted-foreground w-8">#{rank}</span>
             <span className="text-ml font-semibold">{getCaseDisplayName(session)}</span>
             <Badge variant="outline" className={`text-sm ${config.color}`}>
               <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
@@ -533,7 +533,7 @@ export default function DashboardPage() {
       <div className="w-full max-w-4xl mx-auto space-y-4">
         {/* Header */}
         <div className="text-center mb-5">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl font-semibold tracking-tight">
             {greeting.title}
           </h1>
           <p className="text-base text-muted-foreground mt-1">

@@ -13,7 +13,7 @@ export default function DPIAPage() {
         <article className="max-w-4xl mx-auto space-y-10">
 
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold text-primary">Data Protection Impact Assessment</h1>
+            <h1 className="text-3xl font-semibold text-primary">Data Protection Impact Assessment</h1>
             <p className="text-sm text-muted-foreground">Last updated: February 2026</p>
             <p className="text-base text-foreground leading-relaxed">
               This document provides a summary of the Data Protection Impact Assessment (DPIA) conducted by Helena Bioinformatics for the Helix Insight platform, pursuant to GDPR Article 35. A DPIA is mandatory when processing genetic data on a large scale, as it constitutes high-risk processing of special category data.

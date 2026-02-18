@@ -4,7 +4,7 @@ export function ProductSection() {
   return (
     <section className="py-16 px-6">
       <div className="max-w-3xl mx-auto space-y-8">
-        <h2 className="text-3xl font-bold text-primary text-center">Products</h2>
+        <h2 className="text-3xl font-semibold text-primary text-center">Products</h2>
         <div className="flex gap-8 items-start">
           <a href="https://helixinsight.bio" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity">
             <Image

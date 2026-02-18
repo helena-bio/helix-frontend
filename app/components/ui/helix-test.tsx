@@ -8,7 +8,7 @@ export const HelixTest = () => {
   return (
     <div className="p-8 space-y-12">
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">HelixLoader Sizes</h2>
+        <h2 className="text-2xl font-semibold">HelixLoader Sizes</h2>
         <div className="flex items-end gap-8">
           <div className="text-center">
             <HelixLoader size="sm" />
@@ -26,14 +26,14 @@ export const HelixTest = () => {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">LoadingState Examples</h2>
+        <h2 className="text-2xl font-semibold">LoadingState Examples</h2>
         <div className="border rounded-lg p-4">
           <LoadingState message="Analyzing variants..." size="md" />
         </div>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Different Speeds</h2>
+        <h2 className="text-2xl font-semibold">Different Speeds</h2>
         <div className="flex items-end gap-8">
           <div className="text-center">
             <HelixLoader speed={1} />

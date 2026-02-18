@@ -270,7 +270,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
           <div className="flex items-center justify-center gap-4">
             <HelixLoader size="xs" speed={3} />
             <div>
-              <h1 className="text-3xl font-bold">Analyzing Variants</h1>
+              <h1 className="text-3xl font-semibold">Analyzing Variants</h1>
               <p className="text-base text-muted-foreground">
                 Running ACMG classification pipeline
               </p>

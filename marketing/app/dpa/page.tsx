@@ -13,7 +13,7 @@ export default function DPAPage() {
         <article className="max-w-4xl mx-auto space-y-10">
 
           <div className="space-y-3">
-            <h1 className="text-3xl font-bold text-primary">Data Processing Agreement</h1>
+            <h1 className="text-3xl font-semibold text-primary">Data Processing Agreement</h1>
             <p className="text-sm text-muted-foreground">Last updated: February 2026</p>
             <p className="text-base text-foreground leading-relaxed">
               This Data Processing Agreement (&quot;DPA&quot;) forms part of the service agreement between the laboratory (&quot;Data Controller&quot;) and Helena Bioinformatics EOOD (&quot;Data Processor&quot;) for the use of the Helix Insight platform, pursuant to Article 28 of the EU General Data Protection Regulation (GDPR).

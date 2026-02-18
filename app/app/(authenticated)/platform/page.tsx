@@ -360,7 +360,7 @@ function OverviewContent() {
                 <Icon className="h-5 w-5 text-muted-foreground" />
                 <span className="text-lg font-semibold">{card.label}</span>
               </div>
-              <p className="text-xl font-bold tracking-tight">{card.value}</p>
+              <p className="text-xl font-semibold tracking-tight">{card.value}</p>
               <p className="text-md text-muted-foreground mt-1">{card.sub}</p>
             </div>
           )

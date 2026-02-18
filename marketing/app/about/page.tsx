@@ -18,7 +18,7 @@ export default function AboutPage() {
 
           {/* Mission */}
           <section className="text-center space-y-4 max-w-3xl mx-auto">
-            <h1 className="text-3xl font-bold text-primary">About Helix Insight</h1>
+            <h1 className="text-3xl font-semibold text-primary">About Helix Insight</h1>
             <p className="text-base text-muted-foreground leading-relaxed text-justify">
               Clinical genetics laboratories spend days manually interpreting genetic variants -- cross-referencing databases, reviewing literature, and applying classification guidelines. We are building the infrastructure to reduce that to minutes, without compromising clinical accuracy.
             </p>
@@ -29,7 +29,7 @@ export default function AboutPage() {
 
           {/* Team */}
           <section className="space-y-10">
-            <h2 className="text-3xl font-bold text-primary text-center">Leadership</h2>
+            <h2 className="text-3xl font-semibold text-primary text-center">Leadership</h2>
 
             <div className="grid grid-cols-1 gap-8 max-w-3xl mx-auto">
 
@@ -62,7 +62,7 @@ export default function AboutPage() {
 
           {/* Company */}
           <section className="space-y-6">
-            <h2 className="text-3xl font-bold text-primary text-center">Helena Bioinformatics</h2>
+            <h2 className="text-3xl font-semibold text-primary text-center">Helena Bioinformatics</h2>
             <div className="bg-card border border-border rounded-lg p-8 space-y-4 max-w-3xl mx-auto">
               <p className="text-base text-muted-foreground leading-relaxed">
                 Helena Bioinformatics is a bioinformatics company based in Sofia, Bulgaria, focused on developing AI-powered tools for clinical genetics. The company was founded to address a critical bottleneck in genomic medicine: the manual, time-consuming process of variant interpretation that limits the capacity of genetics laboratories worldwide.

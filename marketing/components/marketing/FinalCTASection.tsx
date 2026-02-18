@@ -23,7 +23,7 @@ export function FinalCTASection() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-8">
           <div className="space-y-4">
-            <h2 className="text-3xl font-bold text-primary">
+            <h2 className="text-3xl font-semibold text-primary">
               Ready to Transform Your Variant Analysis?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

@@ -16,7 +16,7 @@ export function VideoHero() {
         </video>
       </div>
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-primary">
+        <h1 className="text-3xl font-semibold text-primary">
           From variants to understanding
         </h1>
         <p className="text-xl text-muted-foreground">

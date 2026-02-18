@@ -42,7 +42,7 @@ export function DatabaseIntegrationsSection() {
     <section className="py-16 px-6">
       <div className="max-w-5xl mx-auto space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-bold text-primary">Powered by Established Clinical Databases</h2>
+          <h2 className="text-3xl font-semibold text-primary">Powered by Established Clinical Databases</h2>
           <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             Helix Insight integrates with authoritative genomic and clinical databases to provide comprehensive, evidence-based variant analysis.
           </p>
@@ -51,7 +51,7 @@ export function DatabaseIntegrationsSection() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {databases.map((db) => (
             <a key={db.name} href={db.url} target="_blank" rel="noopener noreferrer" className="group bg-card border border-border rounded-lg p-4 flex flex-col items-center text-center space-y-2 hover:border-primary/40 hover:shadow-sm transition-all">
-              <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{db.name}</span>
+              <span className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">{db.name}</span>
               <span className="text-sm text-muted-foreground leading-tight">{db.org}</span>
               <span className="text-sm text-muted-foreground leading-tight opacity-70">{db.description}</span>
             </a>

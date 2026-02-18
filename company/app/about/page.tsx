@@ -13,7 +13,7 @@ export default function AboutPage() {
       <main className="flex-1 pt-20 pb-16 px-6">
         <div className="max-w-3xl mx-auto space-y-16">
           <section className="space-y-6">
-            <h1 className="text-3xl font-bold text-primary">About</h1>
+            <h1 className="text-3xl font-semibold text-primary">About</h1>
             <p className="text-base text-muted-foreground leading-relaxed">
               Helena Bioinformatics is a software company based in Sofia, Bulgaria, working at the intersection of artificial intelligence and bioinformatics. We build tools that help researchers and clinicians work with genomic data at a scale and speed that manual workflows cannot match.
             </p>
@@ -31,7 +31,7 @@ export default function AboutPage() {
             </p>
           </section>
           <section className="space-y-6">
-            <h2 className="text-3xl font-bold text-primary">Leadership</h2>
+            <h2 className="text-3xl font-semibold text-primary">Leadership</h2>
             <div className="flex gap-8 items-start">
               <ProtectedImage
                 src="/images/team/vladimir-mitev.png"

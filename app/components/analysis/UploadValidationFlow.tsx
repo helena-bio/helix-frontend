@@ -574,7 +574,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
           <div className="flex items-center justify-center gap-4">
             <HelixLoader size="xs" speed={3} animated={false} />
             <div className="text-center">
-              <h1 className="text-3xl font-bold tracking-tight">Upload VCF File</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
               <p className="text-base text-muted-foreground">
                 Upload a genetic variant file
               </p>
@@ -792,7 +792,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
           <div className="flex items-center justify-center gap-4">
             <HelixLoader size="xs" speed={3} animated={false} />
             <div className="text-center">
-              <h1 className="text-3xl font-bold tracking-tight">Upload VCF File</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
               <p className="text-base text-muted-foreground">
                 Upload a genetic variant file
               </p>
@@ -837,7 +837,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} animated={isProcessing} />
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">Upload VCF File</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
             <p className="text-base text-muted-foreground">
               Upload a genetic variant file
             </p>

@@ -4,7 +4,7 @@ export function ContactCTASection() {
   return (
     <section className="py-20 px-6 bg-muted/30">
       <div className="max-w-3xl mx-auto text-center space-y-6">
-        <h2 className="text-3xl font-bold text-primary">Looking for Partners</h2>
+        <h2 className="text-3xl font-semibold text-primary">Looking for Partners</h2>
         <p className="text-base text-muted-foreground max-w-xl mx-auto">
           We are actively seeking clinical genetics laboratories and research institutions for validation partnerships and early collaboration.
         </p>

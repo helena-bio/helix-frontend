@@ -529,7 +529,7 @@ export function TeamMembersView() {
         <div className="w-full max-w-4xl mx-auto space-y-4">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Team Members</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Team Members</h1>
             <p className="text-base text-muted-foreground mt-1">
               Manage your organization's team
             </p>

@@ -45,7 +45,7 @@ export function SecurityComplianceSection() {
     <section className="py-16 px-6 bg-card border-y border-border">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 space-y-4">
-          <h2 className="text-3xl font-bold text-primary">
+          <h2 className="text-3xl font-semibold text-primary">
             Security & Compliance
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
