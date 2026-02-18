@@ -247,8 +247,8 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
         <div className="flex items-center justify-between">
           {/* Left: Rank + Gene + Tier + Variants */}
           <div className="flex items-center gap-3">
-            <span className="text-lg font-semibold text-muted-foreground w-8">#{rank}</span>
-            <span className="text-lg font-semibold w-16">{geneResult.gene_symbol}</span>
+            <span className="text-sm font-medium text-muted-foreground w-8">#{rank}</span>
+            <span className="text-base font-medium w-16">{geneResult.gene_symbol}</span>
             <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(geneResult.best_tier)}`}>
               {formatTierDisplay(geneResult.best_tier)}
             </Badge>
