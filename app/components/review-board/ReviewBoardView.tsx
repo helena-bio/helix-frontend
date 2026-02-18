@@ -558,11 +558,11 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
           {/* ACMG Filter Cards */}
           <div className="grid grid-cols-6 gap-3">
             <FilterCard count={acmgCounts.total} label="Total" tooltip="Show all starred variants" isSelected={acmgFilter === 'all'} onClick={() => handleAcmgClick('all')} colorClasses="" />
-            <FilterCard count={acmgCounts.pathogenic} label="Pathogenic" tooltip="Pathogenic variants" isSelected={acmgFilter === 'Pathogenic'} onClick={() => handleAcmgClick('Pathogenic')} colorClasses="border-red-200 bg-red-50 text-red-900" />
-            <FilterCard count={acmgCounts.likely_pathogenic} label="Likely Path." tooltip="Likely Pathogenic variants" isSelected={acmgFilter === 'Likely Pathogenic'} onClick={() => handleAcmgClick('Likely Pathogenic')} colorClasses="border-orange-200 bg-orange-50 text-orange-900" />
+            <FilterCard count={acmgCounts.pathogenic} label="P" tooltip="Pathogenic variants" isSelected={acmgFilter === 'Pathogenic'} onClick={() => handleAcmgClick('Pathogenic')} colorClasses="border-red-200 bg-red-50 text-red-900" />
+            <FilterCard count={acmgCounts.likely_pathogenic} label="LP" tooltip="Likely Pathogenic variants" isSelected={acmgFilter === 'Likely Pathogenic'} onClick={() => handleAcmgClick('Likely Pathogenic')} colorClasses="border-orange-200 bg-orange-50 text-orange-900" />
             <FilterCard count={acmgCounts.vus} label="VUS" tooltip="Variants of Uncertain Significance" isSelected={acmgFilter === 'VUS'} onClick={() => handleAcmgClick('VUS')} colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900" />
-            <FilterCard count={acmgCounts.likely_benign} label="Likely Benign" tooltip="Likely Benign variants" isSelected={acmgFilter === 'Likely Benign'} onClick={() => handleAcmgClick('Likely Benign')} colorClasses="border-blue-200 bg-blue-50 text-blue-900" />
-            <FilterCard count={acmgCounts.benign} label="Benign" tooltip="Benign variants" isSelected={acmgFilter === 'Benign'} onClick={() => handleAcmgClick('Benign')} colorClasses="border-green-200 bg-green-50 text-green-900" />
+            <FilterCard count={acmgCounts.likely_benign} label="LB" tooltip="Likely Benign variants" isSelected={acmgFilter === 'Likely Benign'} onClick={() => handleAcmgClick('Likely Benign')} colorClasses="border-blue-200 bg-blue-50 text-blue-900" />
+            <FilterCard count={acmgCounts.benign} label="B" tooltip="Benign variants" isSelected={acmgFilter === 'Benign'} onClick={() => handleAcmgClick('Benign')} colorClasses="border-green-200 bg-green-50 text-green-900" />
           </div>
 
           {/* Gene Filter + Count */}
