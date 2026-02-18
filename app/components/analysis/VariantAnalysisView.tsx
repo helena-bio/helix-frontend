@@ -49,7 +49,7 @@ import {
   StarButton,
 } from '@/components/shared'
 import type { GeneAggregated, VariantInGene } from '@/types/variant.types'
-import { formatCount } from '@helix/shared/lib/utils'
+import { formatCount, getRarityBadge } from '@helix/shared/lib/utils'
 
 interface VariantAnalysisViewProps {
   sessionId: string
@@ -131,68 +131,54 @@ interface VariantCardProps {
 function VariantCard({ variant, onViewDetails }: VariantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const zygosity = getZygosityBadge(variant.genotype)
+  const rarity = getRarityBadge(variant.gnomad_af)
+
+  // Extract primary consequence for compact display
+  const primaryConsequence = variant.consequence?.split(",")[0]?.trim()?.replace(/_/g, " ") || null
+  const formatConsequence = (c: string) => c.charAt(0).toUpperCase() + c.slice(1)
 
   return (
     <div
-      className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+      className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
       onClick={() => setIsExpanded(!isExpanded)}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <StarButton variantIdx={variant.variant_idx} />
-            {variant.acmg_class && (
-              <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
-                {formatACMGDisplay(variant.acmg_class)}
-              </Badge>
-            )}
-            {variant.impact && (
-              <Badge variant="outline" className={`text-sm ${getImpactColor(variant.impact)}`}>
-                {variant.impact}
-              </Badge>
-            )}
-            <Badge variant="outline" className={`text-sm ${zygosity.color}`}>
-              {zygosity.label}
-            </Badge>
-          </div>
-          <p className="text-base font-mono text-muted-foreground truncate" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}/${variant.alternate_allele}`}>
-            {variant.chromosome}:{variant.position?.toLocaleString()}
-            <span className="ml-2">{truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}</span>
-          </p>
-          {/* HGVS notation - visible in collapsed preview */}
-          {(variant.hgvs_cdna || variant.hgvs_protein) && (
-            <p className="text-sm font-mono text-foreground/70 truncate mt-0.5" title={[variant.hgvs_cdna, variant.hgvs_protein].filter(Boolean).join(' | ')}>
-              {variant.hgvs_cdna && <span>{truncateSequence(variant.hgvs_cdna, 40)}</span>}
-              {variant.hgvs_cdna && variant.hgvs_protein && <span className="mx-1.5 text-muted-foreground">|</span>}
-              {variant.hgvs_protein && <span>{truncateSequence(variant.hgvs_protein, 30)}</span>}
-            </p>
-          )}
-          <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
-        </div>
-        <div className="flex items-center gap-3">
-          {variant.gnomad_af !== null && variant.gnomad_af !== undefined && (
-            <div className="text-right">
-              <p className="text-sm font-mono">{variant.gnomad_af.toExponential(2)}</p>
-              <p className="text-xs text-muted-foreground">gnomAD AF</p>
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsExpanded(!isExpanded)
-            }}
-          >
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </div>
+      {/* Compact single-line row */}
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <StarButton variantIdx={variant.variant_idx} />
+        {variant.acmg_class && (
+          <Badge variant="outline" className={`text-xs ${getACMGColor(variant.acmg_class)}`}>
+            {formatACMGDisplay(variant.acmg_class)}
+          </Badge>
+        )}
+        {primaryConsequence && (
+          <span className="text-sm text-foreground/80">{formatConsequence(primaryConsequence)}</span>
+        )}
+        {variant.hgvs_protein && (
+          <span className="text-sm font-mono text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
+            {truncateSequence(variant.hgvs_protein, 25)}
+          </span>
+        )}
+        <Badge variant="outline" className={`text-xs ${rarity.color}`}>
+          {rarity.label}
+        </Badge>
+        <Badge variant="outline" className={`text-xs ${zygosity.color}`}>
+          {zygosity.label}
+        </Badge>
+        <div className="flex-1" />
+        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </div>
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="mt-4 space-y-4">
+        <div className="px-3 pb-3 pt-1 space-y-4 border-t">
+          {/* Location */}
+          <div className="pt-2">
+            <p className="text-sm font-mono text-muted-foreground" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}/${variant.alternate_allele}`}>
+              {variant.chromosome}:{variant.position?.toLocaleString()}
+              <span className="ml-2">{truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}</span>
+            </p>
+          </div>
+
           {/* Variant Details */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="min-w-0">
@@ -226,6 +212,14 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               <p className="text-md">{variant.quality?.toFixed(1) || '-'}</p>
             </div>
           </div>
+
+          {/* gnomAD AF detail */}
+          {variant.gnomad_af !== null && variant.gnomad_af !== undefined && (
+            <div>
+              <p className="text-md text-muted-foreground mb-1">gnomAD Allele Frequency</p>
+              <p className="text-md font-mono">{variant.gnomad_af.toExponential(2)} (1 in {Math.round(1 / variant.gnomad_af).toLocaleString()})</p>
+            </div>
+          )}
 
           {/* ACMG Criteria */}
           {variant.acmg_criteria && (
@@ -269,7 +263,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
     </div>
   )
 }
-
+interface GeneSectionProps
 interface GeneSectionProps {
   gene: GeneAggregated
   rank: number
