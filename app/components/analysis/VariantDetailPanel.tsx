@@ -99,6 +99,26 @@ const getPredictionColor = (pred: string | null) => {
   return 'bg-gray-100'
 }
 
+
+const parsePrediction = (raw: string | null): string | null => {
+  if (!raw) return null
+  const values = raw.split(';').map(v => v.trim()).filter(v => v && v !== '.')
+  if (values.length === 0) return null
+  return values[0]
+}
+
+const parseScore = (raw: any): number | null => {
+  if (raw === null || raw === undefined) return null
+  if (typeof raw === 'number') return raw
+  if (typeof raw === 'string') {
+    const values = raw.split(';').map(v => v.trim()).filter(v => v && v !== '.')
+    if (values.length === 0) return null
+    const num = parseFloat(values[0])
+    return isNaN(num) ? null : num
+  }
+  return null
+}
+
 const formatDiseaseName = (disease: string | null | undefined): string[] => {
   if (!disease) return []
   return disease
@@ -513,62 +533,81 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
-                    {(variant.sift_pred || variant.sift_score !== null) && (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="text-base text-muted-foreground">SIFT</span>
-                          {variant.sift_pred && (
-                            <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.sift_pred)}`}>
-                              {variant.sift_pred}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <span className="text-md font-mono">{variant.sift_score?.toFixed(3) || '-'}</span>
-                        </div>
-                      </>
-                    )}
+                    {(variant.sift_pred || variant.sift_score !== null) && (() => {
+                      const pred = parsePrediction(variant.sift_pred)
+                      const score = parseScore(variant.sift_score)
+                      if (!pred && score === null) return null
+                      return (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base text-muted-foreground">SIFT</span>
+                            {pred && (
+                              <Badge variant="outline" className={`text-sm ${getPredictionColor(pred)}`}>
+                                {pred}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-md font-mono">{score !== null ? score.toFixed(3) : '-'}</span>
+                          </div>
+                        </>
+                      )
+                    })()}
 
-                    {(variant.alphamissense_pred || variant.alphamissense_score !== null) && (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="text-base text-muted-foreground">AlphaMissense</span>
-                          {variant.alphamissense_pred && (
-                            <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.alphamissense_pred)}`}>
-                              {variant.alphamissense_pred}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <span className="text-md font-mono">{variant.alphamissense_score?.toFixed(3) || '-'}</span>
-                        </div>
-                      </>
-                    )}
+                    {(variant.alphamissense_pred || variant.alphamissense_score !== null) && (() => {
+                      const pred = parsePrediction(variant.alphamissense_pred)
+                      const score = parseScore(variant.alphamissense_score)
+                      if (!pred && score === null) return null
+                      return (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base text-muted-foreground">AlphaMissense</span>
+                            {pred && (
+                              <Badge variant="outline" className={`text-sm ${getPredictionColor(pred)}`}>
+                                {pred}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-md font-mono">{score !== null ? score.toFixed(3) : '-'}</span>
+                          </div>
+                        </>
+                      )
+                    })()}
 
-                    {(variant.metasvm_pred || variant.metasvm_score !== null) && (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="text-base text-muted-foreground">MetaSVM</span>
-                          {variant.metasvm_pred && (
-                            <Badge variant="outline" className={`text-sm ${getPredictionColor(variant.metasvm_pred)}`}>
-                              {variant.metasvm_pred}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <span className="text-md font-mono">{variant.metasvm_score?.toFixed(3) || '-'}</span>
-                        </div>
-                      </>
-                    )}
+                    {(variant.metasvm_pred || variant.metasvm_score !== null) && (() => {
+                      const pred = parsePrediction(variant.metasvm_pred)
+                      const score = parseScore(variant.metasvm_score)
+                      if (!pred && score === null) return null
+                      return (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base text-muted-foreground">MetaSVM</span>
+                            {pred && (
+                              <Badge variant="outline" className={`text-sm ${getPredictionColor(pred)}`}>
+                                {pred}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-md font-mono">{score !== null ? score.toFixed(3) : '-'}</span>
+                          </div>
+                        </>
+                      )
+                    })()}
 
-                    {variant.dann_score !== null && (
-                      <>
-                        <div className="text-base text-muted-foreground">DANN</div>
-                        <div className="text-right">
-                          <span className="text-md font-mono">{variant.dann_score.toFixed(3)}</span>
-                        </div>
-                      </>
-                    )}
+                    {variant.dann_score !== null && (() => {
+                      const score = parseScore(variant.dann_score)
+                      if (score === null) return null
+                      return (
+                        <>
+                          <div className="text-base text-muted-foreground">DANN</div>
+                          <div className="text-right">
+                            <span className="text-md font-mono">{score.toFixed(3)}</span>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 </CardContent>
               </Card>
