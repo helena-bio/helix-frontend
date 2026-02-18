@@ -263,7 +263,6 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
     </div>
   )
 }
-interface GeneSectionProps
 interface GeneSectionProps {
   gene: GeneAggregated
   rank: number
