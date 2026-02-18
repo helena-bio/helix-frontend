@@ -362,3 +362,36 @@ export async function createOverride(
     reason,
   })
 }
+
+// =============================================================================
+// Review Board API
+// =============================================================================
+
+/**
+ * List starred variants for a case.
+ */
+export async function listReviewBoard(
+  sessionId: string
+): Promise<{ items: import('@/types/variant.types').ReviewBoardItem[]; total_count: number }> {
+  return get(`/sessions/${sessionId}/review-board`)
+}
+
+/**
+ * Star a variant (add to review board). Case owner only.
+ */
+export async function starVariant(
+  sessionId: string,
+  variantIdx: number
+): Promise<import('@/types/variant.types').ReviewBoardItem> {
+  return post(`/sessions/${sessionId}/review-board`, { variant_idx: variantIdx })
+}
+
+/**
+ * Unstar a variant (remove from review board). Case owner only.
+ */
+export async function unstarVariant(
+  sessionId: string,
+  variantIdx: number
+): Promise<void> {
+  return del(`/sessions/${sessionId}/review-board/${variantIdx}`)
+}
