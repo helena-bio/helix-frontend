@@ -235,7 +235,7 @@ export function CasesList() {
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-8 pl-8 pr-2 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full h-8 pl-8 pr-2 text-md bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
 
