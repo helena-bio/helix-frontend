@@ -419,7 +419,7 @@ function FilterCard({ count, label, tooltip, isSelected, onClick, colorClasses }
           </Tooltip>
         </TooltipProvider>
         <TooltipProvider delayDuration={200}><Tooltip><TooltipTrigger asChild><p className="text-lg font-semibold cursor-default">{formatCount(count)}</p></TooltipTrigger><TooltipContent><p>{count.toLocaleString()} variants</p></TooltipContent></Tooltip></TooltipProvider>
-        <p className="text-md font-medium">{label}</p>
+        <p className="text-sm font-medium">{label}</p>
       </CardContent>
     </Card>
   )
