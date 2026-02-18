@@ -322,9 +322,6 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
                 {formatACMGDisplay(gene.best_acmg_class)}
               </Badge>
             )}
-            <Badge variant="secondary" className="text-sm">
-              {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
-            </Badge>
             {gene.best_impact && (
               <Badge variant="outline" className={`text-sm ${getImpactColor(gene.best_impact)}`}>
                 {gene.best_impact}
@@ -332,25 +329,13 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
             )}
           </div>
 
-          {/* Right: ACMG breakdown + Chevron */}
-          <div className="flex items-center gap-2">
-            {gene.pathogenic_count > 0 && (
-              <Badge variant="outline" className="text-xs bg-red-100 text-red-900 border-red-300">
-                {gene.pathogenic_count} P
-              </Badge>
-            )}
-            {gene.likely_pathogenic_count > 0 && (
-              <Badge variant="outline" className="text-xs bg-orange-100 text-orange-900 border-orange-300">
-                {gene.likely_pathogenic_count} LP
-              </Badge>
-            )}
-            {gene.vus_count > 0 && (
-              <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-900 border-yellow-300">
-                {gene.vus_count} VUS
-              </Badge>
-            )}
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </div>
+            {/* Right: Variant count + Chevron */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
+              </span>
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
         </div>
       </CardHeader>
 
