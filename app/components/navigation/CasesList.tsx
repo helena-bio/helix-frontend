@@ -317,7 +317,7 @@ export function CasesList() {
                           <StatusDot status={session.status} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-base font-medium truncate leading-tight">
+                          <p className="text-md font-medium truncate leading-tight">
                             {getCaseDisplayName(session)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
