@@ -223,7 +223,7 @@ export function CasesList() {
               onClick={() => setShowAll(true)}
             >
               <Users className="h-4 w-4" />
-              All
+              Team
             </button>
           </div>
 
