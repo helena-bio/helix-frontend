@@ -652,6 +652,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            </div>
 
           {/* Gene Cards */}
           {visibleResults.map((geneResult, idx) => (
