@@ -280,7 +280,7 @@ export function Sidebar() {
             <div className="border-t border-border py-1 shrink-0">
               <button
                 className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
-                onClick={() => { setIsModulesOpen(!isModulesOpen); if (!isModulesOpen) setIsCasesOpen(false) }}
+                onClick={() => setIsModulesOpen(!isModulesOpen)}
               >
                 <span>Modules</span>
                 <ChevronDown
@@ -326,7 +326,7 @@ export function Sidebar() {
 
             {/* Cases List (collapsible) */}
             <div className={cn("border-t border-border", isCasesOpen ? "flex-1 min-h-0 overflow-y-auto" : "border-b shrink-0")}>
-              <CasesList isOpen={isCasesOpen} onToggle={() => { setIsCasesOpen(!isCasesOpen); if (!isCasesOpen) setIsModulesOpen(false) }} />
+              <CasesList isOpen={isCasesOpen} onToggle={() => setIsCasesOpen(!isCasesOpen)} />
             </div>
 
             {!isCasesOpen && <div className="flex-1" />}
