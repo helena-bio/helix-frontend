@@ -271,7 +271,6 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </div>
           </div>
-        </div>
       </CardHeader>
 
       {isExpanded && (
