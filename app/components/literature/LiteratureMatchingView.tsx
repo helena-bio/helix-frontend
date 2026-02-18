@@ -488,7 +488,7 @@ export function LiteratureMatchingView({ sessionId }: LiteratureMatchingViewProp
           <BookOpen className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Literature Analysis</h1>
+          <h1 className="text-2xl font-semibold">Literature Analysis</h1>
           <p className="text-base text-muted-foreground mt-1">
             Automated clinical literature search with combined scoring (60% clinical + 40% literature)
           </p>

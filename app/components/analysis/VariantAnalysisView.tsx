@@ -569,7 +569,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           <Microscope className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Variant Analysis</h1>
+          <h1 className="text-2xl font-semibold">Variant Analysis</h1>
           <p className="text-base text-muted-foreground mt-1">
             Analyze variants by ACMG classification, impact, and clinical significance.
           </p>

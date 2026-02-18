@@ -508,7 +508,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
           <ClipboardCheck className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Review Board</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Review Board</h1>
           <p className="text-base text-muted-foreground mt-1">
             Curated variants for focused clinical review. Star variants from any view to add them here.
           </p>

@@ -176,7 +176,7 @@ export function ClinicalReportView({ sessionId }: ClinicalReportViewProps) {
           <FileText className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-3xl font-bold">Clinical Report</h1>
+          <h1 className="text-2xl font-semibold">Clinical Report</h1>
           <p className="text-base text-muted-foreground mt-1">
             AI-generated clinical interpretation based on all available analysis data
           </p>
@@ -263,7 +263,7 @@ function Header() {
         <FileText className="h-6 w-6 text-primary" />
       </div>
       <div className="min-w-0">
-        <h1 className="text-3xl font-bold">Clinical Report</h1>
+        <h1 className="text-2xl font-semibold">Clinical Report</h1>
         <p className="text-base text-muted-foreground mt-1">
           AI-generated clinical interpretation
         </p>

@@ -466,7 +466,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
           <Dna className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Clinical Phenotype Matching</h1>
+          <h1 className="text-2xl font-semibold">Clinical Phenotype Matching</h1>
           <p className="text-base text-muted-foreground mt-1">
             Prioritize variants by combined clinical evidence: pathogenicity, impact, phenotype match, and frequency.
           </p>
