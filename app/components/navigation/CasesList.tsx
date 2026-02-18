@@ -261,7 +261,7 @@ export function CasesList() {
                   <div
                     key={session.id}
                     className={cn(
-                      "group relative rounded-md px-2 py-1.5 transition-colors",
+                      "group relative rounded-md px-2 py-1 transition-colors",
                       isActive && "bg-secondary",
                       isCompleted && !isActive && "hover:bg-accent cursor-pointer",
                       !isCompleted && "opacity-60"
@@ -317,7 +317,7 @@ export function CasesList() {
                           <StatusDot status={session.status} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-base font-medium truncate leading-tight">
+                          <p className="text-base font-normal truncate leading-tight">
                             {getCaseDisplayName(session)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
