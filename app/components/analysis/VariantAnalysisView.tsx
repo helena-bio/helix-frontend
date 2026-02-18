@@ -49,7 +49,7 @@ import {
   StarButton,
 } from '@/components/shared'
 import type { GeneAggregated, VariantInGene } from '@/types/variant.types'
-import { formatCount } from '@/shared/lib/utils'
+import { formatCount } from '@helix/shared/lib/utils'
 
 interface VariantAnalysisViewProps {
   sessionId: string
@@ -666,7 +666,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             </button>
           ))}
         </div>
-      )}
       )}
 
       {/* Loading State */}
