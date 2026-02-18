@@ -207,35 +207,35 @@ export function CasesList() {
           <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5">
             <button
               className={cn(
-                "flex-1 flex items-center justify-center gap-1 px-2 py-0.5 rounded text-xs transition-colors",
+                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-md transition-colors",
                 !showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setShowAll(false)}
             >
-              <User className="h-3 w-3" />
+              <User className="h-4 w-4" />
               Mine
             </button>
             <button
               className={cn(
-                "flex-1 flex items-center justify-center gap-1 px-2 py-0.5 rounded text-xs transition-colors",
+                "flex-1 flex items-center justify-center gap-1.5 px-2 py-1 rounded text-md transition-colors",
                 showAll ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setShowAll(true)}
             >
-              <Users className="h-3 w-3" />
+              <Users className="h-4 w-4" />
               All
             </button>
           </div>
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-7 pl-8 pr-2 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full h-8 pl-8 pr-2 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
 
@@ -246,7 +246,7 @@ export function CasesList() {
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             ) : filteredCases.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-2 py-3 text-center">
+              <p className="text-md text-muted-foreground px-2 py-3 text-center">
                 {searchQuery ? 'No matches' : showAll ? 'No cases in organization' : 'No cases yet'}
               </p>
             ) : (
@@ -261,7 +261,7 @@ export function CasesList() {
                   <div
                     key={session.id}
                     className={cn(
-                      "group relative rounded-md px-2 py-1 transition-colors",
+                      "group relative rounded-md px-2 py-1.5 transition-colors",
                       isActive && "bg-secondary",
                       isCompleted && !isActive && "hover:bg-accent cursor-pointer",
                       !isCompleted && "opacity-60"
@@ -270,18 +270,18 @@ export function CasesList() {
                   >
                     {isDeleting ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-destructive flex-1 truncate">Delete?</span>
+                        <span className="text-md text-destructive flex-1 truncate">Delete?</span>
                         <button
                           className="p-0.5 rounded hover:bg-destructive/10"
                           onClick={(e) => { e.stopPropagation(); handleConfirmDelete(session.id) }}
                         >
-                          <Check className="h-3.5 w-3.5 text-destructive" />
+                          <Check className="h-4 w-4 text-destructive" />
                         </button>
                         <button
                           className="p-0.5 rounded hover:bg-accent"
                           onClick={(e) => { e.stopPropagation(); setDeletingId(null) }}
                         >
-                          <X className="h-3.5 w-3.5" />
+                          <X className="h-4 w-4" />
                         </button>
                       </div>
                     ) : isEditing ? (
@@ -296,7 +296,7 @@ export function CasesList() {
                             if (e.key === 'Escape') handleCancelRename()
                           }}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 h-6 px-1.5 text-xs bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="flex-1 h-6 px-1.5 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                         <button
                           className="p-0.5 rounded hover:bg-accent"
@@ -312,18 +312,20 @@ export function CasesList() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <StatusDot status={session.status} />
+                      <div className="flex items-start gap-2">
+                        <div className="mt-0.5">
+                          <StatusDot status={session.status} />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate leading-tight">
+                          <p className="text-base font-medium truncate leading-tight">
                             {getCaseDisplayName(session)}
                           </p>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-sm text-muted-foreground">
                               {formatRelativeDate(session.created_at)}
                             </span>
                             {showAll && session.owner_name && (
-                              <span className="text-xs text-muted-foreground truncate">
+                              <span className="text-sm text-muted-foreground truncate">
                                 &middot; {session.owner_name}
                               </span>
                             )}
@@ -335,14 +337,14 @@ export function CasesList() {
                             onClick={(e) => handleStartRename(e, session)}
                             title="Rename"
                           >
-                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
                           </button>
                           <button
                             className="p-0.5 rounded hover:bg-destructive/10"
                             onClick={(e) => handleDelete(e, session.id)}
                             title="Delete"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
                           </button>
                         </div>
                       </div>
