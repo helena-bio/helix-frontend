@@ -163,10 +163,21 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     setIsProfileLoaded(true)
   }, [savedProfile, sessionId])
 
-  // Reset when session changes
+  // Reset ALL local state when session changes
   useEffect(() => {
     if (sessionId && initializedForSessionRef.current !== sessionId) {
       setIsProfileLoaded(false)
+      setLocalHPOTerms([])
+      setLocalClinicalNotes('')
+      setDemographics({ sex: 'female' })
+      setEthnicity(undefined)
+      setClinicalContext(undefined)
+      setReproductive({ is_pregnant: false, family_planning: false })
+      setSampleInfo(undefined)
+      setConsent({ secondary_findings: true, carrier_results: true, pharmacogenomics: false })
+      setEnableScreening(false)
+      setEnablePhenotypeMatching(false)
+      setEnableClinicalReport(true)
     }
   }, [sessionId])
 
