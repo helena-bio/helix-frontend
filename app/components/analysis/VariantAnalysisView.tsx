@@ -602,7 +602,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           />
           <FilterCard
             count={acmgCounts.pathogenic}
-            label="Pathogenic"
+            label="P"
             tooltip="Pathogenic variants - strong evidence of disease association"
             isSelected={acmgFilter === 'Pathogenic'}
             onClick={() => handleAcmgClick('Pathogenic')}
@@ -610,7 +610,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           />
           <FilterCard
             count={acmgCounts.likely_pathogenic}
-            label="Likely Path."
+            label="LP"
             tooltip="Likely Pathogenic variants - probable disease association"
             isSelected={acmgFilter === 'Likely Pathogenic'}
             onClick={() => handleAcmgClick('Likely Pathogenic')}
@@ -626,7 +626,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           />
           <FilterCard
             count={acmgCounts.likely_benign}
-            label="Likely Benign"
+            label="LB"
             tooltip="Likely Benign variants - probably not disease-causing"
             isSelected={acmgFilter === 'Likely Benign'}
             onClick={() => handleAcmgClick('Likely Benign')}
@@ -634,7 +634,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
           />
           <FilterCard
             count={acmgCounts.benign}
-            label="Benign"
+            label="B"
             tooltip="Benign variants - not disease-causing"
             isSelected={acmgFilter === 'Benign'}
             onClick={() => handleAcmgClick('Benign')}
