@@ -69,6 +69,7 @@ export function Sidebar() {
     isSidebarOpen,
     toggleSidebar,
     selectedModule,
+    currentSessionId,
     setCurrentSessionId,
     setSelectedModule,
   } = useSession()
@@ -110,6 +111,14 @@ export function Sidebar() {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isUserMenuOpen])
+
+  // Auto-collapse cases and open modules when a case is selected
+  useEffect(() => {
+    if (currentSessionId) {
+      setIsCasesOpen(false)
+      setIsModulesOpen(true)
+    }
+  }, [currentSessionId])
 
   // Resize handlers -- direct DOM for zero flicker
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
