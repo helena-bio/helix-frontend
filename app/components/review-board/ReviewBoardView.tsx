@@ -504,8 +504,8 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <div className="p-3 rounded-lg bg-primary/10">
-          <ClipboardCheck className="h-6 w-6 text-primary" />
+        <div className="p-2.5 rounded-lg bg-primary/10">
+          <ClipboardCheck className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Review Board</h1>
