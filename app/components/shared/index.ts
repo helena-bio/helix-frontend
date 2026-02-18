@@ -13,3 +13,4 @@ export {
   truncateSequence,
   formatAlleles,
 } from './variant-helpers'
+export { StarButton } from './StarButton'

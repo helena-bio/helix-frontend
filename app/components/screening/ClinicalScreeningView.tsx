@@ -36,6 +36,7 @@ import {
   formatACMGDisplay,
   formatTierDisplay,
   ConsequenceBadges,
+  StarButton,
 } from '@/components/shared'
 
 interface ClinicalScreeningViewProps {
@@ -191,7 +192,8 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           )}
 
           {/* View Details Button */}
-          <div className="pt-2 border-t">
+          <div className="pt-2 border-t flex items-center gap-3">
+            <StarButton variantIdx={parseInt(variant.variant_id)} />
             <Button
               variant="outline"
               size="sm"

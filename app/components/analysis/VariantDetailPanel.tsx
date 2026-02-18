@@ -31,7 +31,8 @@ import {
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
 import { useHPOTerm } from '@/hooks/queries'
-import { ConsequenceBadges, getImpactColor, truncateSequence, formatAlleles } from '@/components/shared'
+import { ConsequenceBadges, getImpactColor, truncateSequence, formatAlleles, StarButton,
+} from '@/components/shared'
 import { GnomADCard } from './GnomADCard'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
@@ -400,6 +401,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <h2 className="text-2xl font-bold">
               {variant.gene_symbol || 'Unknown Gene'}
             </h2>
+            <StarButton variantIdx={variantIdx} size="md" />
             <span className="text-base text-muted-foreground font-mono font-semibold truncate max-w-md" title={`${variant.reference_allele} → ${variant.alternate_allele}`}>
               {variant.chromosome}:{variant.position.toLocaleString()} {truncateSequence(variant.reference_allele, 15)} → {truncateSequence(variant.alternate_allele, 15)}
             </span>

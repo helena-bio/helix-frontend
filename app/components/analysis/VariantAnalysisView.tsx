@@ -46,6 +46,7 @@ import {
   formatACMGDisplay,
   ConsequenceBadges,
   truncateSequence,
+  StarButton,
 } from '@/components/shared'
 import type { GeneAggregated, VariantInGene } from '@/types/variant.types'
 
@@ -247,7 +248,8 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           )}
 
           {/* View Details Button */}
-          <div className="pt-2 border-t">
+          <div className="pt-2 border-t flex items-center gap-3">
+            <StarButton variantIdx={variant.variant_idx} />
             <Button
               variant="outline"
               size="sm"

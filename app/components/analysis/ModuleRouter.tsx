@@ -10,6 +10,7 @@ import { VariantAnalysisView } from './VariantAnalysisView'
 import { ClinicalScreeningView } from '@/components/screening'
 import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingView'
 import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
+import { ReviewBoardView } from '@/components/review-board'
 import { ClinicalReportView } from '@/components/report/ClinicalReportView'
 
 interface ModuleRouterProps {
@@ -37,6 +38,11 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
   // Literature Analysis
   if (selectedModule === 'literature') {
     return <LiteratureMatchingView sessionId={sessionId} />
+  }
+
+  // Review Board
+  if (selectedModule === 'review-board') {
+    return <ReviewBoardView sessionId={sessionId} />
   }
 
   // Clinical Report

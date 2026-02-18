@@ -31,6 +31,7 @@ import {
   Users2,
   Building2,
   Loader2,
+  ClipboardCheck,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -179,6 +180,12 @@ export function Sidebar() {
       name: 'Literature Analysis',
       icon: BookOpen,
       checkEnabled: () => isAnalysisComplete && (enablePhenotypeMatching || hasLiteratureData || hasPhenotypeData),
+    },
+    {
+      id: 'review-board',
+      name: 'Review Board',
+      icon: ClipboardCheck,
+      checkEnabled: () => isAnalysisComplete,
     },
     {
       id: 'report',

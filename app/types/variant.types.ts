@@ -262,4 +262,24 @@ export interface VariantOverride {
   created_at: string
 }
 
+// =============================================================================
+// Review Board Types
+// =============================================================================
+
+export interface ReviewBoardAuthor {
+  name: string
+  initials: string
+}
+
+export interface ReviewBoardItem {
+  id: string
+  user: ReviewBoardAuthor
+  variant_idx: number
+  added_at: string
+}
+
+export interface ReviewBoardListResponse {
+  items: ReviewBoardItem[]
+  total_count: number
+}
 export * from "./literature.types"

@@ -44,6 +44,7 @@ import {
 import { useJourney } from '@/contexts/JourneyContext'
 import { useSession } from '@/contexts/SessionContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { ReviewBoardProvider } from '@/contexts/ReviewBoardContext'
 import { useVariantsResults } from '@/contexts/VariantsResultsContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
@@ -234,6 +235,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
           <PhenotypeResultsProvider sessionId={currentSessionId}>
             <VariantsResultsProvider sessionId={currentSessionId}>
               <LiteratureResultsProvider sessionId={currentSessionId}>
+                <ReviewBoardProvider>
                 <div className="h-screen flex flex-col">
                   {/* Impersonation Banner -- above everything */}
                   <ImpersonationBanner />
@@ -254,6 +256,7 @@ export default function AuthenticatedLayout({ children }: AuthenticatedLayoutPro
                     </LayoutContent>
                   </div>
                 </div>
+                </ReviewBoardProvider>
               </LiteratureResultsProvider>
             </VariantsResultsProvider>
           </PhenotypeResultsProvider>
