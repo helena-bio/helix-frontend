@@ -117,7 +117,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 space-y-4 border-t">
           {/* Variant Details */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+          <div className="grid grid-cols-2 gap-4 pt-2">
             <div className="min-w-0">
               <p className="text-md text-muted-foreground">HGVS Protein</p>
               <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>{variant.hgvs_protein || '-'}</p>
@@ -125,14 +125,6 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             <div className="min-w-0">
               <p className="text-md text-muted-foreground">HGVS cDNA</p>
               <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>{variant.hgvs_cdna || '-'}</p>
-            </div>
-            <div>
-              <p className="text-md text-muted-foreground">Depth</p>
-              <p className="text-md">{variant.depth || '-'}</p>
-            </div>
-            <div>
-              <p className="text-md text-muted-foreground">Quality</p>
-              <p className="text-md">{variant.quality?.toFixed(1) || '-'}</p>
             </div>
           </div>
 
@@ -187,7 +179,6 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
   )
 }
 
-interface GeneSectionProps
 interface GeneSectionProps {
   geneResult: GeneAggregatedResult
   rank: number
