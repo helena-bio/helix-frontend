@@ -571,9 +571,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold">Variant Analysis</h1>
-          <p className="text-base text-muted-foreground mt-1">
-            Analyze variants by ACMG classification, impact, and clinical significance.
-          </p>
         </div>
 
         {/* Status Badge */}
@@ -689,17 +686,22 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
               onChange={(e) => setGeneFilter(e.target.value)}
               className="max-w-xs text-base"
             />
-            <span className="text-sm text-muted-foreground">
-              Showing {visibleGenes.length} of {filteredGenes.length} genes
-              {(acmgFilter !== 'all' || impactFilter !== 'all' || geneFilter) && ` (filtered)`}
-            </span>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-sm text-muted-foreground cursor-default inline-flex items-center gap-1">
+                    Showing {visibleGenes.length} of {filteredGenes.length} genes
+                    {(acmgFilter !== 'all' || impactFilter !== 'all' || geneFilter) && ` (filtered)`}
+                    <Info className="h-3.5 w-3.5 opacity-50" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="text-sm max-w-xs">
+                  <p>Sorted by ACMG classification priority (Pathogenic first), then by Tier, then by variant count.
+                  {(acmgFilter !== 'all' || impactFilter !== 'all') && ' Click the filter card again to show all.'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-
-          {/* Sorting explanation */}
-          <p className="text-sm text-muted-foreground">
-            Sorted by ACMG classification priority (Pathogenic first), then by Tier, then by variant count.
-            {(acmgFilter !== 'all' || impactFilter !== 'all') && ' Click the filter card again to show all.'}
-          </p>
 
           {/* Gene Cards */}
           {visibleGenes.map((gene, idx) => (
