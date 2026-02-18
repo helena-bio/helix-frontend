@@ -190,7 +190,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
         <span>Cases</span>
         <div className="flex items-center gap-1.5">
           {cases.length > 0 && (
-            <span className="text-sm font-normal normal-case tracking-normal bg-muted rounded-full px-1.5 py-0.5">
+            <span className="text-xs font-normal normal-case tracking-normal bg-muted rounded-full px-1.5 py-0.5">
               {cases.length}
             </span>
           )}
