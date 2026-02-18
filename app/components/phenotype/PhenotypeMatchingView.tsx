@@ -264,29 +264,14 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
               <span className="text-sm text-muted-foreground">Loading variants...</span>
             </div>
           )}
-
           {/* Variants */}
-          {!isLoadingVariants && geneResult.variants && (
-            <div>
-              <p className="text-base font-semibold mb-3">
-                Variants ({visibleVariants.length})
-                {tierFilter !== 'all' && (
-                  <span className="text-sm text-muted-foreground font-normal ml-2">
-                    - Showing only {tierFilter} variants
-                  </span>
-                )}
-              </p>
-              <div className="space-y-3">
-                {visibleVariants.map((variant) => (
-                  <VariantCard
-                    key={variant.variant_idx}
-                    variant={variant}
-                    onViewDetails={onViewVariantDetails}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          {!isLoadingVariants && geneResult.variants && visibleVariants.map((variant) => (
+            <VariantCard
+              key={variant.variant_idx}
+              variant={variant}
+              onViewDetails={onViewVariantDetails}
+            />
+          ))}
         </CardContent>
       )}
     </Card>
