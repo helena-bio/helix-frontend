@@ -162,7 +162,7 @@ function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | nul
       <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-mono tabular-nums w-8 text-right text-foreground">
+      <span className="text-[11px] font-mono tabular-nums w-8 text-right text-foreground">
         {value.toFixed(3)}
       </span>
     </div>
@@ -240,14 +240,14 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           {/* GENOMIC IDENTITY STRIP                                            */}
           {/* ---------------------------------------------------------------- */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/60 border border-border/60 flex-wrap mt-2">
-            <span className="font-mono text-sm text-foreground font-medium tracking-tight">
+            <span className="font-mono text-[13px] text-muted-foreground font-normal tracking-tight tabular-nums">
               {variant.chromosome}:{variant.position?.toLocaleString()}{' '}
               {truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}
             </span>
             {variant.hgvs_protein && (
               <>
-                <span className="text-muted-foreground/40 text-xs">·</span>
-                <span className="font-mono text-sm font-semibold text-foreground">
+                <span className="text-muted-foreground/30 text-[11px]">·</span>
+                <span className="font-mono text-[13px] font-semibold text-foreground tracking-tight">
                   {truncateSequence(variant.hgvs_protein, 40)}
                 </span>
                 <button
@@ -261,8 +261,8 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             )}
             {variant.hgvs_cdna && (
               <>
-                <span className="text-muted-foreground/40 text-xs">·</span>
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="text-muted-foreground/30 text-[11px]">·</span>
+                <span className="font-mono text-[11px] text-muted-foreground tracking-tight">
                   {truncateSequence(variant.hgvs_cdna, 40)}
                 </span>
                 <button
@@ -300,7 +300,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             {/* gnomAD AF */}
             <div className="px-3 py-2 flex flex-col gap-1">
               <SectionLabel>gnomAD AF</SectionLabel>
-              <span className={`font-mono text-sm tabular-nums ${af.colorClass}`}>
+              <span className={`font-mono text-[13px] font-medium tabular-nums ${af.colorClass}`}>
                 {af.text}
               </span>
               {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 && (
@@ -315,17 +315,17 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               <SectionLabel>Coverage</SectionLabel>
               <div className="flex items-end gap-3">
                 <div>
-                  <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                  <span className="font-mono text-[13px] font-semibold text-foreground tabular-nums">
                     {variant.depth ?? '—'}
                   </span>
-                  <span className="text-xs text-muted-foreground ml-0.5">x</span>
-                  <p className="text-xs text-muted-foreground leading-none mt-0.5">depth</p>
+                  <span className="text-[11px] text-muted-foreground ml-0.5">x</span>
+                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">depth</p>
                 </div>
                 <div>
-                  <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                  <span className="font-mono text-[13px] font-semibold text-foreground tabular-nums">
                     {variant.quality?.toFixed(0) ?? '—'}
                   </span>
-                  <p className="text-xs text-muted-foreground leading-none mt-0.5">qual</p>
+                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">qual</p>
                 </div>
               </div>
             </div>
@@ -384,7 +384,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                         value={variant.sift_score !== null ? 1 - variant.sift_score! : null}
                         colorClass="bg-red-400"
                       />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                         ({variant.sift_score?.toFixed(3) ?? '—'})
                       </span>
                     </div>
@@ -405,7 +405,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                 e.stopPropagation()
                 onViewDetails(variant.variant_idx)
               }}
-              className="text-sm gap-1.5 h-7 px-3"
+              className="text-[13px] gap-1.5 h-7 px-3 font-medium"
             >
               <ExternalLink className="h-3 w-3" />
               View Full Details
