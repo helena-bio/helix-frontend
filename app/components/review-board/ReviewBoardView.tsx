@@ -631,7 +631,7 @@ function ReviewGeneSection({ group, rank, sessionId, onViewDetails }: ReviewGene
             )}
             {group.best_impact && (
               <Badge variant="outline" className={`text-sm ${getImpactColor(group.best_impact)}`}>
-                {group.best_impact}
+                {formatImpactDisplay(group.best_impact)}
               </Badge>
             )}
           </div>
@@ -871,10 +871,10 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
 
           <div className="flex items-center gap-2">
             {[
-              { key: 'HIGH' as ImpactFilter, label: 'HIGH', count: impactCounts.high, color: 'border-red-200 bg-red-50 text-red-900' },
-              { key: 'MODERATE' as ImpactFilter, label: 'MODERATE', count: impactCounts.moderate, color: 'border-orange-200 bg-orange-50 text-orange-900' },
-              { key: 'LOW' as ImpactFilter, label: 'LOW', count: impactCounts.low, color: 'border-yellow-200 bg-yellow-50 text-yellow-900' },
-              { key: 'MODIFIER' as ImpactFilter, label: 'MODIFIER', count: impactCounts.modifier, color: 'border-gray-200 bg-gray-50 text-gray-700' },
+              { key: 'HIGH' as ImpactFilter, label: 'High', count: impactCounts.high, color: 'border-red-200 bg-red-50 text-red-900' },
+              { key: 'MODERATE' as ImpactFilter, label: 'Moderate', count: impactCounts.moderate, color: 'border-orange-200 bg-orange-50 text-orange-900' },
+              { key: 'LOW' as ImpactFilter, label: 'Low', count: impactCounts.low, color: 'border-yellow-200 bg-yellow-50 text-yellow-900' },
+              { key: 'MODIFIER' as ImpactFilter, label: 'Modifier', count: impactCounts.modifier, color: 'border-gray-200 bg-gray-50 text-gray-700' },
             ].map(({ key, label, count: c, color }) => (
               <button
                 key={key}
