@@ -29,43 +29,11 @@ export function HPOTermDetailPanel({ hpoId, hpoName, onBack }: HPOTermDetailPane
   const { data: term, isLoading } = useHPOTerm(hpoId)
   const { aggregatedResults } = usePhenotypeResults()
 
-  // Find all genes that matched this specific HPO term
+  // Find genes that matched this HPO term using pre-computed matched_hpo_ids
   const matchedGenes = useMemo(() => {
     if (!aggregatedResults) return []
-
-    const results: {
-      gene_symbol: string
-      best_clinical_score: number
-      best_tier: string
-      similarity_score: number
-      rank: number
-    }[] = []
-
-    for (const gene of aggregatedResults) {
-      if (!gene.variants) continue
-      let bestSimilarity = 0
-
-      for (const variant of gene.variants) {
-        if (!variant.individual_matches) continue
-        for (const match of variant.individual_matches) {
-          if (match.patient_hpo_id === hpoId && match.similarity_score > bestSimilarity) {
-            bestSimilarity = match.similarity_score
-          }
-        }
-      }
-
-      if (bestSimilarity > 0) {
-        results.push({
-          gene_symbol: gene.gene_symbol,
-          best_clinical_score: gene.best_clinical_score,
-          best_tier: gene.best_tier,
-          similarity_score: bestSimilarity,
-          rank: gene.rank,
-        })
-      }
-    }
-
-    return results.sort((a, b) => b.similarity_score - a.similarity_score)
+    return aggregatedResults
+      .filter(gene => gene.matched_hpo_ids?.includes(hpoId))
   }, [aggregatedResults, hpoId])
 
   // Clean definition text (strip surrounding quotes if present)

@@ -56,6 +56,7 @@ export interface GeneAggregatedResult {
   best_tier: string
   variant_count: number
   best_matched_terms: number
+  matched_hpo_ids: string[]
   total_patient_terms: number
   tier_1_count: number
   tier_2_count: number
