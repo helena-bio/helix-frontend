@@ -12,14 +12,14 @@ import { Badge } from '@/components/ui/badge'
 // ============================================================================
 
 export const getACMGColor = (acmg: string | null | undefined) => {
-  if (!acmg) return 'bg-gray-100 text-gray-600 border-gray-300'
+  if (!acmg) return 'bg-gray-100 text-gray-900 border-gray-300'
   const acmgLower = acmg.toLowerCase()
   if (acmgLower === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
   if (acmgLower === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
   if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
   if (acmgLower === 'likely benign') return 'bg-blue-100 text-blue-900 border-blue-300'
   if (acmgLower === 'benign') return 'bg-green-100 text-green-900 border-green-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
+  return 'bg-gray-100 text-gray-900 border-gray-300'
 }
 
 export const formatImpactDisplay = (impact: string | null | undefined): string => {
@@ -33,34 +33,34 @@ export const formatImpactDisplay = (impact: string | null | undefined): string =
 }
 
 export const getImpactColor = (impact: string | null | undefined) => {
-  if (!impact) return 'bg-gray-100 text-gray-600 border-gray-300'
+  if (!impact) return 'bg-gray-100 text-gray-900 border-gray-300'
   const impactUpper = impact.toUpperCase()
   if (impactUpper === 'HIGH') return 'bg-red-100 text-red-900 border-red-300'
   if (impactUpper === 'MODERATE') return 'bg-orange-100 text-orange-900 border-orange-300'
   if (impactUpper === 'LOW') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
+  return 'bg-gray-100 text-gray-900 border-gray-300'
 }
 
 export const getTierColor = (tier: string | number | null | undefined) => {
-  if (!tier) return 'bg-gray-100 text-gray-600 border-gray-300'
+  if (!tier) return 'bg-gray-100 text-gray-900 border-gray-300'
   const tierStr = String(tier).toLowerCase()
   // IF must be checked BEFORE tier numbers to avoid false match on "incidental finding" containing no digits
   if (tierStr.startsWith('if') || tierStr.includes('incidental')) return 'bg-purple-100 text-purple-900 border-purple-300'
   if (tierStr.includes('1')) return 'bg-red-100 text-red-900 border-red-300'
   if (tierStr.includes('2') || tierStr.includes('potentially')) return 'bg-orange-100 text-orange-900 border-orange-300'
   if (tierStr.includes('3') || tierStr.includes('uncertain')) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
+  return 'bg-gray-100 text-gray-900 border-gray-300'
 }
 
 export const getScoreColor = (score: number) => {
   if (score >= 70) return 'bg-green-100 text-green-900 border-green-300'
   if (score >= 50) return 'bg-blue-100 text-blue-900 border-blue-300'
   if (score >= 30) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-600 border-gray-300'
+  return 'bg-gray-100 text-gray-900 border-gray-300'
 }
 
 export const getZygosityBadge = (genotype: string | null | undefined) => {
-  if (!genotype) return { label: '-', color: 'bg-gray-100 text-gray-600 border-gray-300' }
+  if (!genotype) return { label: '-', color: 'bg-gray-100 text-gray-900 border-gray-300' }
   if (genotype === '0/1' || genotype === '1/0' || genotype === '0|1' || genotype === '1|0' || genotype === 'het') {
     return { label: 'Het', color: 'bg-blue-100 text-blue-900 border-blue-300' }
   }
@@ -70,7 +70,7 @@ export const getZygosityBadge = (genotype: string | null | undefined) => {
   if (genotype === '1' || genotype === '1/.' || genotype === '.|1' || genotype === 'hemi') {
     return { label: 'Hemi', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
   }
-  return { label: genotype, color: 'bg-gray-100 text-gray-600 border-gray-300' }
+  return { label: genotype, color: 'bg-gray-100 text-gray-900 border-gray-300' }
 }
 
 // ============================================================================
@@ -147,7 +147,7 @@ export const getConsequenceColor = (consequence: string): string => {
   }
 
   // Modifier (gray)
-  return 'bg-gray-100 text-gray-600 border-gray-300'
+  return 'bg-gray-100 text-gray-900 border-gray-300'
 }
 
 // ============================================================================
@@ -177,7 +177,7 @@ export function ConsequenceBadges({ consequence, maxBadges = 3, className = '' }
         </Badge>
       ))}
       {remaining > 0 && (
-        <Badge variant="outline" className="text-tiny bg-gray-100 text-gray-600 border-gray-300">
+        <Badge variant="outline" className="text-tiny bg-gray-100 text-gray-900 border-gray-300">
           +{remaining} more
         </Badge>
       )}
