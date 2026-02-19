@@ -147,7 +147,7 @@ export const getConsequenceColor = (consequence: string): string => {
   }
 
   // Modifier (gray)
-  return 'bg-gray-50 text-gray-600 border-gray-200'
+  return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
 // ============================================================================
@@ -177,7 +177,7 @@ export function ConsequenceBadges({ consequence, maxBadges = 3, className = '' }
         </Badge>
       ))}
       {remaining > 0 && (
-        <Badge variant="outline" className="text-tiny bg-gray-50 text-gray-500 border-gray-200">
+        <Badge variant="outline" className="text-tiny bg-gray-100 text-gray-600 border-gray-300">
           +{remaining} more
         </Badge>
       )}
