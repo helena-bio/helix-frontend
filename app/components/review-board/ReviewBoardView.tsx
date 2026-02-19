@@ -39,6 +39,7 @@ import {
   getImpactColor,
   getZygosityBadge,
   formatACMGDisplay,
+  formatClinVarDisplay,
   ConsequenceBadges,
   truncateSequence,
   StarButton,
@@ -111,6 +112,48 @@ function groupVariantsByGene(variants: Variant[]): GeneGroup[] {
   })
 
   return groups
+}
+
+// ============================================================================
+// ACMG CRITERIA BADGE
+// ============================================================================
+
+function ACMGCriteriaBadge({ code }: { code: string }) {
+  const c = code.trim()
+  let extra = ''
+  if (c.startsWith('PVS') || c.startsWith('PS')) {
+    extra = 'bg-red-50 text-red-700 border-red-200'
+  } else if (c.startsWith('PM')) {
+    extra = 'bg-orange-50 text-orange-700 border-orange-200'
+  } else if (c.startsWith('PP')) {
+    extra = 'bg-yellow-50 text-yellow-700 border-yellow-200'
+  } else if (c.startsWith('BA') || c.startsWith('BS') || c.startsWith('BP')) {
+    extra = 'bg-green-50 text-green-700 border-green-200'
+  } else {
+    extra = 'bg-muted text-muted-foreground border-border'
+  }
+  return (
+    <Badge variant="outline" className={`text-xs font-mono ${extra}`}>
+      {c}
+    </Badge>
+  )
+}
+
+function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | null | undefined; colorClass?: string }) {
+  if (value === null || value === undefined) {
+    return <span className="text-md text-muted-foreground font-mono">—</span>
+  }
+  const pct = Math.min(Math.max(value * 100, 0), 100)
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-md font-mono tabular-nums w-10 text-right text-foreground">
+        {value.toFixed(3)}
+      </span>
+    </div>
+  )
 }
 
 // ============================================================================
@@ -243,7 +286,6 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
                           })}
                         </span>
                       </div>
-                      {/* Edit/Delete actions - visible on hover */}
                       {editingId !== note.id && (
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                           <button
@@ -268,7 +310,6 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
                       )}
                     </div>
 
-                    {/* Inline edit mode */}
                     {editingId === note.id ? (
                       <div className="flex gap-2 mt-1">
                         <Input
@@ -332,7 +373,7 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
 }
 
 // ============================================================================
-// VARIANT ROW (compact, inside gene section)
+// VARIANT ROW
 // ============================================================================
 
 interface ReviewVariantRowProps {
@@ -347,11 +388,20 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
   const zygosity = getZygosityBadge(variant.genotype)
   const rarity = getRarityBadge(variant.global_af)
 
+  const acmgCriteria: string[] = variant.acmg_criteria
+    ? variant.acmg_criteria.split(',').map((c: string) => c.trim()).filter(Boolean)
+    : []
+
+  const hasAlphaMissense = variant.alphamissense_score !== null && variant.alphamissense_score !== undefined
+  const hasSift = variant.sift_score !== null && variant.sift_score !== undefined
+  const hasAnyScores = hasAlphaMissense || hasSift
+
   return (
     <div
       className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
       onClick={() => setIsExpanded(!isExpanded)}
     >
+      {/* Compact single-line row */}
       <div className="flex items-center gap-2 px-3 py-2.5">
         <StarButton variantIdx={variant.variant_idx} />
         {variant.acmg_class && (
@@ -375,25 +425,25 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
         {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </div>
 
+      {/* Expanded Content */}
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 space-y-4 border-t" onClick={(e) => e.stopPropagation()}>
-          <div className="pt-2">
-            <p className="text-sm font-mono text-muted-foreground">
-              {variant.chromosome}:{variant.position?.toLocaleString()}
-              <span className="ml-2">
-                {truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}
-              </span>
-            </p>
-          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* HGVS */}
+          <div className="grid grid-cols-2 gap-4 pt-2">
             <div className="min-w-0">
               <p className="text-md text-muted-foreground">HGVS Protein</p>
               <div className="flex items-center gap-1 min-w-0">
-                <p className="text-md font-mono truncate">{truncateSequence(variant.hgvs_protein, 40)}</p>
+                <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>
+                  {variant.hgvs_protein || '-'}
+                </p>
                 {variant.hgvs_protein && (
-                  <button onClick={() => navigator.clipboard.writeText(variant.hgvs_protein!)} className="flex-shrink-0 p-0.5 rounded hover:bg-muted">
-                    <Copy className="h-4 w-4 text-muted-foreground" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!) }}
+                    className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
+                    title="Copy HGVS Protein"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 )}
               </div>
@@ -401,43 +451,130 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
             <div className="min-w-0">
               <p className="text-md text-muted-foreground">HGVS cDNA</p>
               <div className="flex items-center gap-1 min-w-0">
-                <p className="text-md font-mono truncate">{truncateSequence(variant.hgvs_cdna, 40)}</p>
+                <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>
+                  {variant.hgvs_cdna || '-'}
+                </p>
                 {variant.hgvs_cdna && (
-                  <button onClick={() => navigator.clipboard.writeText(variant.hgvs_cdna!)} className="flex-shrink-0 p-0.5 rounded hover:bg-muted">
-                    <Copy className="h-4 w-4 text-muted-foreground" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!) }}
+                    className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
+                    title="Copy HGVS cDNA"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 )}
               </div>
             </div>
-            <div>
+          </div>
+
+          {/* 4-column classification grid */}
+          <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border overflow-hidden">
+
+            {/* ClinVar */}
+            <div className="px-3 py-2 flex flex-col gap-1">
               <p className="text-md text-muted-foreground">ClinVar</p>
-              <p className="text-md">{variant.clinical_significance || '-'}</p>
+              {variant.clinvar_significance ? (
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
+                >
+                  {formatClinVarDisplay(variant.clinvar_significance)}
+                </Badge>
+              ) : (
+                <span className="text-md text-muted-foreground">—</span>
+              )}
             </div>
-            <div>
-              <p className="text-md text-muted-foreground">Confidence</p>
-              <p className="text-md">{variant.confidence_score?.toFixed(2) || '-'}</p>
+
+            {/* gnomAD AF */}
+            <div className="px-3 py-2 flex flex-col gap-1">
+              <p className="text-md text-muted-foreground">gnomAD AF</p>
+              {variant.global_af !== null && variant.global_af !== undefined && variant.global_af > 0 ? (
+                <span className="text-md font-mono tabular-nums text-foreground">
+                  1 in {Math.round(1 / variant.global_af).toLocaleString()}
+                </span>
+              ) : (
+                <span className="text-md text-muted-foreground">Not found</span>
+              )}
+            </div>
+
+            {/* Coverage */}
+            <div className="px-3 py-2 flex flex-col gap-1">
+              <p className="text-md text-muted-foreground">Coverage</p>
+              <div className="flex items-end gap-3">
+                <div>
+                  <span className="font-mono text-md text-foreground tabular-nums">
+                    {variant.depth ?? '—'}
+                  </span>
+                  <span className="text-md text-muted-foreground ml-0.5">x</span>
+                  <p className="text-md text-muted-foreground leading-none mt-0.5">depth</p>
+                </div>
+                <div>
+                  <span className="font-mono text-md text-foreground tabular-nums">
+                    {variant.quality?.toFixed(0) ?? '—'}
+                  </span>
+                  <p className="text-md text-muted-foreground leading-none mt-0.5">qual</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Impact */}
+            <div className="px-3 py-2 flex flex-col gap-1">
+              <p className="text-md text-muted-foreground">Impact</p>
+              {variant.impact ? (
+                <Badge variant="outline" className={`text-xs w-fit ${getImpactColor(variant.impact)}`}>
+                  {variant.impact}
+                </Badge>
+              ) : (
+                <span className="text-md text-muted-foreground">—</span>
+              )}
             </div>
           </div>
 
-          {variant.acmg_criteria && (
+          {/* ACMG Criteria */}
+          {acmgCriteria.length > 0 && (
             <div>
               <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
-              <div className="flex flex-wrap gap-1">
-                {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => (
-                  <Badge key={c} variant="outline" className="text-sm font-mono">
-                    {c.trim()}
-                  </Badge>
+              <div className="flex gap-1 flex-wrap">
+                {acmgCriteria.map((code) => (
+                  <ACMGCriteriaBadge key={code} code={code} />
                 ))}
               </div>
             </div>
           )}
 
+          {/* Computational Predictions */}
+          {hasAnyScores && (
+            <div className="grid grid-cols-2 gap-4">
+              {hasAlphaMissense && (
+                <div>
+                  <p className="text-md text-muted-foreground mb-1">AlphaMissense</p>
+                  <ScoreBar
+                    value={variant.alphamissense_score}
+                    colorClass={(variant.alphamissense_score ?? 0) > 0.7 ? 'bg-red-500' : 'bg-orange-400'}
+                  />
+                </div>
+              )}
+              {hasSift && (
+                <div>
+                  <p className="text-md text-muted-foreground mb-1">
+                    SIFT <span className="text-md text-muted-foreground">({variant.sift_score?.toFixed(3) ?? '—'})</span>
+                  </p>
+                  <ScoreBar
+                    value={variant.sift_score !== null ? 1 - variant.sift_score! : null}
+                    colorClass="bg-red-400"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action Buttons */}
           <div className="flex items-center gap-3 pt-2 border-t">
             <Button
               variant="outline"
               size="sm"
-              className="text-base"
-              onClick={() => onViewDetails(variant.variant_idx)}
+              className="text-sm"
+              onClick={(e) => { e.stopPropagation(); onViewDetails(variant.variant_idx) }}
             >
               <ExternalLink className="h-3 w-3 mr-1" />
               View Full Details
@@ -445,8 +582,8 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
             <Button
               variant={showNotes ? 'secondary' : 'outline'}
               size="sm"
-              className="text-base"
-              onClick={() => setShowNotes(!showNotes)}
+              className="text-sm"
+              onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes) }}
             >
               <MessageSquare className="h-3 w-3 mr-1" />
               Notes
