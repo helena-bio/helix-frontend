@@ -174,10 +174,10 @@ const formatBiotype = (biotype: string | null | undefined): string => {
 }
 
 const formatAF = (af: number | null): string => {
-  if (af === null) return 'N/A'
-  if (af === 0) return 'Absent'
-  if (af < 0.0001) return af.toExponential(2)
-  return af.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')
+  if (af === null) return "N/A"
+  if (af === 0) return "Absent"
+  if (af < 0.0001) return `1 in ${Math.round(1 / af).toLocaleString()}`
+  return `1 in ${Math.round(1 / af).toLocaleString()}`
 }
 
 // ----------------------------------------------------------------------------
@@ -502,25 +502,25 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             STAT STRIP - 5 key facts, no scroll required
             ================================================================ */}
         <div className="border-t grid grid-cols-5 divide-x">
-          <div className="px-3 py-2">
+          <div className="px-3 py-2 flex flex-col">
             <p className="text-md text-muted-foreground leading-none mb-1">gnomAD AF</p>
-            <p className="text-base font-medium font-mono leading-none">
+            <p className="text-base font-semibold leading-none mt-auto">
               {formatAF(variant.global_af)}
             </p>
           </div>
-          <div className="px-3 py-2 min-w-0">
+          <div className="px-3 py-2 min-w-0 flex flex-col">
             <p className="text-md text-muted-foreground leading-none mb-1">Consequence</p>
-            <div className="mt-1">
+            <div className="mt-auto">
               <ConsequenceBadges consequence={variant.consequence} maxBadges={1} className="text-xs" />
             </div>
           </div>
 
-          <div className="px-3 py-2">
+          <div className="px-3 py-2 flex flex-col">
             <p className="text-md text-muted-foreground leading-none mb-1">Impact</p>
             {variant.impact ? (
               <Badge
                 variant="outline"
-                className={`text-xs px-1.5 py-0 h-5 ${getImpactColor(variant.impact)}`}
+                className={`text-xs px-1.5 py-0 h-5 mt-auto ${getImpactColor(variant.impact)}`}
               >
                 {variant.impact}
               </Badge>
@@ -529,21 +529,21 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             )}
           </div>
 
-          <div className="px-3 py-2">
+          <div className="px-3 py-2 flex flex-col">
             <p className="text-md text-muted-foreground leading-none mb-1">Zygosity</p>
             {zygosity && zygosity.label !== '-' ? (
               <Badge
                 variant="outline"
-                className={`text-xs px-1.5 py-0 h-5 ${zygosity.color}`}
+                className={`text-xs px-1.5 py-0 h-5 mt-auto ${zygosity.color}`}
               >
                 {zygosity.label}
               </Badge>
             ) : (
-              <p className="text-base font-medium leading-none">{variant.genotype || '-'}</p>
+              <p className="text-base font-medium leading-none mt-auto">{variant.genotype || '-'}</p>
             )}
           </div>
 
-          <div className="px-3 py-2">
+          <div className="px-3 py-2 flex flex-col">
             <p className="text-md text-muted-foreground leading-none mb-1">Confidence</p>
             <p className="text-base font-medium leading-none">
               {variant.confidence_score !== null ? variant.confidence_score.toFixed(2) : '-'}
