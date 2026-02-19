@@ -599,9 +599,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Review Board</h1>
-          <p className="text-base text-muted-foreground mt-1">
-            Curated variants for focused clinical review. Star variants from any view to add them here.
-          </p>
         </div>
         {count > 0 && (
           <Badge variant="outline" className="text-sm bg-yellow-50 text-yellow-700 border-yellow-300">
