@@ -6,7 +6,7 @@
  */
 
 import { useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, ExternalLink } from 'lucide-react'
 
@@ -109,7 +109,6 @@ export function GnomADCard({
     return POPULATION_NAMES[popmax.toLowerCase()] || popmax.toUpperCase()
   }, [popmax])
 
-  // Build gnomAD URL - format: chr-pos-ref-alt
   const gnomadUrl = useMemo(() => {
     if (chromosome && position && refAllele && altAllele) {
       const chr = chromosome.replace(/^chr/i, '')
@@ -124,13 +123,13 @@ export function GnomADCard({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          gnomAD v4.1
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="pt-4 space-y-5">
+        {/* Section header - matches SectionHeader pattern */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-muted-foreground"><Users className="h-4 w-4" /></span>
+          <h3 className="text-lg font-semibold">gnomAD v4.1</h3>
+        </div>
+
         {/* Global Frequency */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
