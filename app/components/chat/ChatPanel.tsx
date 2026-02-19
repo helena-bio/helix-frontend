@@ -481,9 +481,12 @@ export function ChatPanel() {
           {/* Empty state */}
           {isEmpty && (
             <div className="flex flex-col items-center justify-center h-full gap-8 select-none px-2">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground/70">
-                Ready to analyze a variant?
-              </h2>
+              <div className="flex flex-col items-center gap-3">
+                <img src="/images/logos/logo_bulb.svg" alt="Helix" className="h-10 w-10 opacity-40" />
+                <h2 className="text-2xl font-bold tracking-tight text-foreground/70">
+                  Ready to analyze a variant?
+                </h2>
+              </div>
               <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
                 {[
                   "What does this variant mean clinically?",
