@@ -52,6 +52,7 @@ import {
 } from '@/components/shared'
 import type { GeneAggregated, VariantInGene } from '@/types/variant.types'
 import { formatCount, getRarityBadge } from '@helix/shared/lib/utils'
+import { toast } from 'sonner'
 
 interface VariantAnalysisViewProps {
   sessionId: string
@@ -234,7 +235,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                 </p>
                 {variant.hgvs_protein && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!) }}
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!); toast.success("HGVS Protein copied") }}
                     className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
                     title="Copy HGVS Protein"
                   >
@@ -251,7 +252,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                 </p>
                 {variant.hgvs_cdna && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!) }}
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!); toast.success("HGVS cDNA copied") }}
                     className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
                     title="Copy HGVS cDNA"
                   >
