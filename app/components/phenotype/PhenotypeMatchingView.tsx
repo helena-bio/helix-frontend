@@ -30,13 +30,12 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
-import { HPOTermDetailPanel } from './HPOTermDetailPanel'
 import {
   getACMGColor,
   StarButton,
@@ -337,7 +336,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
-  const [selectedHpoTerm, setSelectedHpoTerm] = useState<{ hpoId: string; hpoName: string } | null>(null)
+  const [hpoFilter, setHpoFilter] = useState<string | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
     if (observerRef.current) observerRef.current.disconnect()
@@ -403,13 +402,17 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
       })
     }
 
+    if (hpoFilter) {
+      filtered = filtered.filter(g => g.matched_hpo_ids?.includes(hpoFilter))
+    }
+
     if (geneFilter) {
       const filter = geneFilter.toLowerCase()
       filtered = filtered.filter(g => g.gene_symbol.toLowerCase().includes(filter))
     }
 
     return filtered
-  }, [aggregatedResults, geneFilter, tierFilter])
+  }, [aggregatedResults, geneFilter, tierFilter, hpoFilter])
 
   const visibleResults = useMemo(() => {
     return filteredResults.slice(0, visibleCount)
@@ -423,15 +426,6 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   const hasResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
 
-  if (selectedHpoTerm !== null) {
-    return (
-      <HPOTermDetailPanel
-        hpoId={selectedHpoTerm.hpoId}
-        hpoName={selectedHpoTerm.hpoName}
-        onBack={() => setSelectedHpoTerm(null)}
-      />
-    )
-  }
 
   if (selectedVariantIdx !== null) {
     return (
@@ -561,8 +555,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                       <Badge
                         key={term.hpo_id}
                         variant="secondary"
-                        className="px-3 py-1.5 bg-primary/10 text-primary text-sm cursor-pointer hover:bg-primary/20 transition-colors"
-                        onClick={() => setSelectedHpoTerm({ hpoId: term.hpo_id, hpoName: term.name })}
+                        className={`px-3 py-1.5 text-primary text-sm cursor-pointer transition-colors ${hpoFilter === term.hpo_id ? 'bg-primary/25 ring-2 ring-primary/40 ring-offset-1' : 'bg-primary/10 hover:bg-primary/20'}`}
+                        onClick={() => setHpoFilter(prev => prev === term.hpo_id ? null : term.hpo_id)}
                       >
                         {term.name}
                       </Badge>
