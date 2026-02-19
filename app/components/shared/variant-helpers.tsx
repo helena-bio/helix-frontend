@@ -38,7 +38,7 @@ export const getImpactColor = (impact: string | null | undefined) => {
   if (impactUpper === 'HIGH') return 'bg-red-100 text-red-900 border-red-300'
   if (impactUpper === 'MODERATE') return 'bg-orange-100 text-orange-900 border-orange-300'
   if (impactUpper === 'LOW') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  return 'bg-gray-100 text-gray-900 border-gray-300'
+  return 'bg-blue-100 text-blue-900 border-blue-300'
 }
 
 export const getTierColor = (tier: string | number | null | undefined) => {
@@ -146,8 +146,8 @@ export const getConsequenceColor = (consequence: string): string => {
     return 'bg-yellow-100 text-yellow-900 border-yellow-300'
   }
 
-  // Modifier (gray)
-  return 'bg-gray-100 text-gray-900 border-gray-300'
+  // Modifier (blue)
+  return 'bg-blue-100 text-blue-900 border-blue-300'
 }
 
 // ============================================================================
