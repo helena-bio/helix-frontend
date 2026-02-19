@@ -120,6 +120,66 @@ const variantMatchesImpact = (variant: VariantInGene, filter: ImpactFilter): boo
 }
 
 // ============================================================================
+// EXPANDED CARD HELPERS
+// ============================================================================
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      {children}
+    </span>
+  )
+}
+
+function ACMGCriteriaBadge({ code }: { code: string }) {
+  const c = code.trim()
+  let extra = ''
+  if (c.startsWith('PVS') || c.startsWith('PS')) {
+    extra = 'bg-red-50 text-red-700 border-red-200'
+  } else if (c.startsWith('PM')) {
+    extra = 'bg-orange-50 text-orange-700 border-orange-200'
+  } else if (c.startsWith('PP')) {
+    extra = 'bg-yellow-50 text-yellow-700 border-yellow-200'
+  } else if (c.startsWith('BA') || c.startsWith('BS') || c.startsWith('BP')) {
+    extra = 'bg-green-50 text-green-700 border-green-200'
+  } else {
+    extra = 'bg-muted text-muted-foreground border-border'
+  }
+  return (
+    <Badge variant="outline" className={`text-xs font-mono ${extra}`}>
+      {c}
+    </Badge>
+  )
+}
+
+function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | null | undefined; colorClass?: string }) {
+  if (value === null || value === undefined) {
+    return <span className="text-xs text-muted-foreground font-mono">—</span>
+  }
+  const pct = Math.min(Math.max(value * 100, 0), 100)
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs font-mono tabular-nums w-8 text-right text-foreground">
+        {value.toFixed(3)}
+      </span>
+    </div>
+  )
+}
+
+function formatAF(af: number | null | undefined): { text: string; colorClass: string } {
+  if (af === null || af === undefined || af === 0) {
+    return { text: 'Not found', colorClass: 'text-foreground font-semibold' }
+  }
+  if (af < 0.0001) {
+    return { text: af.toExponential(2), colorClass: 'text-orange-700 font-semibold' }
+  }
+  return { text: af.toFixed(6).replace(/\.?0+$/, ''), colorClass: 'text-green-700 font-semibold' }
+}
+
+// ============================================================================
 // SUBCOMPONENTS
 // ============================================================================
 
@@ -133,9 +193,15 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
   const zygosity = getZygosityBadge(variant.genotype)
   const rarity = getRarityBadge(variant.gnomad_af)
 
-  // Extract primary consequence for compact display
-  const primaryConsequence = variant.consequence?.split(",")[0]?.trim()?.replace(/_/g, " ") || null
-  const formatConsequence = (c: string) => c.charAt(0).toUpperCase() + c.slice(1)
+  const acmgCriteria: string[] = variant.acmg_criteria
+    ? variant.acmg_criteria.split(',').map((c: string) => c.trim()).filter(Boolean)
+    : []
+
+  const hasAlphaMissense = variant.alphamissense_score !== null && variant.alphamissense_score !== undefined
+  const hasSift = variant.sift_score !== null && variant.sift_score !== undefined
+  const hasAnyScores = hasAlphaMissense || hasSift
+
+  const af = formatAF(variant.gnomad_af)
 
   return (
     <div
@@ -168,99 +234,190 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="px-3 pb-3 pt-1 space-y-4 border-t">
-          {/* Location */}
-          <div className="pt-2">
-            <p className="text-sm font-mono text-muted-foreground" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}/${variant.alternate_allele}`}>
-              {variant.chromosome}:{variant.position?.toLocaleString()}
-              <span className="ml-2">{truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}</span>
-            </p>
+        <div className="px-3 pb-3 pt-1 space-y-3 border-t" onClick={(e) => e.stopPropagation()}>
+
+          {/* ---------------------------------------------------------------- */}
+          {/* GENOMIC IDENTITY STRIP                                            */}
+          {/* ---------------------------------------------------------------- */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/60 border border-border/60 flex-wrap mt-2">
+            <span className="font-mono text-sm text-foreground font-medium tracking-tight">
+              {variant.chromosome}:{variant.position?.toLocaleString()}{' '}
+              {truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}
+            </span>
+            {variant.hgvs_protein && (
+              <>
+                <span className="text-muted-foreground/40 text-xs">·</span>
+                <span className="font-mono text-sm font-semibold text-foreground">
+                  {truncateSequence(variant.hgvs_protein, 40)}
+                </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!) }}
+                  className="p-0.5 rounded hover:bg-muted"
+                  title="Copy HGVS Protein"
+                >
+                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </>
+            )}
+            {variant.hgvs_cdna && (
+              <>
+                <span className="text-muted-foreground/40 text-xs">·</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {truncateSequence(variant.hgvs_cdna, 40)}
+                </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!) }}
+                  className="p-0.5 rounded hover:bg-muted"
+                  title="Copy HGVS cDNA"
+                >
+                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Variant Details */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="min-w-0">
-              <p className="text-md text-muted-foreground">HGVS Protein</p>
-              <div className="flex items-center gap-1 min-w-0">
-                <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>{truncateSequence(variant.hgvs_protein, 40)}</p>
-                {variant.hgvs_protein && (
-                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
-                    <Copy className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                )}
+          {/* ---------------------------------------------------------------- */}
+          {/* 4-COLUMN CLASSIFICATION GRID                                      */}
+          {/* ClinVar | gnomAD AF | Coverage | Impact                          */}
+          {/* ---------------------------------------------------------------- */}
+          <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border overflow-hidden">
+
+            {/* ClinVar */}
+            <div className="px-3 py-2 flex flex-col gap-1">
+              <SectionLabel>ClinVar</SectionLabel>
+              {variant.clinvar_significance ? (
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
+                >
+                  {variant.clinvar_significance}
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </div>
+
+            {/* gnomAD AF */}
+            <div className="px-3 py-2 flex flex-col gap-1">
+              <SectionLabel>gnomAD AF</SectionLabel>
+              <span className={`font-mono text-sm tabular-nums ${af.colorClass}`}>
+                {af.text}
+              </span>
+              {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  1 in {Math.round(1 / variant.gnomad_af).toLocaleString()}
+                </span>
+              )}
+            </div>
+
+            {/* Coverage */}
+            <div className="px-3 py-2 flex flex-col gap-1">
+              <SectionLabel>Coverage</SectionLabel>
+              <div className="flex items-end gap-3">
+                <div>
+                  <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                    {variant.depth ?? '—'}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-0.5">x</span>
+                  <p className="text-xs text-muted-foreground leading-none mt-0.5">depth</p>
+                </div>
+                <div>
+                  <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                    {variant.quality?.toFixed(0) ?? '—'}
+                  </span>
+                  <p className="text-xs text-muted-foreground leading-none mt-0.5">qual</p>
+                </div>
               </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-md text-muted-foreground">HGVS cDNA</p>
-              <div className="flex items-center gap-1 min-w-0">
-                <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>{truncateSequence(variant.hgvs_cdna, 40)}</p>
-                {variant.hgvs_cdna && (
-                  <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!) }} className="flex-shrink-0 p-0.5 rounded hover:bg-muted" title="Copy to clipboard">
-                    <Copy className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="text-md text-muted-foreground">Depth</p>
-              <p className="text-md">{variant.depth || '-'}</p>
-            </div>
-            <div>
-              <p className="text-md text-muted-foreground">Quality</p>
-              <p className="text-md">{variant.quality?.toFixed(1) || '-'}</p>
+
+            {/* Impact */}
+            <div className="px-3 py-2 flex flex-col gap-1">
+              <SectionLabel>Impact</SectionLabel>
+              {variant.impact ? (
+                <Badge variant="outline" className={`text-xs w-fit ${getImpactColor(variant.impact)}`}>
+                  {variant.impact}
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
             </div>
           </div>
 
-          {/* gnomAD AF detail */}
-          {variant.gnomad_af !== null && variant.gnomad_af !== undefined && (
-            <div>
-              <p className="text-md text-muted-foreground mb-1">gnomAD Allele Frequency</p>
-              <p className="text-md font-mono">{variant.gnomad_af.toExponential(2)} (1 in {Math.round(1 / variant.gnomad_af).toLocaleString()})</p>
-            </div>
-          )}
-
-          {/* ACMG Criteria */}
-          {variant.acmg_criteria && (
-            <div>
-              <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
-              <div className="flex flex-wrap gap-1">
-                {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => (
-                  <Badge key={c} variant="outline" className="text-sm font-mono">
-                    {c.trim()}
-                  </Badge>
+          {/* ---------------------------------------------------------------- */}
+          {/* ACMG CRITERIA                                                     */}
+          {/* ---------------------------------------------------------------- */}
+          {acmgCriteria.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <SectionLabel>ACMG</SectionLabel>
+              <div className="flex gap-1 flex-wrap">
+                {acmgCriteria.map((code) => (
+                  <ACMGCriteriaBadge key={code} code={code} />
                 ))}
               </div>
             </div>
           )}
 
-          {/* ClinVar */}
-          {variant.clinvar_significance && (
-            <div>
-              <p className="text-md text-muted-foreground mb-1">ClinVar</p>
-              <p className="text-base">{variant.clinvar_significance}</p>
+          {/* ---------------------------------------------------------------- */}
+          {/* COMPUTATIONAL PREDICTIONS                                         */}
+          {/* Only when scores available                                        */}
+          {/* ---------------------------------------------------------------- */}
+          {hasAnyScores && (
+            <div className="px-3 py-2 rounded-md bg-muted/30 border border-border/60">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                {hasAlphaMissense && (
+                  <div>
+                    <SectionLabel>AlphaMissense</SectionLabel>
+                    <div className="mt-1">
+                      <ScoreBar
+                        value={variant.alphamissense_score}
+                        colorClass={(variant.alphamissense_score ?? 0) > 0.7 ? 'bg-red-500' : 'bg-orange-400'}
+                      />
+                    </div>
+                  </div>
+                )}
+                {hasSift && (
+                  <div>
+                    <SectionLabel>SIFT</SectionLabel>
+                    <div className="mt-1 flex items-center gap-2">
+                      {/* SIFT: lower = more damaging -- invert for bar */}
+                      <ScoreBar
+                        value={variant.sift_score !== null ? 1 - variant.sift_score! : null}
+                        colorClass="bg-red-400"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        ({variant.sift_score?.toFixed(3) ?? '—'})
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* View Details Button */}
-          <div className="pt-2 border-t flex items-center gap-3">
+          {/* ---------------------------------------------------------------- */}
+          {/* FOOTER: View full details                                         */}
+          {/* ---------------------------------------------------------------- */}
+          <div className="flex justify-end pt-1 border-t border-border/60">
             <Button
               variant="outline"
               size="sm"
-              className="text-sm"
               onClick={(e) => {
                 e.stopPropagation()
                 onViewDetails(variant.variant_idx)
               }}
+              className="text-sm gap-1.5 h-7 px-3"
             >
-              <ExternalLink className="h-3 w-3 mr-1" />
+              <ExternalLink className="h-3 w-3" />
               View Full Details
             </Button>
           </div>
+
         </div>
       )}
     </div>
   )
 }
+
 interface GeneSectionProps {
   gene: GeneAggregated
   rank: number
@@ -620,7 +777,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       {/* Impact Filter Pills */}
       {hasResults && (
         <div className="flex items-center gap-2">
-          
+
           {[
             { key: "HIGH" as ImpactFilter, label: "HIGH", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-900" },
             { key: "MODERATE" as ImpactFilter, label: "MODERATE", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
