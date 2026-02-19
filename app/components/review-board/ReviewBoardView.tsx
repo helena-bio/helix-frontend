@@ -8,7 +8,7 @@
  * Notes integration for collaborative clinical annotation.
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   ClipboardCheck,
   Loader2,
@@ -21,6 +21,10 @@ import {
   Send,
   Info,
   Star,
+  Pencil,
+  Trash2,
+  Check,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,7 +32,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useReviewBoard } from '@/contexts/ReviewBoardContext'
-import { getVariant, listNotes, createNote } from '@/lib/api/variant-analysis'
+import { getVariant, listNotes, createNote, updateNote, deleteNote } from '@/lib/api/variant-analysis'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import {
   getACMGColor,
@@ -46,7 +50,6 @@ interface ReviewBoardViewProps {
   sessionId: string
 }
 
-// ACMG priority for sorting (lower = higher priority)
 const ACMG_PRIORITY: Record<string, number> = {
   'Pathogenic': 0,
   'Likely Pathogenic': 1,
@@ -71,7 +74,6 @@ const acmgFilterToClass = (filter: ACMGFilter): string | undefined => {
   return filter
 }
 
-// Group variants by gene symbol
 interface GeneGroup {
   gene_symbol: string
   variants: Variant[]
@@ -125,6 +127,10 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [newNoteText, setNewNoteText] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -157,6 +163,53 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
     }
   }
 
+  const handleEditStart = (note: CaseNote) => {
+    setEditingId(note.id)
+    setEditValue(note.text)
+  }
+
+  const handleEditCancel = () => {
+    setEditingId(null)
+    setEditValue('')
+  }
+
+  const handleEditSave = async (noteId: string) => {
+    if (!editValue.trim() || isSavingEdit) return
+    setIsSavingEdit(true)
+    try {
+      const updated = await updateNote(sessionId, noteId, editValue.trim())
+      setNotes((prev) => prev.map((n) => n.id === noteId ? updated : n))
+      setEditingId(null)
+      setEditValue('')
+    } catch (err) {
+      console.error('Failed to update note:', err)
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
+  const handleEditKeyDown = (e: React.KeyboardEvent, noteId: string) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleEditSave(noteId)
+    }
+    if (e.key === 'Escape') {
+      handleEditCancel()
+    }
+  }
+
+  const handleDelete = async (noteId: string) => {
+    setDeletingId(noteId)
+    try {
+      await deleteNote(sessionId, noteId)
+      setNotes((prev) => prev.filter((n) => n.id !== noteId))
+    } catch (err) {
+      console.error('Failed to delete note:', err)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className="border-t pt-4 space-y-3">
       <div className="flex items-center gap-2">
@@ -176,20 +229,78 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
           {notes.length > 0 && (
             <div className="space-y-2">
               {notes.map((note) => (
-                <div key={note.id} className="flex gap-3 p-3 rounded-lg bg-muted/30">
+                <div key={note.id} className="flex gap-3 p-3 rounded-lg bg-muted/30 group">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <span className="text-sm font-medium text-primary">{note.user.initials}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-base font-medium">{note.user.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(note.created_at).toLocaleDateString('en-GB', {
-                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                        })}
-                      </span>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-base font-medium">{note.user.name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(note.created_at).toLocaleDateString('en-GB', {
+                            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      {/* Edit/Delete actions - visible on hover */}
+                      {editingId !== note.id && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button
+                            onClick={() => handleEditStart(note)}
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            title="Edit note"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(note.id)}
+                            disabled={deletingId === note.id}
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                            title="Delete note"
+                          >
+                            {deletingId === note.id
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Trash2 className="h-3.5 w-3.5" />
+                            }
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-base mt-1 whitespace-pre-wrap">{note.text}</p>
+
+                    {/* Inline edit mode */}
+                    {editingId === note.id ? (
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => handleEditKeyDown(e, note.id)}
+                          className="flex-1 text-base h-9"
+                          autoFocus
+                          disabled={isSavingEdit}
+                        />
+                        <button
+                          onClick={() => handleEditSave(note.id)}
+                          disabled={!editValue.trim() || isSavingEdit}
+                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                          title="Save"
+                        >
+                          {isSavingEdit
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Check className="h-4 w-4 text-green-600" />
+                          }
+                        </button>
+                        <button
+                          onClick={handleEditCancel}
+                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          title="Cancel"
+                        >
+                          <X className="h-4 w-4 text-destructive" />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-base mt-1 whitespace-pre-wrap">{note.text}</p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -241,7 +352,6 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
       className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
       onClick={() => setIsExpanded(!isExpanded)}
     >
-      {/* Compact single-line row */}
       <div className="flex items-center gap-2 px-3 py-2.5">
         <StarButton variantIdx={variant.variant_idx} />
         {variant.acmg_class && (
@@ -265,10 +375,8 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
         {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </div>
 
-      {/* Expanded Content */}
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 space-y-4 border-t" onClick={(e) => e.stopPropagation()}>
-          {/* Location */}
           <div className="pt-2">
             <p className="text-sm font-mono text-muted-foreground">
               {variant.chromosome}:{variant.position?.toLocaleString()}
@@ -278,7 +386,6 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
             </p>
           </div>
 
-          {/* Details Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="min-w-0">
               <p className="text-md text-muted-foreground">HGVS Protein</p>
@@ -312,7 +419,6 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
             </div>
           </div>
 
-          {/* ACMG Criteria */}
           {variant.acmg_criteria && (
             <div>
               <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
@@ -326,7 +432,6 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex items-center gap-3 pt-2 border-t">
             <Button
               variant="outline"
@@ -474,7 +579,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
   const [geneFilter, setGeneFilter] = useState('')
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
 
-  // Load variant data for all starred items
   useEffect(() => {
     if (items.length === 0) {
       setVariants([])
@@ -502,7 +606,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     return () => { cancelled = true }
   }, [items, sessionId])
 
-  // ACMG counts (always from full variants list)
   const acmgCounts = useMemo(() => {
     const counts = { total: variants.length, pathogenic: 0, likely_pathogenic: 0, vus: 0, likely_benign: 0, benign: 0 }
     for (const v of variants) {
@@ -515,7 +618,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     return counts
   }, [variants])
 
-  // Impact counts — scoped to current ACMG filter
   const impactCounts = useMemo(() => {
     const base = acmgFilter === 'all'
       ? variants
@@ -528,7 +630,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     }
   }, [variants, acmgFilter])
 
-  // Filter variants, group by gene
   const geneGroups = useMemo(() => {
     let filtered = variants
 
@@ -574,7 +675,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-start gap-4">
         <div className="p-2.5 rounded-lg bg-primary/10">
           <ClipboardCheck className="h-5 w-5 text-primary" />
@@ -593,7 +693,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
         )}
       </div>
 
-      {/* Error */}
       {errorMessage && (
         <Card className="border-destructive bg-destructive/5">
           <CardContent className="py-3 px-4">
@@ -602,7 +701,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
         </Card>
       )}
 
-      {/* Loading */}
       {isLoading && (
         <div className="text-center py-16">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
@@ -610,7 +708,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
         </div>
       )}
 
-      {/* Empty State */}
       {!isLoading && count === 0 && (
         <Card>
           <CardContent className="p-6 text-center">
@@ -623,10 +720,8 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
         </Card>
       )}
 
-      {/* Content */}
       {!isLoading && count > 0 && (
         <>
-          {/* ACMG Filter Cards */}
           <div className="grid grid-cols-6 gap-3">
             <FilterCard count={acmgCounts.total} label="Total" tooltip="Show all starred variants" isSelected={acmgFilter === 'all'} onClick={() => handleAcmgClick('all')} colorClasses="" />
             <FilterCard count={acmgCounts.pathogenic} label="P" tooltip="Pathogenic variants" isSelected={acmgFilter === 'Pathogenic'} onClick={() => handleAcmgClick('Pathogenic')} colorClasses="border-red-200 bg-red-50 text-red-900" />
@@ -636,7 +731,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
             <FilterCard count={acmgCounts.benign} label="B" tooltip="Benign variants" isSelected={acmgFilter === 'Benign'} onClick={() => handleAcmgClick('Benign')} colorClasses="border-green-200 bg-green-50 text-green-900" />
           </div>
 
-          {/* Impact Filter Pills */}
           <div className="flex items-center gap-2">
             {[
               { key: 'HIGH' as ImpactFilter, label: 'HIGH', count: impactCounts.high, color: 'border-red-200 bg-red-50 text-red-900' },
@@ -657,7 +751,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
             ))}
           </div>
 
-          {/* Gene Filter + Count */}
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-muted-foreground" />
             <Input
@@ -683,7 +776,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
             </TooltipProvider>
           </div>
 
-          {/* Gene Sections */}
           <div className="space-y-2">
             {geneGroups.map((group, idx) => (
               <ReviewGeneSection
@@ -696,7 +788,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
             ))}
           </div>
 
-          {/* No filter results */}
           {geneGroups.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center">
