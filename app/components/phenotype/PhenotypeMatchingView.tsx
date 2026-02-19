@@ -673,8 +673,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
         </div>
       )}
 
-      {/* Idle State */}
-      {status === 'idle' && (
+      {/* Idle/Not Found State */}
+      {(status === 'idle' || status === 'not_found') && (
         <Card>
           <CardContent className="p-6 text-center">
             <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />

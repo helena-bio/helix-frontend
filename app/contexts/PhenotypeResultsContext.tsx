@@ -46,7 +46,7 @@ const MAX_CACHED_SESSIONS = 10
 // TYPES
 // ============================================================================
 
-export type MatchingStatus = 'idle' | 'loading' | 'pending' | 'success' | 'error' | 'no_phenotypes'
+export type MatchingStatus = 'idle' | 'loading' | 'pending' | 'success' | 'error' | 'no_phenotypes' | 'not_found'
 
 export interface GeneAggregatedResult {
   gene_symbol: string
@@ -310,7 +310,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       // 404 means matching has not been run for this session yet - not an error
       if (response.status === 404) {
         console.log('[PhenotypeResultsContext] No phenotype results found (404) - matching not run yet')
-        setStatus('idle')
+        setStatus('not_found')
         return []
       }
 

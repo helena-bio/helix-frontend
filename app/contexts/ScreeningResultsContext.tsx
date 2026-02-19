@@ -33,7 +33,7 @@ const MAX_CACHED_SESSIONS = 10
 // TYPES
 // ============================================================================
 
-export type ScreeningStatus = 'idle' | 'loading' | 'success' | 'error'
+export type ScreeningStatus = 'idle' | 'loading' | 'success' | 'error' | 'not_found'
 
 export interface ScreeningGeneResult {
   gene_symbol: string
@@ -284,7 +284,7 @@ export function ScreeningResultsProvider({ sessionId, children }: ScreeningResul
       // 404 means screening has not been run for this session yet - not an error
       if (response.status === 404) {
         console.log('[ScreeningResultsContext] No screening results found (404) - screening not run yet')
-        setStatus('idle')
+        setStatus('not_found')
         return []
       }
 
