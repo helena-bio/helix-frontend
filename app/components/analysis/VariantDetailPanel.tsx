@@ -508,14 +508,11 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               {formatAF(variant.global_af)}
             </p>
           </div>
-
           <div className="px-3 py-2 min-w-0">
             <p className="text-md text-muted-foreground leading-none mb-1">Consequence</p>
-            <p className="text-base font-medium leading-none truncate">
-              {variant.consequence
-                ? variant.consequence.split(',')[0].replace(/_variant$/i, '').replace(/_/g, ' ')
-                : '-'}
-            </p>
+            <div className="mt-1">
+              <ConsequenceBadges consequence={variant.consequence} maxBadges={1} className="text-xs" />
+            </div>
           </div>
 
           <div className="px-3 py-2">
@@ -848,7 +845,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.allelic_depth !== null && (
                     <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                       <span className="text-md text-muted-foreground">Allelic Depth</span>
-                      <span className="text-base font-mono font-medium">{variant.allelic_depth}</span>
+                      <span className="text-base font-medium">{variant.allelic_depth}</span>
                     </div>
                   )}
 
