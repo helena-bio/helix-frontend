@@ -710,7 +710,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             tooltip="Pathogenic variants - strong evidence of disease association"
             isSelected={acmgFilter === 'Pathogenic'}
             onClick={() => handleAcmgClick('Pathogenic')}
-            colorClasses="border-red-200 bg-red-50 text-red-900"
+            colorClasses="border-red-300 bg-red-100 text-red-900"
           />
           <FilterCard
             count={acmgCounts.likely_pathogenic}
@@ -718,7 +718,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             tooltip="Likely Pathogenic variants - probable disease association"
             isSelected={acmgFilter === 'Likely Pathogenic'}
             onClick={() => handleAcmgClick('Likely Pathogenic')}
-            colorClasses="border-orange-200 bg-orange-50 text-orange-900"
+            colorClasses="border-orange-300 bg-orange-100 text-orange-900"
           />
           <FilterCard
             count={acmgCounts.vus}
@@ -726,7 +726,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             tooltip="Variants of Uncertain Significance - requires further investigation"
             isSelected={acmgFilter === 'VUS'}
             onClick={() => handleAcmgClick('VUS')}
-            colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900"
+            colorClasses="border-yellow-300 bg-yellow-100 text-yellow-900"
           />
           <FilterCard
             count={acmgCounts.likely_benign}
@@ -734,7 +734,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             tooltip="Likely Benign variants - probably not disease-causing"
             isSelected={acmgFilter === 'Likely Benign'}
             onClick={() => handleAcmgClick('Likely Benign')}
-            colorClasses="border-blue-200 bg-blue-50 text-blue-900"
+            colorClasses="border-blue-300 bg-blue-100 text-blue-900"
           />
           <FilterCard
             count={acmgCounts.benign}
@@ -742,7 +742,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             tooltip="Benign variants - not disease-causing"
             isSelected={acmgFilter === 'Benign'}
             onClick={() => handleAcmgClick('Benign')}
-            colorClasses="border-green-200 bg-green-50 text-green-900"
+            colorClasses="border-green-300 bg-green-100 text-green-900"
           />
         </div>
       )}
@@ -751,10 +751,10 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       {hasResults && (
         <div className="flex items-center gap-2">
           {[
-            { key: "HIGH" as ImpactFilter, label: "High", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-900" },
-            { key: "MODERATE" as ImpactFilter, label: "Moderate", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
-            { key: "LOW" as ImpactFilter, label: "Low", count: impactCounts.low, color: "border-yellow-200 bg-yellow-50 text-yellow-900" },
-            { key: "MODIFIER" as ImpactFilter, label: "Modifier", count: impactCounts.modifier, color: "border-gray-200 bg-gray-50 text-gray-700" },
+            { key: "HIGH" as ImpactFilter, label: "High", count: impactCounts.high, color: "border-red-300 bg-red-100 text-red-900" },
+            { key: "MODERATE" as ImpactFilter, label: "Moderate", count: impactCounts.moderate, color: "border-orange-300 bg-orange-100 text-orange-900" },
+            { key: "LOW" as ImpactFilter, label: "Low", count: impactCounts.low, color: "border-yellow-300 bg-yellow-100 text-yellow-900" },
+            { key: "MODIFIER" as ImpactFilter, label: "Modifier", count: impactCounts.modifier, color: "border-gray-300 bg-gray-100 text-gray-600" },
           ].map(({ key, label, count, color }) => (
             <button
               key={key}
