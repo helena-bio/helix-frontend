@@ -246,11 +246,6 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
                 <TrendingUp className="h-3 w-3 mr-1" />
                 {geneResult.best_clinical_score.toFixed(1)}
               </Badge>
-              {geneResult.best_matched_terms > 0 && (
-                <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                  {geneResult.best_matched_terms}/{geneResult.total_patient_terms} HPO matched
-                </Badge>
-              )}
             </div>
 
             {/* Right: Variant count + Chevron */}
