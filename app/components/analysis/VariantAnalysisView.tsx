@@ -206,20 +206,20 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
       <div className="flex items-center gap-2 px-3 py-2.5">
         <StarButton variantIdx={variant.variant_idx} />
         {variant.acmg_class && (
-          <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
+          <Badge variant="outline" className={`text-tiny ${getACMGColor(variant.acmg_class)}`}>
             {formatACMGDisplay(variant.acmg_class)}
           </Badge>
         )}
         <ConsequenceBadges consequence={variant.consequence} maxBadges={1} />
         {variant.hgvs_protein && (
-          <span className="text-sm font-mono font-semibold text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
+          <span className="text-tiny font-mono font-semibold text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
             {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
           </span>
         )}
-        <Badge variant="outline" className={`text-sm ${rarity.color}`}>
+        <Badge variant="outline" className={`text-tiny ${rarity.color}`}>
           {rarity.label}
         </Badge>
-        <Badge variant="outline" className={`text-sm ${zygosity.color}`}>
+        <Badge variant="outline" className={`text-tiny ${zygosity.color}`}>
           {zygosity.label}
         </Badge>
         <div className="flex-1" />
