@@ -22,6 +22,16 @@ export const getACMGColor = (acmg: string | null | undefined) => {
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
+export const formatImpactDisplay = (impact: string | null | undefined): string => {
+  if (!impact) return ""
+  const i = impact.toLowerCase()
+  if (i === "high") return "High"
+  if (i === "moderate") return "Moderate"
+  if (i === "low") return "Low"
+  if (i === "modifier") return "Modifier"
+  return impact
+}
+
 export const getImpactColor = (impact: string | null | undefined) => {
   if (!impact) return 'bg-gray-100 text-gray-600 border-gray-300'
   const impactUpper = impact.toUpperCase()

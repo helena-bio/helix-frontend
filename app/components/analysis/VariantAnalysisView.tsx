@@ -42,6 +42,7 @@ import { VariantDetailPanel } from './VariantDetailPanel'
 import {
   getACMGColor,
   getImpactColor,
+  formatImpactDisplay,
   getZygosityBadge,
   formatACMGDisplay,
   formatClinVarDisplay,
@@ -321,8 +322,8 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             <div className="px-3 py-2 flex flex-col gap-1">
               <p className="text-md text-muted-foreground">Impact</p>
               {variant.impact ? (
-                <Badge variant="outline" className={`text-xs w-fit ${getImpactColor(variant.impact)}`}>
-                  {variant.impact}
+                <Badge variant="outline" className={`text-tiny w-fit ${getImpactColor(variant.impact)}`}>
+                  {formatImpactDisplay(variant.impact)}
                 </Badge>
               ) : (
                 <span className="text-md text-muted-foreground">—</span>

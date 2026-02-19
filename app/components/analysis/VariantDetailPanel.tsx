@@ -39,6 +39,7 @@ import { useHPOTerm } from '@/hooks/queries'
 import {
   ConsequenceBadges,
   getImpactColor,
+  formatImpactDisplay,
   truncateSequence,
   formatAlleles,
   StarButton,
@@ -538,7 +539,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 variant="outline"
                 className={`text-tiny px-1.5 py-0 h-5 mt-auto ${getImpactColor(variant.impact)}`}
               >
-                {variant.impact}
+                {formatImpactDisplay(variant.impact)}
               </Badge>
             ) : (
               <p className="text-base font-medium leading-none">-</p>
@@ -1073,7 +1074,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                       <span className="text-md text-muted-foreground">Impact</span>
                       <Badge variant="outline" className={`text-tiny ${getImpactColor(variant.impact)}`}>
-                        {variant.impact}
+                        {formatImpactDisplay(variant.impact)}
                       </Badge>
                     </div>
                   )}
