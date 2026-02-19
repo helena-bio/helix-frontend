@@ -39,6 +39,7 @@ import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import { HPOTermDetailPanel } from './HPOTermDetailPanel'
 import {
   getACMGColor,
+  StarButton,
   getZygosityBadge,
   getImpactColor,
   getTierColor,
@@ -93,6 +94,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
     >
       {/* Compact single-line row */}
       <div className="flex items-center gap-2 px-3 py-2.5">
+          <StarButton variantIdx={variant.variant_idx} />
         <Badge variant="outline" className={`text-sm ${getTierColor(variant.clinical_tier)}`}>
           {formatTierDisplay(variant.clinical_tier)}
         </Badge>
