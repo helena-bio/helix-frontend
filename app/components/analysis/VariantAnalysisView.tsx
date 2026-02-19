@@ -276,7 +276,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               {variant.clinvar_significance ? (
                 <Badge
                   variant="outline"
-                  className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
+                  className={`text-sm font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
                 >
                   {formatClinVarDisplay(variant.clinvar_significance)}
                 </Badge>
