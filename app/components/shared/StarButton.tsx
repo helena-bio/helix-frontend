@@ -49,7 +49,7 @@ export function StarButton({ variantIdx, className = '', size = 'sm' }: StarButt
             <Star
               className={`${iconSize} transition-colors ${
                 starred
-                  ? 'fill-yellow-400 text-yellow-400'
+                  ? 'fill-yellow-400 text-yellow-600'
                   : 'text-muted-foreground hover:text-yellow-400'
               }`}
             />
