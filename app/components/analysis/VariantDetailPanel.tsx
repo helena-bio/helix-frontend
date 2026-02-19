@@ -465,7 +465,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         <div className="px-4 pb-3 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-3xl font-bold tracking-tight">
+              <h2 className="text-2xl font-bold tracking-tight">
                 {variant.gene_symbol || 'Unknown'}
               </h2>
               <StarButton variantIdx={variantIdx} size="md" />
@@ -491,7 +491,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           {variant.acmg_class && (
             <Badge
               variant="outline"
-              className={`text-base font-semibold px-3 py-1 flex-shrink-0 border-2 ${getACMGColor(variant.acmg_class)}`}
+              className={`text-md font-semibold px-3 py-1 flex-shrink-0 border-2 ${getACMGColor(variant.acmg_class)}`}
             >
               {variant.acmg_class}
             </Badge>
@@ -503,14 +503,14 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             ================================================================ */}
         <div className="border-t grid grid-cols-5 divide-x">
           <div className="px-3 py-2">
-            <p className="text-xs text-muted-foreground leading-none mb-1">gnomAD AF</p>
+            <p className="text-md text-muted-foreground leading-none mb-1">gnomAD AF</p>
             <p className="text-base font-medium font-mono leading-none">
               {formatAF(variant.global_af)}
             </p>
           </div>
 
           <div className="px-3 py-2 min-w-0">
-            <p className="text-xs text-muted-foreground leading-none mb-1">Consequence</p>
+            <p className="text-md text-muted-foreground leading-none mb-1">Consequence</p>
             <p className="text-base font-medium leading-none truncate">
               {variant.consequence
                 ? variant.consequence.split(',')[0].replace(/_variant$/i, '').replace(/_/g, ' ')
@@ -519,7 +519,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           </div>
 
           <div className="px-3 py-2">
-            <p className="text-xs text-muted-foreground leading-none mb-1">Impact</p>
+            <p className="text-md text-muted-foreground leading-none mb-1">Impact</p>
             {variant.impact ? (
               <Badge
                 variant="outline"
@@ -533,7 +533,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           </div>
 
           <div className="px-3 py-2">
-            <p className="text-xs text-muted-foreground leading-none mb-1">Zygosity</p>
+            <p className="text-md text-muted-foreground leading-none mb-1">Zygosity</p>
             {zygosity && zygosity.label !== '-' ? (
               <Badge
                 variant="outline"
@@ -547,7 +547,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           </div>
 
           <div className="px-3 py-2">
-            <p className="text-xs text-muted-foreground leading-none mb-1">Confidence</p>
+            <p className="text-md text-muted-foreground leading-none mb-1">Confidence</p>
             <p className="text-base font-medium leading-none">
               {variant.confidence_score !== null ? variant.confidence_score.toFixed(2) : '-'}
             </p>
