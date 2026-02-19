@@ -379,6 +379,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
 
   const handleTierClick = (tier: TierFilter) => {
     setTierFilter(prev => prev === tier ? 'all' : tier)
+    setHpoFilter(null)
     setVisibleCount(INITIAL_LOAD)
   }
 
