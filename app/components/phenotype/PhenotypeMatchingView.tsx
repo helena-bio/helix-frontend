@@ -24,11 +24,9 @@ import {
   ChevronUp,
   AlertCircle,
   Shield,
-  ExternalLink,
   Filter,
   TrendingUp,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -37,18 +35,13 @@ import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import {
-  getACMGColor,
-  StarButton,
-  getZygosityBadge,
-  getImpactColor,
   getTierColor,
   getScoreColor,
-  formatACMGDisplay,
   formatTierDisplay,
-  ConsequenceBadges,
+  SharedVariantCard,
+  type SharedVariantData,
 } from '@/components/shared'
 import type { SessionMatchResult } from '@/lib/api/hpo'
-import { getRarityBadge } from '@helix/shared/lib/utils'
 
 interface PhenotypeMatchingViewProps {
   sessionId: string
@@ -76,113 +69,70 @@ const getShortTier = (tier: string): TierFilter => {
 // SUBCOMPONENTS
 // ============================================================================
 
+/** Map SessionMatchResult to SharedVariantData */
+function toSharedVariant(v: SessionMatchResult): SharedVariantData {
+  return {
+    variantIdx: v.variant_idx,
+    hgvsProtein: v.hgvs_protein,
+    hgvsCdna: v.hgvs_cdna,
+    consequence: v.consequence,
+    impact: v.impact ?? null,
+    acmgClass: v.acmg_class,
+    acmgCriteria: v.acmg_criteria ?? null,
+    gnomadAf: v.gnomad_af,
+    genotype: v.genotype,
+    clinvarSignificance: null,
+    depth: v.depth ?? null,
+    quality: v.quality ?? null,
+    alphamissenseScore: v.alphamissense_score ?? null,
+    siftScore: v.sift_score ?? null,
+  }
+}
+
 interface VariantCardProps {
   variant: SessionMatchResult
   onViewDetails: (variantIdx: number) => void
 }
 
 function VariantCard({ variant, onViewDetails }: VariantCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const rarity = getRarityBadge(variant.gnomad_af)
-  const zygosity = getZygosityBadge(variant.genotype)
-
   return (
-    <div
-      className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      {/* Compact single-line row */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
-          <StarButton variantIdx={variant.variant_idx} />
-        <Badge variant="outline" className={`text-tiny ${getTierColor(variant.clinical_tier)}`}>
-          {formatTierDisplay(variant.clinical_tier)}
-        </Badge>
-        <Badge variant="outline" className={`text-tiny ${getACMGColor(variant.acmg_class)}`}>
-          {formatACMGDisplay(variant.acmg_class)}
-        </Badge>
-        <ConsequenceBadges consequence={variant.consequence} maxBadges={1} />
-        {variant.hgvs_protein && (
-          <span className="text-tiny font-mono font-semibold text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
-            {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : variant.hgvs_protein}
-          </span>
-        )}
-        <Badge variant="outline" className={`text-tiny ${rarity.color}`}>
-          {rarity.label}
-        </Badge>
-        <Badge variant="outline" className={`text-tiny ${zygosity.color}`}>
-          {zygosity.label}
-        </Badge>
-        <div className="flex-1" />
-        <Badge className={`text-tiny ${getScoreColor(variant.clinical_priority_score)}`}>
-          <TrendingUp className="h-3 w-3 mr-1" />
-          {variant.clinical_priority_score.toFixed(1)}
-        </Badge>
-        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-      </div>
-
-      {/* Expanded Content */}
-      {isExpanded && (
-        <div className="px-3 pb-3 pt-1 space-y-4 border-t">
-          {/* Variant Details */}
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div className="min-w-0">
-              <p className="text-md text-muted-foreground">HGVS Protein</p>
-              <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>{variant.hgvs_protein || '-'}</p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-md text-muted-foreground">HGVS cDNA</p>
-              <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>{variant.hgvs_cdna || '-'}</p>
+    <SharedVariantCard
+      variant={toSharedVariant(variant)}
+      onViewDetails={onViewDetails}
+      collapsedRight={
+        <>
+          <Badge variant="outline" className={`text-tiny ${getTierColor(variant.clinical_tier)}`}>
+            {formatTierDisplay(variant.clinical_tier)}
+          </Badge>
+          <Badge className={`text-tiny ${getScoreColor(variant.clinical_priority_score)}`}>
+            <TrendingUp className="h-3 w-3 mr-1" />
+            {variant.clinical_priority_score.toFixed(1)}
+          </Badge>
+        </>
+      }
+      expandedChildren={
+        variant.individual_matches && variant.individual_matches.length > 0 ? (
+          <div>
+            <p className="text-md text-muted-foreground mb-2">HPO Term Matches</p>
+            <div className="space-y-1">
+              {variant.individual_matches
+                .filter(m => m.similarity_score > 0)
+                .slice(0, 5)
+                .map((match, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-md">
+                    <span className="text-muted-foreground truncate flex-1">
+                      {match.patient_hpo_name}
+                    </span>
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      {(match.similarity_score * 100).toFixed(0)}%
+                    </Badge>
+                  </div>
+                ))}
             </div>
           </div>
-
-          {/* gnomAD AF detail */}
-          {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 && (
-            <div>
-              <p className="text-md text-muted-foreground mb-1">gnomAD Allele Frequency</p>
-              <p className="text-md font-mono">{variant.gnomad_af.toExponential(2)} (1 in {Math.round(1 / variant.gnomad_af).toLocaleString()})</p>
-            </div>
-          )}
-
-          {/* Individual HPO Matches */}
-          {variant.individual_matches && variant.individual_matches.length > 0 && (
-            <div>
-              <p className="text-md text-muted-foreground mb-2">HPO Term Matches</p>
-              <div className="space-y-1">
-                {variant.individual_matches
-                  .filter(m => m.similarity_score > 0)
-                  .slice(0, 5)
-                  .map((match, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-md">
-                      <span className="text-muted-foreground truncate flex-1">
-                        {match.patient_hpo_name}
-                      </span>
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        {(match.similarity_score * 100).toFixed(0)}%
-                      </Badge>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* View Details Button */}
-          <div className="pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onViewDetails(variant.variant_idx)
-              }}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View Full Details
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+        ) : undefined
+      }
+    />
   )
 }
 
