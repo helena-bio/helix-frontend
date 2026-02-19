@@ -180,6 +180,15 @@ const formatAF = (af: number | null): string => {
   return `1 in ${Math.round(1 / af).toLocaleString()}`
 }
 
+const getRarityLabel = (af: number | null): { label: string; color: string } | null => {
+  if (af === null || af === 0) return null
+  if (af > 0.05) return { label: 'Common', color: 'bg-gray-100 text-gray-700 border-gray-300' }
+  if (af > 0.01) return { label: 'Low freq', color: 'bg-blue-50 text-blue-700 border-blue-300' }
+  if (af > 0.001) return { label: 'Rare', color: 'bg-orange-50 text-orange-700 border-orange-300' }
+  if (af > 0.0001) return { label: 'Very rare', color: 'bg-red-50 text-red-700 border-red-300' }
+  return { label: 'Ultra-rare', color: 'bg-purple-50 text-purple-700 border-purple-200' }
+}
+
 // ----------------------------------------------------------------------------
 // Filter pass indicator
 // ----------------------------------------------------------------------------
@@ -504,9 +513,16 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         <div className="border-t grid grid-cols-5 divide-x">
           <div className="px-3 py-2 flex flex-col">
             <p className="text-md text-muted-foreground leading-none mb-1">gnomAD AF</p>
-            <p className="text-base font-semibold leading-none mt-auto">
-              {formatAF(variant.global_af)}
-            </p>
+            <div className="mt-auto flex items-center gap-1.5 flex-wrap">
+              <p className="text-base font-semibold leading-none">
+                {formatAF(variant.global_af)}
+              </p>
+              {getRarityLabel(variant.global_af) && (
+                <Badge variant="outline" className={`text-tiny px-1 py-0 h-4 ${getRarityLabel(variant.global_af)!.color}`}>
+                  {getRarityLabel(variant.global_af)!.label}
+                </Badge>
+              )}
+            </div>
           </div>
           <div className="px-3 py-2 min-w-0 flex flex-col">
             <p className="text-md text-muted-foreground leading-none mb-1">Consequence</p>
