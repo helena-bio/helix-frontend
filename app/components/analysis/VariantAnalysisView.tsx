@@ -206,7 +206,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
       <div className="flex items-center gap-2 px-3 py-2.5">
         <StarButton variantIdx={variant.variant_idx} />
         {variant.hgvs_protein && (
-          <span className="text-md font-mono font-medium text-foreground truncate max-w-48" title={variant.hgvs_protein}>
+          <span className="text-md font-medium text-foreground truncate max-w-48" title={variant.hgvs_protein}>
             {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
           </span>
         )}
@@ -337,13 +337,19 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                 </div>
               </div>
             ) : <div />}
-            <div className="flex items-center gap-1.5">
-              <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
-                {rarity.label}
-              </Badge>
-              <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
-                {zygosity.label}
-              </Badge>
+            <div className="flex items-end gap-3">
+              <div className="text-right">
+                <p className="text-tiny text-muted-foreground mb-1">Frequency</p>
+                <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
+                  {rarity.label}
+                </Badge>
+              </div>
+              <div className="text-right">
+                <p className="text-tiny text-muted-foreground mb-1">Zygosity</p>
+                <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
+                  {zygosity.label}
+                </Badge>
+              </div>
             </div>
           </div>
 
