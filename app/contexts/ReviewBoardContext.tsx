@@ -16,7 +16,7 @@ import {
   useEffect,
   type ReactNode,
 } from 'react'
-import { listReviewBoard, starVariant, unstarVariant } from '@/lib/api/variant-analysis'
+import { listReviewBoard, starVariant, unstarVariant, listNotes, deleteNote } from '@/lib/api/variant-analysis'
 import type { ReviewBoardItem } from '@/types/variant.types'
 import { useSession } from './SessionContext'
 
@@ -102,6 +102,14 @@ export function ReviewBoardProvider({ children }: ReviewBoardProviderProps) {
           setItems((prev) => prev.filter((i) => i.variant_idx !== variantIdx))
 
           await unstarVariant(currentSessionId, variantIdx)
+
+          // Delete all notes for this variant on unstar
+          try {
+            const { notes } = await listNotes(currentSessionId, variantIdx)
+            await Promise.all(notes.map((n) => deleteNote(currentSessionId, n.id)))
+          } catch (noteErr) {
+            console.error("Failed to delete notes on unstar:", noteErr)
+          }
           return false
         } else {
           // Optimistic update
