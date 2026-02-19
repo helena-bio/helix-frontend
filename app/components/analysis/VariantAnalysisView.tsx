@@ -123,14 +123,6 @@ const variantMatchesImpact = (variant: VariantInGene, filter: ImpactFilter): boo
 // EXPANDED CARD HELPERS
 // ============================================================================
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-      {children}
-    </span>
-  )
-}
-
 function ACMGCriteriaBadge({ code }: { code: string }) {
   const c = code.trim()
   let extra = ''
@@ -154,7 +146,7 @@ function ACMGCriteriaBadge({ code }: { code: string }) {
 
 function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | null | undefined; colorClass?: string }) {
   if (value === null || value === undefined) {
-    return <span className="text-xs text-muted-foreground font-mono">—</span>
+    return <span className="text-md text-muted-foreground font-mono">—</span>
   }
   const pct = Math.min(Math.max(value * 100, 0), 100)
   return (
@@ -162,7 +154,7 @@ function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | nul
       <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-[11px] font-mono tabular-nums w-8 text-right text-foreground">
+      <span className="text-md font-mono tabular-nums w-10 text-right text-foreground">
         {value.toFixed(3)}
       </span>
     </div>
@@ -171,12 +163,12 @@ function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | nul
 
 function formatAF(af: number | null | undefined): { text: string; colorClass: string } {
   if (af === null || af === undefined || af === 0) {
-    return { text: 'Not found', colorClass: 'text-foreground font-semibold' }
+    return { text: 'Not found', colorClass: 'text-foreground' }
   }
   if (af < 0.0001) {
-    return { text: af.toExponential(2), colorClass: 'text-orange-700 font-semibold' }
+    return { text: af.toExponential(2), colorClass: 'text-orange-700' }
   }
-  return { text: af.toFixed(6).replace(/\.?0+$/, ''), colorClass: 'text-green-700 font-semibold' }
+  return { text: af.toFixed(6).replace(/\.?0+$/, ''), colorClass: 'text-green-700' }
 }
 
 // ============================================================================
@@ -234,57 +226,52 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="px-3 pb-3 pt-1 space-y-3 border-t" onClick={(e) => e.stopPropagation()}>
+        <div className="px-3 pb-3 pt-1 space-y-4 border-t" onClick={(e) => e.stopPropagation()}>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* GENOMIC IDENTITY STRIP                                            */}
-          {/* ---------------------------------------------------------------- */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/60 border border-border/60 flex-wrap mt-2">
-            <span className="font-mono text-[13px] text-muted-foreground font-normal tracking-tight tabular-nums">
-              {variant.chromosome}:{variant.position?.toLocaleString()}{' '}
-              {truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}
-            </span>
-            {variant.hgvs_protein && (
-              <>
-                <span className="text-muted-foreground/30 text-[11px]">·</span>
-                <span className="font-mono text-[13px] font-semibold text-foreground tracking-tight">
-                  {truncateSequence(variant.hgvs_protein, 40)}
-                </span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!) }}
-                  className="p-0.5 rounded hover:bg-muted"
-                  title="Copy HGVS Protein"
-                >
-                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </>
-            )}
-            {variant.hgvs_cdna && (
-              <>
-                <span className="text-muted-foreground/30 text-[11px]">·</span>
-                <span className="font-mono text-[11px] text-muted-foreground tracking-tight">
-                  {truncateSequence(variant.hgvs_cdna, 40)}
-                </span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!) }}
-                  className="p-0.5 rounded hover:bg-muted"
-                  title="Copy HGVS cDNA"
-                >
-                  <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </>
-            )}
+          {/* HGVS */}
+          <div className="grid grid-cols-2 gap-4 pt-2">
+            <div className="min-w-0">
+              <p className="text-md text-muted-foreground">HGVS Protein</p>
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>
+                  {variant.hgvs_protein || '-'}
+                </p>
+                {variant.hgvs_protein && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!) }}
+                    className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
+                    title="Copy HGVS Protein"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="min-w-0">
+              <p className="text-md text-muted-foreground">HGVS cDNA</p>
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>
+                  {variant.hgvs_cdna || '-'}
+                </p>
+                {variant.hgvs_cdna && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!) }}
+                    className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
+                    title="Copy HGVS cDNA"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* 4-COLUMN CLASSIFICATION GRID                                      */}
-          {/* ClinVar | gnomAD AF | Coverage | Impact                          */}
-          {/* ---------------------------------------------------------------- */}
+          {/* 4-column classification grid */}
           <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border overflow-hidden">
 
             {/* ClinVar */}
             <div className="px-3 py-2 flex flex-col gap-1">
-              <SectionLabel>ClinVar</SectionLabel>
+              <p className="text-md text-muted-foreground">ClinVar</p>
               {variant.clinvar_significance ? (
                 <Badge
                   variant="outline"
@@ -293,18 +280,18 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                   {variant.clinvar_significance}
                 </Badge>
               ) : (
-                <span className="text-xs text-muted-foreground">—</span>
+                <span className="text-md text-muted-foreground">—</span>
               )}
             </div>
 
             {/* gnomAD AF */}
             <div className="px-3 py-2 flex flex-col gap-1">
-              <SectionLabel>gnomAD AF</SectionLabel>
-              <span className={`font-mono text-[13px] font-medium tabular-nums ${af.colorClass}`}>
+              <p className="text-md text-muted-foreground">gnomAD AF</p>
+              <span className={`font-mono text-md tabular-nums ${af.colorClass}`}>
                 {af.text}
               </span>
               {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-md text-muted-foreground">
                   1 in {Math.round(1 / variant.gnomad_af).toLocaleString()}
                 </span>
               )}
@@ -312,43 +299,41 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 
             {/* Coverage */}
             <div className="px-3 py-2 flex flex-col gap-1">
-              <SectionLabel>Coverage</SectionLabel>
+              <p className="text-md text-muted-foreground">Coverage</p>
               <div className="flex items-end gap-3">
                 <div>
-                  <span className="font-mono text-[13px] font-semibold text-foreground tabular-nums">
+                  <span className="font-mono text-md font-semibold text-foreground tabular-nums">
                     {variant.depth ?? '—'}
                   </span>
-                  <span className="text-[11px] text-muted-foreground ml-0.5">x</span>
-                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">depth</p>
+                  <span className="text-md text-muted-foreground ml-0.5">x</span>
+                  <p className="text-md text-muted-foreground leading-none mt-0.5">depth</p>
                 </div>
                 <div>
-                  <span className="font-mono text-[13px] font-semibold text-foreground tabular-nums">
+                  <span className="font-mono text-md font-semibold text-foreground tabular-nums">
                     {variant.quality?.toFixed(0) ?? '—'}
                   </span>
-                  <p className="text-[11px] text-muted-foreground leading-none mt-0.5">qual</p>
+                  <p className="text-md text-muted-foreground leading-none mt-0.5">qual</p>
                 </div>
               </div>
             </div>
 
             {/* Impact */}
             <div className="px-3 py-2 flex flex-col gap-1">
-              <SectionLabel>Impact</SectionLabel>
+              <p className="text-md text-muted-foreground">Impact</p>
               {variant.impact ? (
                 <Badge variant="outline" className={`text-xs w-fit ${getImpactColor(variant.impact)}`}>
                   {variant.impact}
                 </Badge>
               ) : (
-                <span className="text-xs text-muted-foreground">—</span>
+                <span className="text-md text-muted-foreground">—</span>
               )}
             </div>
           </div>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* ACMG CRITERIA                                                     */}
-          {/* ---------------------------------------------------------------- */}
+          {/* ACMG Criteria */}
           {acmgCriteria.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <SectionLabel>ACMG</SectionLabel>
+            <div>
+              <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
               <div className="flex gap-1 flex-wrap">
                 {acmgCriteria.map((code) => (
                   <ACMGCriteriaBadge key={code} code={code} />
@@ -357,57 +342,44 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             </div>
           )}
 
-          {/* ---------------------------------------------------------------- */}
-          {/* COMPUTATIONAL PREDICTIONS                                         */}
-          {/* Only when scores available                                        */}
-          {/* ---------------------------------------------------------------- */}
+          {/* Computational Predictions */}
           {hasAnyScores && (
-            <div className="px-3 py-2 rounded-md bg-muted/30 border border-border/60">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-                {hasAlphaMissense && (
-                  <div>
-                    <SectionLabel>AlphaMissense</SectionLabel>
-                    <div className="mt-1">
-                      <ScoreBar
-                        value={variant.alphamissense_score}
-                        colorClass={(variant.alphamissense_score ?? 0) > 0.7 ? 'bg-red-500' : 'bg-orange-400'}
-                      />
-                    </div>
-                  </div>
-                )}
-                {hasSift && (
-                  <div>
-                    <SectionLabel>SIFT</SectionLabel>
-                    <div className="mt-1 flex items-center gap-2">
-                      {/* SIFT: lower = more damaging -- invert for bar */}
-                      <ScoreBar
-                        value={variant.sift_score !== null ? 1 - variant.sift_score! : null}
-                        colorClass="bg-red-400"
-                      />
-                      <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                        ({variant.sift_score?.toFixed(3) ?? '—'})
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              {hasAlphaMissense && (
+                <div>
+                  <p className="text-md text-muted-foreground mb-1">AlphaMissense</p>
+                  <ScoreBar
+                    value={variant.alphamissense_score}
+                    colorClass={(variant.alphamissense_score ?? 0) > 0.7 ? 'bg-red-500' : 'bg-orange-400'}
+                  />
+                </div>
+              )}
+              {hasSift && (
+                <div>
+                  <p className="text-md text-muted-foreground mb-1">
+                    SIFT <span className="text-md text-muted-foreground">({variant.sift_score?.toFixed(3) ?? '—'})</span>
+                  </p>
+                  <ScoreBar
+                    value={variant.sift_score !== null ? 1 - variant.sift_score! : null}
+                    colorClass="bg-red-400"
+                  />
+                </div>
+              )}
             </div>
           )}
 
-          {/* ---------------------------------------------------------------- */}
-          {/* FOOTER: View full details                                         */}
-          {/* ---------------------------------------------------------------- */}
-          <div className="flex justify-end pt-1 border-t border-border/60">
+          {/* Footer */}
+          <div className="pt-2 border-t">
             <Button
               variant="outline"
               size="sm"
+              className="text-sm"
               onClick={(e) => {
                 e.stopPropagation()
                 onViewDetails(variant.variant_idx)
               }}
-              className="text-[13px] gap-1.5 h-7 px-3 font-medium"
             >
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3 w-3 mr-1" />
               View Full Details
             </Button>
           </div>
@@ -461,7 +433,7 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
         onClick={handleExpand}
       >
         <div className="flex items-center justify-between">
-          {/* Left: Rank + Gene + ACMG + Tier + Variants */}
+          {/* Left: Rank + Gene + ACMG + Impact */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-muted-foreground w-8">#{rank}</span>
             <span className="text-base font-medium w-20">{gene.gene_symbol}</span>
@@ -477,13 +449,13 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
             )}
           </div>
 
-            {/* Right: Variant count + Chevron */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
-              </span>
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </div>
+          {/* Right: Variant count + Chevron */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
+            </span>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
         </div>
       </CardHeader>
 
@@ -777,7 +749,6 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       {/* Impact Filter Pills */}
       {hasResults && (
         <div className="flex items-center gap-2">
-
           {[
             { key: "HIGH" as ImpactFilter, label: "HIGH", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-900" },
             { key: "MODERATE" as ImpactFilter, label: "MODERATE", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
