@@ -124,10 +124,6 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
     ? variant.acmgCriteria.split(',').map((c: string) => c.trim()).filter(Boolean)
     : []
 
-  const hasAlphaMissense = variant.alphamissenseScore !== null && variant.alphamissenseScore !== undefined
-  const hasSift = variant.siftScore !== null && variant.siftScore !== undefined
-  const hasAnyScores = hasAlphaMissense || hasSift
-
   return (
     <div
       className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
@@ -284,32 +280,6 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
               </div>
             </div>
           </div>
-
-          {/* Computational Predictions */}
-          {hasAnyScores && (
-            <div className="grid grid-cols-2 gap-4">
-              {hasAlphaMissense && (
-                <div>
-                  <p className="text-md text-muted-foreground mb-1">AlphaMissense</p>
-                  <ScoreBar
-                    value={variant.alphamissenseScore}
-                    colorClass={(variant.alphamissenseScore ?? 0) > 0.7 ? 'bg-red-500' : 'bg-orange-400'}
-                  />
-                </div>
-              )}
-              {hasSift && (
-                <div>
-                  <p className="text-md text-muted-foreground mb-1">
-                    SIFT <span className="text-md text-muted-foreground">({variant.siftScore?.toFixed(3) ?? '---'})</span>
-                  </p>
-                  <ScoreBar
-                    value={variant.siftScore !== null ? 1 - variant.siftScore! : null}
-                    colorClass="bg-red-400"
-                  />
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Slot: extra content from each view */}
           {expandedChildren}
