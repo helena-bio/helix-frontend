@@ -26,5 +26,5 @@ export function getRarityBadge(af: number | null | undefined): { label: string; 
   if (af < 0.001) return { label: 'Very rare', color: 'bg-orange-100 text-orange-900 border-orange-300' }
   if (af < 0.01) return { label: 'Rare', color: 'bg-yellow-100 text-yellow-900 border-yellow-300' }
   if (af < 0.05) return { label: 'Low freq', color: 'bg-blue-100 text-blue-900 border-blue-300' }
-  return { label: 'Common', color: 'bg-gray-100 text-gray-900 border-gray-300' }
+  return { label: 'Common', color: 'bg-blue-100 text-blue-900 border-blue-300' }
 }
