@@ -133,7 +133,7 @@ function ACMGCriteriaBadge({ code }: { code: string }) {
     extra = 'bg-muted text-muted-foreground border-border'
   }
   return (
-    <Badge variant="outline" className={`text-xs font-mono ${extra}`}>
+    <Badge variant="outline" className={`text-xs font-medium ${extra}`}>
       {c}
     </Badge>
   )
