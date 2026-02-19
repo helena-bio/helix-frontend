@@ -480,22 +480,21 @@ export function ChatPanel() {
         <div className="space-y-6 max-w-4xl">
           {/* Empty state */}
           {isEmpty && (
-            <div className="flex flex-col items-center justify-center h-full gap-6 select-none">
-              <div className="flex flex-col items-center gap-1.5">
-                <Sparkles className="h-7 w-7 text-primary/30" />
-                <p className="text-lg font-semibold text-foreground/30 tracking-tight">Helix AI</p>
-                <p className="text-md text-muted-foreground/60">Ask about variants, genes, or phenotypes</p>
-              </div>
-              <div className="flex flex-col gap-2 w-full max-w-xs">
+            <div className="flex flex-col items-center justify-center h-full gap-8 select-none px-2">
+              <h2 className="text-2xl font-bold tracking-tight text-foreground/70">
+                Ready to analyze a variant?
+              </h2>
+              <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
                 {[
                   "What does this variant mean clinically?",
                   "Which ACMG criteria support this classification?",
                   "Find literature on this gene",
+                  "Explain the population frequency data",
                 ].map((suggestion) => (
                   <button
                     key={suggestion}
                     onClick={() => setInputValue(suggestion)}
-                    className="text-left px-4 py-2.5 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-md text-muted-foreground hover:text-foreground"
+                    className="text-left px-3.5 py-3 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-md text-muted-foreground hover:text-foreground leading-snug"
                   >
                     {suggestion}
                   </button>
