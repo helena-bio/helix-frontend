@@ -568,7 +568,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           <Card className="overflow-hidden">
 
             {/* --- ACMG + ClinVar (two-column) --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2">
+            <div>
               <div className="p-4">
                 <SectionHeader icon={<Shield className="h-4 w-4" />} title="ACMG Classification" />
                 {variant.acmg_criteria && (
@@ -591,7 +591,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 {variant.priority_score !== null && <Row label="Priority Score"><span className="text-base font-medium">{variant.priority_score.toFixed(1)}</span></Row>}
               </div>
 
-              <div className="p-4 border-t md:border-t-0 md:border-l">
+              <div className="p-4 border-t">
                 <SectionHeader icon={<FileText className="h-4 w-4" />} title="ClinVar" />
                 {hasClinVar ? (
                   <>
