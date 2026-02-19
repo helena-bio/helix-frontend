@@ -93,7 +93,7 @@ export function Sidebar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isModulesOpen, setIsModulesOpen] = useState(true)
   const [isCasesOpen, setIsCasesOpen] = useState(true)
-  const [isAdminOpen, setIsAdminOpen] = useState(true)
+  const [isAdminOpen, setIsAdminOpen] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const menuRef = useRef<HTMLDivElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
