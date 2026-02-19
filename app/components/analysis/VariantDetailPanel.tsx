@@ -516,7 +516,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <p className="text-md text-muted-foreground leading-none mb-1">gnomAD AF</p>
             <div className="mt-auto flex items-center gap-1.5 flex-wrap">
               {getRarityLabel(variant.global_af) && (
-                <Badge variant="outline" className={`text-tiny px-1 py-0 h-4 ${getRarityLabel(variant.global_af)!.color}`}>
+                <Badge variant="outline" className={`text-tiny ${getRarityLabel(variant.global_af)!.color}`}>
                   {getRarityLabel(variant.global_af)!.label}
                 </Badge>
               )}
