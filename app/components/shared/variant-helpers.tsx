@@ -183,6 +183,17 @@ export function ConsequenceBadges({ consequence, maxBadges = 3, className = '' }
  * Truncate long DNA/protein sequences for display.
  * "AGTCACCAACTCTGGGTCCAGTGTGACCTCCAGT..." -> "AGTCACCAACTCTGGGTCC..."
  */
+export const formatClinVarDisplay = (clinvar: string | null | undefined): string => {
+  if (!clinvar) return '—'
+  const c = clinvar.toLowerCase()
+  if (c.includes('pathogenic/likely') || c === 'pathogenic/likely_pathogenic') return 'P/LP'
+  if (c.includes('pathogenic') && !c.includes('likely')) return 'P'
+  if (c.includes('likely pathogenic') || c.includes('likely_pathogenic')) return 'LP'
+  if (c.includes('uncertain') || c.includes('vus')) return 'VUS'
+  if (c.includes('likely benign') || c.includes('likely_benign')) return 'LB'
+  if (c.includes('benign')) return 'B'
+  return clinvar
+}
 export const truncateSequence = (seq: string | null | undefined, maxLen: number = 20): string => {
   if (!seq) return '-'
   if (seq.length <= maxLen) return seq

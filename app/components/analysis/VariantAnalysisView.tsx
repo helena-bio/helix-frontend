@@ -44,6 +44,7 @@ import {
   getImpactColor,
   getZygosityBadge,
   formatACMGDisplay,
+  formatClinVarDisplay,
   ConsequenceBadges,
   truncateSequence,
   StarButton,
@@ -277,7 +278,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
                   variant="outline"
                   className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
                 >
-                  {variant.clinvar_significance}
+                  {formatClinVarDisplay(variant.clinvar_significance)}
                 </Badge>
               ) : (
                 <span className="text-md text-muted-foreground">—</span>

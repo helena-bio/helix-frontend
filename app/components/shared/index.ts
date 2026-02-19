@@ -5,6 +5,7 @@ export {
   getScoreColor,
   getZygosityBadge,
   formatACMGDisplay,
+  formatClinVarDisplay,
   formatTierDisplay,
   formatConsequence,
   parseConsequences,
