@@ -821,55 +821,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </div>
           </Card>
 
-          {/* ============================================================
-              HPO Phenotypes (separate - expandable items)
-              ============================================================ */}
-          {hpoTerms.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold">Phenotypes (HPO)</h3>
-                  <Badge variant="secondary" className="text-xs font-medium">{filteredHPOTerms.length}</Badge>
-                </div>
-                <span className="text-md text-muted-foreground">{displayedHPOTerms.length} of {filteredHPOTerms.length}</span>
-              </div>
 
-              {hpoTerms.length > 10 && (
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={hpoSearchQuery}
-                    onChange={e => setHpoSearchQuery(e.target.value)}
-                    placeholder="Search phenotypes..."
-                    className="pl-9 pr-9 text-base h-10" />
-                  {hpoSearchQuery && (
-                    <button
-                      onClick={() => setHpoSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                {displayedHPOTerms.map((term: HPOTermData, idx: number) => (
-                  <HPOPhenotypeCard key={term.hpo_id} hpoId={term.hpo_id} name={term.name} index={idx} />
-                ))}
-              </div>
-
-              {hasMoreHPO && (
-                <div ref={loadMoreRef} className="flex justify-center py-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              )}
-
-              {hpoSearchQuery && filteredHPOTerms.length === 0 && (
-                <p className="text-center text-md text-muted-foreground py-4">No matching phenotypes found</p>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>
