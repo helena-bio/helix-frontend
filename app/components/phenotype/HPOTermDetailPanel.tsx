@@ -171,16 +171,10 @@ export function HPOTermDetailPanel({ hpoId, hpoName, onBack }: HPOTermDetailPane
                       </Badge>
                     </div>
 
-                    {/* Right: similarity + clinical score */}
+                    {/* Right: clinical score */}
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Similarity</p>
-                        <p className="text-base font-semibold tabular-nums">
-                          {(gene.similarity_score * 100).toFixed(0)}%
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Clinical</p>
+                        <p className="text-sm text-muted-foreground">Score</p>
                         <Badge className={`text-sm ${getScoreColor(gene.best_clinical_score)}`}>
                           <TrendingUp className="h-3 w-3 mr-1" />
                           {gene.best_clinical_score.toFixed(1)}
