@@ -206,12 +206,12 @@ const PredictionRow = ({
       <div className="flex items-center gap-2">
         <span className="text-md text-muted-foreground w-28">{label}</span>
         {pred && (
-          <Badge variant="outline" className={`text-xs ${getPredictionColor(pred)}`}>
+          <Badge variant="outline" className={`text-xs font-medium ${getPredictionColor(pred)}`}>
             {pred}
           </Badge>
         )}
       </div>
-      <span className="text-base font-medium font-mono">
+      <span className="text-base font-medium">
         {parsed !== null ? parsed.toFixed(3) : '-'}
       </span>
     </div>
@@ -220,7 +220,7 @@ const PredictionRow = ({
 
 // ----------------------------------------------------------------------------
 // CopyableValue - HGVS and identifiers with copy button
-// text-xs font-mono break-all leading-relaxed per guidelines
+// text-xs break-all leading-relaxed per guidelines
 // ----------------------------------------------------------------------------
 const CopyableValue = ({ label, value }: { label: string; value: string | null }) => {
   if (!value) return null
@@ -228,7 +228,7 @@ const CopyableValue = ({ label, value }: { label: string; value: string | null }
     <div className="py-1.5 border-b border-border/50 last:border-0">
       <p className="text-md text-muted-foreground mb-1">{label}</p>
       <div className="flex items-start gap-1.5">
-        <p className="text-xs font-mono text-foreground break-all flex-1 leading-relaxed">
+        <p className="text-sm text-foreground break-all flex-1 leading-relaxed">
           {value}
         </p>
         <button
@@ -273,11 +273,11 @@ function HPOPhenotypeCard({ hpoId, name, index }: HPOPhenotypeCardProps) {
           <div className="cursor-pointer hover:bg-accent/50 transition-colors py-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-md text-muted-foreground font-mono w-7 flex-shrink-0">
+                <span className="text-md text-muted-foreground w-7 flex-shrink-0">
                   #{index + 1}
                 </span>
                 <span className="text-base font-medium">{name}</span>
-                <Badge variant="outline" className="text-xs font-mono hidden sm:flex">
+                <Badge variant="outline" className="text-xs hidden sm:flex">
                   {hpoId}
                 </Badge>
               </div>
@@ -509,12 +509,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         <div className="px-4 pb-3 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-end gap-2.5 flex-wrap">
-              <h2 className="text-3xl font-bold tracking-tight">
+              <h2 className="text-2xl font-bold tracking-tight">
                 {variant.gene_symbol || 'Unknown'}
               </h2>
               <StarButton variantIdx={variantIdx} size="md" />
               <span
-                className="text-md text-muted-foreground font-mono truncate max-w-xs"
+                className="text-md text-muted-foreground truncate max-w-xs"
                 title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}
               >
                 {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;
@@ -523,7 +523,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </div>
             {variant.hgvs_protein && (
               <p
-                className="text-md text-muted-foreground font-mono mt-0.5 truncate max-w-lg"
+                className="text-md text-muted-foreground mt-0.5 truncate max-w-lg"
                 title={variant.hgvs_protein}
               >
                 {truncateSequence(variant.hgvs_protein, 70)}
@@ -551,7 +551,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
           {/* ClinVar */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-xs text-muted-foreground leading-none mb-1">ClinVar</p>
+            <p className="text-sm text-muted-foreground leading-none mb-1">ClinVar</p>
             <div className="mt-auto">
               {variant.clinical_significance ? (
                 <Badge variant="outline" className={`text-xs ${getACMGColor(variant.clinical_significance)}`}>
@@ -565,7 +565,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
           {/* gnomAD AF */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-xs text-muted-foreground leading-none mb-1">gnomAD AF</p>
+            <p className="text-sm text-muted-foreground leading-none mb-1">gnomAD AF</p>
             <div className="mt-auto flex items-center gap-1.5 flex-wrap">
               {getRarityLabel(variant.global_af) ? (
                 <Badge variant="outline" className={`text-xs ${getRarityLabel(variant.global_af)!.color}`}>
@@ -579,7 +579,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
           {/* Impact */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-xs text-muted-foreground leading-none mb-1">Impact</p>
+            <p className="text-sm text-muted-foreground leading-none mb-1">Impact</p>
             <div className="mt-auto">
               {variant.impact ? (
                 <Badge variant="outline" className={`text-xs ${getImpactColor(variant.impact)}`}>
@@ -593,7 +593,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
           {/* Zygosity */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-xs text-muted-foreground leading-none mb-1">Zygosity</p>
+            <p className="text-sm text-muted-foreground leading-none mb-1">Zygosity</p>
             <div className="mt-auto">
               {zygosity && zygosity.label !== '-' ? (
                 <Badge variant="outline" className={`text-xs ${zygosity.color}`}>
@@ -607,7 +607,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
           {/* Confidence */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-xs text-muted-foreground leading-none mb-1">Confidence</p>
+            <p className="text-sm text-muted-foreground leading-none mb-1">Confidence</p>
             <span className="text-base font-medium mt-auto">
               {variant.confidence_score !== null ? variant.confidence_score.toFixed(2) : '-'}
             </span>
@@ -797,10 +797,16 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         {variant.dann_score !== null && (() => {
                           const score = parseScore(variant.dann_score)
                           if (score === null) return null
+                          const pct = Math.min(Math.max(score * 100, 0), 100)
                           return (
-                            <div className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
-                              <span className="text-md text-muted-foreground w-28">DANN</span>
-                              <span className="text-base font-medium font-mono">{score.toFixed(3)}</span>
+                            <div className="py-2 border-b border-border/50 last:border-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-md text-muted-foreground">DANN</span>
+                                <span className="text-base font-medium tabular-nums">{score.toFixed(3)}</span>
+                              </div>
+                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full rounded-full bg-red-500" style={{ width: `${pct}%` }} />
+                              </div>
                             </div>
                           )
                         })()}
@@ -813,13 +819,13 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         {variant.phylop100way_vertebrate !== null && (
                           <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                             <span className="text-md text-muted-foreground">PhyloP 100-way</span>
-                            <span className="text-base font-medium font-mono">{variant.phylop100way_vertebrate.toFixed(3)}</span>
+                            <span className="text-base font-medium">{variant.phylop100way_vertebrate.toFixed(3)}</span>
                           </div>
                         )}
                         {variant.gerp_rs !== null && (
                           <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
                             <span className="text-md text-muted-foreground">GERP++</span>
-                            <span className="text-base font-medium font-mono">{variant.gerp_rs.toFixed(2)}</span>
+                            <span className="text-base font-medium">{variant.gerp_rs.toFixed(2)}</span>
                           </div>
                         )}
                       </div>
@@ -834,25 +840,25 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         {variant.pli !== null && (
                           <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                             <span className="text-md text-muted-foreground">pLI</span>
-                            <span className="text-base font-medium font-mono">{variant.pli.toFixed(3)}</span>
+                            <span className="text-base font-medium">{variant.pli.toFixed(3)}</span>
                           </div>
                         )}
                         {variant.oe_lof !== null && (
                           <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                             <span className="text-md text-muted-foreground">oe LoF</span>
-                            <span className="text-base font-medium font-mono">{variant.oe_lof.toFixed(3)}</span>
+                            <span className="text-base font-medium">{variant.oe_lof.toFixed(3)}</span>
                           </div>
                         )}
                         {variant.oe_lof_upper !== null && (
                           <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                             <span className="text-md text-muted-foreground">LOEUF</span>
-                            <span className="text-base font-medium font-mono">{variant.oe_lof_upper.toFixed(3)}</span>
+                            <span className="text-base font-medium">{variant.oe_lof_upper.toFixed(3)}</span>
                           </div>
                         )}
                         {variant.mis_z !== null && (
                           <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
                             <span className="text-md text-muted-foreground">Missense Z</span>
-                            <span className="text-base font-medium font-mono">{variant.mis_z.toFixed(2)}</span>
+                            <span className="text-base font-medium">{variant.mis_z.toFixed(2)}</span>
                           </div>
                         )}
                       </div>
@@ -910,7 +916,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                     <span className="text-md text-muted-foreground">Genotype</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-base font-mono font-medium">{variant.genotype}</span>
+                      <span className="text-base font-medium">{variant.genotype}</span>
                       {zygosity && zygosity.label !== '-' && zygosity.label !== variant.genotype && (
                         <Badge variant="outline" className={`text-xs ${zygosity.color}`}>
                           {zygosity.label}
@@ -923,28 +929,28 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 {variant.depth !== null && (
                   <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                     <span className="text-md text-muted-foreground">Depth</span>
-                    <span className="text-base font-medium font-mono">{variant.depth}x</span>
+                    <span className="text-base font-medium">{variant.depth}x</span>
                   </div>
                 )}
 
                 {variant.allelic_depth !== null && (
                   <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                     <span className="text-md text-muted-foreground">Allelic Depth</span>
-                    <span className="text-base font-medium font-mono">{variant.allelic_depth}</span>
+                    <span className="text-base font-medium">{variant.allelic_depth}</span>
                   </div>
                 )}
 
                 {variant.genotype_quality !== null && (
                   <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                     <span className="text-md text-muted-foreground">GQ</span>
-                    <span className="text-base font-medium font-mono">{variant.genotype_quality}</span>
+                    <span className="text-base font-medium">{variant.genotype_quality}</span>
                   </div>
                 )}
 
                 {variant.quality !== null && (
                   <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                     <span className="text-md text-muted-foreground">QUAL</span>
-                    <span className="text-base font-medium font-mono">{variant.quality.toFixed(1)}</span>
+                    <span className="text-base font-medium">{variant.quality.toFixed(1)}</span>
                   </div>
                 )}
 
@@ -1016,7 +1022,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.transcript_id && (
                     <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                       <span className="text-md text-muted-foreground">Transcript</span>
-                      <span className="text-xs font-mono font-medium">{variant.transcript_id}</span>
+                      <span className="text-sm font-medium">{variant.transcript_id}</span>
                     </div>
                   )}
 
@@ -1057,7 +1063,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.rsid && (
                     <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
                       <span className="text-md text-muted-foreground">rsID</span>
-                      <span className="text-xs font-mono font-medium">{variant.rsid}</span>
+                      <span className="text-sm font-medium">{variant.rsid}</span>
                     </div>
                   )}
                 </div>
