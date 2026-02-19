@@ -360,6 +360,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
     status,
     isLoading,
     aggregatedResults,
+    loadAllPhenotypeResults,
     tier1Count,
     tier2Count,
     incidentalFindingsCount,
@@ -370,6 +371,13 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   } = usePhenotypeResults()
 
   const selectedTerms = hpoTerms
+
+  // Auto-load existing results when opening a saved case
+  useEffect(() => {
+    if (status === 'idle') {
+      loadAllPhenotypeResults(sessionId).catch(() => {})
+    }
+  }, [sessionId])
 
   const handleTierClick = (tier: TierFilter) => {
     setTierFilter(prev => prev === tier ? 'all' : tier)
