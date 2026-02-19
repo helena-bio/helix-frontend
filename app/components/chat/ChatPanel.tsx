@@ -492,7 +492,7 @@ export function ChatPanel() {
                   {chatPrompt.title}
                 </h2>
               </div>
-              <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+              <div className="grid grid-cols-1 gap-2 w-full max-w-md">
                 {[
                   "What does this variant mean clinically?",
                   "Which ACMG criteria support this classification?",
