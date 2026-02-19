@@ -73,19 +73,19 @@ const getShortTier = (tier: string): TierFilter => {
 function toSharedVariant(v: SessionMatchResult): SharedVariantData {
   return {
     variantIdx: v.variant_idx,
-    hgvsProtein: v.hgvs_protein,
-    hgvsCdna: v.hgvs_cdna,
-    consequence: v.consequence,
+    hgvsProtein: v.hgvs_protein ?? null,
+    hgvsCdna: v.hgvs_cdna ?? null,
+    consequence: v.consequence ?? null,
     impact: v.impact ?? null,
-    acmgClass: v.acmg_class,
-    acmgCriteria: v.acmg_criteria ?? null,
-    gnomadAf: v.gnomad_af,
-    genotype: v.genotype,
+    acmgClass: v.acmg_class ?? null,
+    acmgCriteria: null,
+    gnomadAf: v.gnomad_af ?? null,
+    genotype: v.genotype ?? null,
     clinvarSignificance: null,
-    depth: v.depth ?? null,
-    quality: v.quality ?? null,
-    alphamissenseScore: v.alphamissense_score ?? null,
-    siftScore: v.sift_score ?? null,
+    depth: null,
+    quality: null,
+    alphamissenseScore: null,
+    siftScore: null,
   }
 }
 
