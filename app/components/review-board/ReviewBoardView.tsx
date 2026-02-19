@@ -3,10 +3,9 @@
 /**
  * ReviewBoardView - Curated variants for focused clinical review.
  *
- * Shows starred variants sorted by ACMG classification and impact.
- * Variant data loaded from DuckDB via existing API.
+ * Shows starred variants grouped by gene, consistent with VariantAnalysisView.
+ * Gene sections expand to show individual variant rows.
  * Notes integration for collaborative clinical annotation.
- * Layout consistent with VariantAnalysisView.
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
@@ -70,6 +69,47 @@ const acmgFilterToClass = (filter: ACMGFilter): string | undefined => {
   return filter
 }
 
+// Group variants by gene symbol
+interface GeneGroup {
+  gene_symbol: string
+  variants: Variant[]
+  best_acmg_class: string | null
+  best_impact: string | null
+}
+
+function groupVariantsByGene(variants: Variant[]): GeneGroup[] {
+  const map = new Map<string, Variant[]>()
+  for (const v of variants) {
+    const gene = v.gene_symbol || 'Unknown'
+    if (!map.has(gene)) map.set(gene, [])
+    map.get(gene)!.push(v)
+  }
+
+  const groups: GeneGroup[] = []
+  map.forEach((vars, gene) => {
+    const sorted = [...vars].sort((a, b) => {
+      const ap = ACMG_PRIORITY[a.acmg_class || ''] ?? 99
+      const bp = ACMG_PRIORITY[b.acmg_class || ''] ?? 99
+      return ap !== bp ? ap - bp : (IMPACT_PRIORITY[a.impact || ''] ?? 99) - (IMPACT_PRIORITY[b.impact || ''] ?? 99)
+    })
+    groups.push({
+      gene_symbol: gene,
+      variants: sorted,
+      best_acmg_class: sorted[0]?.acmg_class ?? null,
+      best_impact: sorted[0]?.impact ?? null,
+    })
+  })
+
+  // Sort groups by best ACMG priority, then impact
+  groups.sort((a, b) => {
+    const ap = ACMG_PRIORITY[a.best_acmg_class || ''] ?? 99
+    const bp = ACMG_PRIORITY[b.best_acmg_class || ''] ?? 99
+    return ap !== bp ? ap - bp : (IMPACT_PRIORITY[a.best_impact || ''] ?? 99) - (IMPACT_PRIORITY[b.best_impact || ''] ?? 99)
+  })
+
+  return groups
+}
+
 // ============================================================================
 // NOTES SECTION
 // ============================================================================
@@ -85,20 +125,13 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
   const [newNoteText, setNewNoteText] = useState('')
   const [isSending, setIsSending] = useState(false)
 
-  // Load notes on mount
   useEffect(() => {
     let cancelled = false
     setIsLoading(true)
     listNotes(sessionId, variantIdx)
-      .then((res) => {
-        if (!cancelled) setNotes(res.notes)
-      })
-      .catch(() => {
-        if (!cancelled) setNotes([])
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false)
-      })
+      .then((res) => { if (!cancelled) setNotes(res.notes) })
+      .catch(() => { if (!cancelled) setNotes([]) })
+      .finally(() => { if (!cancelled) setIsLoading(false) })
     return () => { cancelled = true }
   }, [sessionId, variantIdx])
 
@@ -139,28 +172,19 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
         </div>
       ) : (
         <>
-          {/* Existing notes */}
           {notes.length > 0 && (
             <div className="space-y-2">
               {notes.map((note) => (
-                <div
-                  key={note.id}
-                  className="flex gap-3 p-3 rounded-lg bg-muted/30"
-                >
+                <div key={note.id} className="flex gap-3 p-3 rounded-lg bg-muted/30">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary">
-                      {note.user.initials}
-                    </span>
+                    <span className="text-sm font-medium text-primary">{note.user.initials}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
                       <span className="text-base font-medium">{note.user.name}</span>
                       <span className="text-sm text-muted-foreground">
                         {new Date(note.created_at).toLocaleDateString('en-GB', {
-                          day: 'numeric',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
+                          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                         })}
                       </span>
                     </div>
@@ -171,7 +195,6 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
             </div>
           )}
 
-          {/* Add note input */}
           <div className="flex gap-2">
             <Input
               value={newNoteText}
@@ -187,11 +210,7 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
               disabled={!newNoteText.trim() || isSending}
               className="h-11 w-11 shrink-0"
             >
-              {isSending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
+              {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
         </>
@@ -201,83 +220,70 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
 }
 
 // ============================================================================
-// VARIANT CARD
+// VARIANT ROW (compact, inside gene section)
 // ============================================================================
 
-interface ReviewVariantCardProps {
+interface ReviewVariantRowProps {
   variant: Variant
   sessionId: string
   onViewDetails: (variantIdx: number) => void
 }
 
-function ReviewVariantCard({ variant, sessionId, onViewDetails }: ReviewVariantCardProps) {
+function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRowProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
   const zygosity = getZygosityBadge(variant.genotype)
 
   return (
     <div
-      className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+      className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
       onClick={() => setIsExpanded(!isExpanded)}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <StarButton variantIdx={variant.variant_idx} />
-            <span className="text-base font-semibold">{variant.gene_symbol || 'Unknown'}</span>
-            {variant.acmg_class && (
-              <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
-                {formatACMGDisplay(variant.acmg_class)}
-              </Badge>
-            )}
-            {variant.impact && (
-              <Badge variant="outline" className={`text-sm ${getImpactColor(variant.impact)}`}>
-                {variant.impact}
-              </Badge>
-            )}
-            <Badge variant="outline" className={`text-sm ${zygosity.color}`}>
-              {zygosity.label}
-            </Badge>
+      {/* Compact single-line row */}
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <StarButton variantIdx={variant.variant_idx} />
+        {variant.acmg_class && (
+          <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
+            {formatACMGDisplay(variant.acmg_class)}
+          </Badge>
+        )}
+        {variant.impact && (
+          <Badge variant="outline" className={`text-sm ${getImpactColor(variant.impact)}`}>
+            {variant.impact}
+          </Badge>
+        )}
+        <ConsequenceBadges consequence={variant.consequence} maxBadges={1} />
+        {variant.hgvs_protein && (
+          <span className="text-sm font-mono font-semibold text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
+            {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
+          </span>
+        )}
+        <Badge variant="outline" className={`text-sm ${zygosity.color}`}>
+          {zygosity.label}
+        </Badge>
+        <div className="flex-1" />
+        {variant.gnomad_af !== null && variant.gnomad_af !== undefined && (
+          <div className="text-right mr-1">
+            <p className="text-sm font-mono">{variant.gnomad_af.toExponential(2)}</p>
+            <p className="text-xs text-muted-foreground">gnomAD AF</p>
           </div>
-          <p className="text-base font-mono text-muted-foreground truncate">
-            {variant.chromosome}:{variant.position?.toLocaleString()}
-            <span className="ml-2">
-              {truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}
-            </span>
-          </p>
-          {(variant.hgvs_cdna || variant.hgvs_protein) && (
-            <p className="text-sm font-mono text-foreground/70 truncate mt-0.5">
-              {variant.hgvs_cdna && <span>{truncateSequence(variant.hgvs_cdna, 40)}</span>}
-              {variant.hgvs_cdna && variant.hgvs_protein && <span className="mx-1.5 text-muted-foreground">|</span>}
-              {variant.hgvs_protein && <span>{truncateSequence(variant.hgvs_protein, 30)}</span>}
-            </p>
-          )}
-          <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
-        </div>
-        <div className="flex items-center gap-3">
-          {variant.global_af !== null && variant.global_af !== undefined && (
-            <div className="text-right">
-              <p className="text-sm font-mono">{variant.global_af.toExponential(2)}</p>
-              <p className="text-xs text-muted-foreground">gnomAD AF</p>
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsExpanded(!isExpanded)
-            }}
-          >
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </div>
+        )}
+        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </div>
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="mt-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="px-3 pb-3 pt-1 space-y-4 border-t" onClick={(e) => e.stopPropagation()}>
+          {/* Location */}
+          <div className="pt-2">
+            <p className="text-sm font-mono text-muted-foreground">
+              {variant.chromosome}:{variant.position?.toLocaleString()}
+              <span className="ml-2">
+                {truncateSequence(variant.reference_allele, 15)}/{truncateSequence(variant.alternate_allele, 15)}
+              </span>
+            </p>
+          </div>
+
           {/* Details Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="min-w-0">
@@ -348,13 +354,72 @@ function ReviewVariantCard({ variant, sessionId, onViewDetails }: ReviewVariantC
             </Button>
           </div>
 
-          {/* Notes */}
           {showNotes && (
             <NotesSection sessionId={sessionId} variantIdx={variant.variant_idx} />
           )}
         </div>
       )}
     </div>
+  )
+}
+
+// ============================================================================
+// GENE SECTION
+// ============================================================================
+
+interface ReviewGeneSectionProps {
+  group: GeneGroup
+  rank: number
+  sessionId: string
+  onViewDetails: (variantIdx: number) => void
+}
+
+function ReviewGeneSection({ group, rank, sessionId, onViewDetails }: ReviewGeneSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  return (
+    <Card className="gap-0">
+      <CardHeader
+        className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-muted-foreground w-8">#{rank}</span>
+            <span className="text-base font-medium w-20">{group.gene_symbol}</span>
+            {group.best_acmg_class && (
+              <Badge variant="outline" className={`text-sm w-12 justify-center ${getACMGColor(group.best_acmg_class)}`}>
+                {formatACMGDisplay(group.best_acmg_class)}
+              </Badge>
+            )}
+            {group.best_impact && (
+              <Badge variant="outline" className={`text-sm ${getImpactColor(group.best_impact)}`}>
+                {group.best_impact}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {group.variants.length} variant{group.variants.length !== 1 ? 's' : ''}
+            </span>
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </div>
+      </CardHeader>
+
+      {isExpanded && (
+        <CardContent className="space-y-3">
+          {group.variants.map((variant) => (
+            <ReviewVariantRow
+              key={variant.variant_idx}
+              variant={variant}
+              sessionId={sessionId}
+              onViewDetails={onViewDetails}
+            />
+          ))}
+        </CardContent>
+      )}
+    </Card>
   )
 }
 
@@ -433,15 +498,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     ).then((results) => {
       if (!cancelled) {
         const loaded = results.filter((v): v is Variant => v !== null)
-        // Sort by ACMG priority, then impact priority
-        loaded.sort((a, b) => {
-          const acmgA = ACMG_PRIORITY[a.acmg_class || ''] ?? 99
-          const acmgB = ACMG_PRIORITY[b.acmg_class || ''] ?? 99
-          if (acmgA !== acmgB) return acmgA - acmgB
-          const impA = IMPACT_PRIORITY[a.impact || ''] ?? 99
-          const impB = IMPACT_PRIORITY[b.impact || ''] ?? 99
-          return impA - impB
-        })
         setVariants(loaded)
       }
     }).finally(() => {
@@ -451,7 +507,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     return () => { cancelled = true }
   }, [items, sessionId])
 
-  // ACMG counts from loaded variants
+  // ACMG counts
   const acmgCounts = useMemo(() => {
     const counts = { total: variants.length, pathogenic: 0, likely_pathogenic: 0, vus: 0, likely_benign: 0, benign: 0 }
     for (const v of variants) {
@@ -464,8 +520,8 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     return counts
   }, [variants])
 
-  // Filter variants
-  const filteredVariants = useMemo(() => {
+  // Filter variants, group by gene
+  const geneGroups = useMemo(() => {
     let filtered = variants
 
     if (acmgFilter !== 'all') {
@@ -475,13 +531,13 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
 
     if (geneFilter.trim()) {
       const search = geneFilter.toLowerCase()
-      filtered = filtered.filter((v) =>
-        v.gene_symbol?.toLowerCase().includes(search)
-      )
+      filtered = filtered.filter((v) => v.gene_symbol?.toLowerCase().includes(search))
     }
 
-    return filtered
+    return groupVariantsByGene(filtered)
   }, [variants, acmgFilter, geneFilter])
+
+  const filteredVariantCount = useMemo(() => geneGroups.reduce((sum, g) => sum + g.variants.length, 0), [geneGroups])
 
   const handleAcmgClick = (filter: ACMGFilter) => {
     setAcmgFilter((prev) => (prev === filter ? 'all' : filter))
@@ -489,7 +545,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
 
   const isLoading = isLoadingBoard || isLoadingVariants
 
-  // View variant detail
   if (selectedVariantIdx !== null) {
     return (
       <VariantDetailPanel
@@ -513,7 +568,6 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
             Curated variants for focused clinical review. Star variants from any view to add them here.
           </p>
         </div>
-
         {count > 0 && (
           <Badge variant="outline" className="text-sm bg-yellow-50 text-yellow-700 border-yellow-300">
             <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
@@ -574,23 +628,30 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
               onChange={(e) => setGeneFilter(e.target.value)}
               className="max-w-xs text-base"
             />
-            <span className="text-md text-muted-foreground">
-              Showing {filteredVariants.length} of {variants.length} variants
-              {(acmgFilter !== 'all' || geneFilter) && ' (filtered)'}
-            </span>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-sm text-muted-foreground cursor-default inline-flex items-center gap-1">
+                    Showing {filteredVariantCount} of {variants.length} variants across {geneGroups.length} genes
+                    {(acmgFilter !== 'all' || geneFilter) && ' (filtered)'}
+                    <Info className="h-3.5 w-3.5 opacity-50" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="text-sm max-w-xs">
+                  <p>Sorted by ACMG classification priority (Pathogenic first), then by impact.
+                  {acmgFilter !== 'all' && ' Click the filter card again to show all.'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
-          <p className="text-md text-muted-foreground">
-            Sorted by ACMG classification priority (Pathogenic first), then by impact.
-            {acmgFilter !== 'all' && ' Click the filter card again to show all.'}
-          </p>
-
-          {/* Variant Cards */}
+          {/* Gene Sections */}
           <div className="space-y-2">
-            {filteredVariants.map((variant) => (
-              <ReviewVariantCard
-                key={variant.variant_idx}
-                variant={variant}
+            {geneGroups.map((group, idx) => (
+              <ReviewGeneSection
+                key={group.gene_symbol}
+                group={group}
+                rank={idx + 1}
                 sessionId={sessionId}
                 onViewDetails={setSelectedVariantIdx}
               />
@@ -598,7 +659,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
           </div>
 
           {/* No filter results */}
-          {filteredVariants.length === 0 && (
+          {geneGroups.length === 0 && (
             <Card>
               <CardContent className="p-6 text-center">
                 <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
