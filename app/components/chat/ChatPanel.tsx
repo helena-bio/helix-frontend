@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback, memo } from 'react'
+import { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react'
 import { Send, Square, Sparkles, Database, BookOpen, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
@@ -8,6 +8,7 @@ import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
 import type { Message } from '@/types/ai.types'
+import { getChatPrompt } from '@/lib/constants/chat-prompts'
 import type { QueryResultEvent, LiteratureResultEvent } from '@/lib/api/ai'
 
 // ============================================================================
@@ -472,6 +473,7 @@ export function ChatPanel() {
     (!lastMessage || lastMessage.role === 'user')
 
   const isEmpty = displayMessages.length === 0 && !shouldShowThinking
+  const chatPrompt = useMemo(() => getChatPrompt(), [])
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
@@ -481,10 +483,11 @@ export function ChatPanel() {
           {/* Empty state */}
           {isEmpty && (
             <div className="flex flex-col items-center justify-center h-full gap-8 select-none px-2">
-              <div className="flex flex-col items-center gap-3">
-                <img src="/images/logos/logo_bulb.svg" alt="Helix" className="h-10 w-10 opacity-40" />
+              <div className="flex flex-col items-center gap-4">
+                <img src="/images/logos/logo_bulb.svg" alt="Helix" className="h-16 w-16 opacity-30" />
+                <img src="/images/logos/logo_helix.svg" alt="Helix Insight" className="h-6 opacity-25" />
                 <h2 className="text-2xl font-bold tracking-tight text-foreground/70">
-                  Ready to analyze a variant?
+                  {chatPrompt.title}
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
