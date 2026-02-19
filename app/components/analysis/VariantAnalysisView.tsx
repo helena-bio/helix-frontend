@@ -207,7 +207,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
       <div className="flex items-center gap-2 px-3 py-2.5">
         <StarButton variantIdx={variant.variant_idx} />
         {variant.hgvs_protein && (
-          <span className="text-md font-medium text-foreground truncate max-w-48" title={variant.hgvs_protein}>
+          <span className="text-md font-medium text-foreground truncate min-w-28 max-w-48" title={variant.hgvs_protein}>
             {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
           </span>
         )}
