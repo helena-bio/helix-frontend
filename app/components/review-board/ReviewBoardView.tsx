@@ -327,14 +327,14 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
               onChange={(e) => setNewNoteText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Add a note..."
-              className="flex-1 text-base h-11"
+              className="flex-1 text-base h-9"
               disabled={isSending}
             />
             <Button
               size="icon"
               onClick={handleSend}
               disabled={!newNoteText.trim() || isSending}
-              className="h-11 w-11 shrink-0"
+              className="h-9 w-9 shrink-0"
             >
               {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
@@ -373,7 +373,7 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
           Notes
         </Button>
       }
-      expandedChildren={
+      afterFooter={
         showNotes ? <NotesSection sessionId={sessionId} variantIdx={variant.variant_idx} /> : undefined
       }
     />

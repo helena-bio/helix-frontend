@@ -65,6 +65,8 @@ export interface SharedVariantCardProps {
   expandedChildren?: ReactNode
   /** Extra buttons next to View Full Details in footer */
   footerActions?: ReactNode
+  /** Content rendered below the footer (e.g. Notes panel) */
+  afterFooter?: ReactNode
 }
 
 // =============================================================================
@@ -113,7 +115,7 @@ export function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: numbe
 // SHARED VARIANT CARD
 // =============================================================================
 
-export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expandedChildren, footerActions }: SharedVariantCardProps) {
+export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expandedChildren, footerActions, afterFooter }: SharedVariantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const zygosity = getZygosityBadge(variant.genotype)
   const rarity = getRarityBadge(variant.gnomadAf)
@@ -328,6 +330,8 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
             </Button>
             {footerActions}
           </div>
+
+          {afterFooter}
         </div>
       )}
     </div>
