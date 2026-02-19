@@ -161,7 +161,7 @@ export function ConsequenceBadges({ consequence, maxBadges = 3, className = '' }
         <Badge
           key={idx}
           variant="outline"
-          className={`text-sm ${getConsequenceColor(c)}`}
+          className={`text-tiny ${getConsequenceColor(c)}`}
         >
           {c}
         </Badge>

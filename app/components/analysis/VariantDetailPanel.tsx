@@ -520,7 +520,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             {variant.impact ? (
               <Badge
                 variant="outline"
-                className={`text-xs px-1.5 py-0 h-5 mt-auto ${getImpactColor(variant.impact)}`}
+                className={`text-tiny px-1.5 py-0 h-5 mt-auto ${getImpactColor(variant.impact)}`}
               >
                 {variant.impact}
               </Badge>
@@ -534,7 +534,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             {zygosity && zygosity.label !== '-' ? (
               <Badge
                 variant="outline"
-                className={`text-xs px-1.5 py-0 h-5 mt-auto ${zygosity.color}`}
+                className={`text-tiny px-1.5 py-0 h-5 mt-auto ${zygosity.color}`}
               >
                 {zygosity.label}
               </Badge>
