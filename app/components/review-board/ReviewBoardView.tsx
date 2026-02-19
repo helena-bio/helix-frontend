@@ -334,7 +334,7 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
               size="icon"
               onClick={handleSend}
               disabled={!newNoteText.trim() || isSending}
-              className="h-9 w-9 shrink-0"
+              className="h-8 w-8 shrink-0 rounded-lg"
             >
               {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
