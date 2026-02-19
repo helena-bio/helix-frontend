@@ -362,23 +362,19 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
     <SharedVariantCard
       variant={toSharedVariant(variant)}
       onViewDetails={onViewDetails}
+      footerActions={
+        <Button
+          variant={showNotes ? 'secondary' : 'outline'}
+          size="sm"
+          className="text-sm"
+          onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes) }}
+        >
+          <MessageSquare className="h-3 w-3 mr-1" />
+          Notes
+        </Button>
+      }
       expandedChildren={
-        <>
-          <div className="flex items-center gap-3 pt-2 border-t">
-            <Button
-              variant={showNotes ? 'secondary' : 'outline'}
-              size="sm"
-              className="text-sm"
-              onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes) }}
-            >
-              <MessageSquare className="h-3 w-3 mr-1" />
-              Notes
-            </Button>
-          </div>
-          {showNotes && (
-            <NotesSection sessionId={sessionId} variantIdx={variant.variant_idx} />
-          )}
-        </>
+        showNotes ? <NotesSection sessionId={sessionId} variantIdx={variant.variant_idx} /> : undefined
       }
     />
   )

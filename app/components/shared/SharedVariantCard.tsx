@@ -63,6 +63,8 @@ export interface SharedVariantCardProps {
   collapsedRight?: ReactNode
   /** Extra sections before footer in expanded view */
   expandedChildren?: ReactNode
+  /** Extra buttons next to View Full Details in footer */
+  footerActions?: ReactNode
 }
 
 // =============================================================================
@@ -111,7 +113,7 @@ export function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: numbe
 // SHARED VARIANT CARD
 // =============================================================================
 
-export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expandedChildren }: SharedVariantCardProps) {
+export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expandedChildren, footerActions }: SharedVariantCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const zygosity = getZygosityBadge(variant.genotype)
   const rarity = getRarityBadge(variant.gnomadAf)
@@ -311,7 +313,7 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
           {expandedChildren}
 
           {/* Footer */}
-          <div className="pt-2 border-t">
+          <div className="pt-2 border-t flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -324,6 +326,7 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
               <ExternalLink className="h-3 w-3 mr-1" />
               View Full Details
             </Button>
+            {footerActions}
           </div>
         </div>
       )}
