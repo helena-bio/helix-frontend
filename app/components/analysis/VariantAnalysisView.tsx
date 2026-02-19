@@ -129,13 +129,13 @@ function ACMGCriteriaBadge({ code }: { code: string }) {
   const c = code.trim()
   let extra = ''
   if (c.startsWith('PVS') || c.startsWith('PS')) {
-    extra = 'bg-red-50 text-red-700 border-red-200'
+    extra = 'bg-red-100 text-red-900 border-red-300'
   } else if (c.startsWith('PM')) {
-    extra = 'bg-orange-50 text-orange-700 border-orange-200'
+    extra = 'bg-orange-100 text-orange-900 border-orange-300'
   } else if (c.startsWith('PP')) {
-    extra = 'bg-yellow-50 text-yellow-700 border-yellow-200'
+    extra = 'bg-yellow-100 text-yellow-900 border-yellow-300'
   } else if (c.startsWith('BA') || c.startsWith('BS') || c.startsWith('BP')) {
-    extra = 'bg-green-50 text-green-700 border-green-200'
+    extra = 'bg-green-100 text-green-900 border-green-300'
   } else {
     extra = 'bg-muted text-muted-foreground border-border'
   }

@@ -21,10 +21,10 @@ export function formatCount(n: number): string {
 }
 // Rarity classification from gnomAD allele frequency
 export function getRarityBadge(af: number | null | undefined): { label: string; color: string } {
-  if (af === null || af === undefined || af === 0) return { label: 'Novel', color: 'bg-purple-100 text-purple-800 border-purple-200' }
-  if (af < 0.0001) return { label: 'Ultra rare', color: 'bg-red-100 text-red-800 border-red-200' }
-  if (af < 0.001) return { label: 'Very rare', color: 'bg-orange-100 text-orange-800 border-orange-200' }
-  if (af < 0.01) return { label: 'Rare', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' }
-  if (af < 0.05) return { label: 'Low freq', color: 'bg-blue-100 text-blue-800 border-blue-200' }
-  return { label: 'Common', color: 'bg-gray-100 text-gray-700 border-gray-200' }
+  if (af === null || af === undefined || af === 0) return { label: 'Novel', color: 'bg-purple-100 text-purple-900 border-purple-300' }
+  if (af < 0.0001) return { label: 'Ultra rare', color: 'bg-red-100 text-red-900 border-red-300' }
+  if (af < 0.001) return { label: 'Very rare', color: 'bg-orange-100 text-orange-900 border-orange-300' }
+  if (af < 0.01) return { label: 'Rare', color: 'bg-yellow-100 text-yellow-900 border-yellow-300' }
+  if (af < 0.05) return { label: 'Low freq', color: 'bg-blue-100 text-blue-900 border-blue-300' }
+  return { label: 'Common', color: 'bg-gray-100 text-gray-600 border-gray-300' }
 }

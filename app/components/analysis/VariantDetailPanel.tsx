@@ -183,11 +183,11 @@ const formatAF = (af: number | null): string => {
 
 const getRarityLabel = (af: number | null): { label: string; color: string } | null => {
   if (af === null || af === 0) return null
-  if (af > 0.05) return { label: 'Common', color: 'bg-gray-100 text-gray-700 border-gray-300' }
-  if (af > 0.01) return { label: 'Low freq', color: 'bg-blue-50 text-blue-700 border-blue-300' }
-  if (af > 0.001) return { label: 'Rare', color: 'bg-orange-50 text-orange-700 border-orange-300' }
-  if (af > 0.0001) return { label: 'Very rare', color: 'bg-red-50 text-red-700 border-red-300' }
-  return { label: 'Ultra-rare', color: 'bg-purple-50 text-purple-700 border-purple-200' }
+  if (af > 0.05) return { label: 'Common', color: 'bg-gray-100 text-gray-600 border-gray-300' }
+  if (af > 0.01) return { label: 'Low freq', color: 'bg-blue-100 text-blue-900 border-blue-300' }
+  if (af > 0.001) return { label: 'Rare', color: 'bg-orange-100 text-orange-900 border-orange-300' }
+  if (af > 0.0001) return { label: 'Very rare', color: 'bg-red-100 text-red-900 border-red-300' }
+  return { label: 'Ultra-rare', color: 'bg-purple-100 text-purple-900 border-purple-300' }
 }
 
 // ----------------------------------------------------------------------------
