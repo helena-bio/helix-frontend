@@ -471,24 +471,21 @@ export function ChatPanel() {
   const shouldShowThinking = isSending && !isQuerying && !isSearchingLiterature &&
     (!lastMessage || lastMessage.role === 'user')
 
+  const isEmpty = displayMessages.length === 0 && !shouldShowThinking
+
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-border shrink-0">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-primary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold">Helix AI</h2>
-            <p className="text-sm text-muted-foreground truncate">
-              Ask questions about variants, genes, or phenotypes
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4" ref={messagesContainerRef}>
         <div className="space-y-6 max-w-4xl">
+          {/* Empty state */}
+          {isEmpty && (
+            <div className="flex flex-col items-center justify-center h-full pt-24 gap-3 select-none">
+              <Sparkles className="h-6 w-6 text-primary/40" />
+              <p className="text-lg font-semibold text-foreground/30 tracking-tight">Helix AI</p>
+            </div>
+          )}
+
           {displayMessages.map((message) => (
             <div
               key={message.id}
