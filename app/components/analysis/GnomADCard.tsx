@@ -134,11 +134,6 @@ export function GnomADCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-base font-medium">Global Allele Frequency</span>
-            {rarity && (
-              <Badge variant="outline" className={`text-sm ${rarity.bgColor} ${rarity.color}`}>
-                {rarity.label}
-              </Badge>
-            )}
           </div>
 
           {isAbsent ? (
