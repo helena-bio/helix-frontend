@@ -206,7 +206,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
       <div className="flex items-center gap-2 px-3 py-2.5">
         <StarButton variantIdx={variant.variant_idx} />
         {variant.hgvs_protein && (
-          <span className="text-md font-mono text-foreground truncate max-w-48" title={variant.hgvs_protein}>
+          <span className="text-md font-mono font-medium text-foreground truncate max-w-48" title={variant.hgvs_protein}>
             {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
           </span>
         )}
@@ -223,16 +223,6 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
       {/* Expanded Content */}
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 space-y-4 border-t" onClick={(e) => e.stopPropagation()}>
-
-          {/* Frequency & Zygosity */}
-          <div className="flex items-center gap-1.5 pt-1">
-            <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
-              {rarity.label}
-            </Badge>
-            <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
-              {zygosity.label}
-            </Badge>
-          </div>
 
           {/* HGVS */}
           <div className="grid grid-cols-2 gap-4 pt-2">
@@ -335,17 +325,27 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             </div>
           </div>
 
-          {/* ACMG Criteria */}
-          {acmgCriteria.length > 0 && (
-            <div>
-              <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
-              <div className="flex gap-1 flex-wrap">
-                {acmgCriteria.map((code) => (
-                  <ACMGCriteriaBadge key={code} code={code} />
-                ))}
+          {/* ACMG Criteria + Frequency/Zygosity */}
+          <div className="flex items-end justify-between">
+            {acmgCriteria.length > 0 ? (
+              <div>
+                <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
+                <div className="flex gap-1 flex-wrap">
+                  {acmgCriteria.map((code) => (
+                    <ACMGCriteriaBadge key={code} code={code} />
+                  ))}
+                </div>
               </div>
+            ) : <div />}
+            <div className="flex items-center gap-1.5">
+              <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
+                {rarity.label}
+              </Badge>
+              <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
+                {zygosity.label}
+              </Badge>
             </div>
-          )}
+          </div>
 
           {/* Computational Predictions */}
           {hasAnyScores && (
