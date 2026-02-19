@@ -302,14 +302,14 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               <p className="text-md text-muted-foreground">Coverage</p>
               <div className="flex items-end gap-3">
                 <div>
-                  <span className="font-mono text-md font-semibold text-foreground tabular-nums">
+                  <span className="font-mono text-md text-foreground tabular-nums">
                     {variant.depth ?? '—'}
                   </span>
                   <span className="text-md text-muted-foreground ml-0.5">x</span>
                   <p className="text-md text-muted-foreground leading-none mt-0.5">depth</p>
                 </div>
                 <div>
-                  <span className="font-mono text-md font-semibold text-foreground tabular-nums">
+                  <span className="font-mono text-md text-foreground tabular-nums">
                     {variant.quality?.toFixed(0) ?? '—'}
                   </span>
                   <p className="text-md text-muted-foreground leading-none mt-0.5">qual</p>
