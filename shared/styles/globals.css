@@ -135,6 +135,9 @@
   --text-tiny: 0.8125rem;
   --text-tiny--line-height: 1.25rem;
 
+  /* Custom font weight - between normal (400) and medium (500) */
+  --font-weight-book: 450;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
