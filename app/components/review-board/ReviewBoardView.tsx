@@ -134,7 +134,7 @@ function ACMGCriteriaBadge({ code }: { code: string }) {
     extra = 'bg-muted text-muted-foreground border-border'
   }
   return (
-    <Badge variant="outline" className={`text-xs font-medium ${extra}`}>
+    <Badge variant="outline" className={`text-tiny font-medium ${extra}`}>
       {c}
     </Badge>
   )
@@ -477,7 +477,7 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
               {variant.clinical_significance ? (
                 <Badge
                   variant="outline"
-                  className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinical_significance)}`}
+                  className={`text-tiny font-semibold w-fit ${getACMGColor(variant.clinical_significance)}`}
                 >
                   {formatClinVarDisplay(variant.clinical_significance)}
                 </Badge>

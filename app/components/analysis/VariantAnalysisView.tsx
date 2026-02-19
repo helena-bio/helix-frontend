@@ -140,7 +140,7 @@ function ACMGCriteriaBadge({ code }: { code: string }) {
     extra = 'bg-muted text-muted-foreground border-border'
   }
   return (
-    <Badge variant="outline" className={`text-xs font-medium ${extra}`}>
+    <Badge variant="outline" className={`text-tiny font-medium ${extra}`}>
       {c}
     </Badge>
   )
@@ -277,7 +277,7 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
               {variant.clinvar_significance ? (
                 <Badge
                   variant="outline"
-                  className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
+                  className={`text-tiny font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
                 >
                   {formatClinVarDisplay(variant.clinvar_significance)}
                 </Badge>
