@@ -2,14 +2,24 @@
 
 /**
  * VariantDetailPanel - Comprehensive variant information view
+ *
  * Stripe-style layout: compact header, stat strip, section-based content
- * Typography: labels text-md text-muted-foreground, values text-base font-medium
+ * Follows Helix UI Guidelines typography scale strictly.
+ *
+ * Clinical priority order (top-down decision flow):
+ * 1. Header: identity + ACMG verdict (no scroll)
+ * 2. Stat strip: 5 key facts at a glance
+ * 3. ACMG + ClinVar (classification evidence)
+ * 4. Computational evidence (predictions + conservation)
+ * 5. Population + Quality (gnomAD + sequencing)
+ * 6. Variant Details (molecular identity)
+ * 7. HPO Phenotypes (patient context)
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   ArrowLeft,
@@ -41,7 +51,6 @@ import {
   getImpactColor,
   formatImpactDisplay,
   truncateSequence,
-  formatAlleles,
   StarButton,
   getZygosityBadge,
 } from '@/components/shared'
@@ -55,49 +64,8 @@ interface VariantDetailPanelProps {
 }
 
 // ----------------------------------------------------------------------------
-// InfoRow - label/value pair with correct typography
-// Labels: text-md text-muted-foreground (secondary)
-// Values: text-base font-medium (primary)
-// ----------------------------------------------------------------------------
-const InfoRow = ({
-  label,
-  value,
-  mono = false,
-  copyable = false,
-}: {
-  label: string
-  value: any
-  mono?: boolean
-  copyable?: boolean
-}) => {
-  if (value === null || value === undefined || value === '') return null
-
-  return (
-    <div className="flex justify-between items-start py-1.5 gap-4 border-b border-border/50 last:border-0">
-      <span className="text-md text-muted-foreground flex-shrink-0">{label}</span>
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span
-          className={`text-base font-medium text-right min-w-0 ${mono ? 'font-mono break-all' : ''}`}
-          title={typeof value === 'string' ? value : undefined}
-        >
-          {value}
-        </span>
-        {copyable && typeof value === 'string' && (
-          <button
-            onClick={() => navigator.clipboard.writeText(value)}
-            className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
-            title="Copy"
-          >
-            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ----------------------------------------------------------------------------
 // SectionHeader - consistent section labels
+// icon: h-4 w-4 text-muted-foreground, title: text-lg font-semibold
 // ----------------------------------------------------------------------------
 const SectionHeader = ({
   icon,
@@ -174,13 +142,6 @@ const formatBiotype = (biotype: string | null | undefined): string => {
   return biotype.replace(/_/g, ' ')
 }
 
-const formatAF = (af: number | null): string => {
-  if (af === null) return "N/A"
-  if (af === 0) return "Absent"
-  if (af < 0.0001) return `1 in ${Math.round(1 / af).toLocaleString()}`
-  return `1 in ${Math.round(1 / af).toLocaleString()}`
-}
-
 const getRarityLabel = (af: number | null): { label: string; color: string } | null => {
   if (af === null || af === 0) return null
   if (af > 0.05) return { label: 'Common', color: 'bg-blue-100 text-blue-900 border-blue-300' }
@@ -190,8 +151,19 @@ const getRarityLabel = (af: number | null): { label: string; color: string } | n
   return { label: 'Ultra-rare', color: 'bg-purple-100 text-purple-900 border-purple-300' }
 }
 
+const formatClinVarShort = (sig: string | null): string => {
+  if (!sig) return '-'
+  const s = sig.toLowerCase()
+  if (s === 'pathogenic') return 'P'
+  if (s === 'likely pathogenic' || s === 'likely_pathogenic') return 'LP'
+  if (s.includes('uncertain') || s === 'vus') return 'VUS'
+  if (s === 'likely benign' || s === 'likely_benign') return 'LB'
+  if (s === 'benign') return 'B'
+  return sig.length > 12 ? sig.slice(0, 12) : sig
+}
+
 // ----------------------------------------------------------------------------
-// Filter pass indicator
+// FilterPassRow
 // ----------------------------------------------------------------------------
 const FilterPassRow = ({
   label,
@@ -209,6 +181,64 @@ const FilterPassRow = ({
       ) : (
         <XCircle className="h-4 w-4 text-red-600" />
       )}
+    </div>
+  )
+}
+
+// ----------------------------------------------------------------------------
+// PredictionRow - consistent row for in silico predictors
+// ----------------------------------------------------------------------------
+const PredictionRow = ({
+  label,
+  prediction,
+  score,
+}: {
+  label: string
+  prediction: string | null
+  score: number | null
+}) => {
+  const pred = parsePrediction(prediction)
+  const parsed = parseScore(score)
+  if (!pred && parsed === null) return null
+
+  return (
+    <div className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+      <div className="flex items-center gap-2">
+        <span className="text-md text-muted-foreground w-28">{label}</span>
+        {pred && (
+          <Badge variant="outline" className={`text-xs ${getPredictionColor(pred)}`}>
+            {pred}
+          </Badge>
+        )}
+      </div>
+      <span className="text-base font-medium font-mono">
+        {parsed !== null ? parsed.toFixed(3) : '-'}
+      </span>
+    </div>
+  )
+}
+
+// ----------------------------------------------------------------------------
+// CopyableValue - HGVS and identifiers with copy button
+// text-xs font-mono break-all leading-relaxed per guidelines
+// ----------------------------------------------------------------------------
+const CopyableValue = ({ label, value }: { label: string; value: string | null }) => {
+  if (!value) return null
+  return (
+    <div className="py-1.5 border-b border-border/50 last:border-0">
+      <p className="text-md text-muted-foreground mb-1">{label}</p>
+      <div className="flex items-start gap-1.5">
+        <p className="text-xs font-mono text-foreground break-all flex-1 leading-relaxed">
+          {value}
+        </p>
+        <button
+          onClick={() => navigator.clipboard.writeText(value)}
+          className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
+          title="Copy"
+        >
+          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+      </div>
     </div>
   )
 }
@@ -240,14 +270,14 @@ function HPOPhenotypeCard({ hpoId, name, index }: HPOPhenotypeCardProps) {
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <Card className="bg-card">
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors py-2.5 px-4">
+          <div className="cursor-pointer hover:bg-accent/50 transition-colors py-2.5 px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-md text-muted-foreground font-mono w-7 flex-shrink-0">
                   #{index + 1}
                 </span>
                 <span className="text-base font-medium">{name}</span>
-                <Badge variant="outline" className="text-tiny font-mono hidden sm:flex">
+                <Badge variant="outline" className="text-xs font-mono hidden sm:flex">
                   {hpoId}
                 </Badge>
               </div>
@@ -257,7 +287,7 @@ function HPOPhenotypeCard({ hpoId, name, index }: HPOPhenotypeCardProps) {
                 <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               )}
             </div>
-          </CardHeader>
+          </div>
         </CollapsibleTrigger>
 
         <CollapsibleContent>
@@ -281,12 +311,12 @@ function HPOPhenotypeCard({ hpoId, name, index }: HPOPhenotypeCardProps) {
                       <p className="text-md text-muted-foreground mb-2">Synonyms</p>
                       <div className="flex flex-wrap gap-1.5">
                         {hpoData.synonyms.slice(0, 5).map((syn: string, idx: number) => (
-                          <Badge key={idx} variant="secondary" className="text-tiny font-normal">
+                          <Badge key={idx} variant="secondary" className="text-xs font-normal">
                             {syn}
                           </Badge>
                         ))}
                         {hpoData.synonyms.length > 5 && (
-                          <Badge variant="outline" className="text-tiny">
+                          <Badge variant="outline" className="text-xs">
                             +{hpoData.synonyms.length - 5} more
                           </Badge>
                         )}
@@ -382,16 +412,24 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     variant.dann_score !== null
   )
 
+  const hasConservation = variant && (
+    variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null
+  )
+
+  const hasConstraints = variant && (
+    variant.pli !== null || variant.oe_lof_upper !== null ||
+    variant.oe_lof !== null || variant.mis_z !== null
+  )
+
+  const hasDosage = variant && (
+    variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null
+  )
+
+  const hasComputationalEvidence = hasPredictions || hasConservation || hasConstraints || hasDosage
+
   const hasGnomAD = variant && (
     variant.global_af !== null || variant.global_ac !== null ||
     variant.global_an !== null || variant.global_hom !== null
-  )
-
-  const hasConservation = variant && (
-    variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null ||
-    variant.pli !== null || variant.oe_lof_upper !== null ||
-    variant.oe_lof !== null || variant.mis_z !== null ||
-    variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null
   )
 
   const hasClinVar = variant && (variant.clinical_significance || variant.clinvar_variation_id)
@@ -410,9 +448,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
   const zygosity = variant ? getZygosityBadge(variant.genotype) : null
 
-  // ----------------------------------------------------------------------------
   // Loading state
-  // ----------------------------------------------------------------------------
   if (isLoading) {
     return (
       <div className="h-full flex flex-col bg-background">
@@ -429,9 +465,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     )
   }
 
-  // ----------------------------------------------------------------------------
   // Error state
-  // ----------------------------------------------------------------------------
   if (error || !variant) {
     return (
       <div className="h-full flex flex-col bg-background">
@@ -452,18 +486,18 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     )
   }
 
-  // ----------------------------------------------------------------------------
+  // ==========================================================================
   // RENDER
-  // ----------------------------------------------------------------------------
+  // ==========================================================================
   return (
     <div className="h-full flex flex-col bg-background">
 
       {/* ====================================================================
-          HEADER - compact, all critical info visible immediately
+          HEADER - compact, all critical info visible without scroll
           ==================================================================== */}
       <div className="flex-shrink-0 border-b">
 
-        {/* Navigation row */}
+        {/* Navigation */}
         <div className="px-4 pt-3 pb-2">
           <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
@@ -475,7 +509,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         <div className="px-4 pb-3 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-end gap-2.5 flex-wrap">
-              <h2 className="text-2xl font-bold tracking-tight">
+              <h2 className="text-3xl font-bold tracking-tight">
                 {variant.gene_symbol || 'Unknown'}
               </h2>
               <StarButton variantIdx={variantIdx} size="md" />
@@ -501,7 +535,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           {variant.acmg_class && (
             <Badge
               variant="outline"
-              className={`text-md font-semibold px-3 py-1 flex-shrink-0 border-2 ${getACMGColor(variant.acmg_class)}`}
+              className={`text-base font-semibold px-3 py-1 flex-shrink-0 border-2 ${getACMGColor(variant.acmg_class)}`}
             >
               {variant.acmg_class}
             </Badge>
@@ -510,58 +544,73 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
         {/* ================================================================
             STAT STRIP - 5 key facts, no scroll required
+            Labels: text-xs text-muted-foreground
+            Values: text-base font-medium
             ================================================================ */}
         <div className="border-t grid grid-cols-5 divide-x">
+
+          {/* ClinVar */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">gnomAD AF</p>
-            <div className="mt-auto flex items-center gap-1.5 flex-wrap">
-              {getRarityLabel(variant.global_af) && (
-                <Badge variant="outline" className={`text-tiny ${getRarityLabel(variant.global_af)!.color}`}>
-                  {getRarityLabel(variant.global_af)!.label}
+            <p className="text-xs text-muted-foreground leading-none mb-1">ClinVar</p>
+            <div className="mt-auto">
+              {variant.clinical_significance ? (
+                <Badge variant="outline" className={`text-xs ${getACMGColor(variant.clinical_significance)}`}>
+                  {formatClinVarShort(variant.clinical_significance)}
                 </Badge>
+              ) : (
+                <span className="text-base font-medium">-</span>
               )}
             </div>
           </div>
-          <div className="px-3 py-2 min-w-0 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">Consequence</p>
-            <div className="mt-auto">
-              <ConsequenceBadges consequence={variant.consequence} maxBadges={1} className="text-tiny" />
+
+          {/* gnomAD AF */}
+          <div className="px-3 py-2 flex flex-col">
+            <p className="text-xs text-muted-foreground leading-none mb-1">gnomAD AF</p>
+            <div className="mt-auto flex items-center gap-1.5 flex-wrap">
+              {getRarityLabel(variant.global_af) ? (
+                <Badge variant="outline" className={`text-xs ${getRarityLabel(variant.global_af)!.color}`}>
+                  {getRarityLabel(variant.global_af)!.label}
+                </Badge>
+              ) : (
+                <span className="text-base font-medium">{variant.global_af === 0 ? 'Absent' : '-'}</span>
+              )}
             </div>
           </div>
 
+          {/* Impact */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">Impact</p>
-            {variant.impact ? (
-              <Badge
-                variant="outline"
-                className={`text-tiny px-1.5 py-0 h-5 mt-auto ${getImpactColor(variant.impact)}`}
-              >
-                {formatImpactDisplay(variant.impact)}
-              </Badge>
-            ) : (
-              <p className="text-base font-medium leading-none">-</p>
-            )}
+            <p className="text-xs text-muted-foreground leading-none mb-1">Impact</p>
+            <div className="mt-auto">
+              {variant.impact ? (
+                <Badge variant="outline" className={`text-xs ${getImpactColor(variant.impact)}`}>
+                  {formatImpactDisplay(variant.impact)}
+                </Badge>
+              ) : (
+                <span className="text-base font-medium">-</span>
+              )}
+            </div>
           </div>
 
+          {/* Zygosity */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">Zygosity</p>
-            {zygosity && zygosity.label !== '-' ? (
-              <Badge
-                variant="outline"
-                className={`text-tiny px-1.5 py-0 h-5 mt-auto ${zygosity.color}`}
-              >
-                {zygosity.label}
-              </Badge>
-            ) : (
-              <p className="text-base font-medium leading-none mt-auto">{variant.genotype || '-'}</p>
-            )}
+            <p className="text-xs text-muted-foreground leading-none mb-1">Zygosity</p>
+            <div className="mt-auto">
+              {zygosity && zygosity.label !== '-' ? (
+                <Badge variant="outline" className={`text-xs ${zygosity.color}`}>
+                  {zygosity.label}
+                </Badge>
+              ) : (
+                <span className="text-base font-medium">{variant.genotype || '-'}</span>
+              )}
+            </div>
           </div>
 
+          {/* Confidence */}
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">Confidence</p>
-            <p className="text-base font-medium leading-none">
+            <p className="text-xs text-muted-foreground leading-none mb-1">Confidence</p>
+            <span className="text-base font-medium mt-auto">
               {variant.confidence_score !== null ? variant.confidence_score.toFixed(2) : '-'}
-            </p>
+            </span>
           </div>
         </div>
       </div>
@@ -572,7 +621,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
       <div className="flex-1 overflow-y-auto">
 
         {/* ================================================================
-            ALERT BANNERS - conditional, always at top of content
+            ALERT BANNERS - between header and content
             ================================================================ */}
         {(variant.compound_het_candidate || variant.is_flagged) && (
           <div className="border-b">
@@ -599,218 +648,241 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           </div>
         )}
 
-        <div className="p-4 space-y-5">
+        <div className="p-4 space-y-4">
 
           {/* ==============================================================
-              ACMG CLASSIFICATION
+              SECTION 1: ACMG + ClinVar (classification evidence)
               ============================================================== */}
-          <Card>
-            <CardContent className="pt-4">
-              <SectionHeader icon={<Shield className="h-4 w-4" />} title="ACMG Classification" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              <div className="space-y-3">
-                {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
-                  <div>
+            {/* ACMG Classification */}
+            <Card>
+              <CardContent className="pt-4">
+                <SectionHeader icon={<Shield className="h-4 w-4" />} title="ACMG Classification" />
+
+                {variant.acmg_criteria && (
+                  <div className="mb-3">
                     <p className="text-md text-muted-foreground mb-2">Evidence Codes</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => (
-                        <Badge key={c} variant="outline" className="text-tiny font-mono">
-                          {c.trim()}
-                        </Badge>
-                      ))}
+                      {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => {
+                        const code = c.trim()
+                        let extra = 'bg-muted text-muted-foreground border-border'
+                        if (code.startsWith('PVS') || code.startsWith('PS')) extra = 'bg-red-100 text-red-900 border-red-300'
+                        else if (code.startsWith('PM')) extra = 'bg-orange-100 text-orange-900 border-orange-300'
+                        else if (code.startsWith('PP')) extra = 'bg-yellow-100 text-yellow-900 border-yellow-300'
+                        else if (code.startsWith('BA') || code.startsWith('BS') || code.startsWith('BP')) extra = 'bg-green-100 text-green-900 border-green-300'
+                        return (
+                          <Badge key={code} variant="outline" className={`text-md font-medium ${extra}`}>
+                            {code}
+                          </Badge>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-x-6 pt-1">
-                  {variant.confidence_score !== null && (
-                    <div className="border-b border-border/50 py-1.5">
-                      <span className="text-md text-muted-foreground">Confidence</span>
-                      <span className="float-right text-base font-medium">
-                        {variant.confidence_score.toFixed(2)}
-                      </span>
+                {variant.confidence_score !== null && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span className="text-md text-muted-foreground">Confidence</span>
+                    <span className="text-base font-medium">{variant.confidence_score.toFixed(2)}</span>
+                  </div>
+                )}
+
+                {variant.priority_score !== null && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
+                    <span className="text-md text-muted-foreground">Priority Score</span>
+                    <span className="text-base font-medium">{variant.priority_score.toFixed(1)}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ClinVar */}
+            {hasClinVar ? (
+              <Card>
+                <CardContent className="pt-4">
+                  <SectionHeader icon={<FileText className="h-4 w-4" />} title="ClinVar" />
+
+                  {variant.clinical_significance && (
+                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                      <span className="text-md text-muted-foreground">Significance</span>
+                      <span className="text-base font-medium">{variant.clinical_significance}</span>
                     </div>
                   )}
-                  {variant.priority_score !== null && (
-                    <div className="border-b border-border/50 py-1.5">
-                      <span className="text-md text-muted-foreground">Priority Score</span>
-                      <span className="float-right text-base font-medium">
-                        {variant.priority_score.toFixed(1)}
-                      </span>
+
+                  {variant.review_stars !== null && variant.review_stars > 0 && (
+                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                      <span className="text-md text-muted-foreground">Review Stars</span>
+                      <div className="flex gap-0.5">
+                        {[...Array(variant.review_stars)].map((_: any, i: number) => (
+                          <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                        ))}
+                        {[...Array(Math.max(0, 4 - (variant.review_stars || 0)))].map((_: any, i: number) => (
+                          <Star key={`e${i}`} className="h-3.5 w-3.5 text-border" />
+                        ))}
+                      </div>
                     </div>
                   )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                  {variant.review_status && (
+                    <div className="py-1.5 border-b border-border/50">
+                      <p className="text-md text-muted-foreground mb-1.5">Review Status</p>
+                      <div className="flex flex-wrap gap-1">
+                        {formatReviewStatus(variant.review_status).map((s: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs font-normal">
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {variant.disease_name && (
+                    <div className="py-1.5 border-b border-border/50">
+                      <p className="text-md text-muted-foreground mb-1.5">Disease</p>
+                      <div className="flex flex-wrap gap-1">
+                        {formatDiseaseName(variant.disease_name).map((d: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs font-normal">
+                            {d}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {variant.clinvar_variation_id && (
+                    <div className="pt-2">
+                      
+                        <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-md text-primary hover:underline flex items-center gap-1"
+                      >
+                        View in ClinVar
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="pt-4">
+                  <SectionHeader icon={<FileText className="h-4 w-4" />} title="ClinVar" />
+                  <p className="text-md text-muted-foreground">No ClinVar record found for this variant.</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* ==============================================================
-              TWO-COLUMN: ClinVar + Predictions
+              SECTION 2: Computational Evidence
+              (Predictions + Conservation + Gene Constraints)
               ============================================================== */}
-          {(hasClinVar || hasPredictions) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {hasComputationalEvidence && (
+            <Card>
+              <CardContent className="pt-4">
+                <SectionHeader icon={<Target className="h-4 w-4" />} title="Computational Evidence" />
 
-              {hasClinVar && (
-                <Card>
-                  <CardContent className="pt-4">
-                    <SectionHeader icon={<FileText className="h-4 w-4" />} title="ClinVar" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
 
-                    <div>
-                      {variant.clinical_significance && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">Significance</span>
-                          <span className="text-base font-medium">
-                            {variant.clinical_significance}
-                          </span>
-                        </div>
-                      )}
-
-                      {variant.review_stars !== null && variant.review_stars > 0 && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">Review Stars</span>
-                          <div className="flex gap-0.5">
-                            {[...Array(variant.review_stars)].map((_, i) => (
-                              <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                            ))}
-                            {[...Array(Math.max(0, 4 - (variant.review_stars || 0)))].map((_, i) => (
-                              <Star key={`e${i}`} className="h-3.5 w-3.5 text-border" />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {variant.review_status && (
-                        <div className="py-1.5 border-b border-border/50">
-                          <p className="text-md text-muted-foreground mb-1.5">Review Status</p>
-                          <div className="flex flex-wrap gap-1">
-                            {formatReviewStatus(variant.review_status).map((s, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-tiny font-normal">
-                                {s}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {variant.disease_name && (
-                        <div className="py-1.5 border-b border-border/50">
-                          <p className="text-md text-muted-foreground mb-1.5">Disease</p>
-                          <div className="flex flex-wrap gap-1">
-                            {formatDiseaseName(variant.disease_name).map((d, idx) => (
-                              <Badge key={idx} variant="outline" className="text-tiny font-normal">
-                                {d}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {variant.clinvar_variation_id && (
-                        <div className="pt-2">
-                          
-                            <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-md text-primary hover:underline flex items-center gap-1"
-                          >
-                            View in ClinVar
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {hasPredictions && (
-                <Card>
-                  <CardContent className="pt-4">
-                    <SectionHeader icon={<Target className="h-4 w-4" />} title="In Silico Predictions" />
-
-                    <div>
-                      {(variant.sift_pred || variant.sift_score !== null) && (() => {
-                        const pred = parsePrediction(variant.sift_pred)
-                        const score = parseScore(variant.sift_score)
-                        if (!pred && score === null) return null
-                        return (
-                          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                            <div className="flex items-center gap-2">
-                              <span className="text-md text-muted-foreground w-28">SIFT</span>
-                              {pred && (
-                                <Badge variant="outline" className={`text-tiny ${getPredictionColor(pred)}`}>
-                                  {pred}
-                                </Badge>
-                              )}
+                  {/* Left column: In Silico Predictions */}
+                  <div>
+                    {hasPredictions && (
+                      <div className="mb-4">
+                        <p className="text-md text-muted-foreground mb-2">In Silico Predictions</p>
+                        <PredictionRow label="SIFT" prediction={variant.sift_pred} score={variant.sift_score} />
+                        <PredictionRow label="AlphaMissense" prediction={variant.alphamissense_pred} score={variant.alphamissense_score} />
+                        <PredictionRow label="MetaSVM" prediction={variant.metasvm_pred} score={variant.metasvm_score} />
+                        {variant.dann_score !== null && (() => {
+                          const score = parseScore(variant.dann_score)
+                          if (score === null) return null
+                          return (
+                            <div className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+                              <span className="text-md text-muted-foreground w-28">DANN</span>
+                              <span className="text-base font-medium font-mono">{score.toFixed(3)}</span>
                             </div>
-                            <span className="text-base font-medium">
-                              {score !== null ? score.toFixed(3) : '-'}
-                            </span>
-                          </div>
-                        )
-                      })()}
+                          )
+                        })()}
+                      </div>
+                    )}
 
-                      {(variant.alphamissense_pred || variant.alphamissense_score !== null) && (() => {
-                        const pred = parsePrediction(variant.alphamissense_pred)
-                        const score = parseScore(variant.alphamissense_score)
-                        if (!pred && score === null) return null
-                        return (
-                          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                            <div className="flex items-center gap-2">
-                              <span className="text-md text-muted-foreground w-28">AlphaMissense</span>
-                              {pred && (
-                                <Badge variant="outline" className={`text-tiny ${getPredictionColor(pred)}`}>
-                                  {pred}
-                                </Badge>
-                              )}
-                            </div>
-                            <span className="text-base font-medium">
-                              {score !== null ? score.toFixed(3) : '-'}
-                            </span>
+                    {hasConservation && (
+                      <div>
+                        <p className="text-md text-muted-foreground mb-2">Conservation</p>
+                        {variant.phylop100way_vertebrate !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                            <span className="text-md text-muted-foreground">PhyloP 100-way</span>
+                            <span className="text-base font-medium font-mono">{variant.phylop100way_vertebrate.toFixed(3)}</span>
                           </div>
-                        )
-                      })()}
+                        )}
+                        {variant.gerp_rs !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
+                            <span className="text-md text-muted-foreground">GERP++</span>
+                            <span className="text-base font-medium font-mono">{variant.gerp_rs.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-                      {(variant.metasvm_pred || variant.metasvm_score !== null) && (() => {
-                        const pred = parsePrediction(variant.metasvm_pred)
-                        const score = parseScore(variant.metasvm_score)
-                        if (!pred && score === null) return null
-                        return (
-                          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-                            <div className="flex items-center gap-2">
-                              <span className="text-md text-muted-foreground w-28">MetaSVM</span>
-                              {pred && (
-                                <Badge variant="outline" className={`text-tiny ${getPredictionColor(pred)}`}>
-                                  {pred}
-                                </Badge>
-                              )}
-                            </div>
-                            <span className="text-base font-medium">
-                              {score !== null ? score.toFixed(3) : '-'}
-                            </span>
+                  {/* Right column: Gene Constraints + Dosage */}
+                  <div>
+                    {hasConstraints && (
+                      <div className="mb-4">
+                        <p className="text-md text-muted-foreground mb-2">Gene Constraints</p>
+                        {variant.pli !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                            <span className="text-md text-muted-foreground">pLI</span>
+                            <span className="text-base font-medium font-mono">{variant.pli.toFixed(3)}</span>
                           </div>
-                        )
-                      })()}
+                        )}
+                        {variant.oe_lof !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                            <span className="text-md text-muted-foreground">oe LoF</span>
+                            <span className="text-base font-medium font-mono">{variant.oe_lof.toFixed(3)}</span>
+                          </div>
+                        )}
+                        {variant.oe_lof_upper !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                            <span className="text-md text-muted-foreground">LOEUF</span>
+                            <span className="text-base font-medium font-mono">{variant.oe_lof_upper.toFixed(3)}</span>
+                          </div>
+                        )}
+                        {variant.mis_z !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
+                            <span className="text-md text-muted-foreground">Missense Z</span>
+                            <span className="text-base font-medium font-mono">{variant.mis_z.toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                      {variant.dann_score !== null && (() => {
-                        const score = parseScore(variant.dann_score)
-                        if (score === null) return null
-                        return (
-                          <div className="flex items-center justify-between py-1.5">
-                            <span className="text-md text-muted-foreground w-28">DANN</span>
-                            <span className="text-base font-medium">{score.toFixed(3)}</span>
+                    {hasDosage && (
+                      <div>
+                        <p className="text-md text-muted-foreground mb-2">ClinGen Dosage</p>
+                        {variant.haploinsufficiency_score !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                            <span className="text-md text-muted-foreground">HI Score</span>
+                            <span className="text-base font-medium">{variant.haploinsufficiency_score}</span>
                           </div>
-                        )
-                      })()}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                        )}
+                        {variant.triplosensitivity_score !== null && (
+                          <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
+                            <span className="text-md text-muted-foreground">TS Score</span>
+                            <span className="text-base font-medium">{variant.triplosensitivity_score}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* ==============================================================
-              TWO-COLUMN: gnomAD + Quality
+              SECTION 3: Population + Quality (two-column)
               ============================================================== */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -832,245 +904,110 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
             <Card>
               <CardContent className="pt-4">
-                <SectionHeader icon={<Gauge className="h-4 w-4" />} title="Quality" />
+                <SectionHeader icon={<Gauge className="h-4 w-4" />} title="Sequencing Quality" />
 
-                <div>
-                  {variant.genotype && (
-                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                      <span className="text-md text-muted-foreground">Genotype</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base font-mono font-medium">{variant.genotype}</span>
-                        {zygosity && zygosity.label !== '-' && zygosity.label !== variant.genotype && (
-                          <Badge variant="outline" className={`text-tiny ${zygosity.color}`}>
-                            {zygosity.label}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {variant.depth !== null && (
-                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                      <span className="text-md text-muted-foreground">Depth</span>
-                      <span className="text-base font-medium">{variant.depth}x</span>
-                    </div>
-                  )}
-
-                  {variant.allelic_depth !== null && (
-                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                      <span className="text-md text-muted-foreground">Allelic Depth</span>
-                      <span className="text-base font-medium">{variant.allelic_depth}</span>
-                    </div>
-                  )}
-
-                  {variant.genotype_quality !== null && (
-                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                      <span className="text-md text-muted-foreground">GQ</span>
-                      <span className="text-base font-medium">{variant.genotype_quality}</span>
-                    </div>
-                  )}
-
-                  {variant.quality !== null && (
-                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                      <span className="text-md text-muted-foreground">QUAL</span>
-                      <span className="text-base font-medium">{variant.quality.toFixed(1)}</span>
-                    </div>
-                  )}
-
-                  {variant.filter_status && (
-                    <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                      <span className="text-md text-muted-foreground">Filter</span>
-                      <Badge
-                        variant="outline"
-                        className={`text-tiny ${variant.filter_status === 'PASS'
-                          ? 'bg-green-50 text-green-800 border-green-300'
-                          : 'bg-red-50 text-red-800 border-red-300'}`}
-                      >
-                        {variant.filter_status}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {hasFilters && (
-                    <div className={`mt-3 pt-3 border-t border-border/50 ${anyFilterFailed ? 'rounded-lg bg-red-50/50 p-2 -mx-1' : ''}`}>
-                      {anyFilterFailed && (
-                        <p className="text-xs text-red-700 font-medium mb-1.5 flex items-center gap-1">
-                          <XCircle className="h-3 w-3" />
-                          QC filter warnings
-                        </p>
+                {variant.genotype && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span className="text-md text-muted-foreground">Genotype</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-mono font-medium">{variant.genotype}</span>
+                      {zygosity && zygosity.label !== '-' && zygosity.label !== variant.genotype && (
+                        <Badge variant="outline" className={`text-xs ${zygosity.color}`}>
+                          {zygosity.label}
+                        </Badge>
                       )}
-                      <FilterPassRow label="Quality filter" pass={variant.pass_quality_filter} />
-                      <FilterPassRow label="Frequency filter" pass={variant.pass_frequency_filter} />
-                      <FilterPassRow label="Impact filter" pass={variant.pass_impact_filter} />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {variant.depth !== null && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span className="text-md text-muted-foreground">Depth</span>
+                    <span className="text-base font-medium font-mono">{variant.depth}x</span>
+                  </div>
+                )}
+
+                {variant.allelic_depth !== null && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span className="text-md text-muted-foreground">Allelic Depth</span>
+                    <span className="text-base font-medium font-mono">{variant.allelic_depth}</span>
+                  </div>
+                )}
+
+                {variant.genotype_quality !== null && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span className="text-md text-muted-foreground">GQ</span>
+                    <span className="text-base font-medium font-mono">{variant.genotype_quality}</span>
+                  </div>
+                )}
+
+                {variant.quality !== null && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span className="text-md text-muted-foreground">QUAL</span>
+                    <span className="text-base font-medium font-mono">{variant.quality.toFixed(1)}</span>
+                  </div>
+                )}
+
+                {variant.filter_status && (
+                  <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                    <span className="text-md text-muted-foreground">Filter</span>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${variant.filter_status === 'PASS'
+                        ? 'bg-green-100 text-green-900 border-green-300'
+                        : 'bg-red-100 text-red-900 border-red-300'}`}
+                    >
+                      {variant.filter_status}
+                    </Badge>
+                  </div>
+                )}
+
+                {hasFilters && (
+                  <div className={`mt-3 pt-3 border-t border-border/50 ${anyFilterFailed ? 'rounded-lg bg-red-50/50 p-2 -mx-1' : ''}`}>
+                    {anyFilterFailed && (
+                      <p className="text-xs text-red-700 font-medium mb-1.5 flex items-center gap-1">
+                        <XCircle className="h-3 w-3" />
+                        QC filter warnings
+                      </p>
+                    )}
+                    <FilterPassRow label="Quality filter" pass={variant.pass_quality_filter} />
+                    <FilterPassRow label="Frequency filter" pass={variant.pass_frequency_filter} />
+                    <FilterPassRow label="Impact filter" pass={variant.pass_impact_filter} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
           {/* ==============================================================
-              TWO-COLUMN: Conservation + Details
+              SECTION 4: Variant Details (full width)
               ============================================================== */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="pt-4">
+              <SectionHeader icon={<Dna className="h-4 w-4" />} title="Variant Details" />
 
-            {hasConservation && (
-              <Card>
-                <CardContent className="pt-4">
-                  <SectionHeader icon={<Activity className="h-4 w-4" />} title="Conservation" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
 
-                  {(variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null) && (
-                    <div className="mb-3">
-                      <p className="text-md text-muted-foreground mb-2">Scores</p>
-                      {variant.phylop100way_vertebrate !== null && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">PhyloP 100-way</span>
-                          <span className="text-base font-medium">
-                            {variant.phylop100way_vertebrate.toFixed(3)}
-                          </span>
-                        </div>
-                      )}
-                      {variant.gerp_rs !== null && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">GERP++</span>
-                          <span className="text-base font-medium">
-                            {variant.gerp_rs.toFixed(2)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {(variant.pli !== null || variant.oe_lof_upper !== null ||
-                    variant.oe_lof !== null || variant.mis_z !== null) && (
-                    <div className="mb-3">
-                      <p className="text-md text-muted-foreground mb-2">Gene Constraints</p>
-                      {variant.pli !== null && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">pLI</span>
-                          <span className="text-base font-medium">
-                            {variant.pli.toFixed(3)}
-                          </span>
-                        </div>
-                      )}
-                      {variant.oe_lof !== null && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">oe LoF</span>
-                          <span className="text-base font-medium">
-                            {variant.oe_lof.toFixed(3)}
-                          </span>
-                        </div>
-                      )}
-                      {variant.oe_lof_upper !== null && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">LOEUF</span>
-                          <span className="text-base font-medium">
-                            {variant.oe_lof_upper.toFixed(3)}
-                          </span>
-                        </div>
-                      )}
-                      {variant.mis_z !== null && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">Missense Z</span>
-                          <span className="text-base font-medium">
-                            {variant.mis_z.toFixed(2)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {(variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null) && (
-                    <div>
-                      <p className="text-md text-muted-foreground mb-2">ClinGen Dosage</p>
-                      {variant.haploinsufficiency_score !== null && (
-                        <div className="flex justify-between items-center py-1.5 border-b border-border/50">
-                          <span className="text-md text-muted-foreground">HI Score</span>
-                          <span className="text-base font-medium">{variant.haploinsufficiency_score}</span>
-                        </div>
-                      )}
-                      {variant.triplosensitivity_score !== null && (
-                        <div className="flex justify-between items-center py-1.5">
-                          <span className="text-md text-muted-foreground">TS Score</span>
-                          <span className="text-base font-medium">{variant.triplosensitivity_score}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            <Card>
-              <CardContent className="pt-4">
-                <SectionHeader icon={<Dna className="h-4 w-4" />} title="Details" />
-
+                {/* Left: HGVS notations (copyable, full width within column) */}
                 <div>
-                  {variant.hgvs_genomic && (
-                    <div className="py-1.5 border-b border-border/50">
-                      <p className="text-md text-muted-foreground mb-1">HGVS Genomic</p>
-                      <div className="flex items-start gap-1.5">
-                        <p className="text-xs font-mono text-foreground break-all flex-1 leading-relaxed">
-                          {variant.hgvs_genomic}
-                        </p>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(variant.hgvs_genomic!)}
-                          className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
-                          title="Copy"
-                        >
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {variant.hgvs_cdna && (
-                    <div className="py-1.5 border-b border-border/50">
-                      <p className="text-md text-muted-foreground mb-1">HGVS cDNA</p>
-                      <div className="flex items-start gap-1.5">
-                        <p className="text-xs font-mono text-foreground break-all flex-1 leading-relaxed">
-                          {variant.hgvs_cdna}
-                        </p>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(variant.hgvs_cdna!)}
-                          className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
-                          title="Copy"
-                        >
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {variant.hgvs_protein && (
-                    <div className="py-1.5 border-b border-border/50">
-                      <p className="text-md text-muted-foreground mb-1">HGVS Protein</p>
-                      <div className="flex items-start gap-1.5">
-                        <p className="text-xs font-mono text-foreground break-all flex-1 leading-relaxed">
-                          {variant.hgvs_protein}
-                        </p>
-                        <button
-                          onClick={() => navigator.clipboard.writeText(variant.hgvs_protein!)}
-                          className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
-                          title="Copy"
-                        >
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  <CopyableValue label="HGVS Genomic" value={variant.hgvs_genomic} />
+                  <CopyableValue label="HGVS cDNA" value={variant.hgvs_cdna} />
+                  <CopyableValue label="HGVS Protein" value={variant.hgvs_protein} />
 
                   {variant.consequence && (
                     <div className="py-1.5 border-b border-border/50">
                       <p className="text-md text-muted-foreground mb-1.5">Consequence</p>
-                      <ConsequenceBadges consequence={variant.consequence} maxBadges={6} className="text-tiny" />
+                      <ConsequenceBadges consequence={variant.consequence} maxBadges={6} className="text-xs" />
                     </div>
                   )}
+                </div>
 
+                {/* Right: Molecular identity */}
+                <div>
                   {variant.impact && (
                     <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                       <span className="text-md text-muted-foreground">Impact</span>
-                      <Badge variant="outline" className={`text-tiny ${getImpactColor(variant.impact)}`}>
+                      <Badge variant="outline" className={`text-xs ${getImpactColor(variant.impact)}`}>
                         {formatImpactDisplay(variant.impact)}
                       </Badge>
                     </div>
@@ -1093,7 +1030,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.biotype && (
                     <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                       <span className="text-md text-muted-foreground">Biotype</span>
-                      <Badge variant="secondary" className="text-tiny font-normal">
+                      <Badge variant="secondary" className="text-xs font-normal">
                         {formatBiotype(variant.biotype)}
                       </Badge>
                     </div>
@@ -1104,12 +1041,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       <p className="text-md text-muted-foreground mb-1.5">Protein Domains</p>
                       <div className="flex flex-wrap gap-1">
                         {variant.domains.split(',').filter(Boolean).slice(0, 4).map((d: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-tiny font-normal">
+                          <Badge key={idx} variant="outline" className="text-xs font-normal">
                             {d.trim()}
                           </Badge>
                         ))}
                         {variant.domains.split(',').length > 4 && (
-                          <Badge variant="outline" className="text-tiny">
+                          <Badge variant="outline" className="text-xs">
                             +{variant.domains.split(',').length - 4} more
                           </Badge>
                         )}
@@ -1118,18 +1055,18 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   )}
 
                   {variant.rsid && (
-                    <div className="flex justify-between items-center py-1.5">
+                    <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
                       <span className="text-md text-muted-foreground">rsID</span>
                       <span className="text-xs font-mono font-medium">{variant.rsid}</span>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* ==============================================================
-              HPO PHENOTYPES - full width
+              SECTION 5: HPO Phenotypes (full width)
               ============================================================== */}
           {hpoTerms.length > 0 && (
             <div className="space-y-3">
@@ -1137,7 +1074,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold">Phenotypes (HPO)</h3>
-                  <Badge variant="secondary" className="text-tiny">
+                  <Badge variant="secondary" className="text-xs">
                     {filteredHPOTerms.length}
                   </Badge>
                 </div>
@@ -1179,7 +1116,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
 
               {hasMoreHPO && (
                 <div ref={loadMoreRef} className="flex justify-center py-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               )}
 
