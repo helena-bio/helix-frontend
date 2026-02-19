@@ -281,6 +281,13 @@ export function ScreeningResultsProvider({ sessionId, children }: ScreeningResul
         `${API_BASE_URL}/screening/sessions/${sid}/screening/summaries`
       )
 
+      // 404 means screening has not been run for this session yet - not an error
+      if (response.status === 404) {
+        console.log('[ScreeningResultsContext] No screening results found (404) - screening not run yet')
+        setStatus('idle')
+        return []
+      }
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
