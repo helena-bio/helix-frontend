@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 export const getACMGColor = (acmg: string | null | undefined) => {
   if (!acmg) return 'bg-gray-100 text-gray-900 border-gray-300'
   const acmgLower = acmg.toLowerCase()
+  if (acmgLower.includes('pathogenic/likely') || acmgLower === 'pathogenic/likely_pathogenic') return 'bg-red-100 text-red-900 border-red-300'
   if (acmgLower === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
   if (acmgLower === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
   if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
