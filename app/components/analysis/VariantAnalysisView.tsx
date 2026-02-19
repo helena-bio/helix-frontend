@@ -28,9 +28,7 @@ import {
   ChevronDown,
   ChevronUp,
   Filter,
-  ExternalLink,
   Info,
-  Copy,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -43,16 +41,12 @@ import {
   getACMGColor,
   getImpactColor,
   formatImpactDisplay,
-  getZygosityBadge,
   formatACMGDisplay,
-  formatClinVarDisplay,
-  ConsequenceBadges,
-  truncateSequence,
-  StarButton,
+  SharedVariantCard,
+  type SharedVariantData,
 } from '@/components/shared'
 import type { GeneAggregated, VariantInGene } from '@/types/variant.types'
-import { formatCount, getRarityBadge } from '@helix/shared/lib/utils'
-import { toast } from 'sonner'
+import { formatCount } from '@helix/shared/lib/utils'
 
 interface VariantAnalysisViewProps {
   sessionId: string
@@ -126,52 +120,24 @@ const variantMatchesImpact = (variant: VariantInGene, filter: ImpactFilter): boo
 // EXPANDED CARD HELPERS
 // ============================================================================
 
-function ACMGCriteriaBadge({ code }: { code: string }) {
-  const c = code.trim()
-  let extra = ''
-  if (c.startsWith('PVS') || c.startsWith('PS')) {
-    extra = 'bg-red-100 text-red-900 border-red-300'
-  } else if (c.startsWith('PM')) {
-    extra = 'bg-orange-100 text-orange-900 border-orange-300'
-  } else if (c.startsWith('PP')) {
-    extra = 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  } else if (c.startsWith('BA') || c.startsWith('BS') || c.startsWith('BP')) {
-    extra = 'bg-green-100 text-green-900 border-green-300'
-  } else {
-    extra = 'bg-muted text-muted-foreground border-border'
+/** Map VariantInGene to SharedVariantData */
+function toSharedVariant(v: VariantInGene): SharedVariantData {
+  return {
+    variantIdx: v.variant_idx,
+    hgvsProtein: v.hgvs_protein,
+    hgvsCdna: v.hgvs_cdna,
+    consequence: v.consequence,
+    impact: v.impact,
+    acmgClass: v.acmg_class,
+    acmgCriteria: v.acmg_criteria,
+    gnomadAf: v.gnomad_af,
+    genotype: v.genotype,
+    clinvarSignificance: v.clinvar_significance,
+    depth: v.depth,
+    quality: v.quality,
+    alphamissenseScore: v.alphamissense_score,
+    siftScore: v.sift_score,
   }
-  return (
-    <Badge variant="outline" className={`text-tiny font-medium ${extra}`}>
-      {c}
-    </Badge>
-  )
-}
-
-function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | null | undefined; colorClass?: string }) {
-  if (value === null || value === undefined) {
-    return <span className="text-md text-muted-foreground font-mono">—</span>
-  }
-  const pct = Math.min(Math.max(value * 100, 0), 100)
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-md font-mono tabular-nums w-10 text-right text-foreground">
-        {value.toFixed(3)}
-      </span>
-    </div>
-  )
-}
-
-function formatAF(af: number | null | undefined): { text: string; colorClass: string } {
-  if (af === null || af === undefined || af === 0) {
-    return { text: 'Not found', colorClass: 'text-foreground' }
-  }
-  if (af < 0.0001) {
-    return { text: af.toExponential(2), colorClass: 'text-orange-700' }
-  }
-  return { text: af.toFixed(6).replace(/\.?0+$/, ''), colorClass: 'text-green-700' }
 }
 
 // ============================================================================
@@ -184,221 +150,11 @@ interface VariantCardProps {
 }
 
 function VariantCard({ variant, onViewDetails }: VariantCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const zygosity = getZygosityBadge(variant.genotype)
-  const rarity = getRarityBadge(variant.gnomad_af)
-
-  const acmgCriteria: string[] = variant.acmg_criteria
-    ? variant.acmg_criteria.split(',').map((c: string) => c.trim()).filter(Boolean)
-    : []
-
-  const hasAlphaMissense = variant.alphamissense_score !== null && variant.alphamissense_score !== undefined
-  const hasSift = variant.sift_score !== null && variant.sift_score !== undefined
-  const hasAnyScores = hasAlphaMissense || hasSift
-
-  const af = formatAF(variant.gnomad_af)
-
   return (
-    <div
-      className="border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      {/* Compact single-line row */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
-        <StarButton variantIdx={variant.variant_idx} />
-        {variant.hgvs_protein && (
-          <span className="text-md font-medium text-foreground truncate min-w-28 max-w-48" title={variant.hgvs_protein}>
-            {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
-          </span>
-        )}
-        <ConsequenceBadges consequence={variant.consequence} maxBadges={1} />
-        {variant.acmg_class && (
-          <Badge variant="outline" className={`text-tiny ${getACMGColor(variant.acmg_class)}`}>
-            {formatACMGDisplay(variant.acmg_class)}
-          </Badge>
-        )}
-        <div className="flex-1" />
-        {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-      </div>
-
-      {/* Expanded Content */}
-      {isExpanded && (
-        <div className="px-3 pb-3 pt-1 space-y-4 border-t" onClick={(e) => e.stopPropagation()}>
-
-          {/* HGVS */}
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div className="min-w-0">
-              <p className="text-md text-muted-foreground">HGVS Protein</p>
-              <div className="flex items-center gap-1 min-w-0">
-                <p className="text-md font-mono truncate" title={variant.hgvs_protein || '-'}>
-                  {variant.hgvs_protein || '-'}
-                </p>
-                {variant.hgvs_protein && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_protein!); toast.success("HGVS Protein copied") }}
-                    className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
-                    title="Copy HGVS Protein"
-                  >
-                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="min-w-0">
-              <p className="text-md text-muted-foreground">HGVS cDNA</p>
-              <div className="flex items-center gap-1 min-w-0">
-                <p className="text-md font-mono truncate" title={variant.hgvs_cdna || '-'}>
-                  {variant.hgvs_cdna || '-'}
-                </p>
-                {variant.hgvs_cdna && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(variant.hgvs_cdna!); toast.success("HGVS cDNA copied") }}
-                    className="flex-shrink-0 p-0.5 rounded hover:bg-muted"
-                    title="Copy HGVS cDNA"
-                  >
-                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 4-column classification grid */}
-          <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border overflow-hidden">
-
-            {/* ClinVar */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">ClinVar</p>
-              {variant.clinvar_significance ? (
-                <Badge
-                  variant="outline"
-                  className={`text-tiny font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
-                >
-                  {formatClinVarDisplay(variant.clinvar_significance)}
-                </Badge>
-              ) : (
-                <span className="text-md text-muted-foreground">—</span>
-              )}
-            </div>
-
-            {/* gnomAD AF */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">gnomAD AF</p>
-              {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 ? (
-                <span className="text-md font-mono tabular-nums text-foreground">
-                  1 in {Math.round(1 / variant.gnomad_af).toLocaleString()}
-                </span>
-              ) : (
-                <span className="text-md text-muted-foreground">Not found</span>
-              )}
-            </div>
-
-            {/* Coverage */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">Coverage</p>
-              <div className="flex items-end gap-3">
-                <div>
-                  <span className="font-mono text-md text-foreground tabular-nums">
-                    {variant.depth ?? '—'}
-                  </span>
-                  <span className="text-md text-muted-foreground ml-0.5">x</span>
-                  <p className="text-md text-muted-foreground leading-none mt-0.5">depth</p>
-                </div>
-                <div>
-                  <span className="font-mono text-md text-foreground tabular-nums">
-                    {variant.quality?.toFixed(0) ?? '—'}
-                  </span>
-                  <p className="text-md text-muted-foreground leading-none mt-0.5">qual</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Impact */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">Impact</p>
-              {variant.impact ? (
-                <Badge variant="outline" className={`text-tiny w-fit ${getImpactColor(variant.impact)}`}>
-                  {formatImpactDisplay(variant.impact)}
-                </Badge>
-              ) : (
-                <span className="text-md text-muted-foreground">—</span>
-              )}
-            </div>
-          </div>
-
-          {/* ACMG Criteria + Frequency/Zygosity */}
-          <div className="flex items-end justify-between">
-            {acmgCriteria.length > 0 ? (
-              <div>
-                <p className="text-md text-muted-foreground mb-2">ACMG Criteria</p>
-                <div className="flex gap-1 flex-wrap">
-                  {acmgCriteria.map((code) => (
-                    <ACMGCriteriaBadge key={code} code={code} />
-                  ))}
-                </div>
-              </div>
-            ) : <div />}
-            <div className="flex items-end gap-3">
-              <div className="text-right">
-                <p className="text-md text-muted-foreground mb-1">Frequency</p>
-                <Badge variant="outline" className="text-tiny font-medium bg-muted text-muted-foreground border-border">
-                  {rarity.label}
-                </Badge>
-              </div>
-              <div className="text-right">
-                <p className="text-md text-muted-foreground mb-1">Zygosity</p>
-                <Badge variant="outline" className="text-tiny font-medium bg-muted text-muted-foreground border-border">
-                  {zygosity.label}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          {/* Computational Predictions */}
-          {hasAnyScores && (
-            <div className="grid grid-cols-2 gap-4">
-              {hasAlphaMissense && (
-                <div>
-                  <p className="text-md text-muted-foreground mb-1">AlphaMissense</p>
-                  <ScoreBar
-                    value={variant.alphamissense_score}
-                    colorClass={(variant.alphamissense_score ?? 0) > 0.7 ? 'bg-red-500' : 'bg-orange-400'}
-                  />
-                </div>
-              )}
-              {hasSift && (
-                <div>
-                  <p className="text-md text-muted-foreground mb-1">
-                    SIFT <span className="text-md text-muted-foreground">({variant.sift_score?.toFixed(3) ?? '—'})</span>
-                  </p>
-                  <ScoreBar
-                    value={variant.sift_score !== null ? 1 - variant.sift_score! : null}
-                    colorClass="bg-red-400"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onViewDetails(variant.variant_idx)
-              }}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View Full Details
-            </Button>
-          </div>
-
-        </div>
-      )}
-    </div>
+    <SharedVariantCard
+      variant={toSharedVariant(variant)}
+      onViewDetails={onViewDetails}
+    />
   )
 }
 

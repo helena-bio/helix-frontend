@@ -16,3 +16,10 @@ export {
   formatAlleles,
 } from './variant-helpers'
 export { StarButton } from './StarButton'
+export {
+  SharedVariantCard,
+  ACMGCriteriaBadge,
+  ScoreBar,
+  type SharedVariantData,
+  type SharedVariantCardProps,
+} from './SharedVariantCard'
