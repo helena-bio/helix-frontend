@@ -464,7 +464,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         {/* Identity row */}
         <div className="px-4 pb-3 flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-end gap-2.5 flex-wrap">
               <h2 className="text-2xl font-bold tracking-tight">
                 {variant.gene_symbol || 'Unknown'}
               </h2>
@@ -648,7 +648,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       {variant.clinical_significance && (
                         <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                           <span className="text-md text-muted-foreground">Significance</span>
-                          <span className="text-base font-semibold">
+                          <span className="text-base font-medium">
                             {variant.clinical_significance}
                           </span>
                         </div>
