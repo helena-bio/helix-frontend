@@ -287,13 +287,12 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             {/* gnomAD AF */}
             <div className="px-3 py-2 flex flex-col gap-1">
               <p className="text-md text-muted-foreground">gnomAD AF</p>
-              <span className={`font-mono text-md tabular-nums ${af.colorClass}`}>
-                {af.text}
-              </span>
-              {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 && (
-                <span className="text-md text-muted-foreground">
+              {variant.gnomad_af !== null && variant.gnomad_af !== undefined && variant.gnomad_af > 0 ? (
+                <span className="text-md font-mono tabular-nums text-foreground">
                   1 in {Math.round(1 / variant.gnomad_af).toLocaleString()}
                 </span>
+              ) : (
+                <span className="text-md text-muted-foreground">Not found</span>
               )}
             </div>
 
