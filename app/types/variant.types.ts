@@ -153,6 +153,8 @@ export interface VariantInGene {
   genotype: string | null
   depth: number | null
   quality: number | null
+  alphamissense_score: number | null
+  sift_score: number | null
 }
 
 /**
