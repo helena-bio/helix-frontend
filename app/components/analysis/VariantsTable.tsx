@@ -72,16 +72,87 @@ const getZygosityBadge = (genotype: string | null) => {
   return { label: genotype, color: 'bg-gray-100' }
 }
 
-
 const truncateAllele = (allele: string, maxLength: number = 10): string => {
   if (allele.length <= maxLength) return allele
   return allele.substring(0, maxLength) + '...'
 }
 
+// ============================================================================
+// ACMG CRITERIA BADGE
+// Color-coded by evidence strength: PVS/PS = red, PM = orange, PP = yellow, BP/BA/BS = green
+// ============================================================================
+
+function ACMGCriteriaBadge({ code }: { code: string }) {
+  const c = code.trim()
+  let extra = ''
+  if (c.startsWith('PVS') || c.startsWith('PS')) {
+    extra = 'bg-red-50 text-red-700 border-red-200'
+  } else if (c.startsWith('PM')) {
+    extra = 'bg-orange-50 text-orange-700 border-orange-200'
+  } else if (c.startsWith('PP')) {
+    extra = 'bg-yellow-50 text-yellow-700 border-yellow-200'
+  } else if (c.startsWith('BA') || c.startsWith('BS') || c.startsWith('BP')) {
+    extra = 'bg-green-50 text-green-700 border-green-200'
+  } else {
+    extra = 'bg-muted text-muted-foreground border-border'
+  }
+  return (
+    <Badge variant="outline" className={`text-xs font-mono ${extra}`}>
+      {c}
+    </Badge>
+  )
+}
+
+// ============================================================================
+// SCORE BAR
+// ============================================================================
+
+function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: number | null | undefined; colorClass?: string }) {
+  if (value === null || value === undefined) {
+    return <span className="text-xs text-muted-foreground font-mono">—</span>
+  }
+  const pct = Math.min(Math.max(value * 100, 0), 100)
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs font-mono tabular-nums w-8 text-right text-foreground">
+        {value.toFixed(3)}
+      </span>
+    </div>
+  )
+}
+
+// ============================================================================
+// SECTION LABEL - Vercel-style uppercase
+// ============================================================================
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      {children}
+    </span>
+  )
+}
+
+// ============================================================================
+// FORMAT AF
+// ============================================================================
+
+function formatAF(af: number | null | undefined): { text: string; colorClass: string } {
+  if (af === null || af === undefined || af === 0) {
+    return { text: 'Not found', colorClass: 'text-foreground font-semibold' }
+  }
+  if (af < 0.0001) {
+    return { text: af.toExponential(2), colorClass: 'text-orange-700 font-semibold' }
+  }
+  return { text: af.toFixed(6).replace(/\.?0+$/, ''), colorClass: 'text-green-700 font-semibold' }
+}
+
 export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }: VariantsTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
-  // Toggle expand/collapse when clicking on row
   const toggleRow = useCallback((variantIdx: number) => {
     setExpandedRows(prev => {
       const next = new Set(prev)
@@ -94,9 +165,8 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
     })
   }, [])
 
-  // Open detail panel when clicking ExternalLink icon OR expanded row
   const handleDetailClick = useCallback((variantIdx: number, e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent row toggle
+    e.stopPropagation()
     if (onVariantClick) {
       onVariantClick(variantIdx)
     }
@@ -143,6 +213,16 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
               data.variants.map((variant: any) => {
                 const zygosity = getZygosityBadge(variant.genotype)
                 const changeText = `${variant.reference_allele}/${variant.alternate_allele}`
+                const af = formatAF(variant.global_af)
+                const isExpanded = expandedRows.has(variant.variant_idx)
+
+                const acmgCriteria: string[] = variant.acmg_criteria
+                  ? variant.acmg_criteria.split(',').map((c: string) => c.trim()).filter(Boolean)
+                  : []
+
+                const hasAlphaMissense = variant.alphamissense_score !== null && variant.alphamissense_score !== undefined
+                const hasSift = variant.sift_score !== null && variant.sift_score !== undefined
+                const hasAnyScores = hasAlphaMissense || hasSift
 
                 return (
                   <>
@@ -152,7 +232,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                       onClick={() => toggleRow(variant.variant_idx)}
                     >
                       <TableCell>
-                        {expandedRows.has(variant.variant_idx) ? (
+                        {isExpanded ? (
                           <ChevronUp className="h-4 w-4" />
                         ) : (
                           <ChevronDown className="h-4 w-4" />
@@ -164,7 +244,7 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                       <TableCell className="font-mono text-sm">
                         {variant.chromosome}:{variant.position.toLocaleString()}
                       </TableCell>
-                      <TableCell 
+                      <TableCell
                         className="font-mono text-sm max-w-[120px] truncate"
                         title={changeText}
                       >
@@ -183,8 +263,8 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                           </Badge>
                         ) : '-'}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {variant.global_af ? variant.global_af.toExponential(2) : '-'}
+                      <TableCell className={`font-mono text-sm ${af.colorClass}`}>
+                        {af.text}
                       </TableCell>
                       <TableCell>
                         <Button
@@ -199,49 +279,165 @@ export function VariantsTable({ data, isFetching, onPageChange, onVariantClick }
                       </TableCell>
                     </TableRow>
 
-                    {expandedRows.has(variant.variant_idx) && (
-                      <TableRow
-                        className="cursor-pointer hover:bg-muted/70 transition-colors"
-                        onClick={(e) => handleDetailClick(variant.variant_idx, e)}
-                      >
-                        <TableCell colSpan={10} className="bg-muted/30">
-                          <div className="p-4 space-y-3">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">HGVS Protein</p>
-                                <p className="text-base font-mono">{variant.hgvs_protein || '-'}</p>
+                    {isExpanded && (
+                      <TableRow key={`${variant.variant_idx}-expanded`}>
+                        <TableCell colSpan={10} className="p-0 bg-muted/20">
+                          <div className="px-6 py-4 space-y-3">
+
+                            {/* -------------------------------------------- */}
+                            {/* GENOMIC IDENTITY STRIP                         */}
+                            {/* -------------------------------------------- */}
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/60 border border-border/60 flex-wrap">
+                              <span className="font-mono text-sm text-foreground font-medium tracking-tight">
+                                {variant.chromosome}:{variant.position?.toLocaleString()}{' '}
+                                {variant.reference_allele}/{variant.alternate_allele}
+                              </span>
+                              {variant.hgvs_protein && (
+                                <>
+                                  <span className="text-muted-foreground/40 text-xs">·</span>
+                                  <span className="font-mono text-sm font-semibold text-foreground">
+                                    {variant.hgvs_protein}
+                                  </span>
+                                </>
+                              )}
+                              {variant.hgvs_cdna && (
+                                <>
+                                  <span className="text-muted-foreground/40 text-xs">·</span>
+                                  <span className="font-mono text-xs text-muted-foreground">
+                                    {variant.hgvs_cdna}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            {/* -------------------------------------------- */}
+                            {/* 4-COLUMN CLASSIFICATION GRID                   */}
+                            {/* ClinVar | gnomAD AF | Coverage | Confidence    */}
+                            {/* -------------------------------------------- */}
+                            <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border overflow-hidden">
+
+                              {/* ClinVar */}
+                              <div className="px-3 py-2 flex flex-col gap-1">
+                                <SectionLabel>ClinVar</SectionLabel>
+                                {variant.clinical_significance ? (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinical_significance)}`}
+                                  >
+                                    {variant.clinical_significance}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
                               </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Impact</p>
-                                <Badge variant="secondary" className="text-sm">{variant.impact || '-'}</Badge>
+
+                              {/* gnomAD AF */}
+                              <div className="px-3 py-2 flex flex-col gap-1">
+                                <SectionLabel>gnomAD AF</SectionLabel>
+                                <span className={`font-mono text-sm tabular-nums ${af.colorClass}`}>
+                                  {af.text}
+                                </span>
                               </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Depth</p>
-                                <p className="text-base">{variant.depth || '-'}</p>
+
+                              {/* Coverage */}
+                              <div className="px-3 py-2 flex flex-col gap-1">
+                                <SectionLabel>Coverage</SectionLabel>
+                                <div className="flex items-end gap-3">
+                                  <div>
+                                    <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                                      {variant.depth ?? '—'}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground ml-0.5">x</span>
+                                    <p className="text-xs text-muted-foreground leading-none mt-0.5">depth</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                                      {variant.quality?.toFixed(0) ?? '—'}
+                                    </span>
+                                    <p className="text-xs text-muted-foreground leading-none mt-0.5">qual</p>
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Quality</p>
-                                <p className="text-base">{variant.quality ? variant.quality.toFixed(1) : '-'}</p>
+
+                              {/* Impact */}
+                              <div className="px-3 py-2 flex flex-col gap-1">
+                                <SectionLabel>Impact</SectionLabel>
+                                {variant.impact ? (
+                                  <Badge variant="secondary" className="text-xs w-fit">
+                                    {variant.impact}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
                               </div>
                             </div>
 
-                            {variant.acmg_criteria && variant.acmg_criteria.length > 0 && (
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-2">ACMG Criteria</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {variant.acmg_criteria.split(',').filter((c: string) => c.trim()).map((c: string) => (
-                                    <Badge key={c} variant="outline" className="text-sm">{c.trim()}</Badge>
+                            {/* -------------------------------------------- */}
+                            {/* ACMG CRITERIA                                  */}
+                            {/* -------------------------------------------- */}
+                            {acmgCriteria.length > 0 && (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <SectionLabel>ACMG</SectionLabel>
+                                <div className="flex gap-1 flex-wrap">
+                                  {acmgCriteria.map((code) => (
+                                    <ACMGCriteriaBadge key={code} code={code} />
                                   ))}
                                 </div>
                               </div>
                             )}
 
-                            {variant.clinical_significance && (
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">ClinVar</p>
-                                <p className="text-base">{variant.clinical_significance}</p>
+                            {/* -------------------------------------------- */}
+                            {/* COMPUTATIONAL PREDICTIONS                      */}
+                            {/* Only when scores available                     */}
+                            {/* -------------------------------------------- */}
+                            {hasAnyScores && (
+                              <div className="px-3 py-2 rounded-md bg-muted/30 border border-border/60">
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                                  {hasAlphaMissense && (
+                                    <div>
+                                      <SectionLabel>AlphaMissense</SectionLabel>
+                                      <div className="mt-1">
+                                        <ScoreBar
+                                          value={variant.alphamissense_score}
+                                          colorClass={(variant.alphamissense_score ?? 0) > 0.7 ? 'bg-red-500' : 'bg-orange-400'}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                  {hasSift && (
+                                    <div>
+                                      <SectionLabel>SIFT</SectionLabel>
+                                      <div className="mt-1 flex items-center gap-2">
+                                        {/* SIFT: lower = more damaging -- invert for bar */}
+                                        <ScoreBar
+                                          value={variant.sift_score !== null ? 1 - variant.sift_score : null}
+                                          colorClass="bg-red-400"
+                                        />
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                          ({variant.sift_score?.toFixed(3) ?? '—'})
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             )}
+
+                            {/* -------------------------------------------- */}
+                            {/* FOOTER: View full details                      */}
+                            {/* -------------------------------------------- */}
+                            <div className="flex justify-end pt-1 border-t border-border/60">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => handleDetailClick(variant.variant_idx, e)}
+                                className="text-sm gap-1.5 h-7 px-3"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                View full details
+                              </Button>
+                            </div>
+
                           </div>
                         </TableCell>
                       </TableRow>
