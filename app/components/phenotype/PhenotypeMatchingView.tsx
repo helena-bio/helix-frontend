@@ -36,6 +36,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { usePhenotypeResults, type GeneAggregatedResult } from '@/contexts/PhenotypeResultsContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
+import { HPOTermDetailPanel } from './HPOTermDetailPanel'
 import {
   getACMGColor,
   getZygosityBadge,
@@ -339,6 +340,7 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
+  const [selectedHpoTerm, setSelectedHpoTerm] = useState<{ hpoId: string; hpoName: string } | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
     if (observerRef.current) observerRef.current.disconnect()
@@ -423,6 +425,16 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
   }, [geneFilter, tierFilter])
 
   const hasResults = status === 'success' && aggregatedResults && aggregatedResults.length > 0
+
+  if (selectedHpoTerm !== null) {
+    return (
+      <HPOTermDetailPanel
+        hpoId={selectedHpoTerm.hpoId}
+        hpoName={selectedHpoTerm.hpoName}
+        onBack={() => setSelectedHpoTerm(null)}
+      />
+    )
+  }
 
   if (selectedVariantIdx !== null) {
     return (
@@ -552,7 +564,8 @@ export function PhenotypeMatchingView({ sessionId }: PhenotypeMatchingViewProps)
                       <Badge
                         key={term.hpo_id}
                         variant="secondary"
-                        className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
+                        className="px-3 py-1.5 bg-primary/10 text-primary text-sm cursor-pointer hover:bg-primary/20 transition-colors"
+                        onClick={() => setSelectedHpoTerm({ hpoId: term.hpo_id, hpoName: term.name })}
                       >
                         {term.name}
                       </Badge>
