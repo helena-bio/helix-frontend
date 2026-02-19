@@ -167,7 +167,7 @@ export function ConsequenceBadges({ consequence, maxBadges = 3, className = '' }
         </Badge>
       ))}
       {remaining > 0 && (
-        <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500 border-gray-200">
+        <Badge variant="outline" className="text-tiny bg-gray-50 text-gray-500 border-gray-200">
           +{remaining} more
         </Badge>
       )}
