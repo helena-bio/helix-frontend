@@ -732,7 +732,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                                 </Badge>
                               )}
                             </div>
-                            <span className="text-base font-mono font-medium">
+                            <span className="text-base font-medium">
                               {score !== null ? score.toFixed(3) : '-'}
                             </span>
                           </div>
@@ -753,7 +753,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                                 </Badge>
                               )}
                             </div>
-                            <span className="text-base font-mono font-medium">
+                            <span className="text-base font-medium">
                               {score !== null ? score.toFixed(3) : '-'}
                             </span>
                           </div>
@@ -774,7 +774,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                                 </Badge>
                               )}
                             </div>
-                            <span className="text-base font-mono font-medium">
+                            <span className="text-base font-medium">
                               {score !== null ? score.toFixed(3) : '-'}
                             </span>
                           </div>
@@ -787,7 +787,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         return (
                           <div className="flex items-center justify-between py-1.5">
                             <span className="text-md text-muted-foreground w-28">DANN</span>
-                            <span className="text-base font-mono font-medium">{score.toFixed(3)}</span>
+                            <span className="text-base font-medium">{score.toFixed(3)}</span>
                           </div>
                         )
                       })()}
@@ -914,7 +914,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       {variant.phylop100way_vertebrate !== null && (
                         <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                           <span className="text-md text-muted-foreground">PhyloP 100-way</span>
-                          <span className="text-base font-mono font-medium">
+                          <span className="text-base font-medium">
                             {variant.phylop100way_vertebrate.toFixed(3)}
                           </span>
                         </div>
@@ -922,7 +922,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       {variant.gerp_rs !== null && (
                         <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                           <span className="text-md text-muted-foreground">GERP++</span>
-                          <span className="text-base font-mono font-medium">
+                          <span className="text-base font-medium">
                             {variant.gerp_rs.toFixed(2)}
                           </span>
                         </div>
@@ -937,7 +937,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       {variant.pli !== null && (
                         <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                           <span className="text-md text-muted-foreground">pLI</span>
-                          <span className="text-base font-mono font-medium">
+                          <span className="text-base font-medium">
                             {variant.pli.toFixed(3)}
                           </span>
                         </div>
@@ -945,7 +945,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       {variant.oe_lof !== null && (
                         <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                           <span className="text-md text-muted-foreground">oe LoF</span>
-                          <span className="text-base font-mono font-medium">
+                          <span className="text-base font-medium">
                             {variant.oe_lof.toFixed(3)}
                           </span>
                         </div>
@@ -953,7 +953,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       {variant.oe_lof_upper !== null && (
                         <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                           <span className="text-md text-muted-foreground">LOEUF</span>
-                          <span className="text-base font-mono font-medium">
+                          <span className="text-base font-medium">
                             {variant.oe_lof_upper.toFixed(3)}
                           </span>
                         </div>
@@ -961,7 +961,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       {variant.mis_z !== null && (
                         <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                           <span className="text-md text-muted-foreground">Missense Z</span>
-                          <span className="text-base font-mono font-medium">
+                          <span className="text-base font-medium">
                             {variant.mis_z.toFixed(2)}
                           </span>
                         </div>
