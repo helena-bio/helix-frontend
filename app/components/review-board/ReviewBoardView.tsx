@@ -230,7 +230,7 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
     <div className="border-t pt-4 space-y-3">
       <div className="flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-muted-foreground" />
-        <p className="text-base font-semibold">
+        <p className="text-md font-semibold">
           Notes {notes.length > 0 && `(${notes.length})`}
         </p>
       </div>
@@ -247,13 +247,13 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
               {notes.map((note) => (
                 <div key={note.id} className="flex gap-3 p-3 rounded-lg bg-muted/30 group">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary">{note.user.initials}</span>
+                    <span className="text-tiny font-medium text-primary">{note.user.initials}</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline justify-between gap-2">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-base font-medium">{note.user.name}</span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-md font-medium">{note.user.name}</span>
+                        <span className="text-tiny text-muted-foreground">
                           {new Date(note.created_at).toLocaleDateString('en-GB', {
                             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                           })}
@@ -289,7 +289,7 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
                           onKeyDown={(e) => handleEditKeyDown(e, note.id)}
-                          className="flex-1 text-base h-9"
+                          className="flex-1 text-md h-9"
                           autoFocus
                           disabled={isSavingEdit}
                         />
@@ -313,7 +313,7 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
                         </button>
                       </div>
                     ) : (
-                      <p className="text-base mt-1 whitespace-pre-wrap">{note.text}</p>
+                      <p className="text-md mt-1 whitespace-pre-wrap">{note.text}</p>
                     )}
                   </div>
                 </div>
@@ -327,7 +327,7 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
               onChange={(e) => setNewNoteText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Add a note..."
-              className="flex-1 text-base h-9"
+              className="flex-1 text-md h-9"
               disabled={isSending}
             />
             <Button
@@ -416,7 +416,7 @@ function ReviewGeneSection({ group, rank, sessionId, onViewDetails }: ReviewGene
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-tiny text-muted-foreground">
               {group.variants.length} variant{group.variants.length !== 1 ? 's' : ''}
             </span>
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
