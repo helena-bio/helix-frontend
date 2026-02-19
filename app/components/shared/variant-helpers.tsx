@@ -14,11 +14,11 @@ import { Badge } from '@/components/ui/badge'
 export const getACMGColor = (acmg: string | null | undefined) => {
   if (!acmg) return 'bg-gray-100 text-gray-600 border-gray-300'
   const acmgLower = acmg.toLowerCase()
-  if (acmgLower === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
-  if (acmgLower === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  if (acmgLower === 'likely benign') return 'bg-blue-100 text-blue-900 border-blue-300'
-  if (acmgLower === 'benign') return 'bg-green-100 text-green-900 border-green-300'
+  if (acmgLower === 'pathogenic') return 'bg-red-50 text-red-700 border-red-200'
+  if (acmgLower === 'likely pathogenic') return 'bg-orange-50 text-orange-700 border-orange-200'
+  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-50 text-yellow-700 border-yellow-200'
+  if (acmgLower === 'likely benign') return 'bg-blue-50 text-blue-700 border-blue-200'
+  if (acmgLower === 'benign') return 'bg-green-50 text-green-700 border-green-200'
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
@@ -35,9 +35,9 @@ export const formatImpactDisplay = (impact: string | null | undefined): string =
 export const getImpactColor = (impact: string | null | undefined) => {
   if (!impact) return 'bg-gray-100 text-gray-600 border-gray-300'
   const impactUpper = impact.toUpperCase()
-  if (impactUpper === 'HIGH') return 'bg-red-100 text-red-900 border-red-300'
-  if (impactUpper === 'MODERATE') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (impactUpper === 'LOW') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (impactUpper === 'HIGH') return 'bg-red-50 text-red-700 border-red-200'
+  if (impactUpper === 'MODERATE') return 'bg-orange-50 text-orange-700 border-orange-200'
+  if (impactUpper === 'LOW') return 'bg-yellow-50 text-yellow-700 border-yellow-200'
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
@@ -45,30 +45,30 @@ export const getTierColor = (tier: string | number | null | undefined) => {
   if (!tier) return 'bg-gray-100 text-gray-600 border-gray-300'
   const tierStr = String(tier).toLowerCase()
   // IF must be checked BEFORE tier numbers to avoid false match on "incidental finding" containing no digits
-  if (tierStr.startsWith('if') || tierStr.includes('incidental')) return 'bg-purple-100 text-purple-900 border-purple-300'
-  if (tierStr.includes('1')) return 'bg-red-100 text-red-900 border-red-300'
-  if (tierStr.includes('2') || tierStr.includes('potentially')) return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (tierStr.includes('3') || tierStr.includes('uncertain')) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (tierStr.startsWith('if') || tierStr.includes('incidental')) return 'bg-purple-50 text-purple-700 border-purple-200'
+  if (tierStr.includes('1')) return 'bg-red-50 text-red-700 border-red-200'
+  if (tierStr.includes('2') || tierStr.includes('potentially')) return 'bg-orange-50 text-orange-700 border-orange-200'
+  if (tierStr.includes('3') || tierStr.includes('uncertain')) return 'bg-yellow-50 text-yellow-700 border-yellow-200'
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
 export const getScoreColor = (score: number) => {
-  if (score >= 70) return 'bg-green-100 text-green-900 border-green-300'
-  if (score >= 50) return 'bg-blue-100 text-blue-900 border-blue-300'
-  if (score >= 30) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (score >= 70) return 'bg-green-50 text-green-700 border-green-200'
+  if (score >= 50) return 'bg-blue-50 text-blue-700 border-blue-200'
+  if (score >= 30) return 'bg-yellow-50 text-yellow-700 border-yellow-200'
   return 'bg-gray-100 text-gray-600 border-gray-300'
 }
 
 export const getZygosityBadge = (genotype: string | null | undefined) => {
   if (!genotype) return { label: '-', color: 'bg-gray-100 text-gray-600 border-gray-300' }
   if (genotype === '0/1' || genotype === '1/0' || genotype === '0|1' || genotype === '1|0' || genotype === 'het') {
-    return { label: 'Het', color: 'bg-blue-100 text-blue-900 border-blue-300' }
+    return { label: 'Het', color: 'bg-blue-50 text-blue-700 border-blue-200' }
   }
   if (genotype === '1/1' || genotype === '1|1' || genotype === 'hom') {
-    return { label: 'Hom', color: 'bg-purple-100 text-purple-900 border-purple-300' }
+    return { label: 'Hom', color: 'bg-purple-50 text-purple-700 border-purple-200' }
   }
   if (genotype === '1' || genotype === '1/.' || genotype === '.|1' || genotype === 'hemi') {
-    return { label: 'Hemi', color: 'bg-indigo-100 text-indigo-900 border-indigo-300' }
+    return { label: 'Hemi', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' }
   }
   return { label: genotype, color: 'bg-gray-100 text-gray-600 border-gray-300' }
 }
