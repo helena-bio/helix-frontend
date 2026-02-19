@@ -13,7 +13,7 @@
  * Max entries per store: 100
  */
 const DB_NAME = 'helix-session-cache'
-const DB_VERSION = 4
+const DB_VERSION = 5
 const TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 const MAX_ENTRIES = 100
 export type StoreName = 'variant-summaries' | 'phenotype-summaries' | 'screening-summaries' | 'clinical-profiles' | 'clinical-interpretations'
