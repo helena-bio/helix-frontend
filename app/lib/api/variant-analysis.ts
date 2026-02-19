@@ -3,7 +3,7 @@
  * Production-ready API endpoints for Helix Insight backend
  */
 
-import { uploadFileWithProgress, get, post, patch, del } from './client'
+import { uploadFileWithProgress, get, post, patch, put, del } from './client'
 import type {
   AnalysisSession,
   QCMetrics,
@@ -342,7 +342,7 @@ export async function updateNote(
   noteId: string,
   text: string
 ): Promise<CaseNote> {
-  return patch<CaseNote>(`/sessions/${sessionId}/notes/${noteId}`, { text })
+  return put<CaseNote>(`/sessions/${sessionId}/notes/${noteId}`, { text })
 }
 
 /**

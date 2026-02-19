@@ -231,7 +231,7 @@ export function HPOTermDetailPanel({ hpoId, hpoName, onBack }: HPOTermDetailPane
         ================================================================ */}
         <div className="flex items-center gap-2 pb-4">
           
-            href={`https://hpo.jax.org/app/browse/term/${hpoId}`}
+            <a href={`https://hpo.jax.org/app/browse/term/${hpoId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
