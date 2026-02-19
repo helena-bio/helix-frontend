@@ -473,12 +473,12 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
             {/* ClinVar */}
             <div className="px-3 py-2 flex flex-col gap-1">
               <p className="text-md text-muted-foreground">ClinVar</p>
-              {variant.clinvar_significance ? (
+              {variant.clinical_significance ? (
                 <Badge
                   variant="outline"
-                  className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinvar_significance)}`}
+                  className={`text-xs font-semibold w-fit ${getACMGColor(variant.clinical_significance)}`}
                 >
-                  {formatClinVarDisplay(variant.clinvar_significance)}
+                  {formatClinVarDisplay(variant.clinical_significance)}
                 </Badge>
               ) : (
                 <span className="text-md text-muted-foreground">—</span>
