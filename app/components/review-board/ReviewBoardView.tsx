@@ -262,9 +262,9 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
           {zygosity.label}
         </Badge>
         <div className="flex-1" />
-        {variant.gnomad_af !== null && variant.gnomad_af !== undefined && (
+        {variant.global_af !== null && variant.global_af !== undefined && (
           <div className="text-right mr-1">
-            <p className="text-sm font-mono">{variant.gnomad_af.toExponential(2)}</p>
+            <p className="text-sm font-mono">{variant.global_af.toExponential(2)}</p>
             <p className="text-xs text-muted-foreground">gnomAD AF</p>
           </div>
         )}
