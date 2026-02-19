@@ -759,7 +759,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             <button
               key={key}
               onClick={() => handleImpactClick(key)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-md font-book transition-all cursor-pointer ${color} ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-md font-medium transition-all cursor-pointer ${color} ${
                 impactFilter === key ? "ring-2 ring-gray-400 ring-offset-1" : "hover:ring-1 hover:ring-gray-300"
               }`}
               title={`${count.toLocaleString()} ${label} impact variants`}
