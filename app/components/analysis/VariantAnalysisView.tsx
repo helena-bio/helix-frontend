@@ -751,10 +751,10 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       {hasResults && (
         <div className="flex items-center gap-2">
           {[
-            { key: "HIGH" as ImpactFilter, label: "High", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-700" },
-            { key: "MODERATE" as ImpactFilter, label: "Moderate", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-700" },
-            { key: "LOW" as ImpactFilter, label: "Low", count: impactCounts.low, color: "border-yellow-200 bg-yellow-50 text-yellow-700" },
-            { key: "MODIFIER" as ImpactFilter, label: "Modifier", count: impactCounts.modifier, color: "border-gray-200 bg-gray-50 text-gray-500" },
+            { key: "HIGH" as ImpactFilter, label: "High", count: impactCounts.high, color: "border-red-200 bg-red-50 text-red-900" },
+            { key: "MODERATE" as ImpactFilter, label: "Moderate", count: impactCounts.moderate, color: "border-orange-200 bg-orange-50 text-orange-900" },
+            { key: "LOW" as ImpactFilter, label: "Low", count: impactCounts.low, color: "border-yellow-200 bg-yellow-50 text-yellow-900" },
+            { key: "MODIFIER" as ImpactFilter, label: "Modifier", count: impactCounts.modifier, color: "border-gray-200 bg-gray-50 text-gray-600" },
           ].map(({ key, label, count, color }) => (
             <button
               key={key}
