@@ -39,6 +39,7 @@ import {
   truncateSequence,
   StarButton,
 } from '@/components/shared'
+import { getRarityBadge } from '@helix/shared/lib/utils'
 import type { Variant, CaseNote } from '@/types/variant.types'
 
 interface ReviewBoardViewProps {
@@ -62,6 +63,7 @@ const IMPACT_PRIORITY: Record<string, number> = {
 }
 
 type ACMGFilter = 'all' | 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely Benign' | 'Benign'
+type ImpactFilter = 'all' | 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
 
 const acmgFilterToClass = (filter: ACMGFilter): string | undefined => {
   if (filter === 'all') return undefined
@@ -100,7 +102,6 @@ function groupVariantsByGene(variants: Variant[]): GeneGroup[] {
     })
   })
 
-  // Sort groups by best ACMG priority, then impact
   groups.sort((a, b) => {
     const ap = ACMG_PRIORITY[a.best_acmg_class || ''] ?? 99
     const bp = ACMG_PRIORITY[b.best_acmg_class || ''] ?? 99
@@ -233,6 +234,7 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
   const [isExpanded, setIsExpanded] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
   const zygosity = getZygosityBadge(variant.genotype)
+  const rarity = getRarityBadge(variant.global_af)
 
   return (
     <div
@@ -247,27 +249,19 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
             {formatACMGDisplay(variant.acmg_class)}
           </Badge>
         )}
-        {variant.impact && (
-          <Badge variant="outline" className={`text-sm ${getImpactColor(variant.impact)}`}>
-            {variant.impact}
-          </Badge>
-        )}
         <ConsequenceBadges consequence={variant.consequence} maxBadges={1} />
         {variant.hgvs_protein && (
           <span className="text-sm font-mono font-semibold text-muted-foreground truncate max-w-40" title={variant.hgvs_protein}>
             {variant.hgvs_protein.includes(':') ? variant.hgvs_protein.split(':').pop() : truncateSequence(variant.hgvs_protein, 25)}
           </span>
         )}
+        <Badge variant="outline" className={`text-sm ${rarity.color}`}>
+          {rarity.label}
+        </Badge>
         <Badge variant="outline" className={`text-sm ${zygosity.color}`}>
           {zygosity.label}
         </Badge>
         <div className="flex-1" />
-        {variant.global_af !== null && variant.global_af !== undefined && (
-          <div className="text-right mr-1">
-            <p className="text-sm font-mono">{variant.global_af.toExponential(2)}</p>
-            <p className="text-xs text-muted-foreground">gnomAD AF</p>
-          </div>
-        )}
         {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </div>
 
@@ -476,6 +470,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
   const [variants, setVariants] = useState<Variant[]>([])
   const [isLoadingVariants, setIsLoadingVariants] = useState(false)
   const [acmgFilter, setAcmgFilter] = useState<ACMGFilter>('all')
+  const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
   const [geneFilter, setGeneFilter] = useState('')
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
 
@@ -507,7 +502,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     return () => { cancelled = true }
   }, [items, sessionId])
 
-  // ACMG counts
+  // ACMG counts (always from full variants list)
   const acmgCounts = useMemo(() => {
     const counts = { total: variants.length, pathogenic: 0, likely_pathogenic: 0, vus: 0, likely_benign: 0, benign: 0 }
     for (const v of variants) {
@@ -520,6 +515,19 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     return counts
   }, [variants])
 
+  // Impact counts — scoped to current ACMG filter
+  const impactCounts = useMemo(() => {
+    const base = acmgFilter === 'all'
+      ? variants
+      : variants.filter((v) => v.acmg_class === acmgFilterToClass(acmgFilter))
+    return {
+      high: base.filter((v) => v.impact === 'HIGH').length,
+      moderate: base.filter((v) => v.impact === 'MODERATE').length,
+      low: base.filter((v) => v.impact === 'LOW').length,
+      modifier: base.filter((v) => v.impact === 'MODIFIER').length,
+    }
+  }, [variants, acmgFilter])
+
   // Filter variants, group by gene
   const geneGroups = useMemo(() => {
     let filtered = variants
@@ -529,18 +537,27 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
       filtered = filtered.filter((v) => v.acmg_class === acmgClass)
     }
 
+    if (impactFilter !== 'all') {
+      filtered = filtered.filter((v) => v.impact === impactFilter)
+    }
+
     if (geneFilter.trim()) {
       const search = geneFilter.toLowerCase()
       filtered = filtered.filter((v) => v.gene_symbol?.toLowerCase().includes(search))
     }
 
     return groupVariantsByGene(filtered)
-  }, [variants, acmgFilter, geneFilter])
+  }, [variants, acmgFilter, impactFilter, geneFilter])
 
   const filteredVariantCount = useMemo(() => geneGroups.reduce((sum, g) => sum + g.variants.length, 0), [geneGroups])
 
   const handleAcmgClick = (filter: ACMGFilter) => {
     setAcmgFilter((prev) => (prev === filter ? 'all' : filter))
+    setImpactFilter('all')
+  }
+
+  const handleImpactClick = (filter: ImpactFilter) => {
+    setImpactFilter((prev) => (prev === filter ? 'all' : filter))
   }
 
   const isLoading = isLoadingBoard || isLoadingVariants
@@ -619,6 +636,27 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
             <FilterCard count={acmgCounts.benign} label="B" tooltip="Benign variants" isSelected={acmgFilter === 'Benign'} onClick={() => handleAcmgClick('Benign')} colorClasses="border-green-200 bg-green-50 text-green-900" />
           </div>
 
+          {/* Impact Filter Pills */}
+          <div className="flex items-center gap-2">
+            {[
+              { key: 'HIGH' as ImpactFilter, label: 'HIGH', count: impactCounts.high, color: 'border-red-200 bg-red-50 text-red-900' },
+              { key: 'MODERATE' as ImpactFilter, label: 'MODERATE', count: impactCounts.moderate, color: 'border-orange-200 bg-orange-50 text-orange-900' },
+              { key: 'LOW' as ImpactFilter, label: 'LOW', count: impactCounts.low, color: 'border-yellow-200 bg-yellow-50 text-yellow-900' },
+              { key: 'MODIFIER' as ImpactFilter, label: 'MODIFIER', count: impactCounts.modifier, color: 'border-gray-200 bg-gray-50 text-gray-700' },
+            ].map(({ key, label, count: c, color }) => (
+              <button
+                key={key}
+                onClick={() => handleImpactClick(key)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-sm font-medium transition-all cursor-pointer ${color} ${
+                  impactFilter === key ? 'ring-2 ring-gray-400 ring-offset-1' : 'hover:ring-1 hover:ring-gray-300'
+                }`}
+                title={`${c.toLocaleString()} ${label} impact variants`}
+              >
+                {label}<span className="opacity-70">·</span>{c}
+              </button>
+            ))}
+          </div>
+
           {/* Gene Filter + Count */}
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-muted-foreground" />
@@ -633,13 +671,13 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
                 <TooltipTrigger asChild>
                   <span className="text-sm text-muted-foreground cursor-default inline-flex items-center gap-1">
                     Showing {filteredVariantCount} of {variants.length} variants across {geneGroups.length} genes
-                    {(acmgFilter !== 'all' || geneFilter) && ' (filtered)'}
+                    {(acmgFilter !== 'all' || impactFilter !== 'all' || geneFilter) && ' (filtered)'}
                     <Info className="h-3.5 w-3.5 opacity-50" />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent className="text-sm max-w-xs">
                   <p>Sorted by ACMG classification priority (Pathogenic first), then by impact.
-                  {acmgFilter !== 'all' && ' Click the filter card again to show all.'}</p>
+                  {(acmgFilter !== 'all' || impactFilter !== 'all') && ' Click the filter again to show all.'}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

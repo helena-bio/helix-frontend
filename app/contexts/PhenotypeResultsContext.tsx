@@ -231,6 +231,7 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
         restoreFromEntry(diskData)
       } else if (!diskData) {
         console.log(`[PhenotypeResultsContext] Disk cache miss for ${sessionId}`)
+        // Status stays 'idle' - PhenotypeMatchingView will auto-attempt server fetch
       }
     }).catch(() => {})
   }, [sessionId, saveToMemoryCache, getCurrentCacheEntry, restoreFromEntry, clearState])
@@ -305,6 +306,13 @@ export function PhenotypeResultsProvider({ sessionId, children }: PhenotypeResul
       const response = await fetch(
         `${API_BASE_URL}/phenotype/api/sessions/${sid}/phenotype/summaries`
       )
+
+      // 404 means matching has not been run for this session yet - not an error
+      if (response.status === 404) {
+        console.log('[PhenotypeResultsContext] No phenotype results found (404) - matching not run yet')
+        setStatus('idle')
+        return []
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
