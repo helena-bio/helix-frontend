@@ -78,14 +78,14 @@ function toSharedVariant(v: SessionMatchResult): SharedVariantData {
     consequence: v.consequence ?? null,
     impact: v.impact ?? null,
     acmgClass: v.acmg_class ?? null,
-    acmgCriteria: null,
+    acmgCriteria: v.acmg_criteria ?? null,
     gnomadAf: v.gnomad_af ?? null,
     genotype: v.genotype ?? null,
-    clinvarSignificance: null,
-    depth: null,
-    quality: null,
-    alphamissenseScore: null,
-    siftScore: null,
+    clinvarSignificance: v.clinvar_significance ?? null,
+    depth: v.depth ?? null,
+    quality: v.quality ?? null,
+    alphamissenseScore: v.alphamissense_score ?? null,
+    siftScore: v.sift_score ?? null,
   }
 }
 

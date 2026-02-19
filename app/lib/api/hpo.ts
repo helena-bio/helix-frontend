@@ -154,6 +154,13 @@ export interface SessionMatchResult {
   genotype?: string
   rsid?: string
   individual_matches: SimilarityMatch[]
+  // Variant annotation fields (enriched from DuckDB JOIN)
+  acmg_criteria?: string
+  clinvar_significance?: string
+  depth?: number
+  quality?: number
+  alphamissense_score?: number
+  sift_score?: number
 }
 
 export interface SessionMatchResultsResponse {

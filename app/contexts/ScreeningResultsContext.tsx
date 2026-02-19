@@ -82,6 +82,13 @@ export interface ScreeningVariantResult {
   age_group: string
   screening_mode: string
   justification: string
+  // Variant annotation fields (enriched from DuckDB JOIN)
+  acmg_criteria?: string
+  clinvar_significance?: string
+  depth?: number
+  quality?: number
+  alphamissense_score?: number
+  sift_score?: number
 }
 
 interface ScreeningDiskData {

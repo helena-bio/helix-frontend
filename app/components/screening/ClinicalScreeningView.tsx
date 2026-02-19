@@ -13,14 +13,12 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   Shield,
   Sparkles,
   Info,
   AlertCircle,
   TrendingUp,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -35,8 +33,8 @@ import {
   getScoreColor,
   formatACMGDisplay,
   formatTierDisplay,
-  ConsequenceBadges,
-  StarButton,
+  SharedVariantCard,
+  type SharedVariantData,
 } from '@/components/shared'
 
 interface ClinicalScreeningViewProps {
@@ -67,8 +65,28 @@ const formatActionability = (actionability: string | null | undefined): string =
   return actionability.charAt(0).toUpperCase() + actionability.slice(1)
 }
 
+/** Map ScreeningVariantResult to SharedVariantData */
+function toSharedVariant(v: ScreeningVariantResult): SharedVariantData {
+  return {
+    variantIdx: parseInt(v.variant_id),
+    hgvsProtein: v.hgvs_protein ?? null,
+    hgvsCdna: v.hgvs_cdna ?? null,
+    consequence: v.consequence ?? null,
+    impact: v.impact ?? null,
+    acmgClass: v.acmg_class ?? null,
+    acmgCriteria: v.acmg_criteria ?? null,
+    gnomadAf: v.gnomad_af ?? null,
+    genotype: v.genotype ?? null,
+    clinvarSignificance: v.clinvar_significance ?? null,
+    depth: v.depth ?? null,
+    quality: v.quality ?? null,
+    alphamissenseScore: v.alphamissense_score ?? null,
+    siftScore: v.sift_score ?? null,
+  }
+}
+
 // ============================================================================
-// VARIANT CARD (inside expanded gene card) - aligned with PhenotypeMatchingView
+// VARIANT CARD (inside expanded gene card) - uses SharedVariantCard
 // ============================================================================
 
 interface VariantCardProps {
@@ -77,62 +95,31 @@ interface VariantCardProps {
 }
 
 function VariantCard({ variant, onViewDetails }: VariantCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const hasBoosts = variant.acmg_boost > 0 || variant.ethnicity_boost > 0 || variant.family_history_boost > 0 || variant.de_novo_boost > 0
 
   return (
-    <div
-      className="border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <Badge variant="outline" className={`text-sm ${getTierColor(variant.tier)}`}>
-              {formatTierDisplay(variant.tier)}
-            </Badge>
-            <Badge variant="outline" className={`text-sm ${getACMGColor(variant.acmg_class)}`}>
-              {formatACMGDisplay(variant.acmg_class)}
-            </Badge>
-            <Badge variant="outline" className={`text-sm ${getActionabilityColor(variant.clinical_actionability)}`}>
-              {formatActionability(variant.clinical_actionability)}
-            </Badge>
-            <Badge variant="outline" className={`text-sm ${getScoreColor(variant.total_score * 100)}`}>
-              {variant.total_score.toFixed(3)}
-            </Badge>
-          </div>
-          <ConsequenceBadges consequence={variant.consequence} className="mt-1" />
-          {variant.gnomad_af != null && variant.gnomad_af > 0 && (
-            <p className="text-sm text-muted-foreground mt-1">
-              <span className="font-mono">AF: {variant.gnomad_af.toExponential(2)}</span>
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-sm font-mono text-muted-foreground">
-              {variant.hgvs_protein || variant.hgvs_cdna || 'No annotation'}
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsExpanded(!isExpanded)
-            }}
-          >
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
-
-      {/* Expanded Content */}
-      {isExpanded && (
-        <div className="mt-4 space-y-4">
+    <SharedVariantCard
+      variant={toSharedVariant(variant)}
+      onViewDetails={() => onViewDetails()}
+      collapsedRight={
+        <>
+          <Badge variant="outline" className={`text-tiny ${getTierColor(variant.tier)}`}>
+            {formatTierDisplay(variant.tier)}
+          </Badge>
+          <Badge variant="outline" className={`text-tiny ${getActionabilityColor(variant.clinical_actionability)}`}>
+            {formatActionability(variant.clinical_actionability)}
+          </Badge>
+          <Badge className={`text-tiny ${getScoreColor(variant.total_score * 100)}`}>
+            <TrendingUp className="h-3 w-3 mr-1" />
+            {variant.total_score.toFixed(3)}
+          </Badge>
+        </>
+      }
+      expandedChildren={
+        <>
           {/* Score Breakdown */}
           <div>
-            <p className="text-base font-semibold mb-2">Score Breakdown</p>
+            <p className="text-md text-muted-foreground mb-2">Score Breakdown</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-md">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Constraint</span>
@@ -154,9 +141,9 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
           </div>
 
           {/* Boosts */}
-          {(variant.acmg_boost > 0 || variant.ethnicity_boost > 0 || variant.family_history_boost > 0 || variant.de_novo_boost > 0) && (
+          {hasBoosts && (
             <div>
-              <p className="text-base font-semibold mb-2">Applied Boosts</p>
+              <p className="text-md text-muted-foreground mb-2">Applied Boosts</p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-md">
                 {variant.acmg_boost > 0 && (
                   <div className="flex justify-between">
@@ -188,28 +175,11 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 
           {/* Justification */}
           {variant.justification && (
-            <p className="text-sm text-muted-foreground italic">{variant.justification}</p>
+            <p className="text-md text-muted-foreground italic">{variant.justification}</p>
           )}
-
-          {/* View Details Button */}
-          <div className="pt-2 border-t flex items-center gap-3">
-            <StarButton variantIdx={parseInt(variant.variant_id)} />
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onViewDetails()
-              }}
-            >
-              <ExternalLink className="h-3 w-3 mr-1" />
-              View Full Details
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
+        </>
+      }
+    />
   )
 }
 
