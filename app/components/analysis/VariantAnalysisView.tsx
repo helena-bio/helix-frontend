@@ -340,13 +340,13 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
             <div className="flex items-end gap-3">
               <div className="text-right">
                 <p className="text-md text-muted-foreground mb-1">Frequency</p>
-                <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
+                <Badge variant="outline" className="text-tiny font-medium bg-muted text-muted-foreground border-border">
                   {rarity.label}
                 </Badge>
               </div>
               <div className="text-right">
                 <p className="text-md text-muted-foreground mb-1">Zygosity</p>
-                <Badge variant="outline" className="text-tiny bg-muted text-muted-foreground border-border">
+                <Badge variant="outline" className="text-tiny font-medium bg-muted text-muted-foreground border-border">
                   {zygosity.label}
                 </Badge>
               </div>
