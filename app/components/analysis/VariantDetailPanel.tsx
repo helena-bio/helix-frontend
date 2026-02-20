@@ -10,7 +10,7 @@
  *   text-2xl: gene name
  *   text-lg: section headers
  *   text-base: primary values
- *   text-md: labels, secondary text
+ *   text-base: labels, secondary text
  *   text-sm: HGVS values, smaller identifiers
  *   text-xs: badges, metadata
  *   No font-mono anywhere.
@@ -166,7 +166,7 @@ const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }
 // ---------------------------------------------------------------------------
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
-    <span className="text-md text-muted-foreground">{label}</span>
+    <span className="text-base text-muted-foreground">{label}</span>
     {children}
   </div>
 )
@@ -180,7 +180,7 @@ const ScoreBar = ({ barValue, displayValue, colorClass = 'bg-foreground/30' }: {
   colorClass?: string
 }) => {
   if (displayValue === null && barValue === null) {
-    return <span className="text-md text-muted-foreground">---</span>
+    return <span className="text-base text-muted-foreground">---</span>
   }
   const pct = barValue !== null ? Math.min(Math.max(barValue * 100, 0), 100) : 0
   return (
@@ -188,7 +188,7 @@ const ScoreBar = ({ barValue, displayValue, colorClass = 'bg-foreground/30' }: {
       <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-md tabular-nums w-12 text-right">
+      <span className="text-base tabular-nums w-12 text-right">
         {displayValue !== null ? displayValue.toFixed(3) : '---'}
       </span>
     </div>
@@ -213,7 +213,7 @@ const PredictionBar = ({ label, prediction, score, invert = false }: {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-md text-muted-foreground">{label}</span>
+        <span className="text-base text-muted-foreground">{label}</span>
         {pred && (
           <Badge variant="outline" className={`text-tiny font-medium ${getPredictionBadgeColor(pred)}`}>{pred}</Badge>
         )}
@@ -230,7 +230,7 @@ const FilterPassRow = ({ label, pass }: { label: string; pass: boolean | null })
   if (pass === null) return null
   return (
     <div className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
-      <span className="text-md text-muted-foreground">{label}</span>
+      <span className="text-base text-muted-foreground">{label}</span>
       {pass ? (
         <CheckCircle2 className="h-4 w-4 text-green-600" />
       ) : (
@@ -247,7 +247,7 @@ const CopyableValue = ({ label, value }: { label: string; value: string | null }
   if (!value) return null
   return (
     <div className="py-1.5 border-b border-border/50 last:border-0">
-      <p className="text-md text-muted-foreground mb-1">{label}</p>
+      <p className="text-base text-muted-foreground mb-1">{label}</p>
       <div className="flex items-start gap-1.5">
         <p className="text-sm text-foreground break-all flex-1 leading-relaxed">{value}</p>
         <button
@@ -316,7 +316,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           <div className="text-center">
             <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
             <p className="text-base font-medium">Failed to load variant</p>
-            <p className="text-md text-muted-foreground mt-1">{error?.message}</p>
+            <p className="text-base text-muted-foreground mt-1">{error?.message}</p>
           </div>
         </div>
       </div>
@@ -346,18 +346,18 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <div className="flex items-end gap-2.5 flex-wrap">
               <h2 className="text-2xl font-bold tracking-tight">{variant.gene_symbol || 'Unknown'}</h2>
               <StarButton variantIdx={variantIdx} size="md" />
-              <span className="text-md text-muted-foreground truncate max-w-xs" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
+              <span className="text-base text-muted-foreground truncate max-w-xs" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
                 {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;{truncateSequence(variant.reference_allele, 12)}&nbsp;&rarr;&nbsp;{truncateSequence(variant.alternate_allele, 12)}
               </span>
             </div>
             {variant.hgvs_protein && (
-              <p className="text-md text-muted-foreground mt-0.5 truncate max-w-lg" title={variant.hgvs_protein}>
+              <p className="text-base text-muted-foreground mt-0.5 truncate max-w-lg" title={variant.hgvs_protein}>
                 {truncateSequence(variant.hgvs_protein, 70)}
               </p>
             )}
           </div>
           {variant.acmg_class && (
-            <Badge variant="outline" className={`text-md font-medium px-3 py-1 flex-shrink-0 ${getACMGColor(variant.acmg_class)}`}>
+            <Badge variant="outline" className={`text-base font-medium px-3 py-1 flex-shrink-0 ${getACMGColor(variant.acmg_class)}`}>
               {variant.acmg_class}
             </Badge>
           )}
@@ -366,7 +366,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         {/* Stat strip */}
         <div className="border-t grid grid-cols-5 divide-x">
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">ClinVar</p>
+            <p className="text-base text-muted-foreground leading-none mb-1">ClinVar</p>
             <div className="mt-auto">
               {variant.clinical_significance ? (
                 <Badge variant="outline" className={`text-tiny font-medium ${getACMGColor(variant.clinical_significance)}`}>
@@ -376,7 +376,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">gnomAD AF</p>
+            <p className="text-base text-muted-foreground leading-none mb-1">gnomAD AF</p>
             <div className="mt-auto">
               {getRarityLabel(variant.global_af) ? (
                 <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
@@ -386,7 +386,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">Impact</p>
+            <p className="text-base text-muted-foreground leading-none mb-1">Impact</p>
             <div className="mt-auto">
               {variant.impact ? (
                 <Badge variant="outline" className={`text-tiny font-medium ${getImpactColor(variant.impact)}`}>
@@ -396,7 +396,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">Zygosity</p>
+            <p className="text-base text-muted-foreground leading-none mb-1">Zygosity</p>
             <div className="mt-auto">
               {zygosity && zygosity.label !== '-' ? (
                 <Badge variant="outline" className={`text-tiny font-medium ${zygosity.color}`}>
@@ -406,7 +406,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
-            <p className="text-md text-muted-foreground leading-none mb-1">Confidence</p>
+            <p className="text-base text-muted-foreground leading-none mb-1">Confidence</p>
             <span className="text-base font-medium mt-auto">
               {variant.confidence_score !== null ? variant.confidence_score.toFixed(2) : '-'}
             </span>
@@ -424,14 +424,14 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               <div className="flex items-center gap-2.5 px-4 py-2.5 bg-amber-50 border-b border-amber-200">
                 <GitMerge className="h-4 w-4 text-amber-700 flex-shrink-0" />
                 <span className="text-base font-medium text-amber-900">Compound heterozygote candidate</span>
-                <span className="text-md text-amber-700">Review other variants in this gene</span>
+                <span className="text-base text-amber-700">Review other variants in this gene</span>
               </div>
             )}
             {variant.is_flagged && (
               <div className="flex items-center gap-2.5 px-4 py-2.5 bg-red-50">
                 <AlertTriangle className="h-4 w-4 text-red-700 flex-shrink-0" />
                 <span className="text-base font-medium text-red-900">Variant flagged</span>
-                {variant.flag_reason && <span className="text-md text-red-700">{String(variant.flag_reason)}</span>}
+                {variant.flag_reason && <span className="text-base text-red-700">{String(variant.flag_reason)}</span>}
               </div>
             )}
           </div>
@@ -450,7 +450,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <SectionHeader icon={<Shield className="h-4 w-4" />} title="ACMG Classification" />
                 {variant.acmg_criteria && (
                   <div className="mb-3">
-                    <p className="text-md text-muted-foreground mb-2">Evidence Codes</p>
+                    <p className="text-base text-muted-foreground mb-2">Evidence Codes</p>
                     <div className="flex flex-wrap gap-1.5">
                       {variant.acmg_criteria.split(',').filter(Boolean).map((c: string) => {
                         const code = c.trim()
@@ -459,7 +459,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         else if (code.startsWith('PM')) extra = 'bg-orange-100 text-orange-900 border-orange-300'
                         else if (code.startsWith('PP')) extra = 'bg-yellow-100 text-yellow-900 border-yellow-300'
                         else if (code.startsWith('BA') || code.startsWith('BS') || code.startsWith('BP')) extra = 'bg-green-100 text-green-900 border-green-300'
-                        return <Badge key={code} variant="outline" className={`text-md font-medium ${extra}`}>{code}</Badge>
+                        return <Badge key={code} variant="outline" className={`text-base font-medium ${extra}`}>{code}</Badge>
                       })}
                     </div>
                   </div>
@@ -487,7 +487,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     )}
                     {variant.review_status && (
                       <div className="py-1.5 border-b border-border/50">
-                        <p className="text-md text-muted-foreground mb-1.5">Review Status</p>
+                        <p className="text-base text-muted-foreground mb-1.5">Review Status</p>
                         <div className="flex flex-wrap gap-1">
                           {formatReviewStatus(variant.review_status).map((s: string, idx: number) => (
                             <Badge key={idx} variant="secondary" className="text-tiny font-medium">{s}</Badge>
@@ -497,7 +497,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     )}
                     {variant.disease_name && (
                       <div className="py-1.5 border-b border-border/50">
-                        <p className="text-md text-muted-foreground mb-1.5">Disease</p>
+                        <p className="text-base text-muted-foreground mb-1.5">Disease</p>
                         <div className="flex flex-wrap gap-1">
                           {formatDiseaseName(variant.disease_name).map((d: string, idx: number) => (
                             <Badge key={idx} variant="outline" className="text-tiny font-medium">{d}</Badge>
@@ -507,12 +507,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     )}
                     {variant.clinvar_variation_id && (
                       <div className="pt-2">
-                        <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`} target="_blank" rel="noopener noreferrer" className="text-md text-primary hover:underline flex items-center gap-1">View in ClinVar <ExternalLink className="h-3 w-3" /></a>
+                        <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`} target="_blank" rel="noopener noreferrer" className="text-base text-primary hover:underline flex items-center gap-1">View in ClinVar <ExternalLink className="h-3 w-3" /></a>
                       </div>
                     )}
                   </>
                 ) : (
-                  <p className="text-md text-muted-foreground">No ClinVar record found for this variant.</p>
+                  <p className="text-base text-muted-foreground">No ClinVar record found for this variant.</p>
                 )}
               </div>
             </div>
@@ -537,14 +537,14 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <div>
                     {hasConservation && (
                       <div className="mb-4">
-                        <p className="text-md font-medium text-foreground mb-2">Conservation</p>
+                        <p className="text-base font-medium text-foreground mb-2">Conservation</p>
                         {variant.phylop100way_vertebrate !== null && <Row label="PhyloP 100-way"><span className="text-base font-medium">{variant.phylop100way_vertebrate.toFixed(3)}</span></Row>}
                         {variant.gerp_rs !== null && <Row label="GERP++"><span className="text-base font-medium">{variant.gerp_rs.toFixed(2)}</span></Row>}
                       </div>
                     )}
                     {hasDosage && (
                       <div>
-                        <p className="text-md font-medium text-foreground mb-2">ClinGen Dosage</p>
+                        <p className="text-base font-medium text-foreground mb-2">ClinGen Dosage</p>
                         {variant.haploinsufficiency_score !== null && <Row label="HI Score"><span className="text-base font-medium">{variant.haploinsufficiency_score}</span></Row>}
                         {variant.triplosensitivity_score !== null && <Row label="TS Score"><span className="text-base font-medium">{variant.triplosensitivity_score}</span></Row>}
                       </div>
@@ -552,7 +552,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   </div>
                   {hasConstraints && (
                     <div>
-                      <p className="text-md font-medium text-foreground mb-2">Gene Constraints</p>
+                      <p className="text-base font-medium text-foreground mb-2">Gene Constraints</p>
                       {variant.pli !== null && <Row label="pLI"><span className="text-base font-medium">{variant.pli.toFixed(3)}</span></Row>}
                       {variant.oe_lof !== null && <Row label="oe LoF"><span className="text-base font-medium">{variant.oe_lof.toFixed(3)}</span></Row>}
                       {variant.oe_lof_upper !== null && <Row label="LOEUF"><span className="text-base font-medium">{variant.oe_lof_upper.toFixed(3)}</span></Row>}
@@ -600,7 +600,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       <Row label="rsID"><span className="text-base font-medium">{variant.rsid}</span></Row>
                     )}
                     <div className="pt-2">
-                        <a href={gnomadUrl} target="_blank" rel="noopener noreferrer" className="text-md text-primary hover:underline flex items-center gap-1">{"View in gnomAD "}<ExternalLink className="h-3 w-3" /></a>
+                        <a href={gnomadUrl} target="_blank" rel="noopener noreferrer" className="text-base text-primary hover:underline flex items-center gap-1">{"View in gnomAD "}<ExternalLink className="h-3 w-3" /></a>
                     </div>
                   </div>
                 </div>
@@ -662,7 +662,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <CopyableValue label="HGVS Protein" value={variant.hgvs_protein} />
                   {variant.consequence && (
                     <div className="py-1.5 border-b border-border/50">
-                      <p className="text-md text-muted-foreground mb-1.5">Consequence</p>
+                      <p className="text-base text-muted-foreground mb-1.5">Consequence</p>
                       <ConsequenceBadges consequence={variant.consequence} maxBadges={6} className="text-xs" />
                     </div>
                   )}
@@ -682,7 +682,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   )}
                   {variant.domains && (
                     <div className="py-1.5 border-b border-border/50">
-                      <p className="text-md text-muted-foreground mb-1.5">Protein Domains</p>
+                      <p className="text-base text-muted-foreground mb-1.5">Protein Domains</p>
                       <div className="flex flex-wrap gap-1">
                         {variant.domains.split(',').filter(Boolean).slice(0, 4).map((d: string, idx: number) => (
                           <Badge key={idx} variant="outline" className="text-tiny font-medium">{d.trim()}</Badge>
