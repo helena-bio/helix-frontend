@@ -459,7 +459,7 @@ function OverviewContent() {
                   <span className="text-base font-medium">{card.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{card.value}</span>
+                  
                   <span className="text-md text-muted-foreground">{card.sub}</span>
                   <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                 </div>
