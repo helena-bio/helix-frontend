@@ -371,12 +371,12 @@ function OverviewContent() {
             const tier = TIER_CONFIG[o.partner_tier] || TIER_CONFIG.standard
             return (
               <div key={o.id} className="flex items-center justify-between">
+                <span className="text-md font-medium">{o.name}</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-md font-medium">{o.name}</span>
                   <Badge variant="outline" className={cn("text-tiny", tier.color)}>{tier.label}</Badge>
                   <Badge variant="outline" className={cn("text-tiny", stat.color)}>{stat.label}</Badge>
+                  <span className="text-md text-muted-foreground">{o.member_count} member{o.member_count !== 1 ? 's' : ''}</span>
                 </div>
-                <span className="text-md text-muted-foreground">{o.member_count} member{o.member_count !== 1 ? 's' : ''}</span>
               </div>
             )
           })}
