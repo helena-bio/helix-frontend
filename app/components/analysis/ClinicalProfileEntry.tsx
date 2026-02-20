@@ -935,9 +935,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     Phenotype Information
                     <Badge variant="outline" className="ml-2 text-md">For Phenotype Matching</Badge>
                   </CardTitle>
-                  <p className="text-md text-muted-foreground">
-                    Add patient symptoms (HPO terms) for phenotype-based variant matching
-                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Search Phenotypes */}
@@ -1078,8 +1075,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     </div>
                   ) : (
                     <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                      <p className="text-md text-muted-foreground">No phenotypes selected</p>
-                      <p className="text-sm text-muted-foreground mt-1">Search and add HPO terms above</p>
                     </div>
                   )}
                 </CardContent>
