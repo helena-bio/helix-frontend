@@ -324,11 +324,22 @@ function OrgFormModal({ org, onClose, onSaved }: OrgFormProps) {
 
 function OverviewContent() {
   const [data, setData] = useState<PlatformOverview | null>(null)
+  const [orgs, setOrgs] = useState<PlatformOrganization[]>([])
+  const [users, setUsers] = useState<PlatformUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [expandedRow, setExpandedRow] = useState<string | null>(null)
 
   useEffect(() => {
-    platformApi.getOverview()
-      .then(setData)
+    Promise.all([
+      platformApi.getOverview(),
+      platformApi.listOrganizations().then((r) => r.organizations),
+      platformApi.listUsers().then((r) => r.users),
+    ])
+      .then(([overview, orgList, userList]) => {
+        setData(overview)
+        setOrgs(orgList)
+        setUsers(userList)
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
@@ -341,21 +352,108 @@ function OverviewContent() {
     return <div className="text-md text-muted-foreground">Failed to load metrics.</div>
   }
 
+  const toggle = (key: string) => setExpandedRow(expandedRow === key ? null : key)
+
   const cards = [
-    { label: 'Organizations', value: data.total_organizations, sub: data.active_organizations + ' active', icon: Building2 },
-    { label: 'Total Users', value: data.total_users, sub: data.active_users + ' active', icon: Users2 },
-    { label: 'Pending Users', value: data.pending_users, sub: 'Awaiting activation', icon: Clock },
-    { label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: data.suspended_users + ' users, ' + data.suspended_organizations + ' orgs', icon: UserX },
+    { key: 'orgs', label: 'Organizations', value: data.total_organizations, sub: data.active_organizations + ' active', icon: Building2 },
+    { key: 'users', label: 'Total Users', value: data.total_users, sub: data.active_users + ' active', icon: Users2 },
+    { key: 'pending', label: 'Pending Users', value: data.pending_users, sub: 'Awaiting activation', icon: Clock },
+    { key: 'suspended', label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: data.suspended_users + ' users, ' + data.suspended_organizations + ' orgs', icon: UserX },
   ]
 
-    return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">Platform Metrics</h3>
-        <div className="border border-border rounded-lg bg-card divide-y divide-border">
-          {cards.map((card) => {
-            const Icon = card.icon
+  const renderExpanded = (key: string) => {
+    if (key === 'orgs') {
+      if (orgs.length === 0) return <p className="text-sm text-muted-foreground">No organizations</p>
+      return (
+        <div className="space-y-2">
+          {orgs.map((o) => {
+            const stat = STATUS_CONFIG[o.status] || STATUS_CONFIG.active
+            const tier = TIER_CONFIG[o.partner_tier] || TIER_CONFIG.standard
             return (
-              <div key={card.label} className="flex items-center justify-between px-5 py-4">
+              <div key={o.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{o.name}</span>
+                  <Badge variant="outline" className={cn("text-xs", tier.color)}>{tier.label}</Badge>
+                  <Badge variant="outline" className={cn("text-xs", stat.color)}>{stat.label}</Badge>
+                </div>
+                <span className="text-sm text-muted-foreground">{o.member_count} member{o.member_count !== 1 ? 's' : ''}</span>
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+    if (key === 'users') {
+      const active = users.filter((u) => u.status === 'active')
+      if (active.length === 0) return <p className="text-sm text-muted-foreground">No active users</p>
+      return (
+        <div className="space-y-2">
+          {active.map((u) => (
+            <div key={u.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">{u.full_name}</span>
+                <span className="text-xs text-muted-foreground">{u.email}</span>
+              </div>
+              <span className="text-sm text-muted-foreground">{u.organization_name}</span>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    if (key === 'pending') {
+      const pending = users.filter((u) => u.status === 'pending')
+      if (pending.length === 0) return <p className="text-sm text-muted-foreground">No pending users</p>
+      return (
+        <div className="space-y-2">
+          {pending.map((u) => (
+            <div key={u.id} className="flex items-center justify-between">
+              <span className="text-sm font-medium">{u.full_name}</span>
+              <span className="text-sm text-muted-foreground">{u.email}</span>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    if (key === 'suspended') {
+      const suspUsers = users.filter((u) => u.status === 'suspended')
+      const suspOrgs = orgs.filter((o) => o.status === 'suspended')
+      if (suspUsers.length === 0 && suspOrgs.length === 0) return <p className="text-sm text-muted-foreground">Nothing suspended</p>
+      return (
+        <div className="space-y-2">
+          {suspOrgs.map((o) => (
+            <div key={o.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-sm font-medium">{o.name}</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Organization</span>
+            </div>
+          ))}
+          {suspUsers.map((u) => (
+            <div key={u.id} className="flex items-center justify-between">
+              <span className="text-sm font-medium">{u.full_name}</span>
+              <span className="text-sm text-muted-foreground">{u.email}</span>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    return null
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-foreground">Platform Metrics</h3>
+      <div className="border border-border rounded-lg bg-card divide-y divide-border">
+        {cards.map((card) => {
+          const Icon = card.icon
+          const isOpen = expandedRow === card.key
+          return (
+            <div key={card.key}>
+              <button
+                onClick={() => toggle(card.key)}
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-accent/30 transition-colors"
+              >
                 <div className="flex items-center gap-2.5">
                   <Icon className="h-4 w-4 text-muted-foreground" />
                   <span className="text-base font-medium">{card.label}</span>
@@ -363,13 +461,20 @@ function OverviewContent() {
                 <div className="flex items-center gap-2">
                   <span className="text-base font-semibold">{card.value}</span>
                   <span className="text-sm text-muted-foreground">{card.sub}</span>
+                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              </button>
+              {isOpen && (
+                <div className="px-5 pb-4 pt-1">
+                  {renderExpanded(card.key)}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
-    )
+    </div>
+  )
 }
 
 
