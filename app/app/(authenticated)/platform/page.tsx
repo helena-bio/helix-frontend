@@ -443,7 +443,7 @@ function OverviewContent() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">Platform Metrics</h3>
+      <h3 className="text-lg font-semibold text-foreground">Overview</h3>
       <div className="border border-border rounded-lg bg-card divide-y divide-border">
         {cards.map((card) => {
           const Icon = card.icon
@@ -906,15 +906,7 @@ export default function PlatformPage() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="w-full max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <button
-            onClick={() => router.push('/')}
-            className="text-md text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <h2 className="text-3xl font-semibold text-foreground">Platform</h2>
-        </div>
+        <h2 className="text-3xl font-semibold text-foreground mb-8">Platform</h2>
 
         <div className="flex gap-8">
           {/* Left navigation */}
