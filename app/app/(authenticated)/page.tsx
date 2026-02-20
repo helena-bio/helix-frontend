@@ -266,10 +266,12 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
           {/* Left: Name + Status */}
           <div className="flex items-center gap-3">
             <span className="text-base font-medium">{getCaseDisplayName(session)}</span>
-            <Badge variant="outline" className={`text-sm ${config.color}`}>
-              <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
-              {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-            </Badge>
+            {session.status !== 'completed' && (
+              <Badge variant="outline" className={`text-sm ${config.color}`}>
+                <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
+                {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+              </Badge>
+            )}
           </div>
           {/* Right: Avatar + Date + Chevron */}
           <div className="flex items-center gap-3">
