@@ -10,7 +10,7 @@ export interface Variant {
   position: number
   reference_allele: string
   alternate_allele: string
-  variant_type: number | null
+  variant_type: string | null
   rsid: string | null
   gene_symbol: string | null
   gene_id: string | null
@@ -41,7 +41,7 @@ export interface Variant {
   clinvar_variation_id: string | null
   clinvar_rsid: string | null
   disease_name: string | null
-  hgvsp: number | null
+  hgvsp: string | null
   sift_pred: string | null
   sift_score: number | null
   alphamissense_pred: string | null
@@ -73,8 +73,8 @@ export interface Variant {
   compound_het_candidate: boolean | null
   priority_score: number | null
   is_flagged: boolean | null
-  flag_reason: number | null
-  processing_notes: number | null
+  flag_reason: string | null
+  processing_notes: string | null
   raw_data: string | null
 }
 

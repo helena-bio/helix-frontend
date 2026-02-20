@@ -380,8 +380,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               <span className="text-base text-muted-foreground truncate max-w-xs" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
                 {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;{truncateSequence(variant.reference_allele, 12)}&nbsp;&rarr;&nbsp;{truncateSequence(variant.alternate_allele, 12)}
               </span>
-              {variant.variant_type && String(variant.variant_type) !== 'SNV' && (
-                <Badge variant="outline" className="text-tiny font-medium">{String(variant.variant_type)}</Badge>
+              {variant.variant_type && variant.variant_type !== 'SNV' && (
+                <Badge variant="outline" className="text-tiny font-medium">{variant.variant_type}</Badge>
               )}
             </div>
             {variant.hgvs_protein && (
