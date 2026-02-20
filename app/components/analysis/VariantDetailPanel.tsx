@@ -4,7 +4,7 @@
  * VariantDetailPanel - Comprehensive variant information view
  *
  * Single Card layout with internal border-t sections.
- * Clinical priority: identity -> classification -> predictions -> population -> quality -> details -> HPO
+ * Clinical priority: identity -> classification -> predictions -> population -> quality -> details
  *
  * Typography scale:
  *   text-2xl: gene name
@@ -16,11 +16,9 @@
  *   No font-mono anywhere.
  */
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import {
   ArrowLeft,
   ExternalLink,
@@ -31,12 +29,7 @@ import {
   FileText,
   Gauge,
   Target,
-  TrendingUp,
   Star,
-  Search,
-  X,
-  ChevronDown,
-  ChevronUp,
   Copy,
   AlertTriangle,
   GitMerge,
@@ -44,7 +37,7 @@ import {
   XCircle,
   Globe,
 } from 'lucide-react'
-import { useVariant, useHPOTerm } from '@/hooks/queries'
+import { useVariant } from '@/hooks/queries'
 import {
   ConsequenceBadges,
   getImpactColor,
@@ -53,7 +46,6 @@ import {
   StarButton,
   getZygosityBadge,
 } from '@/components/shared'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 interface VariantDetailPanelProps {
   sessionId: string
@@ -269,128 +261,13 @@ const CopyableValue = ({ label, value }: { label: string; value: string | null }
   )
 }
 
-// ---------------------------------------------------------------------------
-// HPO Term Card - lazy-loaded expandable
-// ---------------------------------------------------------------------------
-interface HPOTermData { hpo_id: string; name: string }
-
-function HPOPhenotypeCard({ hpoId, name, index }: { hpoId: string; name: string; index: number }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [shouldFetch, setShouldFetch] = useState(false)
-  const { data: hpoData, isLoading } = useHPOTerm(hpoId, shouldFetch)
-
-  useEffect(() => {
-    if (isOpen && !shouldFetch) setShouldFetch(true)
-  }, [isOpen, shouldFetch])
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="bg-card">
-        <CollapsibleTrigger asChild>
-          <div className="cursor-pointer hover:bg-accent/50 transition-colors py-2.5 px-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-md text-muted-foreground w-7 flex-shrink-0">#{index + 1}</span>
-                <span className="text-base font-medium">{name}</span>
-                <Badge variant="outline" className="text-xs hidden sm:flex">{hpoId}</Badge>
-              </div>
-              {isOpen
-                ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
-            </div>
-          </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="pt-0 pb-4 px-4">
-            <div className="border rounded-lg p-4 bg-muted/30 ml-10">
-              {isLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-md">Loading details...</span>
-                </div>
-              ) : hpoData ? (
-                <div className="space-y-3">
-                  {hpoData.definition && (
-                    <div>
-                      <p className="text-md text-muted-foreground mb-1">Definition</p>
-                      <p className="text-base leading-relaxed">{hpoData.definition}</p>
-                    </div>
-                  )}
-                  {hpoData.synonyms && hpoData.synonyms.length > 0 && (
-                    <div>
-                      <p className="text-md text-muted-foreground mb-2">Synonyms</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {hpoData.synonyms.slice(0, 5).map((syn: string, idx: number) => (
-                          <Badge key={idx} variant="secondary" className="text-xs font-normal">{syn}</Badge>
-                        ))}
-                        {hpoData.synonyms.length > 5 && (
-                          <Badge variant="outline" className="text-xs">+{hpoData.synonyms.length - 5} more</Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                    <a href={`https://hpo.jax.org/browse/term/${hpoId}`} target="_blank" rel="noopener noreferrer" className="text-md text-primary hover:underline flex items-center gap-1 pt-1">{"View in HPO Browser "}<ExternalLink className="h-3 w-3" /></a>
-                </div>
-              ) : (
-                <p className="text-md text-muted-foreground italic">No additional details available</p>
-              )}
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-const HPO_INITIAL_COUNT = 10
-const HPO_LOAD_MORE_COUNT = 10
-
 // ===========================================================================
 // MAIN COMPONENT
 // ===========================================================================
 export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDetailPanelProps) {
   const { data, isLoading, error } = useVariant(sessionId, variantIdx)
-  const [hpoSearchQuery, setHpoSearchQuery] = useState('')
-  const [visibleHPOCount, setVisibleHPOCount] = useState(HPO_INITIAL_COUNT)
-  const loadMoreRef = useRef<HTMLDivElement>(null)
 
   const variant = data?.variant
-
-  // HPO parsing
-  const hpoTerms = useMemo<HPOTermData[]>(() => {
-    if (!variant?.hpo_ids || !variant?.hpo_names) return []
-    const ids = variant.hpo_ids.split(';').map((t: string) => t.trim()).filter(Boolean)
-    const names = variant.hpo_names.split(';').map((p: string) => p.trim()).filter(Boolean)
-    return ids.map((hpo_id: string, idx: number) => ({ hpo_id, name: names[idx] || 'Unknown phenotype' }))
-  }, [variant?.hpo_ids, variant?.hpo_names])
-
-  const filteredHPOTerms = useMemo(() => {
-    if (!hpoSearchQuery) return hpoTerms
-    const q = hpoSearchQuery.toLowerCase()
-    return hpoTerms.filter((t: HPOTermData) => t.name.toLowerCase().includes(q) || t.hpo_id.toLowerCase().includes(q))
-  }, [hpoTerms, hpoSearchQuery])
-
-  const displayedHPOTerms = useMemo(() => filteredHPOTerms.slice(0, visibleHPOCount), [filteredHPOTerms, visibleHPOCount])
-  const hasMoreHPO = visibleHPOCount < filteredHPOTerms.length
-
-  useEffect(() => { setVisibleHPOCount(HPO_INITIAL_COUNT) }, [hpoSearchQuery])
-
-  const loadMoreHPO = useCallback(() => {
-    if (hasMoreHPO) setVisibleHPOCount(prev => prev + HPO_LOAD_MORE_COUNT)
-  }, [hasMoreHPO])
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => { if (entries[0].isIntersecting && hasMoreHPO) loadMoreHPO() },
-      { threshold: 0.1 }
-    )
-    if (loadMoreRef.current) observer.observe(loadMoreRef.current)
-    return () => observer.disconnect()
-  }, [hasMoreHPO, loadMoreHPO])
 
   // Section visibility
   const hasPredictions = variant && (
@@ -630,7 +507,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     )}
                     {variant.clinvar_variation_id && (
                       <div className="pt-2">
-                        <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`} target="_blank" rel="noopener noreferrer" className="text-md text-primary hover:underline flex items-center gap-1">View in ClinVar <ExternalLink className="h-3 w-3" /></a>                        
+                        <a href={`https://www.ncbi.nlm.nih.gov/clinvar/variation/${variant.clinvar_variation_id}/`} target="_blank" rel="noopener noreferrer" className="text-md text-primary hover:underline flex items-center gap-1">View in ClinVar <ExternalLink className="h-3 w-3" /></a>
                       </div>
                     )}
                   </>
