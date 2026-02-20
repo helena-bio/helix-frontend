@@ -59,6 +59,7 @@ interface VariantDetailPanelProps {
 const getACMGColor = (classification: string | null) => {
   if (!classification) return 'bg-muted text-muted-foreground border-border'
   const c = classification.toLowerCase()
+  if (c.includes('pathogenic/likely') || c === 'pathogenic/likely_pathogenic') return 'bg-red-100 text-red-900 border-red-300'
   if (c === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
   if (c === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
   if (c.includes('uncertain') || c === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
@@ -136,6 +137,7 @@ const getRarityLabel = (af: number | null): { label: string; color: string } | n
 const formatClinVarShort = (sig: string | null): string => {
   if (!sig) return '-'
   const s = sig.toLowerCase()
+  if (s.includes('pathogenic/likely') || s === 'pathogenic/likely_pathogenic') return 'P/LP'
   if (s === 'pathogenic') return 'P'
   if (s === 'likely pathogenic' || s === 'likely_pathogenic') return 'LP'
   if (s.includes('uncertain') || s === 'vus') return 'VUS'
