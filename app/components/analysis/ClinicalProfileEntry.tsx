@@ -510,7 +510,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   return (
     <div className="flex items-start justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-4xl space-y-6">
+      <div className="w-full max-w-4xl space-y-10">
 
         {/* Header -- restored above layout */}
         <div className="flex items-center justify-center gap-4">
@@ -626,7 +626,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           {/* =========================================================== */}
           {/* CONTENT PANEL                                                */}
           {/* =========================================================== */}
-          <div className="flex-1 min-w-0 pt-4">
+          <div className="flex-1 min-w-0">
 
             {/* ----- PATIENT SECTION ----- */}
             {activeSection === 'patient' && (
