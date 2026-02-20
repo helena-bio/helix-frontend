@@ -380,6 +380,9 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               <span className="text-base text-muted-foreground truncate max-w-xs" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
                 {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;{truncateSequence(variant.reference_allele, 12)}&nbsp;&rarr;&nbsp;{truncateSequence(variant.alternate_allele, 12)}
               </span>
+              {variant.variant_type && String(variant.variant_type) !== 'SNV' && (
+                <Badge variant="outline" className="text-tiny font-medium">{String(variant.variant_type)}</Badge>
+              )}
             </div>
             {variant.hgvs_protein && (
               <p className="text-base text-muted-foreground mt-0.5 truncate max-w-lg" title={variant.hgvs_protein}>
@@ -497,6 +500,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 )}
                 {variant.confidence_score !== null && <Row label="Confidence"><span className="text-base">{variant.confidence_score.toFixed(2)}</span></Row>}
                 {variant.priority_score !== null && <Row label="Priority Score"><span className="text-base">{variant.priority_score.toFixed(1)}</span></Row>}
+                {variant.hpo_count !== null && variant.hpo_count > 0 && <Row label="Phenotype Matches"><span className="text-base">{variant.hpo_count}</span></Row>}
               </div>
 
               <div className="p-4 border-t">
@@ -644,8 +648,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     <span className="text-base">{formatOneInX(variant.af_grpmax)}</span>
                   </Row>
                 )}
-                {variant.rsid && (
-                  <Row label="rsID"><span className="text-base">{variant.rsid}</span></Row>
+                {(variant.rsid || variant.clinvar_rsid) && (
+                  <Row label="rsID"><span className="text-base">{variant.rsid || `ClinVar:${variant.clinvar_rsid}`}</span></Row>
                 )}
                 <div className="pt-2">
                   <a href={gnomadUrl} target="_blank" rel="noopener noreferrer" className="text-base text-primary hover:underline flex items-center gap-1">View in gnomAD <ExternalLink className="h-3 w-3" /></a>
@@ -721,6 +725,11 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   )}
                   {variant.transcript_id && <Row label="Transcript"><span className="text-sm">{variant.transcript_id}</span></Row>}
                   {variant.exon_number && <Row label="Exon"><span className="text-base">{variant.exon_number}</span></Row>}
+                  {variant.gene_id && (
+                    <Row label="Gene">
+                      <a href={`https://www.ensembl.org/Homo_sapiens/Gene/Summary?g=${variant.gene_id}`} target="_blank" rel="noopener noreferrer" className="text-base text-primary hover:underline flex items-center gap-1">{variant.gene_id} <ExternalLink className="h-3 w-3" /></a>
+                    </Row>
+                  )}
                   {variant.biotype && (
                     <Row label="Biotype">
                       <Badge variant="secondary" className="text-tiny font-medium">{formatBiotype(variant.biotype)}</Badge>
