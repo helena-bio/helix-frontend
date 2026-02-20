@@ -268,7 +268,7 @@ export function SettingsView() {
                     />
                   </div>
                   <div>
-                    <p className="text-base font-medium text-foreground">{user?.full_name || 'User'}</p>
+                    <p className="text-ml font-medium text-foreground">{user?.full_name || 'User'}</p>
                     <p className="text-md text-muted-foreground">{user?.email || ''}</p>
                     <button
                       onClick={handleAvatarDelete}
@@ -325,7 +325,7 @@ export function SettingsView() {
                     <button
                       onClick={handleProfileSave}
                       disabled={profileSaving}
-                      className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       {profileSaving ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -337,7 +337,7 @@ export function SettingsView() {
                     {!showPasswordForm && (
                       <button
                         onClick={() => setShowPasswordForm(true)}
-                        className="px-4 py-2 border border-border rounded-md text-base font-medium text-foreground hover:bg-accent transition-colors"
+                        className="px-4 py-2 border border-border rounded-md text-md font-medium text-foreground hover:bg-accent transition-colors"
                       >
                         Change password
                       </button>
@@ -389,7 +389,7 @@ export function SettingsView() {
                         <button
                           onClick={handlePasswordChange}
                           disabled={passwordSaving}
-                          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                         >
                           {passwordSaving ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
