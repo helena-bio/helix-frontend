@@ -387,12 +387,12 @@ function OverviewContent() {
       return (
         <div className="space-y-2">
           {active.map((u) => (
-            <div key={u.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div key={u.id} className="grid grid-cols-[180px_1fr_auto] items-center gap-x-3">
+              
                 <span className="text-md font-medium">{u.full_name}</span>
                 <span className="text-md text-muted-foreground">{u.email}</span>
-              </div>
-              <span className="text-md text-muted-foreground">{u.organization_name}</span>
+              
+              <span className="text-md text-muted-foreground text-right">{u.organization_name}</span>
             </div>
           ))}
         </div>
@@ -742,7 +742,7 @@ function UserCard({ user: u }: UserCardProps) {
             </Badge>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-md text-muted-foreground">{u.organization_name}</span>
+            <span className="text-md text-muted-foreground text-right">{u.organization_name}</span>
             <span className="text-md text-muted-foreground">{formatRelative(u.last_login_at)}</span>
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
