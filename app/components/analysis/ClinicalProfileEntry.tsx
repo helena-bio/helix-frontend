@@ -753,147 +753,175 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   </div>
 
                   {/* Family History */}
-                  <div className="border-t mt-5 pt-5 space-y-3">
-                    <Label className="text-base font-medium">Family History</Label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={hasFamilyHistory}
-                          onChange={(e) => setHasFamilyHistory(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-base">Known family history of genetic conditions</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={hasConsanguinity}
-                          onChange={(e) => setHasConsanguinity(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-base">Consanguineous parents</span>
-                      </label>
-                    </div>
-                    {(hasFamilyHistory || hasConsanguinity) && (
-                      <Textarea
-                        value={familyHistoryDetails}
-                        onChange={(e) => setFamilyHistoryDetails(e.target.value)}
-                        placeholder="Family history details..."
-                        className="text-base"
-                        rows={2}
-                      />
-                    )}
-                  </div>
-
-                  {/* Sample */}
-                  <div className="border-t mt-5 pt-5 space-y-2">
-                    <Label className="text-base font-medium">Sample</Label>
-                    <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select sample type (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={hasParentalSamples}
-                          onChange={(e) => setHasParentalSamples(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-base">Parental samples available</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={hasAffectedSibling}
-                          onChange={(e) => setHasAffectedSibling(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-base">Affected sibling available</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Reproductive (female only) */}
-                  {sex === 'female' && (
-                    <div className="border-t mt-5 pt-5 space-y-2">
-                      <Label className="text-base font-medium">Reproductive</Label>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <button className="border-t mt-5 pt-4 w-full flex items-center justify-between group">
+                        <Label className="text-base font-medium cursor-pointer">Family History</Label>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3 space-y-3">
                       <div className="space-y-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={isPregnant}
-                            onChange={(e) => setIsPregnant(e.target.checked)}
+                            checked={hasFamilyHistory}
+                            onChange={(e) => setHasFamilyHistory(e.target.checked)}
                             className="w-4 h-4"
                           />
-                          <span className="text-base">Patient is pregnant</span>
+                          <span className="text-base">Known family history of genetic conditions</span>
                         </label>
-                        {isPregnant && (
-                          <Input
-                            type="number"
-                            min="0"
-                            max="42"
-                            value={gestationalAge}
-                            onChange={(e) => setGestationalAge(e.target.value)}
-                            placeholder="Gestational age (weeks)"
-                            className="text-base ml-6"
-                          />
-                        )}
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={familyPlanning}
-                            onChange={(e) => setFamilyPlanning(e.target.checked)}
+                            checked={hasConsanguinity}
+                            onChange={(e) => setHasConsanguinity(e.target.checked)}
                             className="w-4 h-4"
                           />
-                          <span className="text-base">Family planning considerations</span>
+                          <span className="text-base">Consanguineous parents</span>
                         </label>
                       </div>
-                    </div>
+                      {(hasFamilyHistory || hasConsanguinity) && (
+                        <Textarea
+                          value={familyHistoryDetails}
+                          onChange={(e) => setFamilyHistoryDetails(e.target.value)}
+                          placeholder="Family history details..."
+                          className="text-base"
+                          rows={2}
+                        />
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Sample */}
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <button className="border-t mt-5 pt-4 w-full flex items-center justify-between group">
+                        <Label className="text-base font-medium cursor-pointer">Sample</Label>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3 space-y-2">
+                      <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select sample type (optional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(SAMPLE_TYPE_LABELS).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasParentalSamples}
+                            onChange={(e) => setHasParentalSamples(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Parental samples available</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasAffectedSibling}
+                            onChange={(e) => setHasAffectedSibling(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Affected sibling available</span>
+                        </label>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Reproductive (female only) */}
+                  {sex === 'female' && (
+                    <Collapsible>
+                      <CollapsibleTrigger asChild>
+                        <button className="border-t mt-5 pt-4 w-full flex items-center justify-between group">
+                          <Label className="text-base font-medium cursor-pointer">Reproductive</Label>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-3 space-y-2">
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isPregnant}
+                              onChange={(e) => setIsPregnant(e.target.checked)}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-base">Patient is pregnant</span>
+                          </label>
+                          {isPregnant && (
+                            <Input
+                              type="number"
+                              min="0"
+                              max="42"
+                              value={gestationalAge}
+                              onChange={(e) => setGestationalAge(e.target.value)}
+                              placeholder="Gestational age (weeks)"
+                              className="text-base ml-6"
+                            />
+                          )}
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={familyPlanning}
+                              onChange={(e) => setFamilyPlanning(e.target.checked)}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-base">Family planning considerations</span>
+                          </label>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   )}
 
                   {/* Result Preferences */}
-                  <div className="border-t mt-5 pt-5 space-y-3">
-                    <Label className="text-base font-medium">Result Preferences</Label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={consentSecondaryFindings}
-                          onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-base">Report ACMG Secondary Findings</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={consentCarrierResults}
-                          onChange={(e) => setConsentCarrierResults(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-base">Report carrier status for recessive conditions</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={consentPharmacogenomics}
-                          onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-base">Include pharmacogenomics results</span>
-                      </label>
-                    </div>
-                  </div>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <button className="border-t mt-5 pt-4 w-full flex items-center justify-between group">
+                        <Label className="text-base font-medium cursor-pointer">Result Preferences</Label>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3 space-y-2">
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={consentSecondaryFindings}
+                            onChange={(e) => setConsentSecondaryFindings(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Report ACMG Secondary Findings</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={consentCarrierResults}
+                            onChange={(e) => setConsentCarrierResults(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Report carrier status for recessive conditions</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={consentPharmacogenomics}
+                            onChange={(e) => setConsentPharmacogenomics(e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-base">Include pharmacogenomics results</span>
+                        </label>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </CardContent>
               </Card>
             )}
