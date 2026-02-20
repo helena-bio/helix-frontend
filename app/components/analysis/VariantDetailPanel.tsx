@@ -359,7 +359,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             )}
           </div>
           {variant.acmg_class && (
-            <Badge variant="outline" className={`text-base font-medium px-3 py-1 flex-shrink-0 ${getACMGColor(variant.acmg_class)}`}>
+            <Badge variant="outline" className={`text-md font-medium px-3 py-1 flex-shrink-0 ${getACMGColor(variant.acmg_class)}`}>
               {variant.acmg_class}
             </Badge>
           )}
