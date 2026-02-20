@@ -372,7 +372,7 @@ function OverviewContent() {
             return (
               <div key={o.id} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-3">
                 <span className="text-md font-medium">{o.name}</span>
-                <Badge variant="outline" className={cn("text-tiny w-24 justify-center", tier.color)}>{tier.label}</Badge>
+                <Badge variant="outline" className={cn("text-tiny w-28 justify-center", tier.color)}>{tier.label}</Badge>
                 <Badge variant="outline" className={cn("text-tiny w-14 justify-center", stat.color)}>{stat.label}</Badge>
                 <span className="text-md text-muted-foreground text-right w-20">{o.member_count} member{o.member_count !== 1 ? 's' : ''}</span>
               </div>
