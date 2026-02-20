@@ -372,29 +372,29 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
         </div>
 
         {/* Identity */}
-        <div className="px-4 pb-3 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-end gap-2.5 flex-wrap">
-              <h2 className="text-2xl font-bold tracking-tight">{variant.gene_symbol || 'Unknown'}</h2>
-              <StarButton variantIdx={variantIdx} size="md" />
-              <span className="text-base text-muted-foreground truncate max-w-xs" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
-                {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;{truncateSequence(variant.reference_allele, 12)}&nbsp;&rarr;&nbsp;{truncateSequence(variant.alternate_allele, 12)}
-              </span>
-              {variant.variant_type && variant.variant_type !== 'SNV' && (
-                <Badge variant="outline" className="text-tiny font-medium">{variant.variant_type}</Badge>
-              )}
-            </div>
-            {variant.hgvs_protein && (
-              <p className="text-base text-muted-foreground mt-0.5 truncate max-w-lg" title={variant.hgvs_protein}>
-                {truncateSequence(variant.hgvs_protein, 70)}
-              </p>
+        <div className="px-4 pb-3">
+          <div className="flex items-end gap-2.5 flex-wrap">
+            <StarButton variantIdx={variantIdx} size="md" />
+            <h2 className="text-2xl font-bold tracking-tight">{variant.gene_symbol || 'Unknown'}</h2>
+            <span className="text-base text-muted-foreground truncate max-w-xs" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
+              {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;{truncateSequence(variant.reference_allele, 12)}&nbsp;&rarr;&nbsp;{truncateSequence(variant.alternate_allele, 12)}
+            </span>
+            {variant.variant_type && variant.variant_type !== 'SNV' && (
+              <Badge variant="outline" className="text-tiny font-medium">{variant.variant_type}</Badge>
             )}
           </div>
-          {variant.acmg_class && (
-            <Badge variant="outline" className={`text-md font-medium px-3 py-1 flex-shrink-0 ${getACMGColor(variant.acmg_class)}`}>
-              {variant.acmg_class}
-            </Badge>
+          <div className="flex items-center justify-between mt-0.5">
+            {variant.hgvs_protein ? (
+              <p className="text-base text-muted-foreground truncate max-w-lg" title={variant.hgvs_protein}>
+                {truncateSequence(variant.hgvs_protein, 70)}
+              </p>
+            ) : <span />}
+            {variant.acmg_class && (
+              <Badge variant="outline" className={`text-md font-medium px-3 py-1 flex-shrink-0 ${getACMGColor(variant.acmg_class)}`}>
+                {variant.acmg_class}
+              </Badge>
           )}
+          </div>
         </div>
 
         {/* Stat strip */}
