@@ -372,7 +372,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <Badge variant="outline" className={`text-tiny font-medium ${getACMGColor(variant.clinical_significance)}`}>
                   {formatClinVarShort(variant.clinical_significance)}
                 </Badge>
-              ) : <span className="text-base font-medium">-</span>}
+              ) : <span className="text-base">-</span>}
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
@@ -382,7 +382,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
                   {getRarityLabel(variant.global_af)!.label}
                 </Badge>
-              ) : <span className="text-base font-medium">{variant.global_af === 0 ? 'Absent' : '-'}</span>}
+              ) : <span className="text-base">{variant.global_af === 0 ? 'Absent' : '-'}</span>}
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
@@ -392,7 +392,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <Badge variant="outline" className={`text-tiny font-medium ${getImpactColor(variant.impact)}`}>
                   {formatImpactDisplay(variant.impact)}
                 </Badge>
-              ) : <span className="text-base font-medium">-</span>}
+              ) : <span className="text-base">-</span>}
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
@@ -402,7 +402,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <Badge variant="outline" className={`text-tiny font-medium ${zygosity.color}`}>
                   {zygosity.label}
                 </Badge>
-              ) : <span className="text-base font-medium">{variant.genotype || '-'}</span>}
+              ) : <span className="text-base">{variant.genotype || '-'}</span>}
             </div>
           </div>
           <div className="px-3 py-2 flex flex-col">
@@ -459,20 +459,20 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         else if (code.startsWith('PM')) extra = 'bg-orange-100 text-orange-900 border-orange-300'
                         else if (code.startsWith('PP')) extra = 'bg-yellow-100 text-yellow-900 border-yellow-300'
                         else if (code.startsWith('BA') || code.startsWith('BS') || code.startsWith('BP')) extra = 'bg-green-100 text-green-900 border-green-300'
-                        return <Badge key={code} variant="outline" className={`text-base font-medium ${extra}`}>{code}</Badge>
+                        return <Badge key={code} variant="outline" className={`text-tiny font-medium ${extra}`}>{code}</Badge>
                       })}
                     </div>
                   </div>
                 )}
-                {variant.confidence_score !== null && <Row label="Confidence"><span className="text-base font-medium">{variant.confidence_score.toFixed(2)}</span></Row>}
-                {variant.priority_score !== null && <Row label="Priority Score"><span className="text-base font-medium">{variant.priority_score.toFixed(1)}</span></Row>}
+                {variant.confidence_score !== null && <Row label="Confidence"><span className="text-base">{variant.confidence_score.toFixed(2)}</span></Row>}
+                {variant.priority_score !== null && <Row label="Priority Score"><span className="text-base">{variant.priority_score.toFixed(1)}</span></Row>}
               </div>
 
               <div className="p-4 border-t">
                 <SectionHeader icon={<FileText className="h-4 w-4" />} title="ClinVar" />
                 {hasClinVar ? (
                   <>
-                    {variant.clinical_significance && <Row label="Significance"><span className="text-base font-medium">{variant.clinical_significance}</span></Row>}
+                    {variant.clinical_significance && <Row label="Significance"><span className="text-base">{variant.clinical_significance}</span></Row>}
                     {variant.review_stars !== null && variant.review_stars > 0 && (
                       <Row label="Review Stars">
                         <div className="flex gap-0.5">
@@ -538,25 +538,25 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     {hasConservation && (
                       <div className="mb-4">
                         <p className="text-base font-medium text-foreground mb-2">Conservation</p>
-                        {variant.phylop100way_vertebrate !== null && <Row label="PhyloP 100-way"><span className="text-base font-medium">{variant.phylop100way_vertebrate.toFixed(3)}</span></Row>}
-                        {variant.gerp_rs !== null && <Row label="GERP++"><span className="text-base font-medium">{variant.gerp_rs.toFixed(2)}</span></Row>}
+                        {variant.phylop100way_vertebrate !== null && <Row label="PhyloP 100-way"><span className="text-base">{variant.phylop100way_vertebrate.toFixed(3)}</span></Row>}
+                        {variant.gerp_rs !== null && <Row label="GERP++"><span className="text-base">{variant.gerp_rs.toFixed(2)}</span></Row>}
                       </div>
                     )}
                     {hasDosage && (
                       <div>
                         <p className="text-base font-medium text-foreground mb-2">ClinGen Dosage</p>
-                        {variant.haploinsufficiency_score !== null && <Row label="HI Score"><span className="text-base font-medium">{variant.haploinsufficiency_score}</span></Row>}
-                        {variant.triplosensitivity_score !== null && <Row label="TS Score"><span className="text-base font-medium">{variant.triplosensitivity_score}</span></Row>}
+                        {variant.haploinsufficiency_score !== null && <Row label="HI Score"><span className="text-base">{variant.haploinsufficiency_score}</span></Row>}
+                        {variant.triplosensitivity_score !== null && <Row label="TS Score"><span className="text-base">{variant.triplosensitivity_score}</span></Row>}
                       </div>
                     )}
                   </div>
                   {hasConstraints && (
                     <div>
                       <p className="text-base font-medium text-foreground mb-2">Gene Constraints</p>
-                      {variant.pli !== null && <Row label="pLI"><span className="text-base font-medium">{variant.pli.toFixed(3)}</span></Row>}
-                      {variant.oe_lof !== null && <Row label="oe LoF"><span className="text-base font-medium">{variant.oe_lof.toFixed(3)}</span></Row>}
-                      {variant.oe_lof_upper !== null && <Row label="LOEUF"><span className="text-base font-medium">{variant.oe_lof_upper.toFixed(3)}</span></Row>}
-                      {variant.mis_z !== null && <Row label="Missense Z"><span className="text-base font-medium">{variant.mis_z.toFixed(2)}</span></Row>}
+                      {variant.pli !== null && <Row label="pLI"><span className="text-base">{variant.pli.toFixed(3)}</span></Row>}
+                      {variant.oe_lof !== null && <Row label="oe LoF"><span className="text-base">{variant.oe_lof.toFixed(3)}</span></Row>}
+                      {variant.oe_lof_upper !== null && <Row label="LOEUF"><span className="text-base">{variant.oe_lof_upper.toFixed(3)}</span></Row>}
+                      {variant.mis_z !== null && <Row label="Missense Z"><span className="text-base">{variant.mis_z.toFixed(2)}</span></Row>}
                     </div>
                   )}
                 </div>
@@ -571,7 +571,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <div>
                     <Row label="Global AF">
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-medium">{formatAF(variant.global_af)}</span>
+                        <span className="text-base">{formatAF(variant.global_af)}</span>
                         {getRarityLabel(variant.global_af) && (
                           <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
                             {getRarityLabel(variant.global_af)!.label}
@@ -581,7 +581,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     </Row>
                     {(variant.global_ac !== null || variant.global_an !== null) && (
                       <Row label="Allele Count">
-                        <span className="text-base font-medium">
+                        <span className="text-base">
                           {variant.global_ac?.toLocaleString() ?? '-'} / {variant.global_an?.toLocaleString() ?? '-'}
                           {variant.global_hom !== null && variant.global_hom > 0 && ` (${variant.global_hom} hom)`}
                         </span>
@@ -591,13 +591,13 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <div>
                     {variant.popmax && (
                       <Row label="PopMax">
-                        <span className="text-base font-medium">
+                        <span className="text-base">
                           {variant.popmax}{variant.af_grpmax !== null ? ` (${variant.af_grpmax.toExponential(2)})` : ''}
                         </span>
                       </Row>
                     )}
                     {variant.rsid && (
-                      <Row label="rsID"><span className="text-base font-medium">{variant.rsid}</span></Row>
+                      <Row label="rsID"><span className="text-base">{variant.rsid}</span></Row>
                     )}
                     <div className="pt-2">
                         <a href={gnomadUrl} target="_blank" rel="noopener noreferrer" className="text-base text-primary hover:underline flex items-center gap-1">{"View in gnomAD "}<ExternalLink className="h-3 w-3" /></a>
@@ -615,19 +615,19 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.genotype && (
                     <Row label="Genotype">
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-medium">{variant.genotype}</span>
+                        <span className="text-base">{variant.genotype}</span>
                         {zygosity && zygosity.label !== '-' && zygosity.label !== variant.genotype && (
                           <Badge variant="outline" className={`text-tiny font-medium ${zygosity.color}`}>{zygosity.label}</Badge>
                         )}
                       </div>
                     </Row>
                   )}
-                  {variant.depth !== null && <Row label="Depth"><span className="text-base font-medium">{variant.depth}x</span></Row>}
-                  {variant.allelic_depth !== null && <Row label="Allelic Depth"><span className="text-base font-medium">{variant.allelic_depth}</span></Row>}
+                  {variant.depth !== null && <Row label="Depth"><span className="text-base">{variant.depth}x</span></Row>}
+                  {variant.allelic_depth !== null && <Row label="Allelic Depth"><span className="text-base">{variant.allelic_depth}</span></Row>}
                 </div>
                 <div>
-                  {variant.genotype_quality !== null && <Row label="GQ"><span className="text-base font-medium">{variant.genotype_quality}</span></Row>}
-                  {variant.quality !== null && <Row label="QUAL"><span className="text-base font-medium">{variant.quality.toFixed(1)}</span></Row>}
+                  {variant.genotype_quality !== null && <Row label="GQ"><span className="text-base">{variant.genotype_quality}</span></Row>}
+                  {variant.quality !== null && <Row label="QUAL"><span className="text-base">{variant.quality.toFixed(1)}</span></Row>}
                   {variant.filter_status && (
                     <Row label="Filter">
                       <Badge variant="outline" className={`text-tiny font-medium ${variant.filter_status === 'PASS' ? 'bg-green-100 text-green-900 border-green-300' : 'bg-red-100 text-red-900 border-red-300'}`}>
@@ -673,8 +673,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       <Badge variant="outline" className={`text-tiny font-medium ${getImpactColor(variant.impact)}`}>{formatImpactDisplay(variant.impact)}</Badge>
                     </Row>
                   )}
-                  {variant.transcript_id && <Row label="Transcript"><span className="text-sm font-medium">{variant.transcript_id}</span></Row>}
-                  {variant.exon_number && <Row label="Exon"><span className="text-base font-medium">{variant.exon_number}</span></Row>}
+                  {variant.transcript_id && <Row label="Transcript"><span className="text-sm">{variant.transcript_id}</span></Row>}
+                  {variant.exon_number && <Row label="Exon"><span className="text-base">{variant.exon_number}</span></Row>}
                   {variant.biotype && (
                     <Row label="Biotype">
                       <Badge variant="secondary" className="text-tiny font-medium">{formatBiotype(variant.biotype)}</Badge>
