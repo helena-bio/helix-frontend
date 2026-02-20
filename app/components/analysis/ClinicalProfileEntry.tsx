@@ -703,20 +703,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
             {/* ----- CLINICAL INFO SECTION ----- */}
             {activeSection === 'clinical' && enableScreening && (
               <Card>
-                <CardHeader className="pt-4 pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ScanSearch className="h-4 w-4" />
-                    Clinical Information
-                    <Badge variant="outline" className="ml-2 text-md">For Screening</Badge>
-                  </CardTitle>
-                  <p className="text-md text-muted-foreground">
-                    Ethnicity, clinical context, and family history improve screening accuracy
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="pt-5 pb-5">
                   {/* Ethnicity */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Ethnicity & Ancestry</Label>
+                  <div className="space-y-2">
+                    <Label className="text-base font-medium">Ethnicity</Label>
                     <Select value={ethnicity} onValueChange={(val) => setEthnicityLocal(val as Ethnicity)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select ethnicity (optional)" />
@@ -729,18 +719,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         ))}
                       </SelectContent>
                     </Select>
-                    <Textarea
-                      value={ethnicityNote}
-                      onChange={(e) => setEthnicityNote(e.target.value)}
-                      placeholder="Additional ancestry notes (optional)"
-                      className="text-base"
-                      rows={2}
-                    />
                   </div>
 
-                  {/* Clinical Context */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Clinical Context</Label>
+                  {/* Indication */}
+                  <div className="border-t mt-5 pt-5 space-y-2">
+                    <Label className="text-base font-medium">Indication</Label>
                     <Select value={indication} onValueChange={(val) => setIndication(val as Indication)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Proactive Health Screening" />
@@ -756,14 +739,14 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     <Textarea
                       value={indicationDetails}
                       onChange={(e) => setIndicationDetails(e.target.value)}
-                      placeholder="Additional details (optional)"
+                      placeholder="Additional clinical details (optional)"
                       className="text-base"
                       rows={2}
                     />
                   </div>
 
                   {/* Family History */}
-                  <div className="space-y-3">
+                  <div className="border-t mt-5 pt-5 space-y-3">
                     <Label className="text-base font-medium">Family History</Label>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -791,14 +774,14 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         onChange={(e) => setFamilyHistoryDetails(e.target.value)}
                         placeholder="Family history details..."
                         className="text-base"
-                        rows={3}
+                        rows={2}
                       />
                     )}
                   </div>
 
-                  {/* Sample Information */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium">Sample Information</Label>
+                  {/* Sample */}
+                  <div className="border-t mt-5 pt-5 space-y-2">
+                    <Label className="text-base font-medium">Sample</Label>
                     <Select value={sampleType} onValueChange={(val) => setSampleTypeLocal(val as SampleType)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select sample type (optional)" />
@@ -833,10 +816,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                     </div>
                   </div>
 
-                  {/* Reproductive Context (only if female) */}
+                  {/* Reproductive (female only) */}
                   {sex === 'female' && (
-                    <div className="space-y-3">
-                      <Label className="text-base font-medium">Reproductive Context</Label>
+                    <div className="border-t mt-5 pt-5 space-y-2">
+                      <Label className="text-base font-medium">Reproductive</Label>
                       <div className="space-y-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -872,7 +855,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                   )}
 
                   {/* Result Preferences */}
-                  <div className="space-y-3">
+                  <div className="border-t mt-5 pt-5 space-y-3">
                     <Label className="text-base font-medium">Result Preferences</Label>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
