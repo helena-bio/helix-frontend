@@ -633,7 +633,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
               <div className="space-y-6">
                 {/* Demographics */}
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pt-4 pb-3">
                     <CardTitle className="text-lg flex items-center gap-2">
                       <User className="h-4 w-4" />
                       Patient Demographics
@@ -703,7 +703,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
             {/* ----- CLINICAL INFO SECTION ----- */}
             {activeSection === 'clinical' && enableScreening && (
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pt-4 pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <ScanSearch className="h-4 w-4" />
                     Clinical Information
@@ -911,7 +911,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
             {/* ----- PHENOTYPE SECTION ----- */}
             {activeSection === 'phenotype' && enablePhenotypeMatching && (
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pt-4 pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Dna className="h-4 w-4" />
                     Phenotype Information
