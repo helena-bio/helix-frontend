@@ -327,7 +327,7 @@ function OverviewContent() {
   const [orgs, setOrgs] = useState<PlatformOrganization[]>([])
   const [users, setUsers] = useState<PlatformUser[]>([])
   const [loading, setLoading] = useState(true)
-  const [expandedRow, setExpandedRow] = useState<string | null>(null)
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     Promise.all([
@@ -352,7 +352,7 @@ function OverviewContent() {
     return <div className="text-md text-muted-foreground">Failed to load metrics.</div>
   }
 
-  const toggle = (key: string) => setExpandedRow(expandedRow === key ? null : key)
+  const toggle = (key: string) => setExpandedRows((prev) => { const next = new Set(prev); next.has(key) ? next.delete(key) : next.add(key); return next })
 
   const cards = [
     { key: 'orgs', label: 'Organizations', value: data.total_organizations, sub: data.active_organizations + ' active', icon: Building2 },
@@ -363,7 +363,7 @@ function OverviewContent() {
 
   const renderExpanded = (key: string) => {
     if (key === 'orgs') {
-      if (orgs.length === 0) return <p className="text-sm text-muted-foreground">No organizations</p>
+      if (orgs.length === 0) return <p className="text-md text-muted-foreground">No organizations</p>
       return (
         <div className="space-y-2">
           {orgs.map((o) => {
@@ -372,11 +372,11 @@ function OverviewContent() {
             return (
               <div key={o.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{o.name}</span>
-                  <Badge variant="outline" className={cn("text-xs", tier.color)}>{tier.label}</Badge>
-                  <Badge variant="outline" className={cn("text-xs", stat.color)}>{stat.label}</Badge>
+                  <span className="text-md font-medium">{o.name}</span>
+                  <Badge variant="outline" className={cn("text-tiny", tier.color)}>{tier.label}</Badge>
+                  <Badge variant="outline" className={cn("text-tiny", stat.color)}>{stat.label}</Badge>
                 </div>
-                <span className="text-sm text-muted-foreground">{o.member_count} member{o.member_count !== 1 ? 's' : ''}</span>
+                <span className="text-md text-muted-foreground">{o.member_count} member{o.member_count !== 1 ? 's' : ''}</span>
               </div>
             )
           })}
@@ -385,16 +385,16 @@ function OverviewContent() {
     }
     if (key === 'users') {
       const active = users.filter((u) => u.status === 'active')
-      if (active.length === 0) return <p className="text-sm text-muted-foreground">No active users</p>
+      if (active.length === 0) return <p className="text-md text-muted-foreground">No active users</p>
       return (
         <div className="space-y-2">
           {active.map((u) => (
             <div key={u.id} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{u.full_name}</span>
-                <span className="text-xs text-muted-foreground">{u.email}</span>
+                <span className="text-md font-medium">{u.full_name}</span>
+                <span className="text-md text-muted-foreground">{u.email}</span>
               </div>
-              <span className="text-sm text-muted-foreground">{u.organization_name}</span>
+              <span className="text-md text-muted-foreground">{u.organization_name}</span>
             </div>
           ))}
         </div>
@@ -402,13 +402,13 @@ function OverviewContent() {
     }
     if (key === 'pending') {
       const pending = users.filter((u) => u.status === 'pending')
-      if (pending.length === 0) return <p className="text-sm text-muted-foreground">No pending users</p>
+      if (pending.length === 0) return <p className="text-md text-muted-foreground">No pending users</p>
       return (
         <div className="space-y-2">
           {pending.map((u) => (
             <div key={u.id} className="flex items-center justify-between">
-              <span className="text-sm font-medium">{u.full_name}</span>
-              <span className="text-sm text-muted-foreground">{u.email}</span>
+              <span className="text-md font-medium">{u.full_name}</span>
+              <span className="text-md text-muted-foreground">{u.email}</span>
             </div>
           ))}
         </div>
@@ -417,22 +417,22 @@ function OverviewContent() {
     if (key === 'suspended') {
       const suspUsers = users.filter((u) => u.status === 'suspended')
       const suspOrgs = orgs.filter((o) => o.status === 'suspended')
-      if (suspUsers.length === 0 && suspOrgs.length === 0) return <p className="text-sm text-muted-foreground">Nothing suspended</p>
+      if (suspUsers.length === 0 && suspOrgs.length === 0) return <p className="text-md text-muted-foreground">Nothing suspended</p>
       return (
         <div className="space-y-2">
           {suspOrgs.map((o) => (
             <div key={o.id} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm font-medium">{o.name}</span>
+                <span className="text-md font-medium">{o.name}</span>
               </div>
-              <span className="text-sm text-muted-foreground">Organization</span>
+              <span className="text-md text-muted-foreground">Organization</span>
             </div>
           ))}
           {suspUsers.map((u) => (
             <div key={u.id} className="flex items-center justify-between">
-              <span className="text-sm font-medium">{u.full_name}</span>
-              <span className="text-sm text-muted-foreground">{u.email}</span>
+              <span className="text-md font-medium">{u.full_name}</span>
+              <span className="text-md text-muted-foreground">{u.email}</span>
             </div>
           ))}
         </div>
@@ -447,7 +447,7 @@ function OverviewContent() {
       <div className="border border-border rounded-lg bg-card divide-y divide-border">
         {cards.map((card) => {
           const Icon = card.icon
-          const isOpen = expandedRow === card.key
+          const isOpen = expandedRows.has(card.key)
           return (
             <div key={card.key}>
               <button
@@ -459,8 +459,8 @@ function OverviewContent() {
                   <span className="text-base font-medium">{card.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-semibold">{card.value}</span>
-                  <span className="text-sm text-muted-foreground">{card.sub}</span>
+                  <span className="text-base">{card.value}</span>
+                  <span className="text-md text-muted-foreground">{card.sub}</span>
                   <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                 </div>
               </button>
