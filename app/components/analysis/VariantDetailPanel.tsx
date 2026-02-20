@@ -153,6 +153,34 @@ const formatAF = (af: number | null): string => {
   return af.toFixed(6)
 }
 
+const POPULATION_NAMES: Record<string, string> = {
+  afr: 'African/African American',
+  amr: 'Latino/Admixed American',
+  asj: 'Ashkenazi Jewish',
+  eas: 'East Asian',
+  fin: 'Finnish',
+  mid: 'Middle Eastern',
+  nfe: 'Non-Finnish European',
+  sas: 'South Asian',
+  ami: 'Amish',
+  oth: 'Other',
+  remaining: 'Remaining',
+}
+
+const formatOneInX = (af: number | null): string => {
+  if (af === null) return '-'
+  if (af === 0) return 'Not observed'
+  const oneIn = Math.round(1 / af)
+  return `1 in ${oneIn.toLocaleString()}`
+}
+
+const getProgressWidth = (af: number | null): number => {
+  if (af === null || af === 0) return 0
+  const logAF = Math.log10(af)
+  const normalized = ((logAF + 6) / 5.7) * 100
+  return Math.max(2, Math.min(100, normalized))
+}
+
 // ---------------------------------------------------------------------------
 // SectionHeader
 // ---------------------------------------------------------------------------
@@ -569,42 +597,57 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             {hasGnomAD && (
               <div className="border-t p-4">
                 <SectionHeader icon={<Globe className="h-4 w-4" />} title="Population Frequency" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                  <div>
-                    <Row label="Global AF">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{formatAF(variant.global_af)}</span>
-                        {getRarityLabel(variant.global_af) && (
-                          <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
-                            {getRarityLabel(variant.global_af)!.label}
-                          </Badge>
-                        )}
-                      </div>
-                    </Row>
-                    {(variant.global_ac !== null || variant.global_an !== null) && (
-                      <Row label="Allele Count">
-                        <span className="text-base">
-                          {variant.global_ac?.toLocaleString() ?? '-'} / {variant.global_an?.toLocaleString() ?? '-'}
-                          {variant.global_hom !== null && variant.global_hom > 0 && ` (${variant.global_hom} hom)`}
-                        </span>
-                      </Row>
-                    )}
-                  </div>
-                  <div>
-                    {variant.popmax && (
-                      <Row label="PopMax">
-                        <span className="text-base">
-                          {variant.popmax}{variant.af_grpmax !== null ? ` (${variant.af_grpmax.toExponential(2)})` : ''}
-                        </span>
-                      </Row>
-                    )}
-                    {variant.rsid && (
-                      <Row label="rsID"><span className="text-base">{variant.rsid}</span></Row>
-                    )}
-                    <div className="pt-2">
-                        <a href={gnomadUrl} target="_blank" rel="noopener noreferrer" className="text-base text-primary hover:underline flex items-center gap-1">{"View in gnomAD "}<ExternalLink className="h-3 w-3" /></a>
+
+                {/* Frequency bar + 1 in X */}
+                {variant.global_af !== null && variant.global_af > 0 ? (
+                  <div className="mb-3">
+                    <div className="relative h-2 bg-muted rounded-full overflow-hidden mb-2">
+                      <div
+                        className="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
+                        style={{ width: `${getProgressWidth(variant.global_af)}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-base">{formatOneInX(variant.global_af)}</span>
+                      {getRarityLabel(variant.global_af) && (
+                        <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
+                          {getRarityLabel(variant.global_af)!.label}
+                        </Badge>
+                      )}
                     </div>
                   </div>
+                ) : variant.global_af === 0 ? (
+                  <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <span className="text-base text-purple-900">Not observed in gnomAD</span>
+                  </div>
+                ) : null}
+
+                {(variant.global_ac !== null || variant.global_an !== null) && (
+                  <Row label="Allele Count">
+                    <span className="text-base">
+                      {variant.global_ac?.toLocaleString() ?? '-'} / {variant.global_an?.toLocaleString() ?? '-'}
+                      {variant.global_hom !== null && variant.global_hom > 0 && ` (${variant.global_hom} hom)`}
+                    </span>
+                  </Row>
+                )}
+                {variant.popmax && (
+                  <Row label="PopMax Population">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{POPULATION_NAMES[variant.popmax.toLowerCase()] || variant.popmax}</span>
+                      <Badge variant="outline" className="text-tiny font-medium">{variant.popmax.toUpperCase()}</Badge>
+                    </div>
+                  </Row>
+                )}
+                {variant.popmax && variant.af_grpmax !== null && (
+                  <Row label="PopMax Frequency">
+                    <span className="text-base">{formatOneInX(variant.af_grpmax)}</span>
+                  </Row>
+                )}
+                {variant.rsid && (
+                  <Row label="rsID"><span className="text-base">{variant.rsid}</span></Row>
+                )}
+                <div className="pt-2">
+                  <a href={gnomadUrl} target="_blank" rel="noopener noreferrer" className="text-base text-primary hover:underline flex items-center gap-1">View in gnomAD <ExternalLink className="h-3 w-3" /></a>
                 </div>
               </div>
             )}
