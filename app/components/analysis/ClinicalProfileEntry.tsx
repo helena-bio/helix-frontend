@@ -703,6 +703,13 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
             {/* ----- CLINICAL INFO SECTION ----- */}
             {activeSection === 'clinical' && enableScreening && (
               <Card>
+                <CardHeader className="pt-4 pb-0">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <ScanSearch className="h-4 w-4" />
+                    Clinical Information
+                    <Badge variant="outline" className="ml-2 text-md">For Screening</Badge>
+                  </CardTitle>
+                </CardHeader>
                 <CardContent className="pt-5 pb-5">
                   {/* Ethnicity */}
                   <div className="space-y-2">
