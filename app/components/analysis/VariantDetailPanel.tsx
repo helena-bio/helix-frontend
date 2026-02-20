@@ -16,6 +16,7 @@
  *   No font-mono anywhere.
  */
 
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -281,7 +282,7 @@ const CopyableValue = ({ label, value }: { label: string; value: string | null }
       <div className="flex items-start gap-1.5">
         <p className="text-base text-foreground break-all flex-1 leading-relaxed">{value}</p>
         <button
-          onClick={() => navigator.clipboard.writeText(value)}
+          onClick={() => { navigator.clipboard.writeText(value); toast.success(`${label} copied`) }}
           className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
           title="Copy">
           <Copy className="h-3.5 w-3.5 text-muted-foreground" />
