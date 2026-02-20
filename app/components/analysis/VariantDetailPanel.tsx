@@ -249,7 +249,7 @@ const CopyableValue = ({ label, value }: { label: string; value: string | null }
     <div className="py-1.5 border-b border-border/50 last:border-0">
       <p className="text-base text-muted-foreground mb-1">{label}</p>
       <div className="flex items-start gap-1.5">
-        <p className="text-sm text-foreground break-all flex-1 leading-relaxed">{value}</p>
+        <p className="text-base text-foreground break-all flex-1 leading-relaxed">{value}</p>
         <button
           onClick={() => navigator.clipboard.writeText(value)}
           className="flex-shrink-0 p-0.5 rounded hover:bg-muted mt-0.5"
