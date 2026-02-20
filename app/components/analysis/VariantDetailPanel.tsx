@@ -615,8 +615,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.genotype && (
                     <Row label="Genotype">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{variant.genotype}</span>
-                        {zygosity && zygosity.label !== '-' && zygosity.label !== variant.genotype && (
+                        {(!zygosity || zygosity.label === '-') && <span className="text-base">{variant.genotype}</span>}
+                        {zygosity && zygosity.label !== '-' && (
                           <Badge variant="outline" className={`text-tiny font-medium ${zygosity.color}`}>{zygosity.label}</Badge>
                         )}
                       </div>
