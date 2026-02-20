@@ -215,7 +215,7 @@ const PredictionBar = ({ label, prediction, score, invert = false }: {
       <div className="flex items-center gap-2 mb-1">
         <span className="text-md text-muted-foreground">{label}</span>
         {pred && (
-          <Badge variant="outline" className={`text-xs font-medium ${getPredictionBadgeColor(pred)}`}>{pred}</Badge>
+          <Badge variant="outline" className={`text-tiny font-medium ${getPredictionBadgeColor(pred)}`}>{pred}</Badge>
         )}
       </div>
       <ScoreBar barValue={barValue} displayValue={parsed} colorClass={getPredictionBarColor(pred)} />
@@ -369,7 +369,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <p className="text-md text-muted-foreground leading-none mb-1">ClinVar</p>
             <div className="mt-auto">
               {variant.clinical_significance ? (
-                <Badge variant="outline" className={`text-xs font-medium ${getACMGColor(variant.clinical_significance)}`}>
+                <Badge variant="outline" className={`text-tiny font-medium ${getACMGColor(variant.clinical_significance)}`}>
                   {formatClinVarShort(variant.clinical_significance)}
                 </Badge>
               ) : <span className="text-base font-medium">-</span>}
@@ -379,7 +379,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <p className="text-md text-muted-foreground leading-none mb-1">gnomAD AF</p>
             <div className="mt-auto">
               {getRarityLabel(variant.global_af) ? (
-                <Badge variant="outline" className={`text-xs font-medium ${getRarityLabel(variant.global_af)!.color}`}>
+                <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
                   {getRarityLabel(variant.global_af)!.label}
                 </Badge>
               ) : <span className="text-base font-medium">{variant.global_af === 0 ? 'Absent' : '-'}</span>}
@@ -389,7 +389,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <p className="text-md text-muted-foreground leading-none mb-1">Impact</p>
             <div className="mt-auto">
               {variant.impact ? (
-                <Badge variant="outline" className={`text-xs font-medium ${getImpactColor(variant.impact)}`}>
+                <Badge variant="outline" className={`text-tiny font-medium ${getImpactColor(variant.impact)}`}>
                   {formatImpactDisplay(variant.impact)}
                 </Badge>
               ) : <span className="text-base font-medium">-</span>}
@@ -399,7 +399,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
             <p className="text-md text-muted-foreground leading-none mb-1">Zygosity</p>
             <div className="mt-auto">
               {zygosity && zygosity.label !== '-' ? (
-                <Badge variant="outline" className={`text-xs font-medium ${zygosity.color}`}>
+                <Badge variant="outline" className={`text-tiny font-medium ${zygosity.color}`}>
                   {zygosity.label}
                 </Badge>
               ) : <span className="text-base font-medium">{variant.genotype || '-'}</span>}
@@ -490,7 +490,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         <p className="text-md text-muted-foreground mb-1.5">Review Status</p>
                         <div className="flex flex-wrap gap-1">
                           {formatReviewStatus(variant.review_status).map((s: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="text-xs font-medium">{s}</Badge>
+                            <Badge key={idx} variant="secondary" className="text-tiny font-medium">{s}</Badge>
                           ))}
                         </div>
                       </div>
@@ -500,7 +500,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         <p className="text-md text-muted-foreground mb-1.5">Disease</p>
                         <div className="flex flex-wrap gap-1">
                           {formatDiseaseName(variant.disease_name).map((d: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs font-medium">{d}</Badge>
+                            <Badge key={idx} variant="outline" className="text-tiny font-medium">{d}</Badge>
                           ))}
                         </div>
                       </div>
@@ -573,7 +573,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       <div className="flex items-center gap-2">
                         <span className="text-base font-medium">{formatAF(variant.global_af)}</span>
                         {getRarityLabel(variant.global_af) && (
-                          <Badge variant="outline" className={`text-xs font-medium ${getRarityLabel(variant.global_af)!.color}`}>
+                          <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
                             {getRarityLabel(variant.global_af)!.label}
                           </Badge>
                         )}
@@ -617,7 +617,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       <div className="flex items-center gap-2">
                         <span className="text-base font-medium">{variant.genotype}</span>
                         {zygosity && zygosity.label !== '-' && zygosity.label !== variant.genotype && (
-                          <Badge variant="outline" className={`text-xs font-medium ${zygosity.color}`}>{zygosity.label}</Badge>
+                          <Badge variant="outline" className={`text-tiny font-medium ${zygosity.color}`}>{zygosity.label}</Badge>
                         )}
                       </div>
                     </Row>
@@ -630,7 +630,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.quality !== null && <Row label="QUAL"><span className="text-base font-medium">{variant.quality.toFixed(1)}</span></Row>}
                   {variant.filter_status && (
                     <Row label="Filter">
-                      <Badge variant="outline" className={`text-xs font-medium ${variant.filter_status === 'PASS' ? 'bg-green-100 text-green-900 border-green-300' : 'bg-red-100 text-red-900 border-red-300'}`}>
+                      <Badge variant="outline" className={`text-tiny font-medium ${variant.filter_status === 'PASS' ? 'bg-green-100 text-green-900 border-green-300' : 'bg-red-100 text-red-900 border-red-300'}`}>
                         {variant.filter_status}
                       </Badge>
                     </Row>
@@ -670,14 +670,14 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 <div>
                   {variant.impact && (
                     <Row label="Impact">
-                      <Badge variant="outline" className={`text-xs font-medium ${getImpactColor(variant.impact)}`}>{formatImpactDisplay(variant.impact)}</Badge>
+                      <Badge variant="outline" className={`text-tiny font-medium ${getImpactColor(variant.impact)}`}>{formatImpactDisplay(variant.impact)}</Badge>
                     </Row>
                   )}
                   {variant.transcript_id && <Row label="Transcript"><span className="text-sm font-medium">{variant.transcript_id}</span></Row>}
                   {variant.exon_number && <Row label="Exon"><span className="text-base font-medium">{variant.exon_number}</span></Row>}
                   {variant.biotype && (
                     <Row label="Biotype">
-                      <Badge variant="secondary" className="text-xs font-medium">{formatBiotype(variant.biotype)}</Badge>
+                      <Badge variant="secondary" className="text-tiny font-medium">{formatBiotype(variant.biotype)}</Badge>
                     </Row>
                   )}
                   {variant.domains && (
@@ -685,10 +685,10 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                       <p className="text-md text-muted-foreground mb-1.5">Protein Domains</p>
                       <div className="flex flex-wrap gap-1">
                         {variant.domains.split(',').filter(Boolean).slice(0, 4).map((d: string, idx: number) => (
-                          <Badge key={idx} variant="outline" className="text-xs font-medium">{d.trim()}</Badge>
+                          <Badge key={idx} variant="outline" className="text-tiny font-medium">{d.trim()}</Badge>
                         ))}
                         {variant.domains.split(',').length > 4 && (
-                          <Badge variant="outline" className="text-xs font-medium">+{variant.domains.split(',').length - 4} more</Badge>
+                          <Badge variant="outline" className="text-tiny font-medium">+{variant.domains.split(',').length - 4} more</Badge>
                         )}
                       </div>
                     </div>
