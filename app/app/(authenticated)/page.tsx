@@ -152,13 +152,12 @@ const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }>
 
 interface CaseCardProps {
   session: AnalysisSession
-  rank: number
   showOwner: boolean
   memoryCache: React.MutableRefObject<Map<string, ClinicalProfileData>>
   onNavigate: (session: AnalysisSession) => void
 }
 
-function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCardProps) {
+function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps) {
   const { avatarVersion } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
@@ -264,19 +263,13 @@ function CaseCard({ session, rank, showOwner, memoryCache, onNavigate }: CaseCar
         onClick={handleExpand}
       >
         <div className="flex items-center justify-between">
-          {/* Left: Rank + Name + Status + Genome Build + Owner */}
+          {/* Left: Name + Status */}
           <div className="flex items-center gap-3">
-            <span className="text-ml font-semibold text-muted-foreground w-8">#{rank}</span>
-            <span className="text-ml font-semibold">{getCaseDisplayName(session)}</span>
+            <span className="text-base font-medium">{getCaseDisplayName(session)}</span>
             <Badge variant="outline" className={`text-sm ${config.color}`}>
               <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
               {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
             </Badge>
-            {session.genome_build && (
-              <Badge variant="secondary" className="text-sm">
-                {session.genome_build}
-              </Badge>
-            )}
           </div>
           {/* Right: Avatar + Date + Chevron */}
           <div className="flex items-center gap-3">
@@ -617,7 +610,6 @@ export default function DashboardPage() {
               <CaseCard
                 key={session.id}
                 session={session}
-                rank={idx + 1}
                 showOwner={showAll}
                 memoryCache={memoryCache}
                 onNavigate={handleNavigate}
