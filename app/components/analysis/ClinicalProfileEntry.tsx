@@ -626,7 +626,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           {/* =========================================================== */}
           {/* CONTENT PANEL                                                */}
           {/* =========================================================== */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pt-4">
 
             {/* ----- PATIENT SECTION ----- */}
             {activeSection === 'patient' && (
