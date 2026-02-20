@@ -557,7 +557,7 @@ export default function DashboardPage() {
               onClick={() => setShowAll(true)}
             >
               <Users className="h-4 w-4" />
-              All
+              Team
             </button>
           </div>
           <div className="relative flex-1">
@@ -585,7 +585,7 @@ export default function DashboardPage() {
             <CardContent className="p-8 text-center">
               <Microscope className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-base font-medium mb-2">
-                {searchQuery ? 'No matching cases' : showAll ? 'No cases in organization' : 'No cases yet'}
+                {searchQuery ? 'No matching cases' : showAll ? 'No cases in team' : 'No cases yet'}
               </p>
               <p className="text-md text-muted-foreground">
                 {searchQuery ? 'Try a different search term.' : 'Start by uploading a VCF file.'}
@@ -601,7 +601,7 @@ export default function DashboardPage() {
               <p className="text-base text-muted-foreground">
                 {filteredCases.length} case{filteredCases.length !== 1 ? 's' : ''}
                 {searchQuery && ' matching filter'}
-                {showAll && ' across organization'}
+                {showAll && ' across team'}
               </p>
               <Button onClick={handleNewCase}>
                 <Plus className="h-4 w-4 mr-2" />
