@@ -348,26 +348,28 @@ function OverviewContent() {
     { label: 'Suspended', value: data.suspended_users + data.suspended_organizations, sub: data.suspended_users + ' users, ' + data.suspended_organizations + ' orgs', icon: UserX },
   ]
 
-  return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-foreground">Platform Metrics</h3>
-      <div className="grid grid-cols-2 gap-4">
-        {cards.map((card) => {
-          const Icon = card.icon
-          return (
-            <div key={card.label} className="border border-border rounded-lg p-5 bg-card">
-              <div className="flex items-center gap-2 mb-3">
-                <Icon className="h-5 w-5 text-muted-foreground" />
-                <span className="text-lg font-semibold">{card.label}</span>
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">Platform Metrics</h3>
+        <div className="border border-border rounded-lg bg-card divide-y divide-border">
+          {cards.map((card) => {
+            const Icon = card.icon
+            return (
+              <div key={card.label} className="flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-base font-medium">{card.label}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-semibold">{card.value}</span>
+                  <span className="text-sm text-muted-foreground">{card.sub}</span>
+                </div>
               </div>
-              <p className="text-xl font-semibold tracking-tight">{card.value}</p>
-              <p className="text-md text-muted-foreground mt-1">{card.sub}</p>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
-    </div>
-  )
+    )
 }
 
 
@@ -799,7 +801,7 @@ export default function PlatformPage() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="w-full max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 mb-8">
           <button
             onClick={() => router.push('/')}
             className="text-md text-muted-foreground hover:text-foreground transition-colors"
@@ -808,7 +810,6 @@ export default function PlatformPage() {
           </button>
           <h2 className="text-3xl font-semibold text-foreground">Platform</h2>
         </div>
-        <p className="text-base text-muted-foreground mb-8 ml-7">System-wide visibility and control</p>
 
         <div className="flex gap-8">
           {/* Left navigation */}
