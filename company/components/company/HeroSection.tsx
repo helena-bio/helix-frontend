@@ -26,7 +26,7 @@ export function HeroSection() {
                 className="h-[9.5rem] sm:h-[11rem] w-auto shrink-0"
                 priority
               />
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col items-center gap-1">
                 <Image
                   src="/images/logos/logo_helena.svg"
                   alt="Helena Bioinformatics"
