@@ -468,7 +468,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           <div className="px-3 py-2 flex flex-col">
             <p className="text-base text-muted-foreground leading-none mb-1">Confidence</p>
             <span className="text-base font-medium mt-auto">
-              {variant.confidence_score !== null ? variant.confidence_score.toFixed(2) : '-'}
+              {variant.confidence_score !== null ? variant.confidence_score?.toFixed(2) : '-'}
             </span>
           </div>
         </div>
@@ -525,8 +525,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     </div>
                   </div>
                 )}
-                {variant.confidence_score !== null && <Row label="Confidence"><span className="text-base">{variant.confidence_score.toFixed(2)}</span></Row>}
-                {variant.priority_score !== null && <Row label="Priority Score"><span className="text-base">{variant.priority_score.toFixed(1)}</span></Row>}
+                {variant.confidence_score !== null && <Row label="Confidence"><span className="text-base">{variant.confidence_score?.toFixed(2)}</span></Row>}
+                {variant.priority_score !== null && <Row label="Priority Score"><span className="text-base">{variant.priority_score?.toFixed(1)}</span></Row>}
                 {variant.hpo_count !== null && variant.hpo_count > 0 && <Row label="Phenotype Matches"><span className="text-base">{variant.hpo_count}</span></Row>}
               </div>
 
@@ -616,25 +616,25 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {variant.spliceai_ds_ag !== null && (
                     <div>
                       <p className="text-sm text-muted-foreground">Acceptor Gain</p>
-                      <span className="text-base tabular-nums">{variant.spliceai_ds_ag.toFixed(3)}</span>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_ag?.toFixed(3)}</span>
                     </div>
                   )}
                   {variant.spliceai_ds_al !== null && (
                     <div>
                       <p className="text-sm text-muted-foreground">Acceptor Loss</p>
-                      <span className="text-base tabular-nums">{variant.spliceai_ds_al.toFixed(3)}</span>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_al?.toFixed(3)}</span>
                     </div>
                   )}
                   {variant.spliceai_ds_dg !== null && (
                     <div>
                       <p className="text-sm text-muted-foreground">Donor Gain</p>
-                      <span className="text-base tabular-nums">{variant.spliceai_ds_dg.toFixed(3)}</span>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_dg?.toFixed(3)}</span>
                     </div>
                   )}
                   {variant.spliceai_ds_dl !== null && (
                     <div>
                       <p className="text-sm text-muted-foreground">Donor Loss</p>
-                      <span className="text-base tabular-nums">{variant.spliceai_ds_dl.toFixed(3)}</span>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_dl?.toFixed(3)}</span>
                     </div>
                   )}
                 </div>
@@ -655,8 +655,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                     {hasConservation && (
                       <div className="mb-4">
                         <p className="text-base font-medium text-foreground mb-2">Conservation</p>
-                        {variant.phylop100way_vertebrate !== null && <Row label="PhyloP 100-way"><span className="text-base">{variant.phylop100way_vertebrate.toFixed(3)}</span></Row>}
-                        {variant.gerp_rs !== null && <Row label="GERP++"><span className="text-base">{variant.gerp_rs.toFixed(2)}</span></Row>}
+                        {variant.phylop100way_vertebrate !== null && <Row label="PhyloP 100-way"><span className="text-base">{variant.phylop100way_vertebrate?.toFixed(3)}</span></Row>}
+                        {variant.gerp_rs !== null && <Row label="GERP++"><span className="text-base">{variant.gerp_rs?.toFixed(2)}</span></Row>}
                       </div>
                     )}
                     {hasDosage && (
@@ -670,10 +670,10 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   {hasConstraints && (
                     <div>
                       <p className="text-base font-medium text-foreground mb-2">Gene Constraints</p>
-                      {variant.pli !== null && <Row label="pLI"><span className="text-base">{variant.pli.toFixed(3)}</span></Row>}
-                      {variant.oe_lof !== null && <Row label="oe LoF"><span className="text-base">{variant.oe_lof.toFixed(3)}</span></Row>}
-                      {variant.oe_lof_upper !== null && <Row label="LOEUF"><span className="text-base">{variant.oe_lof_upper.toFixed(3)}</span></Row>}
-                      {variant.mis_z !== null && <Row label="Missense Z"><span className="text-base">{variant.mis_z.toFixed(2)}</span></Row>}
+                      {variant.pli !== null && <Row label="pLI"><span className="text-base">{variant.pli?.toFixed(3)}</span></Row>}
+                      {variant.oe_lof !== null && <Row label="oe LoF"><span className="text-base">{variant.oe_lof?.toFixed(3)}</span></Row>}
+                      {variant.oe_lof_upper !== null && <Row label="LOEUF"><span className="text-base">{variant.oe_lof_upper?.toFixed(3)}</span></Row>}
+                      {variant.mis_z !== null && <Row label="Missense Z"><span className="text-base">{variant.mis_z?.toFixed(2)}</span></Row>}
                     </div>
                   )}
                 </div>
@@ -759,7 +759,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                 </div>
                 <div>
                   {variant.genotype_quality !== null && <Row label="GQ"><span className="text-base">{variant.genotype_quality}</span></Row>}
-                  {variant.quality !== null && <Row label="QUAL"><span className="text-base">{variant.quality.toFixed(1)}</span></Row>}
+                  {variant.quality !== null && <Row label="QUAL"><span className="text-base">{variant.quality?.toFixed(1)}</span></Row>}
                   {variant.filter_status && (
                     <Row label="Filter">
                       <Badge variant="outline" className={`text-tiny font-medium ${variant.filter_status === 'PASS' ? 'bg-green-100 text-green-900 border-green-300' : 'bg-red-100 text-red-900 border-red-300'}`}>
