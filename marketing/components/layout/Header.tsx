@@ -8,6 +8,7 @@ import { useDemoModal, useLoginModal } from '@/contexts'
 const platformLinks = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/for-geneticists', label: 'For Geneticists' },
+  { href: '/methodology', label: 'Methodology' },
 ]
 
 export function Header() {

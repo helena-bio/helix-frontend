@@ -10,6 +10,9 @@ export function Footer() {
             &copy; 2026. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-md">
+            <Link href="/methodology" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              Methodology
+            </Link>
             <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors py-2">
               Privacy Policy
             </Link>
