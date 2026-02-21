@@ -36,8 +36,8 @@ export default function ContactPage() {
           </section>
 
         </div>
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

@@ -109,8 +109,8 @@ export default function TermsOfServicePage() {
           </section>
 
         </article>
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

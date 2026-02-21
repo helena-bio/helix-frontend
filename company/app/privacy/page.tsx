@@ -135,8 +135,8 @@ export default function PrivacyPolicyPage() {
           </section>
 
         </article>
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

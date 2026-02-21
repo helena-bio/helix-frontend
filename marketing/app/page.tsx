@@ -13,8 +13,8 @@ export default function MarketingPage() {
         <DatabaseIntegrationsSection />
         <SecurityComplianceSection />
         <FinalCTASection />
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

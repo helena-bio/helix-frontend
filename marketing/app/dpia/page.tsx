@@ -83,8 +83,8 @@ export default function DPIAPage() {
           </section>
 
         </article>
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

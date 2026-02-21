@@ -115,8 +115,8 @@ export default function DPAPage() {
           </section>
 
         </article>
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

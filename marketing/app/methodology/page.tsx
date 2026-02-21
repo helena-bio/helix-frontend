@@ -1307,8 +1307,8 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

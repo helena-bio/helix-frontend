@@ -55,8 +55,8 @@ export default function PartnersPage() {
           </section>
 
         </div>
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

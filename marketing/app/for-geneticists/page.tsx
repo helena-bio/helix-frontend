@@ -323,8 +323,8 @@ export default function ForGeneticistsPage() {
           </div>
         </section>
 
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

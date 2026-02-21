@@ -304,8 +304,8 @@ export default function HowItWorksPage() {
           </div>
         </section>
 
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

@@ -9,8 +9,8 @@ export default function HomePage() {
         <MissionSection />
         <ProductSection />
         <ContactCTASection />
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }

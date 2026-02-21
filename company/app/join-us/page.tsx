@@ -74,8 +74,8 @@ export default function JoinUsPage() {
           </section>
 
         </div>
-      </main>
       <Footer />
+      </main>
     </div>
   )
 }
