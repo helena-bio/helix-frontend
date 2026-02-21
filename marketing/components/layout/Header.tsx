@@ -35,7 +35,7 @@ export function Header() {
   }, [])
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-card">
+    <header className="shrink-0 z-50 h-14 border-b border-border bg-card">
       <div className="h-full flex items-center gap-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">

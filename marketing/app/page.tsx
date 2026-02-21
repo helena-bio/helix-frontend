@@ -1,9 +1,9 @@
 import { Header, Footer, VideoHero, BenefitsSection, FeaturesSection, HowItWorksSection, DatabaseIntegrationsSection, SecurityComplianceSection, FinalCTASection } from '@/components'
 export default function MarketingPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-full flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto">
         <section className="flex items-center justify-center px-6 pt-32 pb-12">
           <VideoHero />
         </section>

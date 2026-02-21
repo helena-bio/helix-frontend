@@ -65,12 +65,12 @@ const amplifies = [
 
 export default function ForGeneticistsPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-full flex flex-col">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto">
 
         {/* Hero with Video */}
-        <section className="pt-24 pb-12 px-6">
+        <section className="pt-12 pb-8 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-8">
             <h1 className="text-3xl font-semibold tracking-tight text-primary">
               Your Expertise Is Irreplaceable. Your Time Is Not.
