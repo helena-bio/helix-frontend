@@ -929,7 +929,7 @@ export default function MethodologyPage() {
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
                       <th className="text-left px-6 py-3 text-md font-semibold text-foreground">Predictor</th>
-                      <th className="text-center px-4 py-3 text-md font-semibold text-foreground">Weight</th>
+                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Weight</th>
                       <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Damaging</th>
                       <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Benign</th>
                     </tr>
@@ -941,7 +941,7 @@ export default function MethodologyPage() {
                           <p className="text-base font-medium text-foreground">{p.name}</p>
                           {p.note && <p className="text-sm text-muted-foreground">{p.note}</p>}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3">
                           <span className="font-mono text-base text-foreground">{p.weight}</span>
                         </td>
                         <td className="px-4 py-3">
@@ -1185,9 +1185,9 @@ export default function MethodologyPage() {
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
                       <th className="text-left px-6 py-3 text-md font-semibold text-foreground">Preset</th>
-                      <th className="text-center px-4 py-3 text-md font-semibold text-foreground">Quality (QUAL)</th>
-                      <th className="text-center px-4 py-3 text-md font-semibold text-foreground">Depth (DP)</th>
-                      <th className="text-center px-4 py-3 text-md font-semibold text-foreground">Genotype Quality (GQ)</th>
+                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Quality (QUAL)</th>
+                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Depth (DP)</th>
+                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Genotype Quality (GQ)</th>
                       <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Recommended Use</th>
                     </tr>
                   </thead>
@@ -1195,9 +1195,9 @@ export default function MethodologyPage() {
                     {qualityPresets.map((p, i) => (
                       <tr key={p.name} className={i < qualityPresets.length - 1 ? 'border-b border-border' : ''}>
                         <td className="px-6 py-3 text-base font-medium text-foreground">{p.name}</td>
-                        <td className="px-4 py-3 text-center font-mono text-md text-muted-foreground">{p.quality}</td>
-                        <td className="px-4 py-3 text-center font-mono text-md text-muted-foreground">{p.depth}</td>
-                        <td className="px-4 py-3 text-center font-mono text-md text-muted-foreground">{p.genotypeQuality}</td>
+                        <td className="px-4 py-3 font-mono text-md text-muted-foreground">{p.quality}</td>
+                        <td className="px-4 py-3 font-mono text-md text-muted-foreground">{p.depth}</td>
+                        <td className="px-4 py-3 font-mono text-md text-muted-foreground">{p.genotypeQuality}</td>
                         <td className="px-4 py-3 text-md text-muted-foreground">{p.use}</td>
                       </tr>
                     ))}
