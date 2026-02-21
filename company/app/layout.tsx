@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased h-dvh overflow-hidden">
         <ThemeProvider attribute="class" defaultTheme="light">
           {children}
         </ThemeProvider>

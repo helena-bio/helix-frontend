@@ -2,7 +2,7 @@ import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 export function ProductSection() {
   return (
-    <section className="py-16 px-6">
+    <section className="py-12 px-6">
       <div className="max-w-3xl mx-auto space-y-8">
         <h2 className="text-3xl font-semibold text-primary text-center">Products</h2>
         <div className="flex gap-8 items-start">

@@ -9,7 +9,7 @@ export function Header() {
   const closeMobileMenu = () => setIsMobileMenuOpen(false)
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-card">
+    <header className="shrink-0 z-50 h-14 border-b border-border bg-card">
       <div className="h-full flex items-center gap-6 overflow-hidden">
         <Link href="/" className="flex items-center shrink-0 pl-6">
           <Image
