@@ -23,7 +23,7 @@ export function HeroSection() {
                 alt=""
                 width={80}
                 height={100}
-                className="h-[9.5rem] sm:h-[11rem] w-auto shrink-0"
+                className="h-[8.5rem] sm:h-[10rem] w-auto shrink-0"
                 priority
               />
               <div className="flex flex-col items-center gap-1">
