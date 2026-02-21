@@ -187,62 +187,62 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
   const config = statusConfig[session.status] || statusConfig.pending
   const StatusIcon = config.icon
 
-  const handleExpand = useCallback(async () => {
-    if (!isCompleted) return
+    const handleExpand = useCallback(async () => {
+      if (!isCompleted) return
 
-    if (isExpanded) {
-      setIsExpanded(false)
-      return
-    }
+      if (isExpanded) {
+        setIsExpanded(false)
+        return
+      }
 
-    setIsExpanded(true)
+      // Load all data BEFORE expanding to prevent layout shifts
+      let profileData = profile
+      let findingsData = findings
 
-    // Layer 1: Memory cache (instant)
-    const memoryCached = memoryCache.current.get(session.id)
-    if (memoryCached) {
-      setProfile(memoryCached)
-    } else {
-      // Layer 2: IndexedDB cache (fast, persistent)
-      const diskCached = await getCached<ClinicalProfileData>('clinical-profiles', session.id)
-      if (diskCached) {
-        memoryCache.current.set(session.id, diskCached)
-        setProfile(diskCached)
-      } else {
-        // Layer 3: Network fetch
-        setIsLoadingProfile(true)
-        try {
-          const res = await fetch(
-            `${API_BASE_URL}/sessions/${session.id}/clinical-profile`,
-            { credentials: 'include' }
-          )
-          if (res.ok) {
-            const text = await res.text()
-            const parsed = parseNdjsonProfile(text, session.id)
-            memoryCache.current.set(session.id, parsed)
-            setCache('clinical-profiles', session.id, parsed).catch(() => {})
-            setProfile(parsed)
+      // Profile: memory -> IndexedDB -> network
+      if (!profileData) {
+        const memoryCached = memoryCache.current.get(session.id)
+        if (memoryCached) {
+          profileData = memoryCached
+        } else {
+          const diskCached = await getCached<ClinicalProfileData>('clinical-profiles', session.id)
+          if (diskCached) {
+            memoryCache.current.set(session.id, diskCached)
+            profileData = diskCached
+          } else {
+            try {
+              const res = await fetch(
+                `${API_BASE_URL}/sessions/${session.id}/clinical-profile`,
+                { credentials: 'include' }
+              )
+              if (res.ok) {
+                const text = await res.text()
+                profileData = parseNdjsonProfile(text, session.id)
+                memoryCache.current.set(session.id, profileData)
+                setCache('clinical-profiles', session.id, profileData).catch(() => {})
+              }
+            } catch (err) {
+              console.error(`Failed to load profile for ${session.id}:`, err)
+            }
           }
-        } catch (err) {
-          console.error(`Failed to load profile for ${session.id}:`, err)
-        } finally {
-          setIsLoadingProfile(false)
         }
       }
-    }
 
-    // Load findings if P/LP counts > 0 and not already loaded
-    if (hasFindings && !findings) {
-      setIsLoadingFindings(true)
-      try {
-        const data = await get<{ findings: Finding[] }>(`/sessions/${session.id}/findings`)
-        setFindings(data.findings || [])
-      } catch (err) {
-        console.error(`Failed to load findings for ${session.id}:`, err)
-      } finally {
-        setIsLoadingFindings(false)
+      // Findings: load if needed
+      if (hasFindings && !findingsData) {
+        try {
+          const data = await get<{ findings: Finding[] }>(`/sessions/${session.id}/findings`)
+          findingsData = data.findings || []
+        } catch (err) {
+          console.error(`Failed to load findings for ${session.id}:`, err)
+        }
       }
-    }
-  }, [isExpanded, isCompleted, session.id, memoryCache, hasFindings, findings])
+
+      // Set all state at once, then expand
+      if (profileData) setProfile(profileData)
+      if (findingsData) setFindings(findingsData)
+      setIsExpanded(true)
+    }, [isExpanded, isCompleted, session.id, memoryCache, hasFindings, findings, profile])
 
   const handleDownloadReport = useCallback(async (sessionId: string, format: ReportFormat) => {
     try {
