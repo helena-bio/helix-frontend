@@ -336,7 +336,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <span className="text-md text-muted-foreground w-[5.5rem] text-right">
+              <span className="text-md text-muted-foreground w-16 text-right">
                 {formatRelativeDate(session.created_at)}
               </span>
               {isCompleted && (
