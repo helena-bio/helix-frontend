@@ -298,20 +298,32 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
         onClick={handleExpand}
       >
           <div className="flex items-center justify-between">
-            {/* Left: Name + Status */}
+            {/* Left: Avatar + Name */}
             <div className="flex items-center gap-3 min-w-0">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="shrink-0">
+                      <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-sm">{session.owner_name || "Unknown"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <span className="text-base font-medium truncate">{getCaseDisplayName(session)}</span>
               {session.status !== 'completed' && (
-                <Badge variant="outline" className={`text-sm ${config.color}`}>
+                <Badge variant="outline" className={`text-sm shrink-0 ${config.color}`}>
                   <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
                   {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
                 </Badge>
               )}
             </div>
-            {/* Right: Badges + Avatar + Date + Chevron */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            {/* Right: Badges + Date + Chevron */}
+            <div className="flex items-center gap-2 shrink-0">
               {isCompleted && hasFindings && (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   {session.pathogenic_count > 0 && (
                     <Badge variant="outline" className="text-sm bg-red-100 text-red-900 border-red-300">
                       {session.pathogenic_count} P
@@ -324,18 +336,6 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                   )}
                 </div>
               )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-sm">{session.owner_name || "Unknown"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
               <span className="text-md text-muted-foreground w-16 text-right">
                 {formatRelativeDate(session.created_at)}
               </span>
