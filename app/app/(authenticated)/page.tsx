@@ -84,6 +84,15 @@ interface ClinicalProfileData {
   }
 }
 
+interface Finding {
+  gene_symbol: string
+  hgvs_cdna: string | null
+  hgvs_protein: string | null
+  acmg_class: string
+  consequence: string | null
+  gnomad_af: number | null
+}
+
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -138,6 +147,13 @@ function parseNdjsonProfile(text: string, sessionId: string): ClinicalProfileDat
   return merged
 }
 
+function formatConsequence(consequence: string | null): string {
+  if (!consequence) return '-'
+  return consequence
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
 const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }> = {
   completed: { color: 'bg-green-100 text-green-900 border-green-300', icon: CheckCircle2 },
   processing: { color: 'bg-orange-100 text-orange-900 border-orange-300', icon: Loader2 },
@@ -162,8 +178,11 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [profile, setProfile] = useState<ClinicalProfileData | null>(null)
+  const [findings, setFindings] = useState<Finding[] | null>(null)
+  const [isLoadingFindings, setIsLoadingFindings] = useState(false)
 
   const isCompleted = session.status === 'completed'
+  const hasFindings = session.pathogenic_count > 0 || session.likely_pathogenic_count > 0
   const config = statusConfig[session.status] || statusConfig.pending
   const StatusIcon = config.icon
 
@@ -181,38 +200,54 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
     const memoryCached = memoryCache.current.get(session.id)
     if (memoryCached) {
       setProfile(memoryCached)
-      return
-    }
-
-    // Layer 2: IndexedDB cache (fast, persistent)
-    const diskCached = await getCached<ClinicalProfileData>('clinical-profiles', session.id)
-    if (diskCached) {
-      memoryCache.current.set(session.id, diskCached)
-      setProfile(diskCached)
-      return
-    }
-
-    // Layer 3: Network fetch
-    setIsLoadingProfile(true)
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/sessions/${session.id}/clinical-profile`,
-        { credentials: 'include' }
-      )
-      if (res.ok) {
-        const text = await res.text()
-        const parsed = parseNdjsonProfile(text, session.id)
-        // Save to both caches
-        memoryCache.current.set(session.id, parsed)
-        setCache('clinical-profiles', session.id, parsed).catch(() => {})
-        setProfile(parsed)
+    } else {
+      // Layer 2: IndexedDB cache (fast, persistent)
+      const diskCached = await getCached<ClinicalProfileData>('clinical-profiles', session.id)
+      if (diskCached) {
+        memoryCache.current.set(session.id, diskCached)
+        setProfile(diskCached)
+      } else {
+        // Layer 3: Network fetch
+        setIsLoadingProfile(true)
+        try {
+          const res = await fetch(
+            `${API_BASE_URL}/sessions/${session.id}/clinical-profile`,
+            { credentials: 'include' }
+          )
+          if (res.ok) {
+            const text = await res.text()
+            const parsed = parseNdjsonProfile(text, session.id)
+            memoryCache.current.set(session.id, parsed)
+            setCache('clinical-profiles', session.id, parsed).catch(() => {})
+            setProfile(parsed)
+          }
+        } catch (err) {
+          console.error(`Failed to load profile for ${session.id}:`, err)
+        } finally {
+          setIsLoadingProfile(false)
+        }
       }
-    } catch (err) {
-      console.error(`Failed to load profile for ${session.id}:`, err)
-    } finally {
-      setIsLoadingProfile(false)
     }
-  }, [isExpanded, isCompleted, session.id, memoryCache])
+
+    // Load findings if P/LP counts > 0 and not already loaded
+    if (hasFindings && !findings) {
+      setIsLoadingFindings(true)
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/sessions/${session.id}/findings`,
+          { credentials: 'include' }
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setFindings(data.findings || [])
+        }
+      } catch (err) {
+        console.error(`Failed to load findings for ${session.id}:`, err)
+      } finally {
+        setIsLoadingFindings(false)
+      }
+    }
+  }, [isExpanded, isCompleted, session.id, memoryCache, hasFindings, findings])
 
   const handleDownloadReport = useCallback(async (sessionId: string, format: ReportFormat) => {
     try {
@@ -263,7 +298,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
         onClick={handleExpand}
       >
         <div className="flex items-center justify-between">
-          {/* Left: Name + Status */}
+          {/* Left: Name + Status + P/LP badges */}
           <div className="flex items-center gap-3">
             <span className="text-base font-medium">{getCaseDisplayName(session)}</span>
             {session.status !== 'completed' && (
@@ -271,6 +306,20 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                 <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
                 {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
               </Badge>
+            )}
+            {isCompleted && hasFindings && (
+              <div className="flex items-center gap-1.5">
+                {session.pathogenic_count > 0 && (
+                  <Badge variant="outline" className="text-sm bg-red-50 text-red-700 border-red-200">
+                    {session.pathogenic_count} P
+                  </Badge>
+                )}
+                {session.likely_pathogenic_count > 0 && (
+                  <Badge variant="outline" className="text-sm bg-orange-50 text-orange-700 border-orange-200">
+                    {session.likely_pathogenic_count} LP
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
           {/* Right: Avatar + Date + Chevron */}
@@ -310,6 +359,70 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
           {/* Profile loaded */}
           {!isLoadingProfile && profile && (
             <div className="space-y-4">
+              {/* P/LP Findings Table */}
+              {hasFindings && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Dna className="h-4 w-4 text-red-600" />
+                    <p className="text-base font-semibold">Pathogenic Findings</p>
+                    <Badge variant="secondary" className="text-xs">
+                      {(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0)} variant{(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0) !== 1 ? 's' : ''}
+                    </Badge>
+                  </div>
+                  {isLoadingFindings && (
+                    <div className="flex items-center py-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
+                      <span className="text-md text-muted-foreground">Loading findings...</span>
+                    </div>
+                  )}
+                  {!isLoadingFindings && findings && findings.length > 0 && (
+                    <div className="border rounded-md overflow-hidden">
+                      <table className="w-full text-base">
+                        <thead>
+                          <tr className="border-b bg-muted/30">
+                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Gene</th>
+                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Variant</th>
+                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Class</th>
+                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Consequence</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {findings.map((f, i) => (
+                            <tr key={i} className="border-b border-border/50 last:border-0">
+                              <td className="px-3 py-1.5 font-medium font-mono">{f.gene_symbol || '-'}</td>
+                              <td className="px-3 py-1.5 font-mono text-md">
+                                {f.hgvs_cdna || '-'}
+                                {f.hgvs_protein && (
+                                  <span className="text-muted-foreground ml-1">
+                                    ({f.hgvs_protein.length > 20 ? f.hgvs_protein.slice(0, 20) + '...' : f.hgvs_protein})
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 py-1.5">
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "text-sm",
+                                    f.acmg_class === 'Pathogenic'
+                                      ? "bg-red-50 text-red-700 border-red-200"
+                                      : "bg-orange-50 text-orange-700 border-orange-200"
+                                  )}
+                                >
+                                  {f.acmg_class === 'Pathogenic' ? 'P' : 'LP'}
+                                </Badge>
+                              </td>
+                              <td className="px-3 py-1.5 text-md text-muted-foreground">
+                                {formatConsequence(f.consequence)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Demographics */}
               {profile.demographics && (
                 <div>

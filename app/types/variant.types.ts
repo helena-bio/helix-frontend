@@ -111,6 +111,8 @@ export interface AnalysisSession {
   completed_at: string | null
   error_message: string | null
   owner_name: string | null
+  pathogenic_count: number
+  likely_pathogenic_count: number
 }
 
 export interface VariantFilters {
