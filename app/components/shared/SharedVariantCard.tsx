@@ -108,7 +108,7 @@ export function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: numbe
         <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
       </div>
       <span className="text-md font-mono tabular-nums w-10 text-right text-foreground">
-        {value.toFixed(3)}
+        {value?.toFixed(3) ?? "---"}
       </span>
     </div>
   )
