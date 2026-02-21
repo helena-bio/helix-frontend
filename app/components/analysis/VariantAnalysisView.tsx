@@ -137,6 +137,7 @@ function toSharedVariant(v: VariantInGene): SharedVariantData {
     quality: v.quality,
     alphamissenseScore: v.alphamissense_score,
     siftScore: v.sift_score,
+    spliceaiMaxScore: v.spliceai_max_score ?? null,
   }
 }
 
