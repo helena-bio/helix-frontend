@@ -3,7 +3,7 @@ import Link from 'next/link'
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
-      <div className="px-6 py-6">
+      <div className="px-6 py-3 md:py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-md text-muted-foreground">
             <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>{' '}

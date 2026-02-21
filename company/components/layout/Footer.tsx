@@ -3,7 +3,7 @@ import Link from 'next/link'
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
-      <div className="px-6 py-3 md:py-6">
+      <div className="px-6 py-3 md:py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-4">
           <p className="text-md text-muted-foreground">
             <span className="text-base md:text-lg font-semibold text-foreground">Helena Bioinformatics</span>{' '}
