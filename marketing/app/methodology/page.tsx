@@ -1279,7 +1279,7 @@ export default function MethodologyPage() {
                     <span className="font-medium">{ref.authors}</span> {ref.title}
                   </p>
                   <p className="text-md text-muted-foreground">{ref.journal}</p>
-                  <p className="text-md font-mono text-primary">{ref.id}</p>
+                  <a href={`https://pubmed.ncbi.nlm.nih.gov/${ref.id.replace("PMID: ", "")}/`} target="_blank" rel="noopener noreferrer" className="text-md font-mono text-primary hover:underline">{ref.id}</a>
                 </div>
               ))}
             </div>
