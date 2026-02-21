@@ -48,6 +48,7 @@ import { useJourney } from '@/contexts/JourneyContext'
 import { useCases } from '@/hooks/queries/use-cases'
 import { cn } from '@helix/shared/lib/utils'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
+import { get } from '@/lib/api/client'
 import type { AnalysisSession } from '@/types/variant.types'
 import { getDashboardGreeting } from '@/lib/constants/dashboard-greetings'
 import { UserAvatar } from '@/components/ui/UserAvatar'
@@ -233,14 +234,8 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
     if (hasFindings && !findings) {
       setIsLoadingFindings(true)
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/sessions/${session.id}/findings`,
-          { credentials: 'include' }
-        )
-        if (res.ok) {
-          const data = await res.json()
-          setFindings(data.findings || [])
-        }
+        const data = await get<{ findings: Finding[] }>(`/sessions/${session.id}/findings`)
+        setFindings(data.findings || [])
       } catch (err) {
         console.error(`Failed to load findings for ${session.id}:`, err)
       } finally {
