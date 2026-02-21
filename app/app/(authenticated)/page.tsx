@@ -379,11 +379,11 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                           {findings.map((f, i) => (
                             <tr key={i} className="border-b border-border/50 last:border-0">
                               <td className="px-3 py-1.5 font-medium">{f.gene_symbol || '-'}</td>
-                              <td className="px-3 py-1.5 font-mono text-md">
-                                {f.hgvs_cdna || '-'}
+                              <td className="px-3 py-1.5 text-md">
+                                {f.hgvs_cdna ? f.hgvs_cdna.replace(/^ENST[^:]+:/, '') : '-'}
                                 {f.hgvs_protein && (
                                   <span className="text-muted-foreground ml-1">
-                                    ({f.hgvs_protein.length > 20 ? f.hgvs_protein.slice(0, 20) + '...' : f.hgvs_protein})
+                                      {(() => { const p = f.hgvs_protein.replace(/^ENSP[^:]+:/, ""); return `(${p.length > 20 ? p.slice(0, 20) + "..." : p})`; })()}
                                   </span>
                                 )}
                               </td>
