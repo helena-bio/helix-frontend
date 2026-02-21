@@ -193,68 +193,66 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
             </div>
           </div>
 
-          {/* 4-column classification grid */}
-          <div className="grid grid-cols-4 divide-x divide-border rounded-md border border-border overflow-hidden">
-
-            {/* ClinVar */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">ClinVar</p>
-              {variant.clinvarSignificance ? (
-                <Badge
-                  variant="outline"
-                  className={`text-tiny font-semibold w-fit ${getACMGColor(variant.clinvarSignificance)}`}
-                >
-                  {formatClinVarDisplay(variant.clinvarSignificance)}
-                </Badge>
-              ) : (
-                <span className="text-md text-muted-foreground">---</span>
-              )}
+            {/* 4-column classification table */}
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full text-md">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">ClinVar</th>
+                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">gnomAD AF</th>
+                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Coverage</th>
+                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Impact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-3 py-2">
+                      {variant.clinvarSignificance ? (
+                        <Badge
+                          variant="outline"
+                          className={`text-tiny font-semibold w-fit ${getACMGColor(variant.clinvarSignificance)}`}
+                        >
+                          {formatClinVarDisplay(variant.clinvarSignificance)}
+                        </Badge>
+                      ) : (
+                        <span className="text-md text-muted-foreground">---</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {variant.gnomadAf !== null && variant.gnomadAf !== undefined && variant.gnomadAf > 0 ? (
+                        <span className="text-md font-mono tabular-nums text-foreground">
+                          1 in {Math.round(1 / variant.gnomadAf).toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-md text-muted-foreground">Not found</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-end gap-3">
+                        <div>
+                          <span className="font-mono text-md text-foreground tabular-nums">{variant.depth ?? '---'}</span>
+                          <span className="text-md text-muted-foreground ml-0.5">x</span>
+                          <p className="text-md text-muted-foreground leading-none mt-0.5">depth</p>
+                        </div>
+                        <div>
+                          <span className="font-mono text-md text-foreground tabular-nums">{variant.quality?.toFixed(0) ?? '---'}</span>
+                          <p className="text-md text-muted-foreground leading-none mt-0.5">qual</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
+                      {variant.impact ? (
+                        <Badge variant="outline" className={`text-tiny w-fit ${getImpactColor(variant.impact)}`}>
+                          {formatImpactDisplay(variant.impact)}
+                        </Badge>
+                      ) : (
+                        <span className="text-md text-muted-foreground">---</span>
+                      )}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-
-            {/* gnomAD AF */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">gnomAD AF</p>
-              {variant.gnomadAf !== null && variant.gnomadAf !== undefined && variant.gnomadAf > 0 ? (
-                <span className="text-md font-mono tabular-nums text-foreground">
-                  1 in {Math.round(1 / variant.gnomadAf).toLocaleString()}
-                </span>
-              ) : (
-                <span className="text-md text-muted-foreground">Not found</span>
-              )}
-            </div>
-
-            {/* Coverage */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">Coverage</p>
-              <div className="flex items-end gap-3">
-                <div>
-                  <span className="font-mono text-md text-foreground tabular-nums">
-                    {variant.depth ?? '---'}
-                  </span>
-                  <span className="text-md text-muted-foreground ml-0.5">x</span>
-                  <p className="text-md text-muted-foreground leading-none mt-0.5">depth</p>
-                </div>
-                <div>
-                  <span className="font-mono text-md text-foreground tabular-nums">
-                    {variant.quality?.toFixed(0) ?? '---'}
-                  </span>
-                  <p className="text-md text-muted-foreground leading-none mt-0.5">qual</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Impact */}
-            <div className="px-3 py-2 flex flex-col gap-1">
-              <p className="text-md text-muted-foreground">Impact</p>
-              {variant.impact ? (
-                <Badge variant="outline" className={`text-tiny w-fit ${getImpactColor(variant.impact)}`}>
-                  {formatImpactDisplay(variant.impact)}
-                </Badge>
-              ) : (
-                <span className="text-md text-muted-foreground">---</span>
-              )}
-            </div>
-          </div>
 
           {/* ACMG Criteria + Frequency/Zygosity */}
           <div className="flex items-end justify-between">
