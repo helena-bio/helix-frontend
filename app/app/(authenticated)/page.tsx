@@ -187,62 +187,60 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
   const config = statusConfig[session.status] || statusConfig.pending
   const StatusIcon = config.icon
 
-    const handleExpand = useCallback(async () => {
-      if (!isCompleted) return
+  const handleExpand = useCallback(async () => {
+    if (!isCompleted) return
 
-      if (isExpanded) {
-        setIsExpanded(false)
-        return
-      }
+    if (isExpanded) {
+      setIsExpanded(false)
+      return
+    }
 
-      // Load all data BEFORE expanding to prevent layout shifts
-      let profileData = profile
-      let findingsData = findings
+    // Expand immediately with loading spinner
+    setIsExpanded(true)
+    setIsLoadingProfile(true)
 
-      // Profile: memory -> IndexedDB -> network
-      if (!profileData) {
-        const memoryCached = memoryCache.current.get(session.id)
-        if (memoryCached) {
-          profileData = memoryCached
+    // Load profile: memory -> IndexedDB -> network
+    if (!profile) {
+      const memoryCached = memoryCache.current.get(session.id)
+      if (memoryCached) {
+        setProfile(memoryCached)
+      } else {
+        const diskCached = await getCached<ClinicalProfileData>('clinical-profiles', session.id)
+        if (diskCached) {
+          memoryCache.current.set(session.id, diskCached)
+          setProfile(diskCached)
         } else {
-          const diskCached = await getCached<ClinicalProfileData>('clinical-profiles', session.id)
-          if (diskCached) {
-            memoryCache.current.set(session.id, diskCached)
-            profileData = diskCached
-          } else {
-            try {
-              const res = await fetch(
-                `${API_BASE_URL}/sessions/${session.id}/clinical-profile`,
-                { credentials: 'include' }
-              )
-              if (res.ok) {
-                const text = await res.text()
-                profileData = parseNdjsonProfile(text, session.id)
-                memoryCache.current.set(session.id, profileData)
-                setCache('clinical-profiles', session.id, profileData).catch(() => {})
-              }
-            } catch (err) {
-              console.error(`Failed to load profile for ${session.id}:`, err)
+          try {
+            const res = await fetch(
+              `${API_BASE_URL}/sessions/${session.id}/clinical-profile`,
+              { credentials: 'include' }
+            )
+            if (res.ok) {
+              const text = await res.text()
+              const parsed = parseNdjsonProfile(text, session.id)
+              memoryCache.current.set(session.id, parsed)
+              setCache('clinical-profiles', session.id, parsed).catch(() => {})
+              setProfile(parsed)
             }
+          } catch (err) {
+            console.error(`Failed to load profile for ${session.id}:`, err)
           }
         }
       }
+    }
 
-      // Findings: load if needed
-      if (hasFindings && !findingsData) {
-        try {
-          const data = await get<{ findings: Finding[] }>(`/sessions/${session.id}/findings`)
-          findingsData = data.findings || []
-        } catch (err) {
-          console.error(`Failed to load findings for ${session.id}:`, err)
-        }
+    // Load findings
+    if (hasFindings && !findings) {
+      try {
+        const data = await get<{ findings: Finding[] }>(`/sessions/${session.id}/findings`)
+        setFindings(data.findings || [])
+      } catch (err) {
+        console.error(`Failed to load findings for ${session.id}:`, err)
       }
+    }
 
-      // Set all state at once, then expand
-      if (profileData) setProfile(profileData)
-      if (findingsData) setFindings(findingsData)
-      setIsExpanded(true)
-    }, [isExpanded, isCompleted, session.id, memoryCache, hasFindings, findings, profile])
+    setIsLoadingProfile(false)
+  }, [isExpanded, isCompleted, session.id, memoryCache, hasFindings, findings, profile])
 
   const handleDownloadReport = useCallback(async (sessionId: string, format: ReportFormat) => {
     try {
@@ -292,53 +290,53 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
         )}
         onClick={handleExpand}
       >
-          <div className="flex items-center justify-between">
-            {/* Left: Avatar + Name */}
-            <div className="flex items-center gap-3 min-w-0">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="shrink-0">
-                      <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-sm">{session.owner_name || "Unknown"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <span className="text-base font-medium truncate">{getCaseDisplayName(session)}</span>
-              {session.status !== 'completed' && (
-                <Badge variant="outline" className={`text-sm shrink-0 ${config.color}`}>
-                  <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
-                  {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-                </Badge>
-              )}
-            </div>
-            {/* Right: Badges + Date + Chevron */}
-            <div className="flex items-center gap-2 shrink-0">
-              {isCompleted && hasFindings && (
-                <div className="flex items-center gap-1">
-                  {session.pathogenic_count > 0 && (
-                    <Badge variant="outline" className="text-sm bg-red-100 text-red-900 border-red-300">
-                      {session.pathogenic_count} P
-                    </Badge>
-                  )}
-                  {session.likely_pathogenic_count > 0 && (
-                    <Badge variant="outline" className="text-sm bg-orange-100 text-orange-900 border-orange-300">
-                      {session.likely_pathogenic_count} LP
-                    </Badge>
-                  )}
-                </div>
-              )}
-              <span className="text-md text-muted-foreground w-16 text-right">
-                {formatRelativeDate(session.created_at)}
-              </span>
-              {isCompleted && (
-                isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-              )}
-            </div>
+        <div className="flex items-center justify-between">
+          {/* Left: Avatar + Name */}
+          <div className="flex items-center gap-3 min-w-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="shrink-0">
+                    <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-sm">{session.owner_name || "Unknown"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <span className="text-base font-medium truncate">{getCaseDisplayName(session)}</span>
+            {session.status !== 'completed' && (
+              <Badge variant="outline" className={`text-sm shrink-0 ${config.color}`}>
+                <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
+                {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+              </Badge>
+            )}
           </div>
+          {/* Right: Badges + Date + Chevron */}
+          <div className="flex items-center gap-2 shrink-0">
+            {isCompleted && hasFindings && (
+              <div className="flex items-center gap-1">
+                {session.pathogenic_count > 0 && (
+                  <Badge variant="outline" className="text-sm bg-red-100 text-red-900 border-red-300">
+                    {session.pathogenic_count} P
+                  </Badge>
+                )}
+                {session.likely_pathogenic_count > 0 && (
+                  <Badge variant="outline" className="text-sm bg-orange-100 text-orange-900 border-orange-300">
+                    {session.likely_pathogenic_count} LP
+                  </Badge>
+                )}
+              </div>
+            )}
+            <span className="text-md text-muted-foreground w-16 text-right">
+              {formatRelativeDate(session.created_at)}
+            </span>
+            {isCompleted && (
+              isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+            )}
+          </div>
+        </div>
       </CardHeader>
 
       {isExpanded && (
@@ -364,7 +362,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                       {(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0)} variant{(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0) !== 1 ? 's' : ''}
                     </Badge>
                   </div>
-                  {!isLoadingFindings && findings && findings.length > 0 && (
+                  {findings && findings.length > 0 && (
                     <div className="border rounded-md overflow-hidden">
                       <table className="w-full text-base">
                         <thead>
@@ -383,7 +381,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                                 {f.hgvs_cdna ? f.hgvs_cdna.replace(/^ENST[^:]+:/, '') : '-'}
                                 {f.hgvs_protein && (
                                   <span className="text-muted-foreground ml-1">
-                                      {(() => { const p = f.hgvs_protein.replace(/^ENSP[^:]+:/, ""); return `(${p.length > 20 ? p.slice(0, 20) + "..." : p})`; })()}
+                                    {(() => { const p = f.hgvs_protein.replace(/^ENSP[^:]+:/, ""); return `(${p.length > 20 ? p.slice(0, 20) + "..." : p})`; })()}
                                   </span>
                                 )}
                               </td>
