@@ -352,7 +352,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
           {/* Profile loaded */}
           {!isLoadingProfile && profile && (
             <div className="space-y-4">
-              {/* P/LP Findings Table */}
+              {/* P/LP Findings - Card rows (matches SharedVariantCard collapsed style) */}
               {hasFindings && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -363,48 +363,36 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                     </Badge>
                   </div>
                   {findings && findings.length > 0 && (
-                    <div className="border rounded-md overflow-hidden">
-                      <table className="w-full text-base">
-                        <thead>
-                          <tr className="border-b bg-muted/30">
-                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Gene</th>
-                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Variant</th>
-                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Class</th>
-                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Consequence</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {findings.map((f, i) => (
-                            <tr key={i} className="border-b border-border/50 last:border-0">
-                              <td className="px-3 py-1.5 font-medium">{f.gene_symbol || '-'}</td>
-                              <td className="px-3 py-1.5 text-md">
-                                {f.hgvs_cdna ? f.hgvs_cdna.replace(/^ENST[^:]+:/, '') : '-'}
-                                {f.hgvs_protein && (
-                                  <span className="text-muted-foreground ml-1">
-                                    {(() => { const p = f.hgvs_protein.replace(/^ENSP[^:]+:/, ""); return `(${p.length > 20 ? p.slice(0, 20) + "..." : p})`; })()}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-3 py-1.5">
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    "text-sm",
-                                    f.acmg_class === 'Pathogenic'
-                                      ? "bg-red-100 text-red-900 border-red-300"
-                                      : "bg-orange-100 text-orange-900 border-orange-300"
-                                  )}
-                                >
-                                  {f.acmg_class === 'Pathogenic' ? 'P' : 'LP'}
-                                </Badge>
-                              </td>
-                              <td className="px-3 py-1.5 text-md text-muted-foreground">
-                                {formatConsequence(f.consequence)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="space-y-1.5">
+                      {findings.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-background">
+                          <span className="text-md font-medium shrink-0">{f.gene_symbol || '-'}</span>
+                          <span className="text-md text-muted-foreground truncate">
+                            {f.hgvs_cdna ? f.hgvs_cdna.replace(/^ENST[^:]+:/, '') : '-'}
+                            {f.hgvs_protein && (() => {
+                              const p = f.hgvs_protein.replace(/^ENSP[^:]+:/, '')
+                              return ` (${p.length > 25 ? p.slice(0, 25) + '...' : p})`
+                            })()}
+                          </span>
+                          <div className="flex-1" />
+                          {f.consequence && (
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {formatConsequence(f.consequence)}
+                            </Badge>
+                          )}
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-xs shrink-0",
+                              f.acmg_class === 'Pathogenic'
+                                ? "bg-red-100 text-red-900 border-red-300"
+                                : "bg-orange-100 text-orange-900 border-orange-300"
+                            )}
+                          >
+                            {f.acmg_class === 'Pathogenic' ? 'P' : 'LP'}
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
