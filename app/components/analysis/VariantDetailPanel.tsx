@@ -87,6 +87,30 @@ const getPredictionBarColor = (pred: string | null) => {
   return 'bg-foreground/30'
 }
 
+const getSpliceAIBadgeColor = (score: number | null): string => {
+  if (score === null) return 'bg-muted text-muted-foreground border-border'
+  if (score >= 0.8) return 'bg-red-100 text-red-900 border-red-300'
+  if (score >= 0.5) return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (score >= 0.2) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  return 'bg-muted text-muted-foreground border-border'
+}
+
+const getSpliceAILabel = (score: number | null): string => {
+  if (score === null) return 'No data'
+  if (score >= 0.8) return 'High impact'
+  if (score >= 0.5) return 'Likely impact'
+  if (score >= 0.2) return 'Possible impact'
+  return 'Unlikely impact'
+}
+
+const getSpliceAIBarColor = (score: number | null): string => {
+  if (score === null) return 'bg-foreground/30'
+  if (score >= 0.8) return 'bg-red-500'
+  if (score >= 0.5) return 'bg-orange-400'
+  if (score >= 0.2) return 'bg-yellow-500'
+  return 'bg-foreground/30'
+}
+
 // ---------------------------------------------------------------------------
 // Parse helpers
 // ---------------------------------------------------------------------------
@@ -305,9 +329,11 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     variant.sift_pred || variant.sift_score !== null ||
     variant.alphamissense_pred || variant.alphamissense_score !== null ||
     variant.metasvm_pred || variant.metasvm_score !== null ||
-    variant.dann_score !== null
+    variant.dann_score !== null ||
+    variant.spliceai_max_score !== null
   )
   const hasConservation = variant && (variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null)
+  const hasSpliceAI = variant && variant.spliceai_max_score !== null
   const hasConstraints = variant && (variant.pli !== null || variant.oe_lof_upper !== null || variant.oe_lof !== null || variant.mis_z !== null)
   const hasDosage = variant && (variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null)
   const hasGnomAD = variant && (variant.global_af !== null || variant.global_ac !== null)
@@ -491,6 +517,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         let extra = 'bg-muted text-muted-foreground border-border'
                         if (code.startsWith('PVS') || code.startsWith('PS')) extra = 'bg-red-100 text-red-900 border-red-300'
                         else if (code.startsWith('PM')) extra = 'bg-orange-100 text-orange-900 border-orange-300'
+                        else if (code === 'PP3_splice') extra = 'bg-purple-100 text-purple-900 border-purple-300'
                         else if (code.startsWith('PP')) extra = 'bg-yellow-100 text-yellow-900 border-yellow-300'
                         else if (code.startsWith('BA') || code.startsWith('BS') || code.startsWith('BP')) extra = 'bg-green-100 text-green-900 border-green-300'
                         return <Badge key={code} variant="outline" className={`text-tiny font-medium ${extra}`}>{code}</Badge>
@@ -562,6 +589,61 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <PredictionBar label="MetaSVM" prediction={variant.metasvm_pred} score={variant.metasvm_score} />
                   <PredictionBar label="DANN" prediction={null} score={variant.dann_score} />
                 </div>
+              </div>
+            )}
+
+            {/* --- SpliceAI Splice Predictions --- */}
+            {hasSpliceAI && (
+              <div className="border-t p-4">
+                <SectionHeader icon={<Target className="h-4 w-4" />} title="Splice Predictions (SpliceAI)" />
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base text-muted-foreground">Max Delta Score</span>
+                    <Badge variant="outline" className={`text-tiny font-medium ${getSpliceAIBadgeColor(variant.spliceai_max_score)}`}>
+                      {getSpliceAILabel(variant.spliceai_max_score)}
+                    </Badge>
+                  </div>
+                  <ScoreBar
+                    barValue={variant.spliceai_max_score}
+                    displayValue={variant.spliceai_max_score}
+                    colorClass={getSpliceAIBarColor(variant.spliceai_max_score)}
+                  />
+                </div>
+                {variant.spliceai_gene && variant.spliceai_gene !== variant.gene_symbol && (
+                  <Row label="SpliceAI Gene"><span className="text-base">{variant.spliceai_gene}</span></Row>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 mt-3">
+                  {variant.spliceai_ds_ag !== null && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Acceptor Gain</p>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_ag.toFixed(3)}</span>
+                    </div>
+                  )}
+                  {variant.spliceai_ds_al !== null && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Acceptor Loss</p>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_al.toFixed(3)}</span>
+                    </div>
+                  )}
+                  {variant.spliceai_ds_dg !== null && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Donor Gain</p>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_dg.toFixed(3)}</span>
+                    </div>
+                  )}
+                  {variant.spliceai_ds_dl !== null && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Donor Loss</p>
+                      <span className="text-base tabular-nums">{variant.spliceai_ds_dl.toFixed(3)}</span>
+                    </div>
+                  )}
+                </div>
+                {variant.acmg_criteria && variant.acmg_criteria.includes('PP3_splice') && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Badge variant="outline" className="text-tiny font-medium bg-purple-100 text-purple-900 border-purple-300">PP3_splice</Badge>
+                    <span className="text-sm text-muted-foreground">SpliceAI score triggered splice prediction criterion</span>
+                  </div>
+                )}
               </div>
             )}
 

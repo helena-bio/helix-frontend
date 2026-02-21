@@ -51,6 +51,13 @@ export interface Variant {
   dann_score: number | null
   phylop100way_vertebrate: number | null
   gerp_rs: number | null
+  spliceai_pred: string | null
+  spliceai_max_score: number | null
+  spliceai_gene: string | null
+  spliceai_ds_ag: number | null
+  spliceai_ds_al: number | null
+  spliceai_ds_dg: number | null
+  spliceai_ds_dl: number | null
   pli: number | null
   oe_lof_upper: number | null
   oe_lof: number | null
@@ -155,6 +162,7 @@ export interface VariantInGene {
   quality: number | null
   alphamissense_score: number | null
   sift_score: number | null
+  spliceai_max_score: number | null
 }
 
 /**

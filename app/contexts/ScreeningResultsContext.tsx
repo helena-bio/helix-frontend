@@ -89,6 +89,7 @@ export interface ScreeningVariantResult {
   quality?: number
   alphamissense_score?: number
   sift_score?: number
+  spliceai_max_score?: number
 }
 
 interface ScreeningDiskData {

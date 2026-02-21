@@ -50,6 +50,7 @@ export interface SharedVariantData {
   quality: number | null
   alphamissenseScore: number | null
   siftScore: number | null
+  spliceaiMaxScore: number | null
 }
 
 // =============================================================================
@@ -80,6 +81,8 @@ export function ACMGCriteriaBadge({ code }: { code: string }) {
     extra = 'bg-red-100 text-red-900 border-red-300'
   } else if (c.startsWith('PM')) {
     extra = 'bg-orange-100 text-orange-900 border-orange-300'
+  } else if (c === 'PP3_splice') {
+    extra = 'bg-purple-100 text-purple-900 border-purple-300'
   } else if (c.startsWith('PP')) {
     extra = 'bg-yellow-100 text-yellow-900 border-yellow-300'
   } else if (c.startsWith('BA') || c.startsWith('BS') || c.startsWith('BP')) {

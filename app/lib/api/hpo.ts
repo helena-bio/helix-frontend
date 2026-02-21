@@ -161,6 +161,7 @@ export interface SessionMatchResult {
   quality?: number
   alphamissense_score?: number
   sift_score?: number
+  spliceai_max_score?: number
 }
 
 export interface SessionMatchResultsResponse {

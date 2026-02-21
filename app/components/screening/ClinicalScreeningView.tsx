@@ -82,6 +82,7 @@ function toSharedVariant(v: ScreeningVariantResult): SharedVariantData {
     quality: v.quality ?? null,
     alphamissenseScore: v.alphamissense_score ?? null,
     siftScore: v.sift_score ?? null,
+    spliceaiMaxScore: v.spliceai_max_score ?? null,
   }
 }
 
