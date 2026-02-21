@@ -310,12 +310,12 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
             {isCompleted && hasFindings && (
               <div className="flex items-center gap-1.5">
                 {session.pathogenic_count > 0 && (
-                  <Badge variant="outline" className="text-sm bg-red-50 text-red-700 border-red-200">
+                  <Badge variant="outline" className="text-sm border-red-200 bg-red-50 text-red-900">
                     {session.pathogenic_count} P
                   </Badge>
                 )}
                 {session.likely_pathogenic_count > 0 && (
-                  <Badge variant="outline" className="text-sm bg-orange-50 text-orange-700 border-orange-200">
+                  <Badge variant="outline" className="text-sm border-orange-200 bg-orange-50 text-orange-900">
                     {session.likely_pathogenic_count} LP
                   </Badge>
                 )}
@@ -404,8 +404,8 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                                   className={cn(
                                     "text-sm",
                                     f.acmg_class === 'Pathogenic'
-                                      ? "bg-red-50 text-red-700 border-red-200"
-                                      : "bg-orange-50 text-orange-700 border-orange-200"
+                                      ? "border-red-200 bg-red-50 text-red-900"
+                                      : "border-orange-200 bg-orange-50 text-orange-900"
                                   )}
                                 >
                                   {f.acmg_class === 'Pathogenic' ? 'P' : 'LP'}
