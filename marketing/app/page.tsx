@@ -4,7 +4,7 @@ export default function MarketingPage() {
     <div className="h-full flex flex-col">
       <Header />
       <main className="flex-1 overflow-y-auto">
-        <section className="flex items-center justify-center px-6 pt-32 pb-12">
+        <section className="flex items-center justify-center px-6 pt-20 pb-8">
           <VideoHero />
         </section>
         <BenefitsSection />
