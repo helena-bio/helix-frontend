@@ -736,7 +736,7 @@ export default function MethodologyPage() {
               <p className="text-lg font-semibold text-foreground mb-4">Contents</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
                 {tocSections.map((section, i) => (
-                  
+                  <a
                     key={section.id}
                     href={`#${section.id}`}
                     className="flex items-center gap-2 text-base text-muted-foreground hover:text-primary transition-colors py-1"
@@ -964,10 +964,10 @@ export default function MethodologyPage() {
                 <p>weighted_ratio = sum(weight_i * direction_i) / sum(weight_i * has_clear_prediction_i)</p>
               </div>
               <p className="text-base text-muted-foreground leading-relaxed">
-                For PP3 (damaging consensus): each predictor that returns a damaging result contributes its weight to the numerator. Each predictor with a clear result (damaging or benign, not ambiguous) contributes its weight to the denominator. PP3 triggers when the ratio >= <span className="font-mono">0.75</span> (75%).
+                For PP3 (damaging consensus): each predictor that returns a damaging result contributes its weight to the numerator. Each predictor with a clear result (damaging or benign, not ambiguous) contributes its weight to the denominator. PP3 triggers when the ratio {">=" } <span className="font-mono">0.75</span> (75%).
               </p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                For BP4 (benign consensus): each predictor that returns a benign result contributes its weight to the numerator. Same denominator logic. BP4 triggers when the benign ratio >= <span className="font-mono">0.75</span> (75%) AND SpliceAI max_score is absent or &lt; <span className="font-mono">0.1</span>.
+                For BP4 (benign consensus): each predictor that returns a benign result contributes its weight to the numerator. Same denominator logic. BP4 triggers when the benign ratio {">=" } <span className="font-mono">0.75</span> (75%) AND SpliceAI max_score is absent or &lt; <span className="font-mono">0.1</span>.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed">
                 If no predictor has a clear result (all NULL or ambiguous), the denominator is zero and neither PP3 nor BP4 is applied.
