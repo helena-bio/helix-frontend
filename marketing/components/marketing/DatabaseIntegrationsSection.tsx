@@ -31,6 +31,12 @@ export function DatabaseIntegrationsSection() {
       url: "https://sites.google.com/site/jpopgen/dbNSFP",
     },
     {
+      name: "SpliceAI",
+      org: "Illumina",
+      description: "Splice impact predictions",
+      url: "https://github.com/Illumina/SpliceAI",
+    },
+    {
       name: "PubMed",
       org: "NCBI / NIH",
       description: "Biomedical literature",
@@ -48,7 +54,7 @@ export function DatabaseIntegrationsSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
           {databases.map((db) => (
             <a key={db.name} href={db.url} target="_blank" rel="noopener noreferrer" className="group bg-card border border-border rounded-lg p-4 flex flex-col items-center text-center space-y-2 hover:border-primary/40 hover:shadow-sm transition-all">
               <span className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">{db.name}</span>
