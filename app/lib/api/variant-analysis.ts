@@ -68,6 +68,8 @@ export async function uploadVCFFile(
     completed_at: null,
     error_message: null,
     owner_name: null,
+      pathogenic_count: 0,
+      likely_pathogenic_count: 0,
   }
 }
 
