@@ -297,53 +297,53 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
         )}
         onClick={handleExpand}
       >
-        <div className="flex items-center justify-between">
-          {/* Left: Name + Status + P/LP badges */}
-          <div className="flex items-center gap-3">
-            <span className="text-base font-medium">{getCaseDisplayName(session)}</span>
-            {session.status !== 'completed' && (
-              <Badge variant="outline" className={`text-sm ${config.color}`}>
-                <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
-                {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
-              </Badge>
-            )}
-            {isCompleted && hasFindings && (
-              <div className="flex items-center gap-1.5">
-                {session.pathogenic_count > 0 && (
-                  <Badge variant="outline" className="text-sm bg-red-100 text-red-900 border-red-300">
-                    {session.pathogenic_count} P
-                  </Badge>
-                )}
-                {session.likely_pathogenic_count > 0 && (
-                  <Badge variant="outline" className="text-sm bg-orange-100 text-orange-900 border-orange-300">
-                    {session.likely_pathogenic_count} LP
-                  </Badge>
-                )}
-              </div>
-            )}
+          <div className="flex items-center justify-between">
+            {/* Left: Name + Status */}
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-base font-medium truncate">{getCaseDisplayName(session)}</span>
+              {session.status !== 'completed' && (
+                <Badge variant="outline" className={`text-sm ${config.color}`}>
+                  <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
+                  {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                </Badge>
+              )}
+            </div>
+            {/* Right: Badges + Avatar + Date + Chevron */}
+            <div className="flex items-center gap-3 shrink-0">
+              {isCompleted && hasFindings && (
+                <div className="flex items-center gap-1.5">
+                  {session.pathogenic_count > 0 && (
+                    <Badge variant="outline" className="text-sm bg-red-100 text-red-900 border-red-300">
+                      {session.pathogenic_count} P
+                    </Badge>
+                  )}
+                  {session.likely_pathogenic_count > 0 && (
+                    <Badge variant="outline" className="text-sm bg-orange-100 text-orange-900 border-orange-300">
+                      {session.likely_pathogenic_count} LP
+                    </Badge>
+                  )}
+                </div>
+              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-sm">{session.owner_name || "Unknown"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <span className="text-md text-muted-foreground w-[5.5rem] text-right">
+                {formatRelativeDate(session.created_at)}
+              </span>
+              {isCompleted && (
+                isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+              )}
+            </div>
           </div>
-          {/* Right: Avatar + Date + Chevron */}
-          <div className="flex items-center gap-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <UserAvatar fullName={session.owner_name || "U"} userId={session.user_id} size="md" version={avatarVersion} />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-sm">{session.owner_name || "Unknown"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <span className="text-md text-muted-foreground">
-              {formatRelativeDate(session.created_at)}
-            </span>
-            {isCompleted && (
-              isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-            )}
-          </div>
-        </div>
       </CardHeader>
 
       {isExpanded && (
