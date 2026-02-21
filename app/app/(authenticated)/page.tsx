@@ -358,7 +358,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
               {hasFindings && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Dna className="h-4 w-4 text-red-600" />
+                    <Dna className="h-4 w-4 text-muted-foreground" />
                     <p className="text-base font-semibold">Pathogenic Findings</p>
                     <Badge variant="secondary" className="text-xs">
                       {(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0)} variant{(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0) !== 1 ? 's' : ''}
@@ -378,7 +378,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                         <tbody>
                           {findings.map((f, i) => (
                             <tr key={i} className="border-b border-border/50 last:border-0">
-                              <td className="px-3 py-1.5 font-medium font-mono">{f.gene_symbol || '-'}</td>
+                              <td className="px-3 py-1.5 font-medium">{f.gene_symbol || '-'}</td>
                               <td className="px-3 py-1.5 font-mono text-md">
                                 {f.hgvs_cdna || '-'}
                                 {f.hgvs_protein && (
