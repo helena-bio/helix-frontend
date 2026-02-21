@@ -706,7 +706,7 @@ export default function MethodologyPage() {
       <main className="flex-1 overflow-y-auto">
 
         {/* ---- HERO ---- */}
-        <section className="pt-12 pb-8 px-6">
+        <section className="pt-4 pb-8 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full">
               <span className="text-md text-muted-foreground">Classification Engine</span>
