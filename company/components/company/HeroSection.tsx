@@ -23,7 +23,7 @@ export function HeroSection() {
                 alt=""
                 width={80}
                 height={100}
-                className="h-40 sm:h-44 w-auto shrink-0"
+                className="h-[9.5rem] sm:h-[11rem] w-auto shrink-0"
                 priority
               />
               <div className="flex flex-col gap-1">
@@ -32,7 +32,7 @@ export function HeroSection() {
                   alt="Helena Bioinformatics"
                   width={400}
                   height={60}
-                  className="h-24 sm:h-28 w-auto"
+                  className="h-[5.5rem] sm:h-[6.5rem] w-auto"
                   priority
                 />
                 <p className="text-xl sm:text-2xl text-foreground font-medium tracking-wide">Intelligence for genomics</p>
