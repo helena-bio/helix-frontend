@@ -70,7 +70,7 @@ export default function ForGeneticistsPage() {
       <main className="flex-1">
 
         {/* Hero with Video */}
-        <section className="pt-28 pb-16 px-6">
+        <section className="pt-24 pb-12 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-8">
             <h1 className="text-3xl font-semibold tracking-tight text-primary">
               Your Expertise Is Irreplaceable. Your Time Is Not.
@@ -98,7 +98,7 @@ export default function ForGeneticistsPage() {
         </section>
 
         {/* The Real Bottleneck */}
-        <section className="py-16 px-6 bg-muted/30">
+        <section className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">
@@ -175,7 +175,7 @@ export default function ForGeneticistsPage() {
         </section>
 
         {/* Side by Side: What Each Does */}
-        <section className="py-16 px-6">
+        <section className="py-12 px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">
@@ -233,7 +233,7 @@ export default function ForGeneticistsPage() {
         </section>
 
         {/* Your Expertise Amplified */}
-        <section className="py-16 px-6 bg-muted/30">
+        <section className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">
@@ -270,7 +270,7 @@ export default function ForGeneticistsPage() {
         </section>
 
         {/* What Helix Insight Never Does */}
-        <section className="py-16 px-6">
+        <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">
@@ -303,7 +303,7 @@ export default function ForGeneticistsPage() {
         </section>
 
         {/* CTA */}
-        <section className="py-16 px-6 bg-muted/30">
+        <section className="py-12 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h2 className="text-3xl font-semibold text-primary">
               See How It Supports Your Workflow

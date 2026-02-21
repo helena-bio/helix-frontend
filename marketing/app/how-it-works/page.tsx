@@ -132,7 +132,7 @@ export default function HowItWorksPage() {
       <main className="flex-1">
 
         {/* Hero */}
-        <section className="pt-28 pb-16 px-6">
+        <section className="pt-24 pb-12 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight text-primary">
               How Helix Insight Works
@@ -173,7 +173,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Detailed Pipeline Steps */}
-        <section className="py-16 px-6 bg-muted/30">
+        <section className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">
@@ -244,7 +244,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* Key Principles */}
-        <section className="py-16 px-6">
+        <section className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">
@@ -284,7 +284,7 @@ export default function HowItWorksPage() {
         </section>
 
         {/* CTA */}
-        <section className="py-16 px-6 bg-muted/30">
+        <section className="py-12 px-6 bg-muted/30">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h2 className="text-3xl font-semibold text-primary">
               See the Pipeline in Action

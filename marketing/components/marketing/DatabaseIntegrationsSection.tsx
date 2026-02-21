@@ -39,7 +39,7 @@ export function DatabaseIntegrationsSection() {
   ]
 
   return (
-    <section className="py-16 px-6">
+    <section className="py-12 px-6">
       <div className="max-w-5xl mx-auto space-y-10">
         <div className="text-center space-y-3">
           <h2 className="text-3xl font-semibold text-primary">Powered by Established Clinical Databases</h2>

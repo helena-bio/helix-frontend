@@ -706,7 +706,7 @@ export default function MethodologyPage() {
       <main className="flex-1">
 
         {/* ---- HERO ---- */}
-        <section className="pt-28 pb-16 px-6">
+        <section className="pt-24 pb-12 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full">
               <span className="text-md text-muted-foreground">Classification Engine</span>
@@ -751,7 +751,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 1. PIPELINE OVERVIEW ---- */}
-        <section id="pipeline" className="py-16 px-6 bg-muted/30">
+        <section id="pipeline" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Pipeline Overview</h2>
@@ -787,7 +787,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 2. REFERENCE DATABASES ---- */}
-        <section id="databases" className="py-16 px-6">
+        <section id="databases" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Reference Databases</h2>
@@ -824,7 +824,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 3. ACMG CLASSIFICATION OVERVIEW ---- */}
-        <section id="classification" className="py-16 px-6 bg-muted/30">
+        <section id="classification" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">ACMG/AMP Classification</h2>
@@ -885,7 +885,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 4. AUTOMATED CRITERIA ---- */}
-        <section id="automated-criteria" className="py-16 px-6">
+        <section id="automated-criteria" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Automated Criteria (19 of 28)</h2>
@@ -913,7 +913,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 5. COMPUTATIONAL PREDICTORS ---- */}
-        <section id="predictors" className="py-16 px-6 bg-muted/30">
+        <section id="predictors" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Computational Predictors (PP3 / BP4)</h2>
@@ -977,7 +977,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 6. SPLICEAI INTEGRATION ---- */}
-        <section id="spliceai" className="py-16 px-6">
+        <section id="spliceai" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">SpliceAI Integration</h2>
@@ -1033,7 +1033,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 7. COMBINING RULES ---- */}
-        <section id="combining-rules" className="py-16 px-6 bg-muted/30">
+        <section id="combining-rules" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">ACMG Combining Rules (18 Rules)</h2>
@@ -1107,7 +1107,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 8. CLINVAR OVERRIDE ---- */}
-        <section id="clinvar-override" className="py-16 px-6">
+        <section id="clinvar-override" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">ClinVar Override Logic</h2>
@@ -1143,7 +1143,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 9. MANUAL REVIEW CRITERIA ---- */}
-        <section id="manual-criteria" className="py-16 px-6 bg-muted/30">
+        <section id="manual-criteria" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Manual Review Criteria (9 of 28)</h2>
@@ -1170,7 +1170,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 10. QUALITY FILTERING ---- */}
-        <section id="quality-filtering" className="py-16 px-6">
+        <section id="quality-filtering" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Quality Filtering</h2>
@@ -1216,7 +1216,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 11. LIMITATIONS ---- */}
-        <section id="limitations" className="py-16 px-6 bg-muted/30">
+        <section id="limitations" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Limitations and Disclaimers</h2>
@@ -1234,7 +1234,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 12. VERSION HISTORY ---- */}
-        <section id="changelog" className="py-16 px-6">
+        <section id="changelog" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Version History</h2>
@@ -1266,7 +1266,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- 13. REFERENCES ---- */}
-        <section id="references" className="py-16 px-6 bg-muted/30">
+        <section id="references" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">References</h2>
@@ -1287,7 +1287,7 @@ export default function MethodologyPage() {
         </section>
 
         {/* ---- CTA ---- */}
-        <section className="py-16 px-6">
+        <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h2 className="text-3xl font-semibold text-primary">
               Questions About Our Methodology?

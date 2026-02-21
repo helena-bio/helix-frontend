@@ -42,7 +42,7 @@ const complianceDocuments = [
 
 export function SecurityComplianceSection() {
   return (
-    <section className="py-16 px-6 bg-card border-y border-border">
+    <section className="py-12 px-6 bg-card border-y border-border">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 space-y-4">
           <h2 className="text-3xl font-semibold text-primary">
