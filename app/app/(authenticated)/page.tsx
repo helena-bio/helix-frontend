@@ -369,12 +369,6 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                       {(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0)} variant{(session.pathogenic_count || 0) + (session.likely_pathogenic_count || 0) !== 1 ? 's' : ''}
                     </Badge>
                   </div>
-                  {isLoadingFindings && (
-                    <div className="flex items-center py-3">
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mr-2" />
-                      <span className="text-md text-muted-foreground">Loading findings...</span>
-                    </div>
-                  )}
                   {!isLoadingFindings && findings && findings.length > 0 && (
                     <div className="border rounded-md overflow-hidden">
                       <table className="w-full text-base">
