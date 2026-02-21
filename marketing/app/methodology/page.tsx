@@ -706,18 +706,18 @@ export default function MethodologyPage() {
       <main className="flex-1 overflow-y-auto">
 
         {/* ---- HERO ---- */}
-        <section className="pt-4 pb-8 px-6">
+        <section className="pt-12 pb-8 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
+            <h1 className="text-3xl font-semibold tracking-tight text-primary">
+              Classification Methodology
+            </h1>
+
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full">
               <span className="text-md text-muted-foreground">Classification Engine</span>
               <span className="text-md font-semibold text-foreground">v{CLASSIFIER_VERSION}</span>
               <span className="text-md text-muted-foreground">|</span>
               <span className="text-md text-muted-foreground">Updated {LAST_UPDATED}</span>
             </div>
-
-            <h1 className="text-3xl font-semibold tracking-tight text-primary">
-              Classification Methodology
-            </h1>
 
             <p className="text-base text-muted-foreground leading-relaxed">
               Complete documentation of how Helix Insight processes, annotates, and classifies genetic variants. Every threshold, database version, and classification rule used in production is documented on this page. This documentation is intended for clinical geneticists, laboratory directors, and accreditation auditors.
