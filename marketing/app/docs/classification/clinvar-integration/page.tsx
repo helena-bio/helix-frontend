@@ -40,16 +40,16 @@ export default function ClinvarIntegrationPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
             <p className="text-md font-medium text-foreground">Override IS applied when:</p>
-            <p className="text-tiny text-muted-foreground">ClinVar asserts P/LP/B/LB with at least 1 review star</p>
-            <p className="text-tiny text-muted-foreground">No conflicting computational evidence exists</p>
-            <p className="text-tiny text-muted-foreground">BA1 does not apply</p>
+            <p className="text-sm text-muted-foreground">ClinVar asserts P/LP/B/LB with at least 1 review star</p>
+            <p className="text-sm text-muted-foreground">No conflicting computational evidence exists</p>
+            <p className="text-sm text-muted-foreground">BA1 does not apply</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
             <p className="text-md font-medium text-foreground">Override is NOT applied when:</p>
-            <p className="text-tiny text-muted-foreground">BA1 applies (frequency &gt; 5% always overrides ClinVar)</p>
-            <p className="text-tiny text-muted-foreground">Conflicting pathogenic + benign evidence exists</p>
-            <p className="text-tiny text-muted-foreground">ClinVar asserts VUS</p>
-            <p className="text-tiny text-muted-foreground">Review stars below minimum threshold</p>
+            <p className="text-sm text-muted-foreground">BA1 applies (frequency &gt; 5% always overrides ClinVar)</p>
+            <p className="text-sm text-muted-foreground">Conflicting pathogenic + benign evidence exists</p>
+            <p className="text-sm text-muted-foreground">ClinVar asserts VUS</p>
+            <p className="text-sm text-muted-foreground">Review stars below minimum threshold</p>
           </div>
         </div>
       </section>
