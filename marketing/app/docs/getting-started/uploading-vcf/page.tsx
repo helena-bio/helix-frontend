@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function UploadingVcfPage() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
+    <div className="max-w-4xl mx-auto px-6 py-12 space-y-6">
       {/* Breadcrumb */}
       <div>
         <p className="text-sm text-muted-foreground">
@@ -32,7 +32,7 @@ export default function UploadingVcfPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Genome Build Requirement</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          GRCh38 (hg38) is required. GRCh37 (hg19) files are not supported directly. If your data is aligned to GRCh37, convert it to GRCh38 using a liftover tool before uploading. Recommended tools include CrossMap, Picard LiftoverVcf, and the UCSC liftOver utility.
+          GRCh38 (hg38) is the primary genome build. GRCh37 (hg19) files are also accepted -- the platform performs automatic liftover to GRCh38 during upload, so no manual conversion is required. The liftover step is transparent and reported in the processing summary.
         </p>
       </section>
 

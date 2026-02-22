@@ -26,7 +26,7 @@ const variantFields = [
 
 export default function UnderstandingResultsPage() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
+    <div className="max-w-4xl mx-auto px-6 py-12 space-y-6">
       {/* Breadcrumb */}
       <div>
         <p className="text-sm text-muted-foreground">
