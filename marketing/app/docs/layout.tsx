@@ -8,17 +8,10 @@ export const metadata = {
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-dvh flex flex-col">
       <Header />
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar -- desktop only */}
-        <aside className="hidden lg:block w-64 shrink-0 border-r border-border bg-card overflow-y-auto">
-          <div className="p-4 pt-6">
-            <p className="text-sm font-semibold text-foreground mb-4 px-3">Documentation</p>
-            <DocsSidebar />
-          </div>
-        </aside>
-        {/* Main content */}
+      <div className="flex-1 min-h-0 flex">
+        <DocsSidebar />
         <main className="flex-1 overflow-y-auto">
           {children}
           <Footer />

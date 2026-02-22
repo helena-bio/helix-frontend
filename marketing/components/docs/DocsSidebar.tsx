@@ -1,22 +1,192 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronRight } from 'lucide-react'
+import { PanelLeftClose, ChevronRight, ChevronDown, Search, X } from 'lucide-react'
 import { docsNavigation, type NavItem } from './docsNavigation'
+
+const SIDEBAR_MIN = 256
+const SIDEBAR_MAX = 480
+const SIDEBAR_COLLAPSED = 40
 
 export function DocsSidebar() {
   const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(true)
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
+  const [searchQuery, setSearchQuery] = useState('')
+  const sidebarRef = useRef<HTMLElement>(null)
+  const isResizing = useRef(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Flatten all nav items for search
+  const allItems = useMemo(() => {
+    const items: NavItem[] = []
+    for (const section of docsNavigation) {
+      items.push(section)
+      if (section.children) {
+        for (const child of section.children) {
+          items.push(child)
+        }
+      }
+    }
+    return items
+  }, [])
+
+  // Filter items by search query
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return null
+    const q = searchQuery.toLowerCase()
+    return allItems.filter((item) => item.title.toLowerCase().includes(q))
+  }, [searchQuery, allItems])
+
+  // Resize handlers -- direct DOM for zero flicker
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    isResizing.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const startX = e.clientX
+    const startWidth = sidebarRef.current?.offsetWidth ?? SIDEBAR_MIN
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!isResizing.current || !sidebarRef.current) return
+      const delta = moveEvent.clientX - startX
+      const newWidth = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth + delta))
+      sidebarRef.current.style.width = `${newWidth}px`
+    }
+
+    const handleMouseUp = () => {
+      if (!isResizing.current) return
+      isResizing.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      if (sidebarRef.current) {
+        setSidebarWidth(sidebarRef.current.offsetWidth)
+      }
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [])
+
+  const handleCollapsedClick = () => {
+    if (!isOpen) setIsOpen(true)
+  }
 
   return (
-    <nav className="space-y-1">
-      {docsNavigation.map((section) => (
-        <SidebarSection key={section.href} section={section} pathname={pathname} />
-      ))}
-    </nav>
+    <aside
+      ref={sidebarRef}
+      className={`h-full flex flex-col bg-card border-r border-border shrink-0 overflow-hidden relative ${
+        !isOpen ? 'cursor-pointer hover:bg-accent/50' : ''
+      }`}
+      style={{
+        width: isOpen ? `${sidebarWidth}px` : `${SIDEBAR_COLLAPSED}px`,
+        transition: isResizing.current ? 'none' : 'width 300ms',
+      }}
+      onClick={!isOpen ? handleCollapsedClick : undefined}
+    >
+      {isOpen ? (
+        <div className="flex flex-col flex-1 min-h-0" style={{ animation: 'slideInLeft 200ms ease-out' }}>
+          {/* Header: title + collapse button */}
+          <div className="flex items-center justify-between px-2 pt-2 pb-0 shrink-0">
+            <Link
+              href="/docs"
+              className="flex-1 px-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+            >
+              Documentation
+            </Link>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors shrink-0"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="px-2 pt-2 pb-1 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search docs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-8 pl-8 pr-8 text-sm bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(''); searchInputRef.current?.focus() }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+            {filteredItems ? (
+              /* Search results */
+              filteredItems.length > 0 ? (
+                filteredItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
+                      pathname === item.href
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                    onClick={() => setSearchQuery('')}
+                  >
+                    {item.title}
+                  </Link>
+                ))
+              ) : (
+                <p className="px-3 py-4 text-sm text-muted-foreground text-center">No results</p>
+              )
+            ) : (
+              /* Full navigation tree */
+              docsNavigation.map((section) => (
+                <SidebarSection key={section.href} section={section} pathname={pathname} />
+              ))
+            )}
+          </nav>
+        </div>
+      ) : (
+        /* Collapsed state */
+        <div className="flex flex-col items-center h-full">
+          <div className="px-1 pt-3 shrink-0">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+      )}
+
+      {/* Resize handle -- only when expanded */}
+      {isOpen && (
+        <div
+          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors z-50"
+          onMouseDown={handleResizeStart}
+        />
+      )}
+
+      <style>{`@keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
+    </aside>
   )
 }
+
+/* ---- Section with expand/collapse ---- */
 
 function SidebarSection({ section, pathname }: { section: NavItem; pathname: string }) {
   const isActive = pathname === section.href
@@ -25,16 +195,14 @@ function SidebarSection({ section, pathname }: { section: NavItem; pathname: str
   const [isOpen, setIsOpen] = useState(isActive || isChildActive)
 
   useEffect(() => {
-    if (isActive || isChildActive) {
-      setIsOpen(true)
-    }
+    if (isActive || isChildActive) setIsOpen(true)
   }, [isActive, isChildActive])
 
   if (!hasChildren) {
     return (
       <Link
         href={section.href}
-        className={`block px-3 py-2 text-sm rounded-md transition-colors ${
+        className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
           isActive
             ? 'bg-primary/10 text-primary font-medium'
             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -49,19 +217,21 @@ function SidebarSection({ section, pathname }: { section: NavItem; pathname: str
     <div>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors ${
+        className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-md transition-colors ${
           isActive
             ? 'bg-primary/10 text-primary font-medium'
             : 'text-foreground hover:bg-muted/50'
         }`}
       >
         <span>{section.title}</span>
-        <ChevronRight
-          className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`}
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${
+            !isOpen ? '-rotate-90' : ''
+          }`}
         />
       </button>
       {isOpen && (
-        <div className="ml-3 pl-3 border-l border-border mt-1 space-y-0.5">
+        <div className="ml-3 pl-3 border-l border-border mt-0.5 space-y-0.5">
           <Link
             href={section.href}
             className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
