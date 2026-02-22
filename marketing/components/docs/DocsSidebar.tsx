@@ -167,7 +167,7 @@ export function DocsSidebar() {
       onClick={!isOpen ? handleCollapsedClick : undefined}
     >
       {isOpen ? (
-        <div className="flex flex-col flex-1 min-h-0" style={{ animation: 'slideInLeft 200ms ease-out' }}>
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex items-center justify-between px-2 pt-2 pb-0 shrink-0">
             <Link
               href="/docs"
