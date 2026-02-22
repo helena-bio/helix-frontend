@@ -70,6 +70,9 @@ export async function uploadVCFFile(
     owner_name: null,
       pathogenic_count: 0,
       likely_pathogenic_count: 0,
+      classifier_version: null,
+      classifier_version_label: null,
+      classifier_is_outdated: false,
   }
 }
 
