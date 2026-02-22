@@ -117,6 +117,9 @@ export interface AnalysisSession {
   owner_name: string | null
   pathogenic_count: number
   likely_pathogenic_count: number
+  classifier_version: string | null
+  classifier_version_label: string | null
+  classifier_is_outdated: boolean
 }
 
 export interface VariantFilters {
@@ -242,6 +245,8 @@ export interface SummaryMetadata {
   total_genes: number
   total_variants: number
   impact_by_acmg: ImpactByAcmg
+  classifier_version?: string
+  classifier_version_label?: string
   session_id: string
   timestamp: number
 }

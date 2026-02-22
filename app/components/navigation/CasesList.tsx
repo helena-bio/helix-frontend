@@ -322,6 +322,11 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                         <div className="flex-1 min-w-0">
                           <p className="text-md font-medium truncate leading-tight">
                             {getCaseDisplayName(session)}
+                            {session.classifier_version && (
+                              <span className="ml-1.5 text-sm font-normal text-muted-foreground">
+                                v{session.classifier_version}
+                              </span>
+                            )}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-sm text-muted-foreground">
