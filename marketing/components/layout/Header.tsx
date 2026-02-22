@@ -83,6 +83,9 @@ export function Header() {
               </div>
             )}
           </div>
+          <Link href="/docs" className="text-base text-foreground hover:text-primary transition-colors">
+            Docs
+          </Link>
           <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors">
             About
           </Link>
@@ -145,6 +148,13 @@ export function Header() {
                 ))}
               </div>
             )}
+            <Link
+              href="/docs"
+              className="text-base text-foreground hover:text-primary transition-colors py-2"
+              onClick={closeMobileMenu}
+            >
+              Docs
+            </Link>
             <Link
               href="/about"
               className="text-base text-foreground hover:text-primary transition-colors py-2"
