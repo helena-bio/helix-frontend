@@ -93,7 +93,7 @@ const sections = [
 
 export default function DocsPage() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+    <div className="py-10 space-y-8">
       {/* Hero */}
       <section className="space-y-4">
         <h1 className="text-3xl font-semibold tracking-tight text-primary">

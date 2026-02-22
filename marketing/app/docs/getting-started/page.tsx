@@ -23,7 +23,7 @@ const subpages = [
 
 export default function GettingStartedPage() {
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+    <div className="py-10 space-y-8">
       {/* Header */}
       <section className="space-y-4">
         <p className="text-sm text-muted-foreground">
