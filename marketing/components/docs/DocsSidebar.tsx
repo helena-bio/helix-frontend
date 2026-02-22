@@ -225,12 +225,12 @@ export function DocsSidebar() {
                       className="w-full text-left px-3 py-2 rounded-md hover:bg-muted/50 transition-colors"
                       onClick={() => handleResultClick(result.entry.href)}
                     >
-                      <p className="text-sm font-medium text-foreground leading-tight">
+                      <p className="text-md font-medium text-foreground leading-tight">
                         <HighlightedText text={result.entry.title} query={searchQuery} />
                       </p>
                       <p className="text-xs text-muted-foreground/60 mt-0.5">{result.entry.section}</p>
                       {result.snippet && (
-                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                           <HighlightedText text={result.snippet} query={searchQuery} />
                         </p>
                       )}
