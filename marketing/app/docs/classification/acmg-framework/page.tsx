@@ -9,7 +9,7 @@ export default function AcmgFrameworkPage() {
   return (
     <div className="py-10 space-y-6">
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/classification" className="hover:text-primary transition-colors">Classification</Link>
@@ -35,10 +35,10 @@ export default function AcmgFrameworkPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Strength Level</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Count</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Bayesian Points</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Examples</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Strength Level</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Count</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Bayesian Points</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Examples</th>
               </tr>
             </thead>
             <tbody>
@@ -52,10 +52,10 @@ export default function AcmgFrameworkPage() {
                 { level: 'Supporting (benign)', count: '6', points: '-1', examples: 'BP1-BP7' },
               ].map((row, i) => (
                 <tr key={row.level} className={i < 6 ? 'border-b border-border' : ''}>
-                  <td className="px-4 py-2 text-sm font-medium text-foreground">{row.level}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-muted-foreground">{row.count}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-muted-foreground">{row.points}</td>
-                  <td className="px-4 py-2 text-sm text-muted-foreground">{row.examples}</td>
+                  <td className="px-4 py-2 text-md font-medium text-foreground">{row.level}</td>
+                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.count}</td>
+                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.points}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.examples}</td>
                 </tr>
               ))}
             </tbody>
@@ -82,12 +82,12 @@ export default function AcmgFrameworkPage() {
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">Key Principle</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-md text-muted-foreground leading-relaxed">
           The ACMG framework provides a structured, reproducible method for variant classification. Two geneticists using the same evidence should reach the same classification. Helix Insight ensures this reproducibility by applying identical rules to every variant, with full transparency on which criteria were triggered and why.
         </p>
       </section>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-md text-muted-foreground">
         Reference: Richards S, et al. Genetics in Medicine. 2015;17(5):405-424. <a href="https://pubmed.ncbi.nlm.nih.gov/25741868/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono">PMID: 25741868</a>
       </p>
     </div>

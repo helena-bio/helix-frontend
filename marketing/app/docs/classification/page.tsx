@@ -43,11 +43,11 @@ export default function ClassificationPage() {
           ].map((item) => (
             <div key={item.priority} className="bg-card border border-border rounded-lg p-4 flex items-start gap-4">
               <div className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-sm font-semibold text-primary">{item.priority}</span>
+                <span className="text-md font-semibold text-primary">{item.priority}</span>
               </div>
               <div className="space-y-1">
                 <p className="text-base font-medium text-foreground">{item.label}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                <p className="text-md text-muted-foreground leading-relaxed">{item.desc}</p>
               </div>
             </div>
           ))}
@@ -69,7 +69,7 @@ export default function ClassificationPage() {
             { label: 'Benign', points: '<= -6 pts' },
           ].map((c) => (
             <div key={c.label} className="bg-card border border-border rounded-lg p-3 text-center space-y-1">
-              <p className="text-sm font-medium text-foreground">{c.label}</p>
+              <p className="text-md font-medium text-foreground">{c.label}</p>
               <p className="text-xs font-mono text-muted-foreground">{c.points}</p>
             </div>
           ))}
@@ -87,13 +87,13 @@ export default function ClassificationPage() {
               className="bg-card border border-border rounded-lg p-4 space-y-1 hover:border-primary/30 transition-colors group"
             >
               <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">{page.title}</p>
-              <p className="text-sm text-muted-foreground">{page.description}</p>
+              <p className="text-md text-muted-foreground">{page.description}</p>
             </Link>
           ))}
         </div>
       </section>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-md text-muted-foreground">
         For the full methodology with all thresholds and implementation details, see the dedicated <Link href="/methodology" className="text-primary hover:underline font-medium">Methodology</Link> page.
       </p>
     </div>

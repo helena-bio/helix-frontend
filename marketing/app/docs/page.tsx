@@ -121,7 +121,7 @@ export default function DocsPage() {
                 {section.title}
               </p>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-md text-muted-foreground leading-relaxed">
               {section.description}
             </p>
           </Link>

@@ -9,7 +9,7 @@ export default function ConfidenceScoresPage() {
   return (
     <div className="py-10 space-y-6">
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/classification" className="hover:text-primary transition-colors">Classification</Link>
@@ -32,10 +32,10 @@ export default function ConfidenceScoresPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Classification</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Point Range</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Confidence</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Interpretation</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Classification</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Point Range</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Confidence</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Interpretation</th>
               </tr>
             </thead>
             <tbody>
@@ -47,10 +47,10 @@ export default function ConfidenceScoresPage() {
                 { cls: 'Benign', points: '<= -6', conf: '0.80-0.99', interp: 'Lower points = higher confidence' },
               ].map((row, i) => (
                 <tr key={row.cls} className={i < 4 ? 'border-b border-border' : ''}>
-                  <td className="px-4 py-2 text-sm font-medium text-foreground">{row.cls}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-muted-foreground">{row.points}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-muted-foreground">{row.conf}</td>
-                  <td className="px-4 py-2 text-sm text-muted-foreground">{row.interp}</td>
+                  <td className="px-4 py-2 text-md font-medium text-foreground">{row.cls}</td>
+                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.points}</td>
+                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.conf}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.interp}</td>
                 </tr>
               ))}
             </tbody>
@@ -70,7 +70,7 @@ export default function ConfidenceScoresPage() {
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">Important Note</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-md text-muted-foreground leading-relaxed">
           The confidence score reflects classification evidence strength, not the probability of disease causation. A high-confidence Pathogenic classification means the evidence strongly supports pathogenicity under the ACMG framework, but clinical significance still depends on the patient's phenotype, inheritance pattern, and clinical context.
         </p>
       </section>

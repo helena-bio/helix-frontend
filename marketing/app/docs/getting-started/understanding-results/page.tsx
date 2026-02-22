@@ -29,7 +29,7 @@ export default function UnderstandingResultsPage() {
     <div className="py-10 space-y-6">
       {/* Breadcrumb */}
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/getting-started" className="hover:text-primary transition-colors">Getting Started</Link>
@@ -57,7 +57,7 @@ export default function UnderstandingResultsPage() {
           {variantFields.map((item) => (
             <div key={item.field} className="bg-card border border-border rounded-lg p-4 space-y-1">
               <p className="text-base font-medium text-foreground">{item.field}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+              <p className="text-md text-muted-foreground leading-relaxed">{item.description}</p>
             </div>
           ))}
         </div>
@@ -71,9 +71,9 @@ export default function UnderstandingResultsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Classification</th>
-                  <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Clinical Meaning</th>
-                  <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Action</th>
+                  <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Classification</th>
+                  <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Clinical Meaning</th>
+                  <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -85,9 +85,9 @@ export default function UnderstandingResultsPage() {
                   { cls: 'Benign', meaning: 'Variant does not cause disease.', action: 'Not reported.' },
                 ].map((row, i) => (
                   <tr key={row.cls} className={i < 4 ? 'border-b border-border' : ''}>
-                    <td className="px-5 py-3 text-sm font-medium text-foreground">{row.cls}</td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground">{row.meaning}</td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground">{row.action}</td>
+                    <td className="px-5 py-3 text-md font-medium text-foreground">{row.cls}</td>
+                    <td className="px-5 py-3 text-md text-muted-foreground">{row.meaning}</td>
+                    <td className="px-5 py-3 text-md text-muted-foreground">{row.action}</td>
                   </tr>
                 ))}
               </tbody>
@@ -104,7 +104,7 @@ export default function UnderstandingResultsPage() {
         </p>
       </section>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-md text-muted-foreground">
         For details on how screening tiers are assigned, see <Link href="/docs/screening/tier-system" className="text-primary hover:underline">Screening Tier System</Link>. For classification methodology, see the full <Link href="/methodology" className="text-primary hover:underline">Methodology</Link> page.
       </p>
     </div>

@@ -10,7 +10,7 @@ export default function SettingHpoTermsPage() {
     <div className="py-10 space-y-6">
       {/* Breadcrumb */}
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/getting-started" className="hover:text-primary transition-colors">Getting Started</Link>
@@ -61,7 +61,7 @@ export default function SettingHpoTermsPage() {
           ].map((item) => (
             <div key={item.domain} className="bg-card border border-border rounded-lg p-4 space-y-1">
               <p className="text-base font-medium text-foreground">{item.domain}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.terms}</p>
+              <p className="text-md text-muted-foreground leading-relaxed">{item.terms}</p>
             </div>
           ))}
         </div>
@@ -75,7 +75,7 @@ export default function SettingHpoTermsPage() {
         </p>
       </section>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-md text-muted-foreground">
         For more on how phenotype information is used in prioritization, see <Link href="/docs/phenotype-matching" className="text-primary hover:underline">Phenotype Matching</Link>.
       </p>
     </div>

@@ -9,7 +9,7 @@ export default function ClinvarIntegrationPage() {
   return (
     <div className="py-10 space-y-6">
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/classification" className="hover:text-primary transition-colors">Classification</Link>
@@ -29,7 +29,7 @@ export default function ClinvarIntegrationPage() {
           ].map((item) => (
             <div key={item.use} className="bg-card border border-border rounded-lg p-4 space-y-1">
               <p className="text-base font-medium text-foreground">{item.use}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              <p className="text-md text-muted-foreground leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -39,13 +39,13 @@ export default function ClinvarIntegrationPage() {
         <p className="text-lg font-semibold text-foreground">ClinVar Override Conditions</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Override IS applied when:</p>
+            <p className="text-md font-medium text-foreground">Override IS applied when:</p>
             <p className="text-xs text-muted-foreground">ClinVar asserts P/LP/B/LB with at least 1 review star</p>
             <p className="text-xs text-muted-foreground">No conflicting computational evidence exists</p>
             <p className="text-xs text-muted-foreground">BA1 does not apply</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Override is NOT applied when:</p>
+            <p className="text-md font-medium text-foreground">Override is NOT applied when:</p>
             <p className="text-xs text-muted-foreground">BA1 applies (frequency &gt; 5% always overrides ClinVar)</p>
             <p className="text-xs text-muted-foreground">Conflicting pathogenic + benign evidence exists</p>
             <p className="text-xs text-muted-foreground">ClinVar asserts VUS</p>
@@ -60,8 +60,8 @@ export default function ClinvarIntegrationPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Stars</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Meaning</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Stars</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Meaning</th>
               </tr>
             </thead>
             <tbody>
@@ -73,8 +73,8 @@ export default function ClinvarIntegrationPage() {
                 { stars: '4', meaning: 'Practice guideline' },
               ].map((row, i) => (
                 <tr key={row.stars} className={i < 4 ? 'border-b border-border' : ''}>
-                  <td className="px-4 py-2 text-sm font-mono text-foreground">{row.stars}</td>
-                  <td className="px-4 py-2 text-sm text-muted-foreground">{row.meaning}</td>
+                  <td className="px-4 py-2 text-md font-mono text-foreground">{row.stars}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.meaning}</td>
                 </tr>
               ))}
             </tbody>
@@ -91,7 +91,7 @@ export default function ClinvarIntegrationPage() {
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">Important Caveat</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-md text-muted-foreground leading-relaxed">
           ClinVar assertions vary in quality and may lag behind current evidence. Review star levels indicate the level of review, not the correctness of the assertion. The geneticist should assess ClinVar assertion quality independently, particularly for 0-star and 1-star submissions. The current ClinVar version in production is 2025-01.
         </p>
       </section>

@@ -10,7 +10,7 @@ export default function QualityPresetsPage() {
     <div className="py-10 space-y-6">
       {/* Breadcrumb */}
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/getting-started" className="hover:text-primary transition-colors">Getting Started</Link>
@@ -30,11 +30,11 @@ export default function QualityPresetsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Preset</th>
-                <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Quality (QUAL)</th>
-                <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Depth (DP)</th>
-                <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Genotype Quality (GQ)</th>
-                <th className="text-left px-5 py-3 text-sm font-semibold text-foreground">Recommended Use</th>
+                <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Preset</th>
+                <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Quality (QUAL)</th>
+                <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Depth (DP)</th>
+                <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Genotype Quality (GQ)</th>
+                <th className="text-left px-5 py-3 text-md font-semibold text-foreground">Recommended Use</th>
               </tr>
             </thead>
             <tbody>
@@ -44,11 +44,11 @@ export default function QualityPresetsPage() {
                 { name: 'Permissive', qual: '>= 10', depth: '>= 10', gq: '>= 10', use: 'Maximum sensitivity / research' },
               ].map((row, i) => (
                 <tr key={row.name} className={i < 2 ? 'border-b border-border' : ''}>
-                  <td className="px-5 py-3 text-sm font-medium text-foreground">{row.name}</td>
-                  <td className="px-5 py-3 text-sm font-mono text-muted-foreground">{row.qual}</td>
-                  <td className="px-5 py-3 text-sm font-mono text-muted-foreground">{row.depth}</td>
-                  <td className="px-5 py-3 text-sm font-mono text-muted-foreground">{row.gq}</td>
-                  <td className="px-5 py-3 text-sm text-muted-foreground">{row.use}</td>
+                  <td className="px-5 py-3 text-md font-medium text-foreground">{row.name}</td>
+                  <td className="px-5 py-3 text-md font-mono text-muted-foreground">{row.qual}</td>
+                  <td className="px-5 py-3 text-md font-mono text-muted-foreground">{row.depth}</td>
+                  <td className="px-5 py-3 text-md font-mono text-muted-foreground">{row.gq}</td>
+                  <td className="px-5 py-3 text-md text-muted-foreground">{row.use}</td>
                 </tr>
               ))}
             </tbody>
@@ -67,7 +67,7 @@ export default function QualityPresetsPage() {
           ].map((item) => (
             <div key={item.name} className="bg-card border border-border rounded-lg p-4 space-y-1">
               <p className="text-base font-medium text-foreground">{item.name}</p>
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              <p className="text-md text-muted-foreground leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -84,7 +84,7 @@ export default function QualityPresetsPage() {
         </p>
       </section>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-md text-muted-foreground">
         For the complete quality filtering documentation with technical details, see the <Link href="/methodology#quality-filtering" className="text-primary hover:underline">Methodology</Link> page.
       </p>
     </div>

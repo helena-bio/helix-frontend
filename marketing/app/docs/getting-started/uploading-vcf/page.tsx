@@ -10,7 +10,7 @@ export default function UploadingVcfPage() {
     <div className="py-10 space-y-6">
       {/* Breadcrumb */}
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/getting-started" className="hover:text-primary transition-colors">Getting Started</Link>

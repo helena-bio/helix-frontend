@@ -201,7 +201,7 @@ function CriterionCard({ c }: { c: Criterion }) {
           <span className={`px-2 py-0.5 text-xs rounded capitalize ${statusColors[c.status]}`}>{c.status}</span>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground">{c.name}</p>
+      <p className="text-md text-muted-foreground">{c.name}</p>
 
       {c.conditions && (
         <div className="space-y-1">
@@ -243,7 +243,7 @@ export default function CriteriaReferencePage() {
   return (
     <div className="py-10 space-y-6">
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/classification" className="hover:text-primary transition-colors">Classification</Link>

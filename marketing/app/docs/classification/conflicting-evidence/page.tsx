@@ -9,7 +9,7 @@ export default function ConflictingEvidencePage() {
   return (
     <div className="py-10 space-y-6">
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/classification" className="hover:text-primary transition-colors">Classification</Link>
@@ -33,14 +33,14 @@ export default function ConflictingEvidencePage() {
         </p>
         <div className="space-y-3">
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Level 1: High-Confidence Conflict Safety Check</p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-md font-medium text-foreground">Level 1: High-Confidence Conflict Safety Check</p>
+            <p className="text-md text-muted-foreground leading-relaxed">
               When pathogenic evidence at Strong or Very Strong level (PVS or PS criteria triggered) directly conflicts with Strong benign evidence (BS criteria triggered), the variant is flagged for manual review regardless of the point total. This prevents automated resolution of genuinely conflicting high-quality evidence.
             </p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Level 2: Bayesian Point Summation</p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-md font-medium text-foreground">Level 2: Bayesian Point Summation</p>
+            <p className="text-md text-muted-foreground leading-relaxed">
               For all other conflicts, the Bayesian point system handles them naturally through summation. For example, PM2 (+2) and BS1 (-4) yield a net of -2 = Likely Benign. This is more nuanced than the previous approach (v3.3) which defaulted all conflicts to VUS.
             </p>
           </div>
@@ -63,7 +63,7 @@ export default function ConflictingEvidencePage() {
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">Clinical Safety Rationale</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-md text-muted-foreground leading-relaxed">
           In clinical genetics, false positives (reporting a benign variant as pathogenic) can lead to unnecessary invasive procedures, patient anxiety, and cascade testing of family members. When high-quality evidence genuinely conflicts, flagging for manual review is the safest outcome -- it prompts the geneticist to gather additional evidence rather than acting on incomplete information.
         </p>
       </section>

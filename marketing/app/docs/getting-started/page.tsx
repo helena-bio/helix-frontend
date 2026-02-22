@@ -26,7 +26,7 @@ export default function GettingStartedPage() {
     <div className="py-10 space-y-8">
       {/* Header */}
       <section className="space-y-4">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <span className="text-foreground">Getting Started</span>
@@ -44,11 +44,11 @@ export default function GettingStartedPage() {
           {pipelineSteps.map((step) => (
             <div key={step.stage} className="bg-card border border-border rounded-lg p-5 flex items-start gap-4">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
-                <span className="text-sm font-semibold text-primary-foreground">{step.stage}</span>
+                <span className="text-md font-semibold text-primary-foreground">{step.stage}</span>
               </div>
               <div className="space-y-1">
                 <p className="text-base font-medium text-foreground">{step.name}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                <p className="text-md text-muted-foreground leading-relaxed">{step.description}</p>
               </div>
             </div>
           ))}
@@ -92,7 +92,7 @@ export default function GettingStartedPage() {
               <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">
                 {page.title}
               </p>
-              <p className="text-sm text-muted-foreground">{page.description}</p>
+              <p className="text-md text-muted-foreground">{page.description}</p>
             </Link>
           ))}
         </div>

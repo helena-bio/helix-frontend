@@ -9,7 +9,7 @@ export default function CombiningRulesPage() {
   return (
     <div className="py-10 space-y-6">
       <div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>
           {' / '}
           <Link href="/docs/classification" className="hover:text-primary transition-colors">Classification</Link>
@@ -26,27 +26,27 @@ export default function CombiningRulesPage() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Pathogenic Evidence Points</p>
+            <p className="text-md font-medium text-foreground">Pathogenic Evidence Points</p>
             {[
               { level: 'Very Strong (PVS)', points: '+8' },
               { level: 'Strong (PS)', points: '+4' },
               { level: 'Moderate (PM)', points: '+2' },
               { level: 'Supporting (PP)', points: '+1' },
             ].map((e) => (
-              <div key={e.level} className="flex justify-between items-center px-3 py-1.5 bg-muted/50 rounded text-sm">
+              <div key={e.level} className="flex justify-between items-center px-3 py-1.5 bg-muted/50 rounded text-md">
                 <span className="text-muted-foreground">{e.level}</span>
                 <span className="font-mono text-foreground">{e.points}</span>
               </div>
             ))}
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Benign Evidence Points</p>
+            <p className="text-md font-medium text-foreground">Benign Evidence Points</p>
             {[
               { level: 'Stand-alone (BA1)', points: 'Override to Benign' },
               { level: 'Strong (BS)', points: '-4' },
               { level: 'Supporting (BP)', points: '-1' },
             ].map((e) => (
-              <div key={e.level} className="flex justify-between items-center px-3 py-1.5 bg-muted/50 rounded text-sm">
+              <div key={e.level} className="flex justify-between items-center px-3 py-1.5 bg-muted/50 rounded text-md">
                 <span className="text-muted-foreground">{e.level}</span>
                 <span className="font-mono text-foreground">{e.points}</span>
               </div>
@@ -61,9 +61,9 @@ export default function CombiningRulesPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Classification</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Point Range</th>
-                <th className="text-left px-4 py-2 text-sm font-semibold text-foreground">Confidence Range</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Classification</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Point Range</th>
+                <th className="text-left px-4 py-2 text-md font-semibold text-foreground">Confidence Range</th>
               </tr>
             </thead>
             <tbody>
@@ -75,9 +75,9 @@ export default function CombiningRulesPage() {
                 { cls: 'Benign', range: '<= -6', conf: '0.80-0.99' },
               ].map((row, i) => (
                 <tr key={row.cls} className={i < 4 ? 'border-b border-border' : ''}>
-                  <td className="px-4 py-2 text-sm font-medium text-foreground">{row.cls}</td>
-                  <td className="px-4 py-2 text-sm font-mono text-muted-foreground">{row.range} pts</td>
-                  <td className="px-4 py-2 text-sm font-mono text-muted-foreground">{row.conf}</td>
+                  <td className="px-4 py-2 text-md font-medium text-foreground">{row.cls}</td>
+                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.range} pts</td>
+                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.conf}</td>
                 </tr>
               ))}
             </tbody>
@@ -92,7 +92,7 @@ export default function CombiningRulesPage() {
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Pathogenic (8 rules)</p>
+            <p className="text-md font-medium text-foreground">Pathogenic (8 rules)</p>
             {[
               'P1: 1 Very Strong + >= 1 Strong',
               'P2: 1 Very Strong + >= 2 Moderate',
@@ -107,7 +107,7 @@ export default function CombiningRulesPage() {
             ))}
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Likely Pathogenic (6 rules)</p>
+            <p className="text-md font-medium text-foreground">Likely Pathogenic (6 rules)</p>
             {[
               'LP1: 1 Very Strong + 1 Moderate',
               'LP2: 1 Strong + 1-2 Moderate',
@@ -120,12 +120,12 @@ export default function CombiningRulesPage() {
             ))}
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Benign (2 rules)</p>
+            <p className="text-md font-medium text-foreground">Benign (2 rules)</p>
             <p className="text-xs text-muted-foreground font-mono">B1: 1 Stand-alone (BA1)</p>
             <p className="text-xs text-muted-foreground font-mono">B2: &gt;= 2 Strong benign</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground">Likely Benign (2 rules)</p>
+            <p className="text-md font-medium text-foreground">Likely Benign (2 rules)</p>
             <p className="text-xs text-muted-foreground font-mono">LB1: 1 Strong benign + 1 Supporting benign</p>
             <p className="text-xs text-muted-foreground font-mono">LB2: &gt;= 2 Supporting benign</p>
           </div>
@@ -134,7 +134,7 @@ export default function CombiningRulesPage() {
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">Why the Point System</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-md text-muted-foreground leading-relaxed">
           The original 18 ACMG rules left gaps -- certain evidence combinations had no defined classification. The Bayesian point system fills these gaps while producing identical results for all combinations covered by the original rules. It also handles conflicting evidence more naturally through point summation rather than binary VUS defaults.
         </p>
       </section>

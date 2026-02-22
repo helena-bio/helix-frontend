@@ -17,11 +17,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
             {children}
             <DocsPagination />
           </div>
-          <div className="mt-6">
-            <Footer />
-          </div>
         </main>
       </div>
+      <Footer />
     </div>
   )
 }
