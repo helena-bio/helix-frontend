@@ -41,7 +41,6 @@ export function DocsPagination() {
         >
           <ChevronLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <div className="text-right">
-            <p className="text-xs text-muted-foreground/70">Previous</p>
             <p className="font-medium">{prev.title}</p>
           </div>
         </Link>
@@ -54,7 +53,6 @@ export function DocsPagination() {
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group text-right"
         >
           <div>
-            <p className="text-xs text-muted-foreground/70">Next</p>
             <p className="font-medium">{next.title}</p>
           </div>
           <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
