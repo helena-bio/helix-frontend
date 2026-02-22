@@ -228,7 +228,7 @@ export function DocsSidebar() {
                       <p className="text-md font-medium text-foreground leading-tight">
                         <HighlightedText text={result.entry.title} query={searchQuery} />
                       </p>
-                      <p className="text-xs text-muted-foreground/60 mt-0.5">{result.entry.section}</p>
+                      <p className="text-tiny text-muted-foreground/60 mt-0.5">{result.entry.section}</p>
                       {result.snippet && (
                         <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                           <HighlightedText text={result.snippet} query={searchQuery} />

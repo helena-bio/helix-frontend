@@ -37,7 +37,7 @@ export function DocsPagination() {
       {prev ? (
         <Link
           href={prev.href}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
+          className="flex items-center gap-2 text-md text-muted-foreground hover:text-primary transition-colors group"
         >
           <ChevronLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
           <div className="text-right">
@@ -50,7 +50,7 @@ export function DocsPagination() {
       {next ? (
         <Link
           href={next.href}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group text-right"
+          className="flex items-center gap-2 text-md text-muted-foreground hover:text-primary transition-colors group text-right"
         >
           <div>
             <p className="font-medium">{next.title}</p>
