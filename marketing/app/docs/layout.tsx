@@ -1,4 +1,4 @@
-import { Header, Footer } from '@/components'
+import { Header } from '@/components'
 import { DocsSidebar, DocsPagination, DocsHighlighter } from '@/components/docs'
 
 export const metadata = {
@@ -21,7 +21,6 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
           </DocsHighlighter>
         </main>
       </div>
-      <Footer />
     </div>
   )
 }
