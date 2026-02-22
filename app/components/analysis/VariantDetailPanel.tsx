@@ -175,7 +175,7 @@ const formatAF = (af: number | null): string => {
   if (af === null) return '-'
   if (af === 0) return 'Absent'
   if (af < 0.0001) return af.toExponential(2)
-  return af.toFixed(6)
+  return af?.toFixed(6) ?? "-"
 }
 
 const POPULATION_NAMES: Record<string, string> = {
@@ -234,17 +234,17 @@ const ScoreBar = ({ barValue, displayValue, colorClass = 'bg-foreground/30' }: {
   displayValue: number | null
   colorClass?: string
 }) => {
-  if (displayValue === null && barValue === null) {
+  if (displayValue == null && barValue == null) {
     return <span className="text-base text-muted-foreground">---</span>
   }
-  const pct = barValue !== null ? Math.min(Math.max(barValue * 100, 0), 100) : 0
+  const pct = barValue != null ? Math.min(Math.max(barValue * 100, 0), 100) : 0
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${pct}%` }} />
       </div>
       <span className="text-base tabular-nums w-12 text-right">
-        {displayValue !== null ? displayValue.toFixed(3) : '---'}
+        {displayValue != null ? displayValue.toFixed(3) : '---'}
       </span>
     </div>
   )
