@@ -171,7 +171,7 @@ export function DocsSidebar() {
           <div className="flex items-center justify-between px-2 pt-2 pb-0 shrink-0">
             <Link
               href="/docs"
-              className="flex-1 px-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+              className="flex-1 px-2 text-md font-semibold text-foreground hover:text-primary transition-colors"
             >
               Documentation
             </Link>
@@ -299,7 +299,7 @@ function SidebarSection({
     return (
       <Link
         href={section.href}
-        className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
+        className={`block px-3 py-1.5 text-md rounded-md transition-colors ${
           isActive
             ? 'bg-primary/10 text-primary font-medium'
             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -314,7 +314,7 @@ function SidebarSection({
     <div>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-md transition-colors ${
+        className={`w-full flex items-center justify-between px-3 py-1.5 text-md rounded-md transition-colors ${
           isSectionActive
             ? 'text-foreground font-medium'
             : 'text-foreground hover:bg-muted/50'
@@ -331,7 +331,7 @@ function SidebarSection({
         <div className="ml-3 pl-3 border-l border-border mt-0.5 space-y-0.5">
           <Link
             href={section.href}
-            className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
+            className={`block px-3 py-1.5 text-md rounded-md transition-colors ${
               isActive
                 ? 'text-primary font-medium'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -345,7 +345,7 @@ function SidebarSection({
               <Link
                 key={child.href}
                 href={child.href}
-                className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
+                className={`block px-3 py-1.5 text-md rounded-md transition-colors ${
                   childActive
                     ? 'text-primary font-medium'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
