@@ -28,7 +28,6 @@ function searchDocs(query: string): SearchResult[] {
     const titleLower = entry.title.toLowerCase()
     const contentLower = entry.content.toLowerCase()
 
-    // Check title match first
     const titleMatch = terms.some((t) => titleLower.includes(t))
     const contentMatch = terms.some((t) => contentLower.includes(t))
 
@@ -36,7 +35,6 @@ function searchDocs(query: string): SearchResult[] {
 
     let snippet = ''
     if (contentMatch) {
-      // Find best matching position and extract snippet
       let bestIdx = -1
       let bestTerm = terms[0]
       for (const term of terms) {
@@ -60,14 +58,13 @@ function searchDocs(query: string): SearchResult[] {
     })
   }
 
-  // Sort: title matches first, then by section order
   results.sort((a, b) => {
     if (a.matchType === 'title' && b.matchType !== 'title') return -1
     if (a.matchType !== 'title' && b.matchType === 'title') return 1
     return 0
   })
 
-  return results.slice(0, 10)
+  return results.slice(0, 15)
 }
 
 function HighlightedText({ text, query }: { text: string; query: string }) {
@@ -95,7 +92,6 @@ export function DocsSidebar() {
   const [isOpen, setIsOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const [searchQuery, setSearchQuery] = useState('')
-  const [isFocused, setIsFocused] = useState(false)
   const sidebarRef = useRef<HTMLElement>(null)
   const isResizing = useRef(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -106,7 +102,6 @@ export function DocsSidebar() {
   const handleResultClick = (href: string) => {
     const q = searchQuery.trim()
     setSearchQuery('')
-    setIsFocused(false)
     router.push(q.length >= 2 ? `${href}?q=${encodeURIComponent(q)}` : href)
   }
 
@@ -147,7 +142,6 @@ export function DocsSidebar() {
     if (!isOpen) setIsOpen(true)
   }
 
-  // Keyboard shortcut: Cmd/Ctrl+K to focus search
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -190,7 +184,7 @@ export function DocsSidebar() {
           </div>
 
           {/* Search */}
-          <div className="px-2 pt-2 pb-1 shrink-0 relative">
+          <div className="px-2 pt-2 pb-1 shrink-0">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
@@ -199,61 +193,64 @@ export function DocsSidebar() {
                 placeholder="Search docs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                 className="w-full h-8 pl-8 pr-16 text-sm bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
               />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/50 font-mono pointer-events-none">
-                {searchQuery ? '' : 'Ctrl+K'}
-              </span>
-              {searchQuery && (
+              {searchQuery ? (
                 <button
                   onClick={() => { setSearchQuery(''); searchInputRef.current?.focus() }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
+              ) : (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/50 font-mono pointer-events-none">
+                  Ctrl+K
+                </span>
               )}
             </div>
+          </div>
 
-            {/* Search results dropdown */}
-            {showResults && isFocused && (
-              <div className="absolute left-2 right-2 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
-                {searchResults.length > 0 ? (
-                  searchResults.map((result) => (
+          {/* Content area: search results OR navigation */}
+          <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+            {showResults ? (
+              /* Search results inline */
+              searchResults.length > 0 ? (
+                <div className="space-y-1">
+                  <p className="px-3 py-1 text-xs text-muted-foreground/70">
+                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                  </p>
+                  {searchResults.map((result) => (
                     <button
                       key={result.entry.href}
-                      className="w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0"
-                      onMouseDown={(e) => { e.preventDefault(); handleResultClick(result.entry.href) }}
+                      className="w-full text-left px-3 py-2 rounded-md hover:bg-muted/50 transition-colors"
+                      onClick={() => handleResultClick(result.entry.href)}
                     >
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-sm font-medium text-foreground leading-tight">
                         <HighlightedText text={result.entry.title} query={searchQuery} />
                       </p>
-                      <p className="text-[11px] text-muted-foreground/70 mt-0.5">{result.entry.section}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-0.5">{result.entry.section}</p>
                       {result.snippet && (
                         <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                           <HighlightedText text={result.snippet} query={searchQuery} />
                         </p>
                       )}
                     </button>
-                  ))
-                ) : (
-                  <p className="px-3 py-4 text-sm text-muted-foreground text-center">No results found</p>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="px-3 py-6 text-sm text-muted-foreground text-center">No results</p>
+              )
+            ) : (
+              /* Full navigation tree */
+              docsNavigation.map((section, index) => (
+                <SidebarSection
+                  key={section.href}
+                  section={section}
+                  pathname={pathname}
+                  defaultOpen={index === 0}
+                />
+              ))
             )}
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-            {docsNavigation.map((section, index) => (
-              <SidebarSection
-                key={section.href}
-                section={section}
-                pathname={pathname}
-                defaultOpen={index === 0}
-              />
-            ))}
           </nav>
         </div>
       ) : (
