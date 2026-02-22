@@ -51,6 +51,8 @@ export interface SharedVariantData {
   alphamissenseScore: number | null
   siftScore: number | null
   spliceaiMaxScore: number | null
+  bayesdelNoafScore: number | null
+  bayesdelNoafPred: string | null
 }
 
 // =============================================================================

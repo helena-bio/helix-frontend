@@ -53,6 +53,10 @@ export interface Variant {
   gerp_rs: number | null
   spliceai_pred: string | null
   spliceai_max_score: number | null
+  bayesdel_noaf_score: number | null
+  bayesdel_noaf_pred: string | null
+  bayesdel_addaf_score: number | null
+  bayesdel_addaf_pred: string | null
   spliceai_gene: string | null
   spliceai_ds_ag: number | null
   spliceai_ds_al: number | null
@@ -165,6 +169,10 @@ export interface VariantInGene {
   alphamissense_score: number | null
   sift_score: number | null
   spliceai_max_score: number | null
+  bayesdel_noaf_score: number | null
+  bayesdel_noaf_pred: string | null
+  bayesdel_addaf_score: number | null
+  bayesdel_addaf_pred: string | null
 }
 
 /**

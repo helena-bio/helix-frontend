@@ -87,6 +87,8 @@ function toSharedVariant(v: SessionMatchResult): SharedVariantData {
     alphamissenseScore: v.alphamissense_score ?? null,
     siftScore: v.sift_score ?? null,
     spliceaiMaxScore: v.spliceai_max_score ?? null,
+    bayesdelNoafScore: v.bayesdel_noaf_score ?? null,
+    bayesdelNoafPred: v.bayesdel_noaf_pred ?? null,
   }
 }
 

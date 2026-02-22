@@ -90,6 +90,10 @@ export interface ScreeningVariantResult {
   alphamissense_score?: number
   sift_score?: number
   spliceai_max_score?: number
+  bayesdel_noaf_score?: number
+  bayesdel_noaf_pred?: string
+  bayesdel_addaf_score?: number
+  bayesdel_addaf_pred?: string
 }
 
 interface ScreeningDiskData {

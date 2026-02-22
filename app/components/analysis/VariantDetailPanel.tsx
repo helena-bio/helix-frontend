@@ -111,6 +111,41 @@ const getSpliceAIBarColor = (score: number | null): string => {
   return 'bg-foreground/30'
 }
 
+const getBayesDelBadgeColor = (score: number | null): string => {
+  if (score === null) return 'bg-muted text-muted-foreground border-border'
+  if (score >= 0.518) return 'bg-red-100 text-red-900 border-red-300'
+  if (score >= 0.290) return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (score >= 0.130) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (score <= -0.361) return 'bg-green-100 text-green-900 border-green-300'
+  if (score <= -0.181) return 'bg-blue-100 text-blue-900 border-blue-300'
+  return 'bg-muted text-muted-foreground border-border'
+}
+
+const getBayesDelLabel = (score: number | null): string => {
+  if (score === null) return 'No data'
+  if (score >= 0.518) return 'PP3 Strong'
+  if (score >= 0.290) return 'PP3 Moderate'
+  if (score >= 0.130) return 'PP3 Supporting'
+  if (score <= -0.361) return 'BP4 Moderate'
+  if (score <= -0.181) return 'BP4 Supporting'
+  return 'Indeterminate'
+}
+
+const getBayesDelBarColor = (score: number | null): string => {
+  if (score === null) return 'bg-foreground/30'
+  if (score >= 0.518) return 'bg-red-500'
+  if (score >= 0.290) return 'bg-orange-400'
+  if (score >= 0.130) return 'bg-yellow-500'
+  if (score <= -0.361) return 'bg-green-500'
+  if (score <= -0.181) return 'bg-blue-500'
+  return 'bg-foreground/30'
+}
+
+const normalizeBayesDel = (score: number | null): number | null => {
+  if (score === null) return null
+  return Math.min(Math.max((score + 1.32) / 2.06, 0), 1)
+}
+
 // ---------------------------------------------------------------------------
 // Parse helpers
 // ---------------------------------------------------------------------------
@@ -330,7 +365,8 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
     variant.alphamissense_pred || variant.alphamissense_score !== null ||
     variant.metasvm_pred || variant.metasvm_score !== null ||
     variant.dann_score !== null ||
-    variant.spliceai_max_score !== null
+    variant.spliceai_max_score !== null ||
+      variant.bayesdel_noaf_score !== null
   )
   const hasConservation = variant && (variant.phylop100way_vertebrate !== null || variant.gerp_rs !== null)
   const hasSpliceAI = variant && variant.spliceai_max_score !== null
@@ -584,6 +620,19 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               <div className="border-t p-4">
                 <SectionHeader icon={<Target className="h-4 w-4" />} title="In Silico Predictions" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-base text-muted-foreground">BayesDel</span>
+                      <Badge variant="outline" className={`text-tiny font-medium ${getBayesDelBadgeColor(variant.bayesdel_noaf_score)}`}>
+                        {getBayesDelLabel(variant.bayesdel_noaf_score)}
+                      </Badge>
+                    </div>
+                    <ScoreBar
+                      barValue={normalizeBayesDel(variant.bayesdel_noaf_score)}
+                      displayValue={variant.bayesdel_noaf_score}
+                      colorClass={getBayesDelBarColor(variant.bayesdel_noaf_score)}
+                    />
+                  </div>
                   <PredictionBar label="SIFT" prediction={variant.sift_pred} score={variant.sift_score} invert />
                   <PredictionBar label="AlphaMissense" prediction={variant.alphamissense_pred} score={variant.alphamissense_score} />
                   <PredictionBar label="MetaSVM" prediction={variant.metasvm_pred} score={variant.metasvm_score} />

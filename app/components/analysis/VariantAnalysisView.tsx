@@ -138,6 +138,8 @@ function toSharedVariant(v: VariantInGene): SharedVariantData {
     alphamissenseScore: v.alphamissense_score,
     siftScore: v.sift_score,
     spliceaiMaxScore: v.spliceai_max_score ?? null,
+    bayesdelNoafScore: v.bayesdel_noaf_score ?? null,
+    bayesdelNoafPred: v.bayesdel_noaf_pred ?? null,
   }
 }
 
