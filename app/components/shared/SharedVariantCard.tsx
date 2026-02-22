@@ -193,66 +193,46 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
             </div>
           </div>
 
-            {/* 4-column classification table */}
-            <div className="border rounded-md overflow-hidden">
-              <table className="w-full text-md">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">ClinVar</th>
-                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">gnomAD AF</th>
-                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Coverage</th>
-                    <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Impact</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="px-3 py-2">
-                      {variant.clinvarSignificance ? (
-                        <Badge
-                          variant="outline"
-                          className={`text-tiny font-semibold w-fit ${getACMGColor(variant.clinvarSignificance)}`}
-                        >
-                          {formatClinVarDisplay(variant.clinvarSignificance)}
-                        </Badge>
-                      ) : (
-                        <span className="text-md text-muted-foreground">---</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      {variant.gnomadAf !== null && variant.gnomadAf !== undefined && variant.gnomadAf > 0 ? (
-                        <span className="text-md font-mono tabular-nums text-foreground">
-                          1 in {Math.round(1 / variant.gnomadAf).toLocaleString()}
-                        </span>
-                      ) : (
-                        <span className="text-md text-muted-foreground">Not found</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-end gap-3">
-                        <div>
-                          <span className="font-mono text-md text-foreground tabular-nums">{variant.depth ?? '---'}</span>
-                          <span className="text-md text-muted-foreground ml-0.5">x</span>
-                          <p className="text-md text-muted-foreground leading-none mt-0.5">depth</p>
-                        </div>
-                        <div>
-                          <span className="font-mono text-md text-foreground tabular-nums">{variant.quality?.toFixed(0) ?? '---'}</span>
-                          <p className="text-md text-muted-foreground leading-none mt-0.5">qual</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      {variant.impact ? (
-                        <Badge variant="outline" className={`text-tiny w-fit ${getImpactColor(variant.impact)}`}>
-                          {formatImpactDisplay(variant.impact)}
-                        </Badge>
-                      ) : (
-                        <span className="text-md text-muted-foreground">---</span>
-                      )}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            {/* Classification details - key/value rows */}
+            <div className="space-y-0">
+              <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                <span className="text-md text-muted-foreground">ClinVar</span>
+                {variant.clinvarSignificance ? (
+                  <Badge variant="outline" className={`text-tiny font-semibold ${getACMGColor(variant.clinvarSignificance)}`}>
+                    {formatClinVarDisplay(variant.clinvarSignificance)}
+                  </Badge>
+                ) : (
+                  <span className="text-md text-muted-foreground">---</span>
+                )}
+              </div>
+              <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                <span className="text-md text-muted-foreground">gnomAD AF</span>
+                {variant.gnomadAf != null && variant.gnomadAf > 0 ? (
+                  <span className="text-md text-foreground">
+                    1 in {Math.round(1 / variant.gnomadAf).toLocaleString()}
+                  </span>
+                ) : (
+                  <span className="text-md text-muted-foreground">Not found</span>
+                )}
+              </div>
+              <div className="flex justify-between items-center py-1.5 border-b border-border/50">
+                <span className="text-md text-muted-foreground">Coverage</span>
+                <span className="text-md text-foreground">
+                  {variant.depth ?? '---'}x depth / {variant.quality?.toFixed(0) ?? '---'} qual
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-1.5">
+                <span className="text-md text-muted-foreground">Impact</span>
+                {variant.impact ? (
+                  <Badge variant="outline" className={`text-tiny ${getImpactColor(variant.impact)}`}>
+                    {formatImpactDisplay(variant.impact)}
+                  </Badge>
+                ) : (
+                  <span className="text-md text-muted-foreground">---</span>
+                )}
+              </div>
             </div>
+
 
           {/* ACMG Criteria + Frequency/Zygosity */}
           <div className="flex items-end justify-between">
