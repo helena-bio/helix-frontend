@@ -99,10 +99,10 @@ export default function DocsPage() {
         <h1 className="text-3xl font-semibold tracking-tight text-primary">
           Documentation
         </h1>
-        <p className="text-base text-muted-foreground leading-relaxed max-w-2xl">
+        <p className="text-base text-muted-foreground leading-relaxed">
           Complete documentation for the Helix Insight clinical genetics platform. Every threshold, database version, and classification rule used in production is documented here. This documentation is intended for clinical geneticists, laboratory directors, accreditation auditors, and bioinformaticians.
         </p>
-        <p className="text-base text-muted-foreground leading-relaxed max-w-2xl">
+        <p className="text-base text-muted-foreground leading-relaxed">
           For the full classification methodology with all criteria thresholds and combining rules, see the dedicated <Link href="/methodology" className="text-primary hover:underline font-medium">Methodology</Link> page.
         </p>
       </section>

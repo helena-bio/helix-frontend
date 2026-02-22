@@ -32,7 +32,7 @@ export default function GettingStartedPage() {
           <span className="text-foreground">Getting Started</span>
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary">Getting Started</h1>
-        <p className="text-base text-muted-foreground leading-relaxed max-w-2xl">
+        <p className="text-base text-muted-foreground leading-relaxed">
           Helix Insight receives a VCF file, processes it through a six-stage pipeline, and produces fully classified variants with ACMG evidence, phenotype correlation, literature evidence, and a prioritized shortlist for clinical review.
         </p>
       </section>

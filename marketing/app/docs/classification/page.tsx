@@ -19,10 +19,10 @@ export default function ClassificationPage() {
     <div className="py-10 space-y-8">
       <section className="space-y-4">
         <h1 className="text-3xl font-semibold tracking-tight text-primary">Classification</h1>
-        <p className="text-base text-muted-foreground leading-relaxed max-w-2xl">
+        <p className="text-base text-muted-foreground leading-relaxed">
           Variant classification follows the ACMG/AMP 2015 guidelines implemented through the Bayesian point-based framework (Tavtigian et al. 2018, 2020) with ClinGen SVI calibrated computational predictor thresholds (Pejaver et al. 2022) and SpliceAI integration aligned to ClinGen SVI 2023 recommendations (Walker et al. 2023).
         </p>
-        <p className="text-base text-muted-foreground leading-relaxed max-w-2xl">
+        <p className="text-base text-muted-foreground leading-relaxed">
           Classification is strictly evidence-based. No machine learning model determines variant pathogenicity. The framework evaluates 28 evidence criteria -- 19 automated, 9 requiring manual curation -- and combines them using calibrated point values to produce one of five standard classifications: Pathogenic, Likely Pathogenic, VUS, Likely Benign, or Benign.
         </p>
       </section>
