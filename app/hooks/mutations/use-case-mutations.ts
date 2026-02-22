@@ -1,11 +1,11 @@
 /**
  * Case Mutation Hooks
- * Rename and delete operations for analysis cases (sessions).
+ * Rename, delete, and reprocess operations for analysis cases (sessions).
  * Invalidates cases query on success for immediate UI update.
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { renameCase, deleteCase } from '@/lib/api/variant-analysis'
+import { renameCase, deleteCase, reprocessSession } from '@/lib/api/variant-analysis'
 import { casesKeys } from '@/hooks/queries/use-cases'
 
 export function useRenameCase() {
@@ -25,6 +25,17 @@ export function useDeleteCase() {
 
   return useMutation({
     mutationFn: (sessionId: string) => deleteCase(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: casesKeys.all })
+    },
+  })
+}
+
+export function useReprocessCase() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (sessionId: string) => reprocessSession(sessionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: casesKeys.all })
     },

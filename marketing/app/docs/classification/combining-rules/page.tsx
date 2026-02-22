@@ -103,7 +103,7 @@ export default function CombiningRulesPage() {
               'P7: 1 Strong + 2 Moderate + >= 2 Supporting',
               'P8: 1 Strong + >= 4 Moderate',
             ].map((rule) => (
-              <p key={rule} className="text-xs text-muted-foreground font-mono">{rule}</p>
+              <p key={rule} className="text-tiny text-muted-foreground font-mono">{rule}</p>
             ))}
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
@@ -116,18 +116,18 @@ export default function CombiningRulesPage() {
               'LP5: 2 Moderate + >= 2 Supporting',
               'LP6: 1 Moderate + >= 4 Supporting',
             ].map((rule) => (
-              <p key={rule} className="text-xs text-muted-foreground font-mono">{rule}</p>
+              <p key={rule} className="text-tiny text-muted-foreground font-mono">{rule}</p>
             ))}
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
             <p className="text-md font-medium text-foreground">Benign (2 rules)</p>
-            <p className="text-xs text-muted-foreground font-mono">B1: 1 Stand-alone (BA1)</p>
-            <p className="text-xs text-muted-foreground font-mono">B2: &gt;= 2 Strong benign</p>
+            <p className="text-tiny text-muted-foreground font-mono">B1: 1 Stand-alone (BA1)</p>
+            <p className="text-tiny text-muted-foreground font-mono">B2: &gt;= 2 Strong benign</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
             <p className="text-md font-medium text-foreground">Likely Benign (2 rules)</p>
-            <p className="text-xs text-muted-foreground font-mono">LB1: 1 Strong benign + 1 Supporting benign</p>
-            <p className="text-xs text-muted-foreground font-mono">LB2: &gt;= 2 Supporting benign</p>
+            <p className="text-tiny text-muted-foreground font-mono">LB1: 1 Strong benign + 1 Supporting benign</p>
+            <p className="text-tiny text-muted-foreground font-mono">LB2: &gt;= 2 Supporting benign</p>
           </div>
         </div>
       </section>

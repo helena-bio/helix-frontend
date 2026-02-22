@@ -30,6 +30,10 @@ import {
   FileText,
   Dna,
   BookOpen,
+  RefreshCw,
+  Trash2,
+  Check,
+  X,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -46,6 +50,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useCases } from '@/hooks/queries/use-cases'
+import { useReprocessCase, useDeleteCase } from '@/hooks/mutations/use-case-mutations'
 import { cn } from '@helix/shared/lib/utils'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 import { get } from '@/lib/api/client'
@@ -175,14 +180,19 @@ interface CaseCardProps {
 }
 
 function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps) {
-  const { avatarVersion } = useAuth()
+  const { avatarVersion, user } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [profile, setProfile] = useState<ClinicalProfileData | null>(null)
   const [findings, setFindings] = useState<Finding[] | null>(null)
   const [isLoadingFindings, setIsLoadingFindings] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  const reprocessMutation = useReprocessCase()
+  const deleteMutation = useDeleteCase()
 
   const isCompleted = session.status === 'completed'
+  const isOwner = session.user_id === user?.id
   const hasFindings = session.pathogenic_count > 0 || session.likely_pathogenic_count > 0
   const config = statusConfig[session.status] || statusConfig.pending
   const StatusIcon = config.icon
@@ -192,6 +202,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
 
     if (isExpanded) {
       setIsExpanded(false)
+      setConfirmingDelete(false)
       return
     }
 
@@ -279,6 +290,43 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
     } catch {
       toast.error('No clinical report available for this case')
     }
+  }, [])
+
+  const handleReprocess = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    reprocessMutation.mutate(session.id, {
+      onSuccess: () => {
+        toast.success('Reprocess started -- annotations and classification will be updated')
+      },
+      onError: (err: any) => {
+        const detail = err?.response?.data?.detail || err?.message || 'Reprocess failed'
+        toast.error(detail)
+      },
+    })
+  }, [session.id, reprocessMutation])
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setConfirmingDelete(true)
+  }, [])
+
+  const handleConfirmDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    deleteMutation.mutate(session.id, {
+      onSuccess: () => {
+        toast.success('Case deleted')
+        setConfirmingDelete(false)
+      },
+      onError: () => {
+        toast.error('Failed to delete case')
+        setConfirmingDelete(false)
+      },
+    })
+  }, [session.id, deleteMutation])
+
+  const handleCancelDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setConfirmingDelete(false)
   }, [])
 
   return (
@@ -523,45 +571,96 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
               )}
 
               {/* Actions */}
-              <div className="pt-2 pb-3 border-t flex items-center gap-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onNavigate(session)
-                  }}
-                >
-                  <ExternalLink className="h-3 w-3 mr-1" />
-                  View Case
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+              <div className="pt-2 pb-3 border-t flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onNavigate(session)
+                    }}
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    View Case
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Download Report
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-40" onClick={(e) => e.stopPropagation()}>
+                      {(['pdf', 'docx', 'md'] as ReportFormat[]).map((fmt) => (
+                        <DropdownMenuItem
+                          key={fmt}
+                          className="cursor-pointer text-md"
+                          onClick={() => handleDownloadReport(session.id, fmt)}
+                        >
+                          <Download className="h-3 w-3 mr-2" />
+                          {fmt === 'md' ? 'Markdown' : fmt.toUpperCase()}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                {isOwner && (
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="text-sm"
-                      onClick={(e) => e.stopPropagation()}
+                      disabled={reprocessMutation.isPending}
+                      onClick={handleReprocess}
                     >
-                      <Download className="h-3 w-3 mr-1" />
-                      Download Report
-                      <ChevronDown className="h-3 w-3 ml-1" />
+                      <RefreshCw className={cn("h-3 w-3 mr-1", reprocessMutation.isPending && "animate-spin")} />
+                      {reprocessMutation.isPending ? 'Reprocessing...' : 'Reprocess'}
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-40" onClick={(e) => e.stopPropagation()}>
-                    {(['pdf', 'docx', 'md'] as ReportFormat[]).map((fmt) => (
-                      <DropdownMenuItem
-                        key={fmt}
-                        className="cursor-pointer text-md"
-                        onClick={() => handleDownloadReport(session.id, fmt)}
+                    {confirmingDelete ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm text-destructive">Delete?</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          disabled={deleteMutation.isPending}
+                          onClick={handleConfirmDelete}
+                        >
+                          {deleteMutation.isPending
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Check className="h-3.5 w-3.5 text-destructive" />
+                          }
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={handleCancelDelete}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-sm text-muted-foreground hover:text-destructive"
+                        onClick={handleDelete}
                       >
-                        <Download className="h-3 w-3 mr-2" />
-                        {fmt === 'md' ? 'Markdown' : fmt.toUpperCase()}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -572,7 +671,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
               <p className="text-sm text-muted-foreground text-center py-2">
                 No clinical profile saved for this case.
               </p>
-              <div className="pt-2 border-t">
+              <div className="pt-2 border-t flex items-center justify-between">
                 <Button
                   variant="default"
                   size="sm"
@@ -585,6 +684,55 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                   <ExternalLink className="h-3 w-3 mr-1" />
                   View Case
                 </Button>
+                {isOwner && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-sm"
+                      disabled={reprocessMutation.isPending}
+                      onClick={handleReprocess}
+                    >
+                      <RefreshCw className={cn("h-3 w-3 mr-1", reprocessMutation.isPending && "animate-spin")} />
+                      {reprocessMutation.isPending ? 'Reprocessing...' : 'Reprocess'}
+                    </Button>
+                    {confirmingDelete ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm text-destructive">Delete?</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          disabled={deleteMutation.isPending}
+                          onClick={handleConfirmDelete}
+                        >
+                          {deleteMutation.isPending
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Check className="h-3.5 w-3.5 text-destructive" />
+                          }
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={handleCancelDelete}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-sm text-muted-foreground hover:text-destructive"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

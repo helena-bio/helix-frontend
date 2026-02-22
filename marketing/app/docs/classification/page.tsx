@@ -70,7 +70,7 @@ export default function ClassificationPage() {
           ].map((c) => (
             <div key={c.label} className="bg-card border border-border rounded-lg p-3 text-center space-y-1">
               <p className="text-md font-medium text-foreground">{c.label}</p>
-              <p className="text-xs font-mono text-muted-foreground">{c.points}</p>
+              <p className="text-tiny font-mono text-muted-foreground">{c.points}</p>
             </div>
           ))}
         </div>

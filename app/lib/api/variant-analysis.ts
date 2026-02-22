@@ -421,3 +421,17 @@ export async function unstarVariant(
 ): Promise<void> {
   return del(`/sessions/${sessionId}/review-board/${variantIdx}`)
 }
+
+// =============================================================================
+// Reprocess API
+// =============================================================================
+
+/**
+ * Reprocess a completed session: re-annotate all phases + re-classify ACMG.
+ * Returns 202 with task_id for polling.
+ */
+export async function reprocessSession(
+  sessionId: string
+): Promise<{ task_id: string; session_id: string; status: string }> {
+  return post(`/sessions/${sessionId}/reprocess`, {})
+}

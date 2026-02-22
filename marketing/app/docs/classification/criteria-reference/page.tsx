@@ -197,19 +197,19 @@ function CriterionCard({ c }: { c: Criterion }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-mono text-base font-semibold text-foreground">{c.code}</span>
-          <span className={`px-2 py-0.5 text-xs rounded ${strengthColors[c.strength] || 'bg-muted text-muted-foreground'}`}>{c.strength}</span>
-          <span className={`px-2 py-0.5 text-xs rounded capitalize ${statusColors[c.status]}`}>{c.status}</span>
+          <span className={`px-2 py-0.5 text-tiny rounded ${strengthColors[c.strength] || 'bg-muted text-muted-foreground'}`}>{c.strength}</span>
+          <span className={`px-2 py-0.5 text-tiny rounded capitalize ${statusColors[c.status]}`}>{c.status}</span>
         </div>
       </div>
       <p className="text-md text-muted-foreground">{c.name}</p>
 
       {c.conditions && (
         <div className="space-y-1">
-          <p className="text-xs font-medium text-foreground">Conditions</p>
+          <p className="text-tiny font-medium text-foreground">Conditions</p>
           {c.conditions.map((cond, i) => (
             <div key={i} className="flex items-start gap-2">
               <div className="w-1 h-1 bg-primary/60 rounded-full shrink-0 mt-1.5" />
-              <p className="text-xs text-muted-foreground">{cond}</p>
+              <p className="text-tiny text-muted-foreground">{cond}</p>
             </div>
           ))}
         </div>
@@ -217,22 +217,22 @@ function CriterionCard({ c }: { c: Criterion }) {
 
       {c.exclusions && c.exclusions.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs font-medium text-foreground">Exclusions</p>
+          <p className="text-tiny font-medium text-foreground">Exclusions</p>
           {c.exclusions.map((exc, i) => (
-            <p key={i} className="text-xs text-muted-foreground">{exc}</p>
+            <p key={i} className="text-tiny text-muted-foreground">{exc}</p>
           ))}
         </div>
       )}
 
       {c.reason && (
-        <p className="text-xs text-muted-foreground italic">{c.reason}</p>
+        <p className="text-tiny text-muted-foreground italic">{c.reason}</p>
       )}
 
       {(c.databases || c.limitations || c.note) && (
         <div className="pt-2 border-t border-border space-y-1">
-          {c.databases && <p className="text-xs text-muted-foreground"><span className="font-medium text-foreground">Databases: </span>{c.databases}</p>}
-          {c.limitations && c.limitations.map((lim, i) => <p key={i} className="text-xs text-muted-foreground">{lim}</p>)}
-          {c.note && <p className="text-xs text-primary/80">{c.note}</p>}
+          {c.databases && <p className="text-tiny text-muted-foreground"><span className="font-medium text-foreground">Databases: </span>{c.databases}</p>}
+          {c.limitations && c.limitations.map((lim, i) => <p key={i} className="text-tiny text-muted-foreground">{lim}</p>)}
+          {c.note && <p className="text-tiny text-primary/80">{c.note}</p>}
         </div>
       )}
     </div>
