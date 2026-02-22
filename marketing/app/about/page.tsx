@@ -13,8 +13,8 @@ export default function AboutPage() {
   return (
     <div className="h-full flex flex-col">
       <Header />
-      <main className="flex-1 overflow-y-auto pt-8 pb-12 px-6">
-        <div className="max-w-5xl mx-auto space-y-16">
+      <main className="flex-1 overflow-y-auto">
+        <div className="pt-8 pb-12 px-6 max-w-5xl mx-auto space-y-16">
 
           {/* Mission */}
           <section className="text-center space-y-4 max-w-3xl mx-auto">

@@ -10,8 +10,8 @@ export default function JoinUsPage() {
   return (
     <div className="h-full flex flex-col">
       <Header />
-      <main className="flex-1 overflow-y-auto pt-8 pb-12 px-6">
-        <div className="max-w-3xl mx-auto space-y-16">
+      <main className="flex-1 overflow-y-auto">
+        <div className="pt-8 pb-12 px-6 max-w-3xl mx-auto space-y-16">
 
           <section className="space-y-6">
             <h1 className="text-3xl font-semibold text-primary">Join Us</h1>
