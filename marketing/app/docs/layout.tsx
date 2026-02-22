@@ -1,5 +1,5 @@
 import { Header, Footer } from '@/components'
-import { DocsSidebar, DocsPagination } from '@/components/docs'
+import { DocsSidebar, DocsPagination, DocsHighlighter } from '@/components/docs'
 
 export const metadata = {
   title: 'Documentation | Helix Insight',
@@ -13,10 +13,12 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       <div className="flex-1 min-h-0 flex">
         <DocsSidebar />
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6">
-            {children}
-            <DocsPagination />
-          </div>
+          <DocsHighlighter>
+            <div className="max-w-4xl mx-auto px-6">
+              {children}
+              <DocsPagination />
+            </div>
+          </DocsHighlighter>
         </main>
       </div>
       <Footer />

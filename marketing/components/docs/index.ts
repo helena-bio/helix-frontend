@@ -1,4 +1,7 @@
 export { DocsSidebar } from './DocsSidebar'
 export { DocsPagination } from './DocsPagination'
+export { DocsHighlighter } from './DocsHighlighter'
 export { docsNavigation } from './docsNavigation'
+export { docsSearchIndex } from './docsSearchIndex'
 export type { NavItem } from './docsNavigation'
+export type { SearchEntry } from './docsSearchIndex'

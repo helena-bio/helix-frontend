@@ -2,41 +2,113 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { PanelLeftClose, ChevronRight, ChevronDown, Search, X } from 'lucide-react'
 import { docsNavigation, type NavItem } from './docsNavigation'
+import { docsSearchIndex, type SearchEntry } from './docsSearchIndex'
 
 const SIDEBAR_MIN = 256
 const SIDEBAR_MAX = 480
 const SIDEBAR_COLLAPSED = 40
 
+interface SearchResult {
+  entry: SearchEntry
+  snippet: string
+  matchType: 'title' | 'content'
+}
+
+function searchDocs(query: string): SearchResult[] {
+  if (!query || query.trim().length < 2) return []
+  const terms = query.toLowerCase().split(/\s+/).filter((t) => t.length >= 2)
+  if (terms.length === 0) return []
+
+  const results: SearchResult[] = []
+
+  for (const entry of docsSearchIndex) {
+    const titleLower = entry.title.toLowerCase()
+    const contentLower = entry.content.toLowerCase()
+
+    // Check title match first
+    const titleMatch = terms.some((t) => titleLower.includes(t))
+    const contentMatch = terms.some((t) => contentLower.includes(t))
+
+    if (!titleMatch && !contentMatch) continue
+
+    let snippet = ''
+    if (contentMatch) {
+      // Find best matching position and extract snippet
+      let bestIdx = -1
+      let bestTerm = terms[0]
+      for (const term of terms) {
+        const idx = contentLower.indexOf(term)
+        if (idx !== -1 && (bestIdx === -1 || idx < bestIdx)) {
+          bestIdx = idx
+          bestTerm = term
+        }
+      }
+      if (bestIdx !== -1) {
+        const start = Math.max(0, bestIdx - 30)
+        const end = Math.min(entry.content.length, bestIdx + bestTerm.length + 50)
+        snippet = (start > 0 ? '...' : '') + entry.content.slice(start, end) + (end < entry.content.length ? '...' : '')
+      }
+    }
+
+    results.push({
+      entry,
+      snippet,
+      matchType: titleMatch ? 'title' : 'content',
+    })
+  }
+
+  // Sort: title matches first, then by section order
+  results.sort((a, b) => {
+    if (a.matchType === 'title' && b.matchType !== 'title') return -1
+    if (a.matchType !== 'title' && b.matchType === 'title') return 1
+    return 0
+  })
+
+  return results.slice(0, 10)
+}
+
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  if (!query || query.length < 2) return <>{text}</>
+  const terms = query.toLowerCase().split(/\s+/).filter((t) => t.length >= 2)
+  const regex = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
+  const parts = text.split(regex)
+
+  return (
+    <>
+      {parts.map((part, i) =>
+        terms.some((t) => part.toLowerCase() === t) ? (
+          <span key={i} className="text-primary font-medium">{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  )
+}
+
 export function DocsSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(true)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const [searchQuery, setSearchQuery] = useState('')
+  const [isFocused, setIsFocused] = useState(false)
   const sidebarRef = useRef<HTMLElement>(null)
   const isResizing = useRef(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const allItems = useMemo(() => {
-    const items: NavItem[] = []
-    for (const section of docsNavigation) {
-      items.push(section)
-      if (section.children) {
-        for (const child of section.children) {
-          items.push(child)
-        }
-      }
-    }
-    return items
-  }, [])
+  const searchResults = useMemo(() => searchDocs(searchQuery), [searchQuery])
+  const showResults = searchQuery.trim().length >= 2
 
-  const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return null
-    const q = searchQuery.toLowerCase()
-    return allItems.filter((item) => item.title.toLowerCase().includes(q))
-  }, [searchQuery, allItems])
+  const handleResultClick = (href: string) => {
+    const q = searchQuery.trim()
+    setSearchQuery('')
+    setIsFocused(false)
+    router.push(q.length >= 2 ? `${href}?q=${encodeURIComponent(q)}` : href)
+  }
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -75,6 +147,19 @@ export function DocsSidebar() {
     if (!isOpen) setIsOpen(true)
   }
 
+  // Keyboard shortcut: Cmd/Ctrl+K to focus search
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        if (!isOpen) setIsOpen(true)
+        setTimeout(() => searchInputRef.current?.focus(), 100)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
   return (
     <aside
       ref={sidebarRef}
@@ -104,7 +189,8 @@ export function DocsSidebar() {
             </button>
           </div>
 
-          <div className="px-2 pt-2 pb-1 shrink-0">
+          {/* Search */}
+          <div className="px-2 pt-2 pb-1 shrink-0 relative">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
@@ -113,8 +199,13 @@ export function DocsSidebar() {
                 placeholder="Search docs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 pl-8 pr-8 text-sm bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                className="w-full h-8 pl-8 pr-16 text-sm bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
               />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/50 font-mono pointer-events-none">
+                {searchQuery ? '' : 'Ctrl+K'}
+              </span>
               {searchQuery && (
                 <button
                   onClick={() => { setSearchQuery(''); searchInputRef.current?.focus() }}
@@ -124,38 +215,45 @@ export function DocsSidebar() {
                 </button>
               )}
             </div>
+
+            {/* Search results dropdown */}
+            {showResults && isFocused && (
+              <div className="absolute left-2 right-2 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  searchResults.map((result) => (
+                    <button
+                      key={result.entry.href}
+                      className="w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0"
+                      onMouseDown={(e) => { e.preventDefault(); handleResultClick(result.entry.href) }}
+                    >
+                      <p className="text-sm font-medium text-foreground">
+                        <HighlightedText text={result.entry.title} query={searchQuery} />
+                      </p>
+                      <p className="text-[11px] text-muted-foreground/70 mt-0.5">{result.entry.section}</p>
+                      {result.snippet && (
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          <HighlightedText text={result.snippet} query={searchQuery} />
+                        </p>
+                      )}
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-3 py-4 text-sm text-muted-foreground text-center">No results found</p>
+                )}
+              </div>
+            )}
           </div>
 
+          {/* Navigation */}
           <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-            {filteredItems ? (
-              filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block px-3 py-1.5 text-sm rounded-md transition-colors ${
-                      pathname === item.href
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
-                    onClick={() => setSearchQuery('')}
-                  >
-                    {item.title}
-                  </Link>
-                ))
-              ) : (
-                <p className="px-3 py-4 text-sm text-muted-foreground text-center">No results</p>
-              )
-            ) : (
-              docsNavigation.map((section, index) => (
-                <SidebarSection
-                  key={section.href}
-                  section={section}
-                  pathname={pathname}
-                  defaultOpen={index === 0}
-                />
-              ))
-            )}
+            {docsNavigation.map((section, index) => (
+              <SidebarSection
+                key={section.href}
+                section={section}
+                pathname={pathname}
+                defaultOpen={index === 0}
+              />
+            ))}
           </nav>
         </div>
       ) : (
