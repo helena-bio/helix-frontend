@@ -73,7 +73,7 @@ export default function ClinvarIntegrationPage() {
                 { stars: '4', meaning: 'Practice guideline' },
               ].map((row, i) => (
                 <tr key={row.stars} className={i < 4 ? 'border-b border-border' : ''}>
-                  <td className="px-4 py-2 text-md font-mono text-foreground">{row.stars}</td>
+                  <td className="px-4 py-2 text-md text-foreground">{row.stars}</td>
                   <td className="px-4 py-2 text-md text-muted-foreground">{row.meaning}</td>
                 </tr>
               ))}

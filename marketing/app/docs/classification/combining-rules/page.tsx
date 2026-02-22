@@ -76,8 +76,8 @@ export default function CombiningRulesPage() {
               ].map((row, i) => (
                 <tr key={row.cls} className={i < 4 ? 'border-b border-border' : ''}>
                   <td className="px-4 py-2 text-md font-medium text-foreground">{row.cls}</td>
-                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.range} pts</td>
-                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.conf}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.range} pts</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.conf}</td>
                 </tr>
               ))}
             </tbody>
@@ -103,7 +103,7 @@ export default function CombiningRulesPage() {
               'P7: 1 Strong + 2 Moderate + >= 2 Supporting',
               'P8: 1 Strong + >= 4 Moderate',
             ].map((rule) => (
-              <p key={rule} className="text-sm text-muted-foreground font-mono">{rule}</p>
+              <p key={rule} className="text-sm text-muted-foreground">{rule}</p>
             ))}
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
@@ -116,18 +116,18 @@ export default function CombiningRulesPage() {
               'LP5: 2 Moderate + >= 2 Supporting',
               'LP6: 1 Moderate + >= 4 Supporting',
             ].map((rule) => (
-              <p key={rule} className="text-sm text-muted-foreground font-mono">{rule}</p>
+              <p key={rule} className="text-sm text-muted-foreground">{rule}</p>
             ))}
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
             <p className="text-md font-medium text-foreground">Benign (2 rules)</p>
-            <p className="text-sm text-muted-foreground font-mono">B1: 1 Stand-alone (BA1)</p>
-            <p className="text-sm text-muted-foreground font-mono">B2: &gt;= 2 Strong benign</p>
+            <p className="text-sm text-muted-foreground">B1: 1 Stand-alone (BA1)</p>
+            <p className="text-sm text-muted-foreground">B2: &gt;= 2 Strong benign</p>
           </div>
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">
             <p className="text-md font-medium text-foreground">Likely Benign (2 rules)</p>
-            <p className="text-sm text-muted-foreground font-mono">LB1: 1 Strong benign + 1 Supporting benign</p>
-            <p className="text-sm text-muted-foreground font-mono">LB2: &gt;= 2 Supporting benign</p>
+            <p className="text-sm text-muted-foreground">LB1: 1 Strong benign + 1 Supporting benign</p>
+            <p className="text-sm text-muted-foreground">LB2: &gt;= 2 Supporting benign</p>
           </div>
         </div>
       </section>

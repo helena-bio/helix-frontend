@@ -48,8 +48,8 @@ export default function ConfidenceScoresPage() {
               ].map((row, i) => (
                 <tr key={row.cls} className={i < 4 ? 'border-b border-border' : ''}>
                   <td className="px-4 py-2 text-md font-medium text-foreground">{row.cls}</td>
-                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.points}</td>
-                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.conf}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.points}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.conf}</td>
                   <td className="px-4 py-2 text-md text-muted-foreground">{row.interp}</td>
                 </tr>
               ))}

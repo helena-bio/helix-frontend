@@ -53,8 +53,8 @@ export default function AcmgFrameworkPage() {
               ].map((row, i) => (
                 <tr key={row.level} className={i < 6 ? 'border-b border-border' : ''}>
                   <td className="px-4 py-2 text-md font-medium text-foreground">{row.level}</td>
-                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.count}</td>
-                  <td className="px-4 py-2 text-md font-mono text-muted-foreground">{row.points}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.count}</td>
+                  <td className="px-4 py-2 text-md text-muted-foreground">{row.points}</td>
                   <td className="px-4 py-2 text-md text-muted-foreground">{row.examples}</td>
                 </tr>
               ))}
@@ -88,7 +88,7 @@ export default function AcmgFrameworkPage() {
       </section>
 
       <p className="text-md text-muted-foreground">
-        Reference: Richards S, et al. Genetics in Medicine. 2015;17(5):405-424. <a href="https://pubmed.ncbi.nlm.nih.gov/25741868/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono">PMID: 25741868</a>
+        Reference: Richards S, et al. Genetics in Medicine. 2015;17(5):405-424. <a href="https://pubmed.ncbi.nlm.nih.gov/25741868/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">PMID: 25741868</a>
       </p>
     </div>
   )

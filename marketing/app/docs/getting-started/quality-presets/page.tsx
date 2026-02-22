@@ -45,9 +45,9 @@ export default function QualityPresetsPage() {
               ].map((row, i) => (
                 <tr key={row.name} className={i < 2 ? 'border-b border-border' : ''}>
                   <td className="px-5 py-3 text-md font-medium text-foreground">{row.name}</td>
-                  <td className="px-5 py-3 text-md font-mono text-muted-foreground">{row.qual}</td>
-                  <td className="px-5 py-3 text-md font-mono text-muted-foreground">{row.depth}</td>
-                  <td className="px-5 py-3 text-md font-mono text-muted-foreground">{row.gq}</td>
+                  <td className="px-5 py-3 text-md text-muted-foreground">{row.qual}</td>
+                  <td className="px-5 py-3 text-md text-muted-foreground">{row.depth}</td>
+                  <td className="px-5 py-3 text-md text-muted-foreground">{row.gq}</td>
                   <td className="px-5 py-3 text-md text-muted-foreground">{row.use}</td>
                 </tr>
               ))}
