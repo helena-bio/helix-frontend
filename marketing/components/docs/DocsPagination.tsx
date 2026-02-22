@@ -33,7 +33,7 @@ export function DocsPagination() {
   if (!prev && !next) return null
 
   return (
-    <nav className="flex items-center justify-between border-t border-border pt-6 mt-10">
+    <nav className="flex items-center justify-between border-t border-border pt-6 mt-10 mb-8">
       {prev ? (
         <Link
           href={prev.href}
