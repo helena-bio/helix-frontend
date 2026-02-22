@@ -14,9 +14,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
         <DocsSidebar />
         <main className="flex-1 overflow-y-auto">
           {children}
-          <Footer />
         </main>
       </div>
+      <Footer />
     </div>
   )
 }
