@@ -20,10 +20,12 @@ export const metadata = {
    Source of truth: git commit hash should be referenced in version history.
    --------------------------------------------------------------------------- */
 
-const CLASSIFIER_VERSION = '3.3'
+const CLASSIFIER_VERSION = '3.5'
 const LAST_UPDATED = 'February 2026'
 const ACMG_REFERENCE = 'Richards et al., Genetics in Medicine, 2015'
 const CLINGEN_SVI_REFERENCE = 'Walker et al., Am J Hum Genet. 2023;110(7):1046-1067. PMID: 37352859'
+const TAVTIGIAN_REFERENCE = 'Tavtigian et al., Hum Mutat. 2018;39(11):1485-1492. PMID: 30311386'
+const PEJAVER_REFERENCE = 'Pejaver et al., Am J Hum Genet. 2022;109(12):2163-2177. PMID: 36413997'
 
 const tocSections = [
   { id: 'pipeline', label: 'Pipeline Overview' },
@@ -32,7 +34,8 @@ const tocSections = [
   { id: 'automated-criteria', label: 'Automated Criteria' },
   { id: 'predictors', label: 'Computational Predictors' },
   { id: 'spliceai', label: 'SpliceAI Integration' },
-  { id: 'combining-rules', label: 'Combining Rules' },
+  { id: 'classification-logic', label: 'Classification Logic' },
+  { id: 'vcep', label: 'VCEP Gene-Specific Specifications' },
   { id: 'clinvar-override', label: 'ClinVar Override Logic' },
   { id: 'manual-criteria', label: 'Manual Review Criteria' },
   { id: 'quality-filtering', label: 'Quality Filtering' },
@@ -46,7 +49,7 @@ const pipelineStages = [
   { stage: 2, name: 'Quality Filtering', duration: '~5s', description: 'Configurable quality, depth, and genotype quality thresholds. ClinVar-listed pathogenic variants are protected from filtering.' },
   { stage: 3, name: 'VEP Annotation', duration: '~3-4 min', description: 'Ensembl Variant Effect Predictor for consequence, impact, transcript, and protein annotations. Parallel processing across chromosomes.' },
   { stage: 4, name: 'Reference DB Annotation', duration: '~5-10s', description: 'Population frequencies, clinical significance, functional predictions, gene constraint, phenotype associations, and dosage sensitivity loaded from 7 reference databases.' },
-  { stage: 5, name: 'ACMG Classification', duration: '<1s', description: 'SQL-based ACMG/AMP 2015 classification. 19 automated criteria evaluated, 18 combining rules applied, confidence scores assigned.' },
+  { stage: 5, name: 'ACMG Classification', duration: '<1s', description: 'SQL-based ACMG/AMP 2015 classification using Bayesian point framework (Tavtigian et al. 2018). 19 automated criteria evaluated with calibrated evidence strength, point-based classification thresholds applied, continuous confidence scores assigned. Optional VCEP gene-specific overlay for ~50-60 genes.' },
   { stage: 6, name: 'Export', duration: '~5s', description: 'Gene-level summaries exported for streaming. Classified variants persisted to analytical database for downstream services.' },
 ]
 
@@ -78,8 +81,8 @@ const referenceDatabases = [
     source: 'sites.google.com/site/jpopgen/dbNSFP',
     sourceUrl: 'https://sites.google.com/site/jpopgen/dbNSFP',
     provides: 'Functional impact predictions from multiple algorithms, conservation scores',
-    usedBy: 'PP3 (damaging consensus), BP4 (benign consensus) -- SIFT, AlphaMissense, MetaSVM, DANN, PhyloP, GERP',
-    columns: 'sift_pred, sift_score, alphamissense_pred, alphamissense_score, metasvm_pred, metasvm_score, dann_score, phylop100way_vertebrate, gerp_rs',
+    usedBy: 'PP3/BP4 primary tool: BayesDel_noAF with ClinGen SVI calibrated thresholds (Pejaver et al. 2022). Display predictors: SIFT, AlphaMissense, MetaSVM, DANN, PhyloP, GERP (available for clinical review, not used in classification logic)',
+    columns: 'bayesdel_noaf_score, bayesdel_addaf_score, sift_pred, sift_score, alphamissense_pred, alphamissense_score, metasvm_pred, metasvm_score, dann_score, phylop100way_vertebrate, gerp_rs',
   },
   {
     name: 'SpliceAI',
@@ -154,7 +157,7 @@ const pathogenicCriteria = [
       'Does not evaluate reading frame rescue via downstream in-frame reinitiation',
       'Does not assess alternative transcript usage or tissue-specific expression',
       'Last-exon truncation logic not implemented (all qualifying exons treated equally)',
-      'Gene-specific VCEP refinements not applied (generic thresholds used)',
+      'VCEP gene-specific PVS1 applicability gate available for ~50-60 genes (e.g., PVS1 disabled for gain-of-function genes like MYOC). Generic thresholds used for all other genes.',
     ],
   },
   {
@@ -201,6 +204,7 @@ const pathogenicCriteria = [
       'Requires gnomAD frequency data to be available for the variant position',
       'Does not apply population-specific frequency adjustments',
       'ClinGen SVI PM2_Supporting downgrade not implemented (full Moderate strength used)',
+      'When VCEP gene-specific specifications are enabled, PM2 threshold may differ from the generic 0.01% (e.g., 0% for RASopathy genes where any population frequency argues against pathogenicity)',
     ],
   },
   {
@@ -254,20 +258,22 @@ const pathogenicCriteria = [
   {
     code: 'PP3',
     name: 'Computational evidence supports a deleterious effect (two independent paths)',
-    strength: 'Supporting',
+    strength: 'Supporting / Moderate / Strong',
     conditions: [
-      'Path A (Missense predictors): Weighted damaging consensus >= 75% across available predictors with conservation scores. See Computational Predictors section for full details.',
-      'Path B (Splice evidence): SpliceAI max_score >= 0.2 AND PVS1 does not apply to this variant (ClinGen SVI 2023 double-counting guard)',
-      'Either path independently triggers PP3',
+      'Path A (Missense -- BayesDel): BayesDel_noAF score evaluated with ClinGen SVI calibrated thresholds (Pejaver et al. 2022). Three strength levels: PP3_Strong (>= 0.518, +4 points), PP3_Moderate (0.290-0.517, +2 points), PP3_Supporting (0.130-0.289, +1 point). Scores below 0.130 are indeterminate.',
+      'PM1 + PP3 double-counting guard: When PM1 (functional domain) applies alongside PP3_Strong, PP3 is downgraded to PP3_Moderate. Combined PM1 + PP3 capped at Strong equivalent (4 points) per ClinGen SVI.',
+      'Path B (Splice evidence): SpliceAI max_score >= 0.2 AND PVS1 does not apply (ClinGen SVI 2023 double-counting guard). Always Supporting strength (+1 point).',
+      'Paths A and B are independent. A variant can trigger both if it has a BayesDel score and a splice prediction.',
     ],
     exclusions: [
       'PP3_splice not applied when PVS1 is triggered (prevents double-counting loss-of-function and splice evidence per ClinGen SVI 2023)',
+      'BayesDel indeterminate range (-0.180 to 0.129): no PP3 or BP4 applied',
     ],
-    databases: 'dbNSFP (SIFT, AlphaMissense, MetaSVM, DANN, PhyloP, GERP), SpliceAI (max_score)',
+    databases: 'dbNSFP 4.9c (bayesdel_noaf_score), SpliceAI (max_score)',
     limitations: [
-      'Generic thresholds used; gene-specific VCEP calibrated thresholds not implemented',
-      'PP3_Moderate strength modulation for high SpliceAI scores deferred pending VCEP specifications',
-      'Predictor correlation not formally modeled (weighted consensus used as proxy for independence)',
+      'BayesDel_noAF used to avoid circular reasoning with PM2/BA1/BS1 frequency criteria (Pejaver et al. 2022)',
+      'PM1 + PP3 cap assumes PM1 = Moderate (2 points). Extensible if future VCEP upgrades PM1 strength.',
+      'BayesDel does not reach PP3_Very_Strong per Pejaver calibration data',
     ],
   },
   {
@@ -319,9 +325,8 @@ const benignCriteria = [
     databases: 'gnomAD v4.1 (global_af)',
     limitations: [
       'Uses global allele frequency only; population-specific BA1 thresholds not implemented',
-      'No disease-specific frequency adjustments',
     ],
-    note: 'BA1 is the only stand-alone ACMG criterion. A variant meeting BA1 is classified as Benign regardless of any other evidence, including ClinVar assertions.',
+    note: 'BA1 is the only stand-alone ACMG criterion. A variant meeting BA1 is classified as Benign regardless of any other evidence, including ClinVar assertions. When VCEP gene-specific specifications are enabled, the BA1 threshold may be lower than 5% for specific genes (e.g., 0.1% for Cardiomyopathy genes).',
   },
   {
     code: 'BS1',
@@ -337,7 +342,7 @@ const benignCriteria = [
     databases: 'gnomAD v4.1 (global_af), ClinGen (haploinsufficiency_score as inheritance proxy)',
     limitations: [
       'ClinGen haploinsufficiency score is a proxy for inheritance mode, not a direct determination',
-      'Disease-specific frequency thresholds not implemented (generic AD/AR thresholds used)',
+      'When VCEP gene-specific specifications are enabled, BS1 uses VCEP-defined thresholds that are already mode-of-inheritance-aware, overriding the generic AD/AR proxy logic',
     ],
   },
   {
@@ -403,15 +408,17 @@ const benignCriteria = [
   {
     code: 'BP4',
     name: 'Computational evidence suggests no impact on gene or gene product',
-    strength: 'Supporting',
+    strength: 'Supporting / Moderate',
     conditions: [
-      'Weighted benign consensus >= 75% across available predictors with conservation scores. See Computational Predictors section for full details.',
+      'BayesDel_noAF score evaluated with ClinGen SVI calibrated thresholds (Pejaver et al. 2022). Two strength levels: BP4_Moderate (<= -0.361, -2 points), BP4_Supporting (-0.360 to -0.181, -1 point).',
       'SpliceAI max_score must be < 0.1 or absent (no predicted splice impact)',
     ],
-    exclusions: [],
-    databases: 'dbNSFP (SIFT, AlphaMissense, MetaSVM, DANN, PhyloP, GERP), SpliceAI (max_score)',
+    exclusions: [
+      'BayesDel indeterminate range (-0.180 to 0.129): no BP4 applied',
+    ],
+    databases: 'dbNSFP 4.9c (bayesdel_noaf_score), SpliceAI (max_score)',
     limitations: [
-      'Same predictor correlation caveat as PP3',
+      'BayesDel_noAF does not reach BP4_Strong per Pejaver calibration data',
       'SpliceAI guard prevents BP4 for variants with any predicted splice impact',
     ],
   },
@@ -497,7 +504,7 @@ const manualCriteria = [
   },
 ]
 
-/* Computational predictor configuration */
+/* Computational predictor configuration (legacy -- display only since v3.4) */
 const predictors = [
   {
     name: 'SIFT',
@@ -592,6 +599,35 @@ const qualityPresets = [
 /* Version history */
 const versionHistory = [
   {
+    version: 'v3.5',
+    date: 'February 2026',
+    changes: [
+      'ClinGen VCEP gene-specific specification overlay (optional, enabled by default)',
+      'BA1, BS1, PM2: gene-specific frequency thresholds from published VCEP specifications (~50-60 genes)',
+      'PVS1: gene-specific applicability gate (disabled for gain-of-function genes)',
+      'VCEP audit trail: criteria string includes [VCEP:Panel vX.Y] marker when gene-specific thresholds applied',
+      'VCEP toggle: can be enabled/disabled per case in case settings',
+      'Source: ClinGen Criteria Specification Registry (CSpec)',
+    ],
+  },
+  {
+    version: 'v3.4',
+    date: 'February 2026',
+    changes: [
+      'Bayesian point-based classification framework (Tavtigian et al. 2018, 2020) replaces sequential 18-rule evaluation',
+      'All 18 original ACMG combining rules produce identical results under the point system (backward compatible)',
+      'Point system fills gaps: evidence combinations not covered by original 18 rules now classified properly',
+      'PP3/BP4: BayesDel_noAF single-tool replaces weighted 6-predictor consensus (ClinGen SVI calibration, Pejaver et al. 2022)',
+      'PP3 evidence strength modulation: Strong (>= 0.518), Moderate (0.290-0.517), Supporting (0.130-0.289)',
+      'BP4 evidence strength modulation: Moderate (<= -0.361), Supporting (-0.360 to -0.181)',
+      'PM1 + PP3 double-counting guard: combined evidence capped at Strong equivalent (4 points)',
+      'Continuous confidence scores derived from point distance to classification threshold boundary',
+      'Conflicting evidence handled by point summation (more nuanced than binary VUS default)',
+      'High-confidence conflict safety check: Strong/Very Strong pathogenic vs. Strong benign flagged for manual review',
+      'Legacy predictors (SIFT, AlphaMissense, MetaSVM, DANN, PhyloP, GERP) retained as display data only',
+    ],
+  },
+  {
     version: 'v3.3',
     date: 'February 2026',
     changes: [
@@ -642,7 +678,7 @@ const limitations = [
   'ClinVar assertions vary in quality and currency. Review star levels are displayed alongside all ClinVar-derived evidence to enable informed interpretation.',
   'Structural variants (SVs), copy number variants (CNVs), and repeat expansions are not currently classified by this pipeline.',
   'Mitochondrial variants are processed through the same pipeline using nuclear ACMG rules as an approximation. Dedicated mitochondrial classification guidelines (e.g., MitoMap criteria) are not yet implemented.',
-  'Gene-specific VCEP (Variant Curation Expert Panel) thresholds are not implemented. All criteria use generic ACMG thresholds. This may result in differences from gene-specific classifications published by ClinGen VCEPs.',
+  'VCEP gene-specific specifications are implemented as a threshold overlay for BA1, BS1, PM2, and PVS1 applicability. The overlay does not implement VCEP-specific functional assay interpretation (PS3/BS3) or gene-specific segregation logic (PP1/BS4), which require manual curation. Coverage is limited to approximately 50-60 genes with published ClinGen CSpec specifications; all other genes use generic ACMG 2015 thresholds.',
   'PM5 (novel missense at known pathogenic amino acid position) is currently disabled pending standardized protein-level coordinate matching in the ClinVar preprocessing pipeline.',
   'Compound heterozygote detection is inferred from genotype data without long-read phasing or trio analysis. Formal phasing should be performed for clinical confirmation.',
   'Results should always be interpreted in the context of the patient\'s clinical presentation, family history, and other available clinical information.',
@@ -650,6 +686,24 @@ const limitations = [
 
 /* References */
 const references = [
+  {
+    authors: 'Tavtigian SV, Greenblatt MS, Harrison SM, et al.',
+    title: 'Modeling the ACMG/AMP variant classification guidelines as a Bayesian classification framework.',
+    journal: 'Human Mutation. 2018;39(11):1485-1492.',
+    id: 'PMID: 30311386',
+  },
+  {
+    authors: 'Tavtigian SV, Harrison SM, Boucher KM, Biesecker LG.',
+    title: 'Fitting a naturally scaled point system to the ACMG/AMP variant classification guidelines.',
+    journal: 'Human Genetics. 2020;139(8):1057-1067.',
+    id: 'PMID: 32666219',
+  },
+  {
+    authors: 'Pejaver V, Byrne AB, Feng BJ, et al.',
+    title: 'Calibration of computational tools for missense variant pathogenicity classification and ClinGen recommendations for PP3/BP4 criteria.',
+    journal: 'American Journal of Human Genetics. 2022;109(12):2163-2177.',
+    id: 'PMID: 36413997',
+  },
   {
     authors: 'Richards S, Aziz N, Bale S, et al.',
     title: 'Standards and guidelines for the interpretation of sequence variants: a joint consensus recommendation of the American College of Medical Genetics and Genomics and the Association for Molecular Pathology.',
@@ -724,7 +778,7 @@ export default function MethodologyPage() {
             </p>
 
             <p className="text-base text-muted-foreground leading-relaxed">
-              Variant classification follows the ACMG/AMP 2015 framework ({ACMG_REFERENCE}) with SpliceAI integration aligned to ClinGen SVI 2023 recommendations ({CLINGEN_SVI_REFERENCE}). Classification is strictly rule-based. No machine learning model determines variant pathogenicity.
+              Variant classification follows the ACMG/AMP 2015 framework ({ACMG_REFERENCE}) implemented through the Bayesian point-based system ({TAVTIGIAN_REFERENCE}) with BayesDel ClinGen SVI calibrated thresholds ({PEJAVER_REFERENCE}) and SpliceAI integration aligned to ClinGen SVI 2023 recommendations ({CLINGEN_SVI_REFERENCE}). Optional ClinGen VCEP gene-specific specification overlay is available for approximately 50-60 genes. Classification is strictly evidence-based. No machine learning model determines variant pathogenicity.
             </p>
           </div>
         </section>
@@ -844,7 +898,7 @@ export default function MethodologyPage() {
                   { priority: 1, label: 'BA1 Stand-alone', desc: 'Allele frequency > 5% is always classified Benign. BA1 is the only stand-alone criterion in the ACMG framework and cannot be overridden by any other evidence, including ClinVar assertions.' },
                   { priority: 2, label: 'Conflicting Evidence', desc: 'If a variant has pathogenic evidence at moderate strength or above (PVS, PS, or PM criteria triggered) AND strong benign evidence (BS criteria triggered), the variant is classified as VUS regardless of the individual evidence strength. This is a conservative approach that prioritizes clinical safety.' },
                   { priority: 3, label: 'ClinVar Override', desc: 'ClinVar classification is applied only when no conflicting computational evidence exists. Requires minimum review star level (default: 1 star). ClinVar VUS does not override computational classification.' },
-                  { priority: 4, label: 'ACMG Combining Rules', desc: '18 combining rules are evaluated in order: 8 Pathogenic, 6 Likely Pathogenic, 1 Benign (2 Strong), 2 Likely Benign. The first matching rule determines classification.' },
+                  { priority: 4, label: 'Bayesian Point System', desc: 'Each triggered criterion contributes points based on its evidence strength: Very Strong (+8), Strong (+4), Moderate (+2), Supporting (+1) for pathogenic; Strong (-4), Supporting (-1) for benign. Total points determine classification: >= 10 Pathogenic, 6-9 Likely Pathogenic, 0-5 VUS, -1 to -5 Likely Benign, <= -6 Benign. This system is mathematically equivalent to the original 18 ACMG combining rules while filling gaps for evidence combinations not explicitly covered.' },
                   { priority: 5, label: 'Default', desc: 'Variants that do not meet any of the above criteria are classified as Uncertain Significance (VUS).' },
                 ].map((item) => (
                   <div key={item.priority} className="flex items-start gap-4">
@@ -864,18 +918,19 @@ export default function MethodologyPage() {
             <div className="mt-6 bg-card border border-border rounded-lg p-8 space-y-4">
               <p className="text-lg font-semibold text-foreground">Classification Output</p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Each variant receives one of five standard ACMG classifications, a list of all criteria that were triggered (e.g., "PVS1,PM2,PP3"), and a confidence score:
+                Each variant receives one of five standard ACMG classifications, a list of all criteria that were triggered with evidence strength levels (e.g., "PVS1,PM2,PP3_Strong"), a Bayesian point total, and a continuous confidence score derived from the distance between the point total and the nearest classification boundary:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                 {[
-                  { label: 'Pathogenic', conf: '0.95' },
-                  { label: 'Likely Pathogenic', conf: '0.80' },
-                  { label: 'VUS', conf: '0.50' },
-                  { label: 'Likely Benign', conf: '0.80' },
-                  { label: 'Benign', conf: '0.95' },
+                  { label: 'Pathogenic', points: '>= 10 pts', conf: '0.80-0.99' },
+                  { label: 'Likely Pathogenic', points: '6-9 pts', conf: '0.70-0.90' },
+                  { label: 'VUS', points: '0-5 pts', conf: '0.30-0.60' },
+                  { label: 'Likely Benign', points: '-1 to -5 pts', conf: '0.70-0.90' },
+                  { label: 'Benign', points: '<= -6 pts', conf: '0.80-0.99' },
                 ].map((c) => (
                   <div key={c.label} className="bg-muted/50 rounded-lg p-3 text-center space-y-1">
                     <p className="text-md font-medium text-foreground">{c.label}</p>
+                    <p className="text-sm font-mono text-muted-foreground">{c.points}</p>
                     <p className="text-sm font-mono text-muted-foreground">confidence: {c.conf}</p>
                   </div>
                 ))}
@@ -918,38 +973,36 @@ export default function MethodologyPage() {
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Computational Predictors (PP3 / BP4)</h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                PP3 and BP4 use a weighted consensus approach across 4 functional predictors and 2 conservation metrics. Predictors with ambiguous results (neither clearly damaging nor benign) are excluded from the denominator, preventing them from diluting the consensus.
+                PP3 and BP4 use BayesDel_noAF as the primary classification tool with ClinGen SVI calibrated thresholds (Pejaver et al. 2022). BayesDel is a Bayesian framework that integrates deleteriousness scores from multiple underlying predictors into a single calibrated score. The noAF variant (without allele frequency) is used to avoid circular reasoning with PM2, BA1, and BS1 frequency criteria.
               </p>
             </div>
 
-            {/* Predictor table */}
+            {/* BayesDel threshold table */}
             <div className="bg-card border border-border rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
-                      <th className="text-left px-6 py-3 text-md font-semibold text-foreground">Predictor</th>
-                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Weight</th>
-                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Damaging</th>
-                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Benign</th>
+                      <th className="text-left px-6 py-3 text-md font-semibold text-foreground">BayesDel_noAF Score</th>
+                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Evidence Strength</th>
+                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">ACMG Code</th>
+                      <th className="text-left px-4 py-3 text-md font-semibold text-foreground">Bayesian Points</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {predictors.map((p, i) => (
-                      <tr key={p.name} className={i < predictors.length - 1 ? 'border-b border-border' : ''}>
-                        <td className="px-6 py-3">
-                          <p className="text-base font-medium text-foreground">{p.name}</p>
-                          {p.note && <p className="text-sm text-muted-foreground">{p.note}</p>}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-base text-foreground">{p.weight}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-md text-muted-foreground">{p.damagingCondition}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-md text-muted-foreground">{p.benignCondition}</span>
-                        </td>
+                    {[
+                      { score: '>= 0.518', strength: 'Strong pathogenic', code: 'PP3_Strong', points: '+4' },
+                      { score: '0.290 to 0.517', strength: 'Moderate pathogenic', code: 'PP3_Moderate', points: '+2' },
+                      { score: '0.130 to 0.289', strength: 'Supporting pathogenic', code: 'PP3_Supporting', points: '+1' },
+                      { score: '-0.180 to 0.129', strength: 'Indeterminate', code: 'None', points: '0' },
+                      { score: '-0.360 to -0.181', strength: 'Supporting benign', code: 'BP4_Supporting', points: '-1' },
+                      { score: '<= -0.361', strength: 'Moderate benign', code: 'BP4_Moderate', points: '-2' },
+                    ].map((row, i) => (
+                      <tr key={row.code + i} className={i < 5 ? 'border-b border-border' : ''}>
+                        <td className="px-6 py-3 font-mono text-base text-foreground">{row.score}</td>
+                        <td className="px-4 py-3 text-md text-muted-foreground">{row.strength}</td>
+                        <td className="px-4 py-3 font-mono text-md text-foreground">{row.code}</td>
+                        <td className="px-4 py-3 font-mono text-md text-foreground">{row.points}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -957,21 +1010,43 @@ export default function MethodologyPage() {
               </div>
             </div>
 
-            {/* Consensus formula */}
+            {/* PM1+PP3 cap */}
             <div className="mt-6 bg-card border border-border rounded-lg p-8 space-y-4">
-              <p className="text-lg font-semibold text-foreground">Consensus Calculation</p>
-              <div className="bg-muted/50 rounded-lg p-4 font-mono text-md text-foreground leading-relaxed">
-                <p>weighted_ratio = sum(weight_i * direction_i) / sum(weight_i * has_clear_prediction_i)</p>
+              <p className="text-lg font-semibold text-foreground">PM1 + PP3 Double-Counting Guard</p>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                When PM1 (functional domain, Moderate = 2 points) applies alongside PP3_Strong (4 points), the combined evidence would exceed the ClinGen SVI recommended cap of Strong equivalent (4 points). In this case, PP3_Strong is downgraded to PP3_Moderate (2 points), yielding a combined 2 + 2 = 4 points. PP3_Moderate and PP3_Supporting are not affected by this cap.
+              </p>
+            </div>
+
+            {/* Why BayesDel */}
+            <div className="mt-6 bg-card border border-border rounded-lg p-8 space-y-4">
+              <p className="text-lg font-semibold text-foreground">Why BayesDel</p>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                The ClinGen SVI Working Group calibrated four computational tools (BayesDel, MutPred2, REVEL, VEST4) and demonstrated that a single calibrated tool with evidence strength modulation provides more accurate classification than a fixed-threshold multi-predictor consensus. BayesDel_noAF was selected because it explicitly excludes allele frequency from its model (avoiding circular reasoning with PM2/BA1/BS1), is precomputed in dbNSFP 4.9c, and reaches both PP3_Strong and BP4_Moderate in the Pejaver calibration -- providing the widest evidence strength range among available tools.
+              </p>
+            </div>
+
+            {/* Display predictors */}
+            <div className="mt-6 bg-card border border-border rounded-lg p-8 space-y-4">
+              <p className="text-lg font-semibold text-foreground">Display Predictors (Not Used in Classification)</p>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                The following predictors are available alongside every variant for the reviewing geneticist to inspect, but they are not used in the PP3/BP4 classification logic. They were used in the weighted consensus approach prior to v3.4 and are retained for clinical reference:
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+                {[
+                  { name: 'SIFT', source: 'dbNSFP 4.9c' },
+                  { name: 'AlphaMissense', source: 'dbNSFP 4.9c' },
+                  { name: 'MetaSVM', source: 'dbNSFP 4.9c' },
+                  { name: 'DANN', source: 'dbNSFP 4.9c' },
+                  { name: 'PhyloP (100-way)', source: 'dbNSFP 4.9c' },
+                  { name: 'GERP++', source: 'dbNSFP 4.9c' },
+                ].map((p) => (
+                  <div key={p.name} className="bg-muted/50 rounded-lg p-3 space-y-1">
+                    <p className="text-md font-medium text-foreground">{p.name}</p>
+                    <p className="text-sm text-muted-foreground">{p.source}</p>
+                  </div>
+                ))}
               </div>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                For PP3 (damaging consensus): each predictor that returns a damaging result contributes its weight to the numerator. Each predictor with a clear result (damaging or benign, not ambiguous) contributes its weight to the denominator. PP3 triggers when the ratio {">=" } <span className="font-mono">0.75</span> (75%).
-              </p>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                For BP4 (benign consensus): each predictor that returns a benign result contributes its weight to the numerator. Same denominator logic. BP4 triggers when the benign ratio {">=" } <span className="font-mono">0.75</span> (75%) AND SpliceAI max_score is absent or &lt; <span className="font-mono">0.1</span>.
-              </p>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                If no predictor has a clear result (all NULL or ambiguous), the denominator is zero and neither PP3 nor BP4 is applied.
-              </p>
             </div>
           </div>
         </section>
@@ -1032,13 +1107,83 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        {/* ---- 7. COMBINING RULES ---- */}
-        <section id="combining-rules" className="py-12 px-6 bg-muted/30">
+        {/* ---- 7. CLASSIFICATION LOGIC ---- */}
+        <section id="classification-logic" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
-              <h2 className="text-3xl font-semibold text-primary">ACMG Combining Rules (18 Rules)</h2>
+              <h2 className="text-3xl font-semibold text-primary">Classification Logic</h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                All 18 combining rules from the 2015 ACMG/AMP guidelines are implemented. Rules are evaluated in the order shown. The first matching rule determines the classification.
+                Classification uses the Bayesian point-based framework (Tavtigian et al. 2018, 2020) which is mathematically equivalent to the original 18 ACMG combining rules while providing proper classifications for evidence combinations not explicitly covered by the 2015 guidelines.
+              </p>
+            </div>
+
+            {/* Bayesian Point System */}
+            <div className="bg-card border border-border rounded-lg p-8 space-y-6 mb-6">
+              <p className="text-lg font-semibold text-foreground">Bayesian Point System (Primary)</p>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                Each evidence criterion contributes points based on its strength level. The total determines classification:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <p className="text-md font-medium text-foreground">Pathogenic Evidence Points</p>
+                  {[
+                    { level: 'Very Strong (PVS)', points: '+8' },
+                    { level: 'Strong (PS)', points: '+4' },
+                    { level: 'Moderate (PM)', points: '+2' },
+                    { level: 'Supporting (PP)', points: '+1' },
+                  ].map((e) => (
+                    <div key={e.level} className="flex justify-between items-center px-3 py-2 bg-muted/50 rounded">
+                      <span className="text-md text-muted-foreground">{e.level}</span>
+                      <span className="font-mono text-md text-foreground">{e.points}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  <p className="text-md font-medium text-foreground">Benign Evidence Points</p>
+                  {[
+                    { level: 'Stand-alone (BA1)', points: 'Override to Benign' },
+                    { level: 'Strong (BS)', points: '-4' },
+                    { level: 'Supporting (BP)', points: '-1' },
+                  ].map((e) => (
+                    <div key={e.level} className="flex justify-between items-center px-3 py-2 bg-muted/50 rounded">
+                      <span className="text-md text-muted-foreground">{e.level}</span>
+                      <span className="font-mono text-md text-foreground">{e.points}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <p className="text-md font-medium text-foreground">Classification Thresholds</p>
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                  {[
+                    { label: 'Pathogenic', range: '>= 10' },
+                    { label: 'Likely Path.', range: '6 to 9' },
+                    { label: 'VUS', range: '0 to 5' },
+                    { label: 'Likely Benign', range: '-1 to -5' },
+                    { label: 'Benign', range: '<= -6' },
+                  ].map((t) => (
+                    <div key={t.label} className="bg-muted/50 rounded-lg p-3 text-center space-y-1">
+                      <p className="text-md font-medium text-foreground">{t.label}</p>
+                      <p className="text-sm font-mono text-muted-foreground">{t.range} pts</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Safety check */}
+            <div className="bg-card border border-border rounded-lg p-6 space-y-3 mb-6">
+              <p className="text-lg font-semibold text-foreground">High-Confidence Conflict Safety Check</p>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                When pathogenic evidence at Strong or Very Strong level conflicts with Strong benign evidence (BS), the variant is flagged for manual review regardless of the point total. This prevents automated resolution of genuinely conflicting high-quality evidence.
+              </p>
+            </div>
+
+            {/* Legacy rules header */}
+            <div className="mb-6">
+              <p className="text-lg font-semibold text-foreground mb-2">ACMG 2015 Combining Rules (Reference)</p>
+              <p className="text-base text-muted-foreground leading-relaxed mb-4">
+                The original 18 ACMG 2015 combining rules are a special case of the Bayesian point system -- every rule produces the same classification under both approaches. They are retained here as a reference.
               </p>
             </div>
 
@@ -1100,14 +1245,73 @@ export default function MethodologyPage() {
             <div className="mt-6 bg-card border border-border rounded-lg p-6 space-y-3">
               <p className="text-lg font-semibold text-foreground">Conflicting Evidence Handling</p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                If a variant has both pathogenic criteria at moderate strength or above (any of PVS, PS, or PM triggered) and strong benign criteria (any BS triggered), it is classified as Uncertain Significance regardless of how many criteria on either side are present. BA1 is excluded from this check because it is handled as a stand-alone override at a higher priority level. Supporting-level evidence alone (PP vs. BP) does not constitute conflicting evidence.
+                The Bayesian point system naturally handles most conflicting evidence through point summation. For example, PM2 (+2) and BS1 (-4) yield a net of -2 = Likely Benign. Under the previous v3.3 system, this combination would have been flagged as conflicting and defaulted to VUS. The point-based approach is more nuanced and clinically appropriate. However, when pathogenic evidence at Strong or Very Strong level directly conflicts with Strong benign evidence, the variant is flagged for manual review regardless of point total (see High-Confidence Conflict Safety Check above). BA1 remains a stand-alone override handled at a higher priority level.
               </p>
             </div>
           </div>
         </section>
 
-        {/* ---- 8. CLINVAR OVERRIDE ---- */}
-        <section id="clinvar-override" className="py-12 px-6">
+        {/* ---- 8. VCEP GENE-SPECIFIC SPECIFICATIONS ---- */}
+        <section id="vcep" className="py-12 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12 space-y-3">
+              <h2 className="text-3xl font-semibold text-primary">VCEP Gene-Specific Specifications</h2>
+              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+                ClinGen Variant Curation Expert Panels (VCEPs) adapt generic ACMG/AMP 2015 criteria to specific genes or diseases. Helix Insight implements approved VCEP specifications as an optional overlay on top of the standard classification.
+              </p>
+            </div>
+
+            <div className="bg-card border border-border rounded-lg p-8 space-y-6">
+              <div className="space-y-3">
+                <p className="text-lg font-semibold text-foreground">How It Works</p>
+                <p className="text-base text-muted-foreground leading-relaxed">
+                  The standard classification pipeline runs first, producing a generic ACMG classification for all variants. For variants in genes with available VCEP specifications, gene-specific thresholds are applied via a lightweight overlay that modifies frequency cutoffs (BA1, BS1, PM2) and criterion applicability (PVS1) based on the published VCEP specification. The Bayesian point total is then recalculated with the modified criteria.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-lg font-semibold text-foreground">What VCEPs Modify</p>
+                <div className="space-y-2">
+                  {[
+                    { criterion: 'BA1', desc: 'Gene-specific allele frequency threshold for stand-alone benign (e.g., 0.1% for Cardiomyopathy genes instead of generic 5%)' },
+                    { criterion: 'BS1', desc: 'Gene-specific elevated frequency threshold, already mode-of-inheritance-aware' },
+                    { criterion: 'PM2', desc: 'Gene-specific absent-in-controls threshold (e.g., 0% for RASopathy genes)' },
+                    { criterion: 'PVS1', desc: 'Gene-specific applicability gate. Set to FALSE for gain-of-function genes (e.g., MYOC in glaucoma)' },
+                  ].map((item) => (
+                    <div key={item.criterion} className="flex items-start gap-3">
+                      <span className="font-mono text-md text-primary shrink-0 w-12 pt-0.5">{item.criterion}</span>
+                      <p className="text-md text-muted-foreground">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-lg font-semibold text-foreground">Toggle Behavior</p>
+                <p className="text-base text-muted-foreground leading-relaxed">
+                  VCEP overlay is enabled by default and can be disabled per case in case settings. When enabled, variants in VCEP-covered genes display an audit trail marker (e.g., "[VCEP:Hearing Loss v1.0]") in the criteria string.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-lg font-semibold text-foreground">Coverage</p>
+                <p className="text-base text-muted-foreground leading-relaxed">
+                  Approved VCEP specifications are sourced from the ClinGen Criteria Specification Registry (CSpec). Approximately 50-60 genes have published specifications, including panels for Hearing Loss, Cardiomyopathy (MYH7, MYBPC3), RASopathy (PTPN11, BRAF, SOS1), PTEN, CDH1, TP53, PAH, and BRCA1/BRCA2 (ENIGMA). For all other genes, generic ACMG 2015 thresholds are used.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-border">
+                <p className="text-md text-muted-foreground">
+                  <span className="font-medium text-foreground">Source: </span>
+                  <a href="https://cspec.genome.network" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">ClinGen Criteria Specification Registry (cspec.genome.network)</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---- 9. CLINVAR OVERRIDE ---- */}
+        <section id="clinvar-override" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">ClinVar Override Logic</h2>
@@ -1142,8 +1346,8 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        {/* ---- 9. MANUAL REVIEW CRITERIA ---- */}
-        <section id="manual-criteria" className="py-12 px-6 bg-muted/30">
+        {/* ---- 10. MANUAL REVIEW CRITERIA ---- */}
+        <section id="manual-criteria" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Manual Review Criteria (9 of 28)</h2>
@@ -1169,8 +1373,8 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        {/* ---- 10. QUALITY FILTERING ---- */}
-        <section id="quality-filtering" className="py-12 px-6">
+        {/* ---- 11. QUALITY FILTERING ---- */}
+        <section id="quality-filtering" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Quality Filtering</h2>
@@ -1215,8 +1419,8 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        {/* ---- 11. LIMITATIONS ---- */}
-        <section id="limitations" className="py-12 px-6 bg-muted/30">
+        {/* ---- 12. LIMITATIONS ---- */}
+        <section id="limitations" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Limitations and Disclaimers</h2>
@@ -1233,8 +1437,8 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        {/* ---- 12. VERSION HISTORY ---- */}
-        <section id="changelog" className="py-12 px-6">
+        {/* ---- 13. VERSION HISTORY ---- */}
+        <section id="changelog" className="py-12 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">Version History</h2>
@@ -1265,8 +1469,8 @@ export default function MethodologyPage() {
           </div>
         </section>
 
-        {/* ---- 13. REFERENCES ---- */}
-        <section id="references" className="py-12 px-6 bg-muted/30">
+        {/* ---- 14. REFERENCES ---- */}
+        <section id="references" className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">References</h2>

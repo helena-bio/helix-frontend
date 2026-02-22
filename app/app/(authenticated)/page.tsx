@@ -306,6 +306,11 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
               </Tooltip>
             </TooltipProvider>
             <span className="text-base font-medium truncate">{getCaseDisplayName(session)}</span>
+            {session.classifier_version && (
+              <span className="text-sm font-normal text-muted-foreground shrink-0">
+                v{session.classifier_version}
+              </span>
+            )}
             {session.status !== 'completed' && (
               <Badge variant="outline" className={`text-sm shrink-0 ${config.color}`}>
                 <StatusIcon className={cn("h-3 w-3 mr-1", session.status === 'processing' && "animate-spin")} />
