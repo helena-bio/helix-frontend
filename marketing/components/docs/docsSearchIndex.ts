@@ -321,4 +321,35 @@ export const docsSearchIndex: SearchEntry[] = [
     section: 'Data and Privacy',
     content: 'no external calls zero outbound network variant processing Ensembl VEP local offline cache gnomAD local ClinVar local dbNSFP local HPO pyhpo local ClinGen local SpliceAI precomputed local literature database local PubMed mirror network architecture inbound only no outbound processing separate update channel no data leakage no third-party dependency verifiable firewall Docker AI assistant optional anonymized',
   },
+  // Limitations, Glossary, FAQ, Changelog, References
+  {
+    href: '/docs/limitations',
+    title: 'Limitations',
+    section: 'Limitations',
+    content: 'limitations known issues variant types SNV indel structural variants CNV copy number repeat expansion mitochondrial somatic germline genome build GRCh38 GRCh37 liftover ACMG 19 of 28 criteria automated VCEP gene-specific database coverage gnomAD ancestry underrepresented ClinVar review stars AI clinical assistant read-only VCF single-sample',
+  },
+  {
+    href: '/docs/glossary',
+    title: 'Glossary',
+    section: 'Glossary',
+    content: 'glossary definitions ACMG BayesDel ClinGen ClinVar compound heterozygote confidence score consequence DANN dbNSFP DuckDB Ensembl VEP GERP gnomAD GRCh38 haploinsufficiency HGVS HPO impact LOEUF MetaSVM pathogenic PhyloP pLI PP3 PVS1 screening tier SIFT SpliceAI VCF VCEP VUS WES WGS',
+  },
+  {
+    href: '/docs/faq',
+    title: 'FAQ',
+    section: 'FAQ',
+    content: 'frequently asked questions FAQ file format VCF genome build GRCh38 GRCh37 processing time gene panel WES WGS data storage EU Helsinki GDPR deletion ACMG criteria automated BayesDel PP3 BP4 structural variants CNV somatic databases gnomAD ClinVar dbNSFP phenotype matching HPO AI model on-premise clinical interpretation diagnosis report classification override ClinVar conflict update policy',
+  },
+  {
+    href: '/docs/changelog',
+    title: 'Changelog',
+    section: 'Changelog',
+    content: 'changelog version history release notes v1.0.0 February 2026 initial release ACMG classification Bayesian BayesDel SpliceAI ClinVar gnomAD dbNSFP phenotype matching screening AI clinical assistant PDF DOCX EU infrastructure DuckDB',
+  },
+  {
+    href: '/docs/references',
+    title: 'References',
+    section: 'References',
+    content: 'references publications citations Richards 2015 Tavtigian 2018 2020 Pejaver 2022 Jaganathan 2019 Walker 2023 Cheng 2023 AlphaMissense Quang 2015 DANN Chen 2024 Karczewski 2020 gnomAD Landrum ClinVar McLaren VEP Liu dbNSFP Kohler HPO Lin similarity Rehm ClinGen Stenton 2024',
+  },
 ]
