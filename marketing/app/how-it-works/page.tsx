@@ -302,6 +302,13 @@ export default function HowItWorksPage() {
                 Contact Us
               </Link>
             </div>
+            <div className="pt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+              <Link href="/for-geneticists" className="text-md text-primary hover:underline">For Geneticists</Link>
+              <Link href="/use-cases/rare-disease" className="text-md text-primary hover:underline">Rare Disease</Link>
+              <Link href="/use-cases/newborn-screening" className="text-md text-primary hover:underline">Newborn Screening</Link>
+              <Link href="/use-cases/carrier-screening" className="text-md text-primary hover:underline">Carrier Screening</Link>
+              <Link href="/methodology" className="text-md text-primary hover:underline">Methodology</Link>
+            </div>
           </div>
         </section>
 

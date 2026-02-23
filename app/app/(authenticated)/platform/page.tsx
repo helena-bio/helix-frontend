@@ -933,6 +933,7 @@ export default function PlatformPage() {
             {activeSection === 'organizations' && <OrganizationsContent />}
             {activeSection === 'users' && <UsersContent />}
             {activeSection === 'activity' && <ActivityContent />}
+              {activeSection === 'reference-data' && <ReferenceDatabasesContent />}
           </div>
         </div>
       </div>

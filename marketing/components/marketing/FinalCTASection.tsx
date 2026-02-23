@@ -1,6 +1,7 @@
 "use client"
 
-import { Shield, Lock, Zap } from 'lucide-react'
+import Link from 'next/link'
+import { Shield, Lock, Zap, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useDemoModal } from '@/contexts'
 
@@ -8,6 +9,12 @@ const trustBadges = [
   { icon: Shield, text: 'GDPR Compliant' },
   { icon: Lock, text: 'HIPAA Ready' },
   { icon: Zap, text: 'No Credit Card Required' },
+]
+
+const useCases = [
+  { href: '/use-cases/rare-disease', label: 'Rare Disease' },
+  { href: '/use-cases/newborn-screening', label: 'Newborn Screening' },
+  { href: '/use-cases/carrier-screening', label: 'Carrier Screening' },
 ]
 
 export function FinalCTASection() {
@@ -56,6 +63,23 @@ export function FinalCTASection() {
                 </div>
               )
             })}
+          </div>
+
+          {/* Use case links */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-md text-muted-foreground mb-3">Explore by clinical application:</p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              {useCases.map((uc) => (
+                <Link
+                  key={uc.href}
+                  href={uc.href}
+                  className="inline-flex items-center gap-1 text-md text-primary hover:underline"
+                >
+                  {uc.label}
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>

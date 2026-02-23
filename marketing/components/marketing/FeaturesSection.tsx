@@ -1,4 +1,5 @@
-import { Database, Users, BookOpen, Brain } from 'lucide-react'
+import Link from 'next/link'
+import { Database, Users, BookOpen, Brain, ArrowRight } from 'lucide-react'
 
 const features = [
   {
@@ -6,24 +7,28 @@ const features = [
     title: 'Analysis Service',
     description: 'Comprehensive variant annotation with VEP and automated ACMG classification following clinical guidelines.',
     highlights: ['VCF processing', 'Multi-source annotation', 'ACMG criteria'],
+    href: '/docs/classification',
   },
   {
     icon: Users,
     title: 'Phenotype Matching',
     description: 'HPO-based phenotype analysis with semantic similarity scoring to prioritize clinically relevant variants.',
     highlights: ['HPO ontology', 'Semantic matching', 'Clinical relevance'],
+    href: '/docs/phenotype-matching',
   },
   {
     icon: BookOpen,
     title: 'Literature Analysis',
     description: 'Automated mining of biomedical literature from PubMed, ClinVar, and specialized databases.',
     highlights: ['Multi-source search', 'Evidence extraction', 'Citation tracking'],
+    href: '/docs/literature',
   },
   {
     icon: Brain,
     title: 'AI Interpretation',
     description: 'Advanced AI models synthesize genomic data, phenotypes, and literature to generate clinical reports.',
     highlights: ['Evidence synthesis', 'Report generation', 'Clinical insights'],
+    href: '/docs/ai-assistant',
   },
 ]
 
@@ -71,6 +76,13 @@ export function FeaturesSection() {
                     </span>
                   ))}
                 </div>
+                <Link
+                  href={feature.href}
+                  className="inline-flex items-center gap-1 text-md text-primary hover:underline pt-1"
+                >
+                  Technical documentation
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             )
           })}
