@@ -10,11 +10,11 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="h-dvh flex flex-col">
       <Header />
-      <div className="flex-1 min-h-0 flex">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         <DocsSidebar />
         <main className="flex-1 overflow-y-auto">
           <DocsHighlighter>
-            <div className="max-w-4xl mx-auto px-6">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6">
               {children}
               <DocsPagination />
             </div>

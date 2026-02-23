@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { PanelLeftClose, ChevronRight, ChevronDown, Search, X } from 'lucide-react'
+import { PanelLeftClose, ChevronRight, ChevronDown, Search, X, Menu } from 'lucide-react'
 import { docsNavigation, type NavItem } from './docsNavigation'
 import { docsSearchIndex, type SearchEntry } from './docsSearchIndex'
 
@@ -86,24 +86,179 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   )
 }
 
+/* ------------------------------------------------------------------ */
+/* Mobile trigger button -- rendered in layout via portal-free approach */
+/* ------------------------------------------------------------------ */
+export function DocsMobileMenuButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="lg:hidden flex items-center gap-2 px-3 py-2 text-md text-muted-foreground hover:text-foreground transition-colors"
+      aria-label="Open documentation menu"
+    >
+      <Menu className="h-5 w-5" />
+      <span>Menu</span>
+    </button>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Sidebar content -- shared between desktop and mobile                */
+/* ------------------------------------------------------------------ */
+function SidebarContent({
+  pathname,
+  router,
+  searchQuery,
+  setSearchQuery,
+  searchInputRef,
+  searchResults,
+  showResults,
+  onNavigate,
+  onClose,
+  isMobile,
+}: {
+  pathname: string
+  router: ReturnType<typeof useRouter>
+  searchQuery: string
+  setSearchQuery: (q: string) => void
+  searchInputRef: React.RefObject<HTMLInputElement | null>
+  searchResults: SearchResult[]
+  showResults: boolean
+  onNavigate: (href: string) => void
+  onClose?: () => void
+  isMobile: boolean
+}) {
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between px-2 pt-2 pb-0 shrink-0">
+        <Link
+          href="/docs"
+          onClick={() => onNavigate('/docs')}
+          className="flex-1 px-2 text-md font-semibold text-foreground hover:text-primary transition-colors"
+        >
+          Documentation
+        </Link>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors shrink-0"
+          >
+            {isMobile ? <X className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
+
+      {/* Search */}
+      <div className="px-2 pt-2 pb-1 shrink-0">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search docs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-8 pl-8 pr-16 text-sm bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
+          />
+          {searchQuery ? (
+            <button
+              onClick={() => { setSearchQuery(''); searchInputRef.current?.focus() }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/50 font-mono pointer-events-none hidden sm:inline">
+              Ctrl+K
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Content area: search results OR navigation */}
+      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+        {showResults ? (
+          searchResults.length > 0 ? (
+            <div className="space-y-1">
+              <p className="px-3 py-1 text-xs text-muted-foreground/70">
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+              </p>
+              {searchResults.map((result) => (
+                <button
+                  key={result.entry.href}
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-muted/50 transition-colors"
+                  onClick={() => onNavigate(result.entry.href)}
+                >
+                  <p className="text-md font-medium text-foreground leading-tight">
+                    <HighlightedText text={result.entry.title} query={searchQuery} />
+                  </p>
+                  <p className="text-tiny text-muted-foreground/60 mt-0.5">{result.entry.section}</p>
+                  {result.snippet && (
+                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                      <HighlightedText text={result.snippet} query={searchQuery} />
+                    </p>
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="px-3 py-6 text-sm text-muted-foreground text-center">No results</p>
+          )
+        ) : (
+          docsNavigation.map((section, index) => (
+            <SidebarSection
+              key={section.href}
+              section={section}
+              pathname={pathname}
+              defaultOpen={index === 0}
+              onNavigate={onNavigate}
+            />
+          ))
+        )}
+      </nav>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Main exported sidebar                                               */
+/* ------------------------------------------------------------------ */
 export function DocsSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(true)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const [searchQuery, setSearchQuery] = useState('')
   const sidebarRef = useRef<HTMLElement>(null)
   const isResizing = useRef(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const mobileSearchRef = useRef<HTMLInputElement>(null)
 
   const searchResults = useMemo(() => searchDocs(searchQuery), [searchQuery])
   const showResults = searchQuery.trim().length >= 2
 
-  const handleResultClick = (href: string) => {
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
+
+  const handleNavigate = useCallback((href: string) => {
     const q = searchQuery.trim()
     setSearchQuery('')
+    setMobileOpen(false)
     router.push(q.length >= 2 ? `${href}?q=${encodeURIComponent(q)}` : href)
-  }
+  }, [searchQuery, router])
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -146,144 +301,134 @@ export function DocsSidebar() {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
-        if (!isOpen) setIsOpen(true)
-        setTimeout(() => searchInputRef.current?.focus(), 100)
+        // Check if mobile viewport
+        if (window.innerWidth < 1024) {
+          setMobileOpen(true)
+          setTimeout(() => mobileSearchRef.current?.focus(), 200)
+        } else {
+          if (!isOpen) setIsOpen(true)
+          setTimeout(() => searchInputRef.current?.focus(), 100)
+        }
+      }
+      // Escape closes mobile sidebar
+      if (e.key === 'Escape' && mobileOpen) {
+        setMobileOpen(false)
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen])
+  }, [isOpen, mobileOpen])
 
   return (
-    <aside
-      ref={sidebarRef}
-      className={`h-full flex flex-col bg-card border-r border-border shrink-0 overflow-hidden relative ${
-        !isOpen ? 'cursor-pointer hover:bg-accent/50' : ''
-      }`}
-      style={{
-        width: isOpen ? `${sidebarWidth}px` : `${SIDEBAR_COLLAPSED}px`,
-        transition: isResizing.current ? 'none' : 'width 300ms',
-      }}
-      onClick={!isOpen ? handleCollapsedClick : undefined}
-    >
-      {isOpen ? (
-        <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex items-center justify-between px-2 pt-2 pb-0 shrink-0">
-            <Link
-              href="/docs"
-              className="flex-1 px-2 text-md font-semibold text-foreground hover:text-primary transition-colors"
-            >
-              Documentation
-            </Link>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors shrink-0"
-            >
-              <PanelLeftClose className="h-4 w-4" />
-            </button>
-          </div>
+    <>
+      {/* ---- Mobile: top bar with hamburger ---- */}
+      <div className="lg:hidden flex items-center border-b border-border bg-card px-4 py-2 shrink-0">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="flex items-center gap-2 text-md text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Open documentation menu"
+        >
+          <Menu className="h-5 w-5" />
+          <span>Menu</span>
+        </button>
+      </div>
 
-          {/* Search */}
-          <div className="px-2 pt-2 pb-1 shrink-0">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search docs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-8 pl-8 pr-16 text-sm bg-muted/50 border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/30"
-              />
-              {searchQuery ? (
-                <button
-                  onClick={() => { setSearchQuery(''); searchInputRef.current?.focus() }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              ) : (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground/50 font-mono pointer-events-none">
-                  Ctrl+K
-                </span>
-              )}
+      {/* ---- Mobile: overlay sidebar ---- */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Sidebar panel */}
+          <aside className="relative w-80 max-w-[85vw] h-full bg-card border-r border-border flex flex-col animate-slide-in-left">
+            <SidebarContent
+              pathname={pathname}
+              router={router}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              searchInputRef={mobileSearchRef}
+              searchResults={searchResults}
+              showResults={showResults}
+              onNavigate={handleNavigate}
+              onClose={() => setMobileOpen(false)}
+              isMobile={true}
+            />
+          </aside>
+        </div>
+      )}
+
+      {/* ---- Desktop: persistent sidebar ---- */}
+      <aside
+        ref={sidebarRef}
+        className={`hidden lg:flex h-full flex-col bg-card border-r border-border shrink-0 overflow-hidden relative ${
+          !isOpen ? 'cursor-pointer hover:bg-accent/50' : ''
+        }`}
+        style={{
+          width: isOpen ? `${sidebarWidth}px` : `${SIDEBAR_COLLAPSED}px`,
+          transition: isResizing.current ? 'none' : 'width 300ms',
+        }}
+        onClick={!isOpen ? handleCollapsedClick : undefined}
+      >
+        {isOpen ? (
+          <SidebarContent
+            pathname={pathname}
+            router={router}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchInputRef={searchInputRef}
+            searchResults={searchResults}
+            showResults={showResults}
+            onNavigate={handleNavigate}
+            onClose={() => setIsOpen(false)}
+            isMobile={false}
+          />
+        ) : (
+          <div className="flex flex-col items-center h-full">
+            <div className="px-1 pt-3 shrink-0">
+              <Search className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
+        )}
 
-          {/* Content area: search results OR navigation */}
-          <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-            {showResults ? (
-              /* Search results inline */
-              searchResults.length > 0 ? (
-                <div className="space-y-1">
-                  <p className="px-3 py-1 text-xs text-muted-foreground/70">
-                    {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-                  </p>
-                  {searchResults.map((result) => (
-                    <button
-                      key={result.entry.href}
-                      className="w-full text-left px-3 py-2 rounded-md hover:bg-muted/50 transition-colors"
-                      onClick={() => handleResultClick(result.entry.href)}
-                    >
-                      <p className="text-md font-medium text-foreground leading-tight">
-                        <HighlightedText text={result.entry.title} query={searchQuery} />
-                      </p>
-                      <p className="text-tiny text-muted-foreground/60 mt-0.5">{result.entry.section}</p>
-                      {result.snippet && (
-                        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                          <HighlightedText text={result.snippet} query={searchQuery} />
-                        </p>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="px-3 py-6 text-sm text-muted-foreground text-center">No results</p>
-              )
-            ) : (
-              /* Full navigation tree */
-              docsNavigation.map((section, index) => (
-                <SidebarSection
-                  key={section.href}
-                  section={section}
-                  pathname={pathname}
-                  defaultOpen={index === 0}
-                />
-              ))
-            )}
-          </nav>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center h-full">
-          <div className="px-1 pt-3 shrink-0">
-            <Search className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
-      )}
+        {isOpen && (
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors z-50"
+            onMouseDown={handleResizeStart}
+          />
+        )}
+      </aside>
 
-      {isOpen && (
-        <div
-          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors z-50"
-          onMouseDown={handleResizeStart}
-        />
-      )}
-
-      <style>{`@keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`}</style>
-    </aside>
+      <style>{`
+        @keyframes slideInLeft {
+          from { transform: translateX(-100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in-left {
+          animation: slideInLeft 200ms ease-out;
+        }
+      `}</style>
+    </>
   )
 }
 
+/* ------------------------------------------------------------------ */
+/* Sidebar section (tree node)                                         */
+/* ------------------------------------------------------------------ */
 function SidebarSection({
   section,
   pathname,
   defaultOpen = false,
+  onNavigate,
 }: {
   section: NavItem
   pathname: string
   defaultOpen?: boolean
+  onNavigate: (href: string) => void
 }) {
   const isActive = pathname === section.href
   const hasChildren = section.children && section.children.length > 0
@@ -299,6 +444,7 @@ function SidebarSection({
     return (
       <Link
         href={section.href}
+        onClick={() => onNavigate(section.href)}
         className={`block px-3 py-1.5 text-md rounded-md transition-colors ${
           isActive
             ? 'bg-primary/10 text-primary font-medium'
@@ -331,6 +477,7 @@ function SidebarSection({
         <div className="ml-3 pl-3 border-l border-border mt-0.5 space-y-0.5">
           <Link
             href={section.href}
+            onClick={() => onNavigate(section.href)}
             className={`block px-3 py-1.5 text-md rounded-md transition-colors ${
               isActive
                 ? 'text-primary font-medium'
@@ -345,6 +492,7 @@ function SidebarSection({
               <Link
                 key={child.href}
                 href={child.href}
+                onClick={() => onNavigate(child.href)}
                 className={`block px-3 py-1.5 text-md rounded-md transition-colors ${
                   childActive
                     ? 'text-primary font-medium'
