@@ -31,17 +31,9 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="px-6 py-6">
-        <div className="flex items-end justify-between">
-          {/* Helena copyright -- far left, bottom-aligned */}
-          <div className="hidden md:block">
-            <p className="text-md text-muted-foreground whitespace-nowrap">
-              <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
-              {' '}&copy; 2026
-            </p>
-          </div>
-
-          {/* Columns -- pushed right, compact gaps */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-12 gap-y-4">
+        {/* Columns -- centered */}
+        <div className="flex justify-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-4">
             <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
               {platformLinks.map((link) => (
@@ -80,8 +72,8 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Mobile only copyright */}
-        <p className="md:hidden text-md text-muted-foreground mt-4">
+        {/* Copyright -- left aligned */}
+        <p className="text-md text-muted-foreground mt-2">
           <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
           {' '}&copy; 2026
         </p>
