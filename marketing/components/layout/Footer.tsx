@@ -73,7 +73,7 @@ export function Footer() {
           </div>
 
           {/* Bottom row -- same grid, first and last columns */}
-          <div className="mt-2">
+          <div>
             <p className="text-md text-muted-foreground">
               <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
               {' '}&copy; 2026
@@ -81,7 +81,7 @@ export function Footer() {
           </div>
           <div className="hidden md:block" />
           <div className="hidden md:block" />
-          <div className="mt-2 text-right">
+          <div className="text-right">
             <p className="text-md text-muted-foreground">
               EU-hosted infrastructure. Helsinki, Finland.
             </p>
