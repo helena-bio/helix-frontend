@@ -30,63 +30,61 @@ const legalLinks = [
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-          {/* Platform */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
-            {platformLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Use Cases */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Use Cases</p>
-            {useCaseLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Resources */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Resources</p>
-            {resourceLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Legal */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Legal</p>
-            {legalLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Bottom row -- same grid, first and last columns */}
-          <div>
-            <p className="text-md text-muted-foreground">
+      <div className="px-6 py-6">
+        <div className="flex">
+          {/* Helena copyright -- far left, aligned to bottom of columns */}
+          <div className="hidden md:flex items-end pr-8">
+            <p className="text-md text-muted-foreground whitespace-nowrap">
               <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
               {' '}&copy; 2026
             </p>
           </div>
-          <div className="hidden md:block" />
-          <div className="hidden md:block" />
-          <div className="text-right">
-            <p className="text-md text-muted-foreground">
-              EU-hosted infrastructure. Helsinki, Finland.
-            </p>
+
+          {/* Columns */}
+          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
+              {platformLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Use Cases</p>
+              {useCaseLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Resources</p>
+              {resourceLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Legal</p>
+              {legalLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Mobile only copyright */}
+        <p className="md:hidden text-md text-muted-foreground mt-4">
+          <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
+          {' '}&copy; 2026
+        </p>
       </div>
     </footer>
   )
