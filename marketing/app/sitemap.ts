@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://helena.bio'
+const BASE_URL = 'https://helixinsight.bio'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date().toISOString()

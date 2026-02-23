@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/partners/login'],
       },
     ],
-    sitemap: 'https://helena.bio/sitemap.xml',
+    sitemap: 'https://helixinsight.bio/sitemap.xml',
   }
 }

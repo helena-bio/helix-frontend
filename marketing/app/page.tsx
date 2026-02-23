@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
   description: 'Automated ACMG classification, phenotype matching, and clinical reporting. From VCF upload to diagnostic insight in minutes. EU-hosted, GDPR-compliant. Free to start.',
   alternates: {
-    canonical: 'https://helena.bio',
+    canonical: 'https://helixinsight.bio',
   },
 }
 
@@ -17,7 +17,7 @@ const softwareApplicationData = {
   'applicationCategory': 'HealthApplication',
   'applicationSubCategory': 'Clinical Genetics Software',
   'operatingSystem': 'Web',
-  'url': 'https://helena.bio',
+  'url': 'https://helixinsight.bio',
   'description': 'AI-powered variant interpretation platform for clinical genetics laboratories. Automated ACMG/AMP classification, HPO phenotype matching, biomedical literature mining, and clinical report generation.',
   'featureList': [
     'Automated ACMG/AMP variant classification',

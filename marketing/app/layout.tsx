@@ -11,7 +11,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://helena.bio'),
+  metadataBase: new URL('https://helixinsight.bio'),
   title: {
     default: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
     template: '%s | Helix Insight',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://helena.bio',
+    url: 'https://helixinsight.bio',
     siteName: 'Helix Insight',
     title: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
     description: 'Automated ACMG classification, phenotype matching, and clinical reporting. From VCF upload to diagnostic insight in minutes. EU-hosted, GDPR-compliant.',
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://helena.bio',
+    canonical: 'https://helixinsight.bio',
   },
 }
 

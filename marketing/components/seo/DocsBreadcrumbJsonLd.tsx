@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import { docsNavigation, type NavItem } from '@/components/docs/docsNavigation'
 import { JsonLd } from './JsonLd'
 
-const BASE_URL = 'https://helena.bio'
+const BASE_URL = 'https://helixinsight.bio'
 
 function findBreadcrumbTrail(path: string): { name: string; href: string }[] {
   const trail: { name: string; href: string }[] = [

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Documentation -- Variant Interpretation Pipeline | Helix Insight',
   description: 'Complete technical documentation for Helix Insight: ACMG classification, computational predictors, reference databases, phenotype matching, screening, and AI clinical assistant.',
   alternates: {
-    canonical: 'https://helena.bio/docs',
+    canonical: 'https://helixinsight.bio/docs',
   },
 }
 
