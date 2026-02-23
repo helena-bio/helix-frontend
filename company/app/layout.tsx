@@ -1,3 +1,4 @@
+import { GoogleAnalytics } from '@/components/seo'
 import type { Metadata } from "next"
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
@@ -64,6 +65,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <GoogleAnalytics />
       <body className="font-sans antialiased h-dvh overflow-hidden">
         <ThemeProvider attribute="class" defaultTheme="light">
           {children}

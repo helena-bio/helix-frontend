@@ -4,6 +4,7 @@ import { ThemeProvider } from 'next-themes'
 import '../styles/globals.css'
 import { DemoModalProvider, AuthProvider, LoginModalProvider } from '@/contexts'
 import { RequestDemoModal, LoginModal } from '@/components'
+import { GoogleAnalytics } from '@/components/seo'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -66,6 +67,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <GoogleAnalytics />
       <body className="font-sans antialiased h-dvh overflow-hidden">
         <ThemeProvider attribute="class" defaultTheme="light">
           <AuthProvider>
