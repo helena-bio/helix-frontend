@@ -100,7 +100,7 @@ export function Header() {
           <div className="flex items-center gap-4 ml-8 pl-8 border-l border-border">
             <button
               onClick={openLoginModal}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-base text-muted-foreground hover:text-foreground transition-colors"
             >
               Partner Login
             </button>
