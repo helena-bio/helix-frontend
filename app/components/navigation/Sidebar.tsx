@@ -29,10 +29,10 @@ import {
   Settings,
   LogOut,
   Users2,
-  Building2,
   Loader2,
   ClipboardCheck,
   Shield,
+  Cog,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -159,11 +159,10 @@ export function Sidebar() {
   // Analysis must be complete before any module is accessible
   const isAnalysisComplete = currentStep === 'analysis'
 
-  // Home is active when on dashboard
+  // Route active states
   const isHome = pathname === '/'
-
-  // Admin is active when on /admin
   const isAdminActive = pathname.startsWith('/admin')
+  const isPlatformActive = pathname === '/platform'
 
   // User display values
   const userName = user?.full_name || 'User'
@@ -279,7 +278,7 @@ export function Sidebar() {
               </Button>
             </div>
 
-            {/* Admin - visible only for admin role */}
+            {/* Admin Panel - visible only for admin role */}
             {user?.role === 'admin' && (
               <div className="px-2 pb-1 shrink-0">
                 <Button
@@ -287,8 +286,22 @@ export function Sidebar() {
                   className="w-full justify-start h-8"
                   onClick={() => router.push('/admin')}
                 >
-                  <Shield className="h-4 w-4 shrink-0" />
-                  <span className="ml-2 text-base">Admin</span>
+                  <Users2 className="h-4 w-4 shrink-0" />
+                  <span className="ml-2 text-base">Admin Panel</span>
+                </Button>
+              </div>
+            )}
+
+            {/* Platform Panel - visible only for platform admins */}
+            {user?.is_platform_admin && (
+              <div className="px-2 pb-1 shrink-0">
+                <Button
+                  variant={isPlatformActive ? 'secondary' : 'ghost'}
+                  className="w-full justify-start h-8"
+                  onClick={() => router.push('/platform')}
+                >
+                  <Cog className="h-4 w-4 shrink-0" />
+                  <span className="ml-2 text-base">Platform Panel</span>
                 </Button>
               </div>
             )}
@@ -433,9 +446,9 @@ export function Sidebar() {
               </TooltipProvider>
             </div>
 
-            {/* Admin icon - only for admin role */}
+            {/* Admin Panel icon - only for admin role */}
             {user?.role === 'admin' && (
-              <div className="px-1 pb-2 shrink-0">
+              <div className="px-1 pb-1 shrink-0">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -444,11 +457,33 @@ export function Sidebar() {
                         className="w-full justify-center px-0 h-8"
                         onClick={(e) => { e.stopPropagation(); router.push('/admin') }}
                       >
-                        <Shield className="h-4 w-4" />
+                        <Users2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
-                      <p className="text-sm">Admin</p>
+                      <p className="text-sm">Admin Panel</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+
+            {/* Platform Panel icon - only for platform admins */}
+            {user?.is_platform_admin && (
+              <div className="px-1 pb-2 shrink-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isPlatformActive ? 'secondary' : 'ghost'}
+                        className="w-full justify-center px-0 h-8"
+                        onClick={(e) => { e.stopPropagation(); router.push('/platform') }}
+                      >
+                        <Cog className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p className="text-sm">Platform Panel</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
