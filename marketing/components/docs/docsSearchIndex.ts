@@ -191,4 +191,41 @@ export const docsSearchIndex: SearchEntry[] = [
     section: 'Reference Databases',
     content: 'database update policy versioning validation regression testing reference cohort classification delta report atomic updates reproducible gnomAD major release ClinVar quarterly dbNSFP major release HPO quarterly ClinGen quarterly Ensembl VEP annual SpliceAI Ensembl release schema compatibility record count verification deployment approval existing analyses not retroactively changed',
   },
+  // Phenotype Matching
+  {
+    href: '/docs/phenotype-matching',
+    title: 'Phenotype Matching',
+    section: 'Phenotype Matching',
+    content: 'phenotype matching genotype-phenotype correlation patient HPO terms gene phenotype associations semantic similarity score 0-100 clinical tiers five-tier system prioritization BRCA1 epilepsy SCN1A gene-level deduplication 130x reduction WES WGS parallel processing incidental findings actionable',
+  },
+  {
+    href: '/docs/phenotype-matching/hpo-overview',
+    title: 'HPO Overview',
+    section: 'Phenotype Matching',
+    content: 'HPO Human Phenotype Ontology standardized vocabulary phenotypic abnormalities directed acyclic graph hierarchy 17000 terms 320000 gene-phenotype associations 8000 rare diseases OMIM Orphanet hpo.jax.org Monarch Initiative Jackson Laboratory seizure epilepsy specificity information content PP4 criterion autocomplete text extraction Kohler 2024',
+  },
+  {
+    href: '/docs/phenotype-matching/semantic-similarity',
+    title: 'Semantic Similarity',
+    section: 'Phenotype Matching',
+    content: 'semantic similarity Lin similarity information content IC MICA most informative common ancestor Resnik similarity OMIM disease annotations best-match average normalized score 0-100 0.5 threshold significant match worked example SCN1A seizure febrile intellectual disability developmental delay set comparison pyhpo ontology Lin 1998',
+  },
+  {
+    href: '/docs/phenotype-matching/clinical-tiers',
+    title: 'Clinical Tiers',
+    section: 'Phenotype Matching',
+    content: 'clinical tiers five-tier system Tier 1 Actionable Tier 2 Potentially Actionable IF Incidental Finding Tier 3 Uncertain Tier 4 Unlikely phenotype relevance pathogenic likely pathogenic VUS benign score structure base score fine score 80 60 40 20 0 phenotype 40% ACMG 30% frequency 30% tier assignment rules gnomAD AF rare common population frequency scoring',
+  },
+  {
+    href: '/docs/phenotype-matching/interpreting-scores',
+    title: 'Interpreting Scores',
+    section: 'Phenotype Matching',
+    content: 'interpreting scores phenotype match score 0-100 excellent good moderate weak poor 80 60 40 20 individual term matches significant 0.5 threshold HPO term specificity gene annotation completeness atypical presentations under-annotated genes broad terms misleading scores prioritization guide clinical judgment Tier 1 Tier 2 review',
+  },
+  {
+    href: '/docs/phenotype-matching/hpo-term-selection-guide',
+    title: 'HPO Term Selection Guide',
+    section: 'Phenotype Matching',
+    content: 'HPO term selection guide specific comprehensive negative findings 5-15 terms optimal neurodevelopmental seizure type developmental milestones MRI EEG cardiology cardiomyopathy arrhythmia ECG nephrology renal cysts proteinuria metabolic enzyme activity neonatal newborn screening autocomplete free-text extraction negation iterative refinement common mistakes chief complaint parent terms',
+  },
 ]
