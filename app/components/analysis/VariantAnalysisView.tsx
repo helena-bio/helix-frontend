@@ -22,6 +22,7 @@
  */
 
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   Microscope,
   Loader2,
@@ -324,6 +325,25 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
   const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
+
+  // Read variant from URL param (deep link from dashboard findings)
+  const searchParams = useSearchParams()
+  const variantParamConsumed = useRef(false)
+  useEffect(() => {
+    if (variantParamConsumed.current) return
+    const variantParam = searchParams.get('variant')
+    if (variantParam !== null) {
+      const idx = parseInt(variantParam, 10)
+      if (!isNaN(idx)) {
+        setSelectedVariantIdx(idx)
+        variantParamConsumed.current = true
+        // Clean variant from URL to prevent re-triggering on back navigation
+        const url = new URL(window.location.href)
+        url.searchParams.delete('variant')
+        window.history.replaceState({}, '', url.toString())
+      }
+    }
+  }, [searchParams])
 
   // Intersection Observer for lazy loading VISUALIZATION (not data)
   const observerRef = useRef<IntersectionObserver | null>(null)

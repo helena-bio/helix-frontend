@@ -92,6 +92,7 @@ interface ClinicalProfileData {
 }
 
 interface Finding {
+  variant_idx: number
   gene_symbol: string
   hgvs_cdna: string | null
   hgvs_protein: string | null
@@ -178,10 +179,11 @@ interface CaseCardProps {
   showOwner: boolean
   memoryCache: React.MutableRefObject<Map<string, ClinicalProfileData>>
   onNavigate: (session: AnalysisSession) => void
+  onNavigateToVariant: (session: AnalysisSession, variantIdx: number) => void
   onReprocess: (session: AnalysisSession) => void
 }
 
-function CaseCard({ session, showOwner, memoryCache, onNavigate, onReprocess }: CaseCardProps) {
+function CaseCard({ session, showOwner, memoryCache, onNavigate, onNavigateToVariant, onReprocess }: CaseCardProps) {
   const { avatarVersion, user } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
@@ -421,7 +423,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate, onReprocess }: 
                         </thead>
                         <tbody>
                           {findings.map((f, i) => (
-                            <tr key={i} className="border-b border-border/50 last:border-0">
+                            <tr key={i} className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-accent/50 transition-colors" onClick={(e) => { e.stopPropagation(); onNavigateToVariant(session, f.variant_idx) }}>
                               <td className="px-3 py-1.5 font-medium">{f.gene_symbol || '-'}</td>
                               <td className="px-3 py-1.5 text-md">
                                 {f.hgvs_cdna ? f.hgvs_cdna.replace(/^ENST[^:]+:/, '') : '-'}
@@ -770,6 +772,12 @@ export default function DashboardPage() {
     router.push(`/analysis?session=${session.id}`)
   }, [router, skipToAnalysis])
 
+  const handleNavigateToVariant = useCallback((session: AnalysisSession, variantIdx: number) => {
+    if (session.status !== 'completed') return
+    skipToAnalysis()
+    router.push(`/analysis?session=${session.id}&variant=${variantIdx}`)
+  }, [router, skipToAnalysis])
+
   const handleReprocess = useCallback((session: AnalysisSession) => {
     setCurrentSessionId(session.id)
     startReprocess(session.id)
@@ -868,6 +876,7 @@ export default function DashboardPage() {
                 showOwner={showAll}
                 memoryCache={memoryCache}
                 onNavigate={handleNavigate}
+                onNavigateToVariant={handleNavigateToVariant}
                   onReprocess={handleReprocess}
               />
             ))}

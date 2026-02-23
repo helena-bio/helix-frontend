@@ -58,52 +58,59 @@ export function Header() {
         </Link>
 
         {/* Desktop navigation */}
-        <nav className="hidden md:flex flex-1 items-center justify-end gap-8 mr-6">
-          {/* Platform dropdown */}
-          <div ref={platformRef} className="relative">
-            <button
-              onClick={() => setIsPlatformOpen(!isPlatformOpen)}
-              className="flex items-center gap-1 text-base text-foreground hover:text-primary transition-colors"
-            >
-              Platform
-              <ChevronDown className={`w-4 h-4 transition-transform ${isPlatformOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isPlatformOpen && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
-                {platformLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="block px-4 py-2 text-base text-foreground hover:text-primary hover:bg-muted/50 transition-colors"
-                    onClick={() => setIsPlatformOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            )}
+        <nav className="hidden md:flex flex-1 items-center justify-end mr-6">
+          {/* Nav links group */}
+          <div className="flex items-center gap-8">
+            {/* Platform dropdown */}
+            <div ref={platformRef} className="relative">
+              <button
+                onClick={() => setIsPlatformOpen(!isPlatformOpen)}
+                className="flex items-center gap-1 text-base text-foreground hover:text-primary transition-colors"
+              >
+                Platform
+                <ChevronDown className={`w-4 h-4 transition-transform ${isPlatformOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isPlatformOpen && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
+                  {platformLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="block px-4 py-2 text-base text-foreground hover:text-primary hover:bg-muted/50 transition-colors"
+                      onClick={() => setIsPlatformOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Link href="/docs" className="text-base text-foreground hover:text-primary transition-colors">
+              Docs
+            </Link>
+            <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors">
+              About
+            </Link>
+            <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
+              Contact
+            </Link>
           </div>
-          <Link href="/docs" className="text-base text-foreground hover:text-primary transition-colors">
-            Docs
-          </Link>
-          <Link href="/about" className="text-base text-foreground hover:text-primary transition-colors">
-            About
-          </Link>
-          <Link href="/contact" className="text-base text-foreground hover:text-primary transition-colors">
-            Contact
-          </Link>
-          <button
-            onClick={openLoginModal}
-            className="text-base text-foreground hover:text-primary transition-colors"
-          >
-            Partner Login
-          </button>
-          <button
-            onClick={openModal}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
-          >
-            Request Demo
-          </button>
+
+          {/* Separator + Action buttons */}
+          <div className="flex items-center gap-4 ml-8 pl-8 border-l border-border">
+            <button
+              onClick={openLoginModal}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Partner Login
+            </button>
+            <button
+              onClick={openModal}
+              className="px-4 py-1.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              Request Demo
+            </button>
+          </div>
         </nav>
 
         {/* Mobile hamburger button */}
