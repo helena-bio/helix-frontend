@@ -34,6 +34,10 @@ const legalLinks = [
   { href: '/dpia', label: 'DPIA' },
 ]
 
+const registryLinks = [
+  { href: 'https://bio.tools/HelixInsight', label: 'bio.tools (ELIXIR)' },
+]
+
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
@@ -65,6 +69,12 @@ export function Footer() {
                 <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
                   {link.label}
                 </Link>
+              ))}
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider pt-2">Registries</p>
+              {registryLinks.map((link) => (
+                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                  {link.label}
+                </a>
               ))}
             </div>
 
