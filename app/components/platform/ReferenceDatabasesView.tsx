@@ -402,7 +402,7 @@ function DatabaseCard({ db, onUpdate, isTaskRunning }: DatabaseCardProps) {
           </div>
 
           {/* Freshness details */}
-          <div className="grid grid-cols-4 gap-4 text-md pt-2 border-t border-border">
+          <div className="grid grid-cols-2 gap-4 text-md pt-2 border-t border-border">
             <div>
               <span className="text-muted-foreground">Source age</span>
               <p className="font-medium">{db.freshness.source_age_days != null ? db.freshness.source_age_days + ' days' : '--'}</p>
@@ -410,16 +410,6 @@ function DatabaseCard({ db, onUpdate, isTaskRunning }: DatabaseCardProps) {
             <div>
               <span className="text-muted-foreground">Parquet age</span>
               <p className="font-medium">{db.freshness.parquet_age_days != null ? db.freshness.parquet_age_days + ' days' : '--'}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">TTL</span>
-              <p className="font-medium">{db.freshness.cache_ttl_days} days</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Within TTL</span>
-              <p className={cn('font-medium', db.freshness.is_within_ttl === false && 'text-amber-700')}>
-                {db.freshness.is_within_ttl == null ? '--' : db.freshness.is_within_ttl ? 'Yes' : 'No'}
-              </p>
             </div>
           </div>
 
