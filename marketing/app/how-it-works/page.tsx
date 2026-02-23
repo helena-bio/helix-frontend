@@ -10,6 +10,7 @@ import {
 export const metadata = {
   title: 'How It Works | Helix Insight',
   description: 'Transparent, auditable variant analysis pipeline. Learn how Helix Insight processes genomic data from VCF upload to clinical report.',
+  alternates: { canonical: 'https://helixinsight.bio/how-it-works' },
 }
 
 const pipelineOverview = [

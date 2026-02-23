@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { JsonLd } from '@/components/seo'
 
 export const metadata = {
   title: 'FAQ | Helix Insight Documentation',
@@ -76,9 +77,23 @@ const faqs = [
   },
 ]
 
+const faqStructuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': faqs.map((faq) => ({
+    '@type': 'Question',
+    'name': faq.q,
+    'acceptedAnswer': {
+      '@type': 'Answer',
+      'text': faq.a,
+    },
+  })),
+}
+
 export default function FaqPage() {
   return (
     <div className="py-10 space-y-6">
+      <JsonLd data={faqStructuredData} />
       <div>
         <p className="text-md text-muted-foreground">
           <Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link>

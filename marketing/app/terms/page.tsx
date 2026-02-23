@@ -3,6 +3,7 @@ import { Header, Footer } from '@/components'
 export const metadata = {
   title: 'Terms of Service | Helix Insight',
   description: 'Terms and conditions for using the Helix Insight platform.',
+  alternates: { canonical: 'https://helixinsight.bio/terms' },
 }
 
 export default function TermsOfServicePage() {

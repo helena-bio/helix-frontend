@@ -3,6 +3,7 @@ import { Header, Footer } from '@/components'
 export const metadata = {
   title: 'Data Protection Impact Assessment | Helix Insight',
   description: 'DPIA summary for the Helix Insight genomic variant analysis platform.',
+  alternates: { canonical: 'https://helixinsight.bio/dpia' },
 }
 
 export default function DPIAPage() {

@@ -3,6 +3,7 @@ import { Header, Footer } from '@/components'
 export const metadata = {
   title: 'Data Processing Agreement | Helix Insight',
   description: 'Standard Data Processing Agreement for Helix Insight laboratory partners.',
+  alternates: { canonical: 'https://helixinsight.bio/dpa' },
 }
 
 export default function DPAPage() {

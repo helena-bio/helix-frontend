@@ -48,15 +48,17 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@helix/shared/lib/utils'
+import { ReferenceDatabasesContent } from '@/components/platform/ReferenceDatabasesView'
 
 
-type Section = 'overview' | 'organizations' | 'users' | 'activity'
+type Section = 'overview' | 'organizations' | 'users' | 'activity' | 'reference-data'
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'organizations', label: 'Organizations' },
   { id: 'users', label: 'Users' },
   { id: 'activity', label: 'Activity' },
+  { id: 'reference-data', label: 'Reference Data' },
 ]
 
 function formatDate(dateStr: string): string {

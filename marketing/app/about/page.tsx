@@ -7,6 +7,7 @@ import { ProtectedImage } from '@/components/ProtectedImage'
 export const metadata = {
   title: 'About | Helix Insight',
   description: 'Meet the team behind Helix Insight -- AI-powered genetic variant analysis.',
+  alternates: { canonical: 'https://helixinsight.bio/about' },
 }
 
 export default function AboutPage() {

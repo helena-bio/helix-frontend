@@ -6,6 +6,7 @@ import { ContactForm } from './ContactForm'
 export const metadata = {
   title: 'Contact | Helix Insight',
   description: 'Get in touch with Helena Bioinformatics -- partnerships, demos, and general inquiries.',
+  alternates: { canonical: 'https://helixinsight.bio/contact' },
 }
 
 export default function ContactPage() {

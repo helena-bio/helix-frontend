@@ -3,6 +3,7 @@ import { Header, Footer } from '@/components'
 export const metadata = {
   title: 'Privacy Policy | Helix Insight',
   description: 'How Helena Bioinformatics collects, processes, and protects your personal and genomic data.',
+  alternates: { canonical: 'https://helixinsight.bio/privacy' },
 }
 
 export default function PrivacyPolicyPage() {
