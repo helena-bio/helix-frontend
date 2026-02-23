@@ -3,8 +3,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ProtectedImage } from '@/components/ProtectedImage'
 export const metadata = {
-  title: 'About | Helena Bioinformatics',
-  description: 'About Helena Bioinformatics -- software company integrating AI into bioinformatics.',
+  title: 'About -- AI Clinical Genomics Company | Helena Bioinformatics',
+  description: 'Bulgarian deep-tech company building Helix Insight -- automated clinical genomic variant interpretation powered by AI. Based in Sofia, EU-hosted infrastructure in Helsinki.',
 }
 export default function AboutPage() {
   return (
