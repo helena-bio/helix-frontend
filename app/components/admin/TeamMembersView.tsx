@@ -7,6 +7,9 @@
  * Two tabs: Active members and Pending invitations.
  * Expandable card pattern matching dashboard CaseCard.
  *
+ * TeamMembersContent: standalone content (used by Admin page)
+ * TeamMembersView: full-page wrapper (used by legacy route)
+ *
  * Sort: current user (you) always displayed first.
  * Search: client-side filter by name or email.
  */
@@ -486,10 +489,10 @@ function InvitationCard({ invitation, onOpenInvite }: InvitationCardProps) {
 
 
 // ============================================================================
-// MAIN VIEW
+// TEAM MEMBERS CONTENT (used by Admin page)
 // ============================================================================
 
-export function TeamMembersView() {
+export function TeamMembersContent() {
   const { user, avatarVersion } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('members')
   const [inviteModalOpen, setInviteModalOpen] = useState(false)
@@ -525,155 +528,153 @@ export function TeamMembersView() {
 
   return (
     <>
-      <div className="flex flex-col min-h-full p-8">
-        <div className="w-full max-w-4xl mx-auto space-y-4">
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Team Members</h1>
-            <p className="text-base text-muted-foreground mt-1">
-              Manage your organization's team
-            </p>
-          </div>
+      <div className="space-y-4">
+        {/* Header */}
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Team Members</h3>
+          <p className="text-md text-muted-foreground mt-1">
+            Manage your organization&apos;s team
+          </p>
+        </div>
 
-          {/* Tabs + Search + Invite */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 shrink-0">
-              <button
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-base transition-colors",
-                  activeTab === 'members'
-                    ? "bg-background shadow-sm font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setActiveTab('members')}
-              >
-                <Users className="h-4 w-4" />
-                Active
-                {members.length > 0 && (
-                  <span className="text-xs bg-muted rounded-full px-1.5 py-0.5">{members.length}</span>
-                )}
-              </button>
-              <button
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded text-base transition-colors",
-                  activeTab === 'invitations'
-                    ? "bg-background shadow-sm font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => setActiveTab('invitations')}
-              >
-                <Send className="h-4 w-4" />
-                Invitations
-                {pendingCount > 0 && (
-                  <span className="text-xs bg-orange-100 text-orange-900 rounded-full px-1.5 py-0.5">{pendingCount}</span>
-                )}
-              </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder={activeTab === 'members' ? 'Search members...' : 'Search invitations...'}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-
-            {/* Invite button */}
+        {/* Tabs + Search + Invite */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 shrink-0">
             <button
-              onClick={() => setInviteModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors shrink-0"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded text-base transition-colors",
+                activeTab === 'members'
+                  ? "bg-background shadow-sm font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setActiveTab('members')}
             >
-              <UserPlus className="h-4 w-4" />
-              Invite Member
+              <Users className="h-4 w-4" />
+              Active
+              {members.length > 0 && (
+                <span className="text-xs bg-muted rounded-full px-1.5 py-0.5">{members.length}</span>
+              )}
+            </button>
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded text-base transition-colors",
+                activeTab === 'invitations'
+                  ? "bg-background shadow-sm font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setActiveTab('invitations')}
+            >
+              <Send className="h-4 w-4" />
+              Invitations
+              {pendingCount > 0 && (
+                <span className="text-xs bg-orange-100 text-orange-900 rounded-full px-1.5 py-0.5">{pendingCount}</span>
+              )}
             </button>
           </div>
 
-          {/* Content */}
-          {activeTab === 'members' && (
-            <>
-              {membersLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : sortedMembers.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Users className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-base font-medium mb-2">
-                      {searchQuery ? 'No matching members' : 'No team members found'}
-                    </p>
-                    <p className="text-md text-muted-foreground">
-                      {searchQuery ? 'Try a different search term.' : 'Invite members to get started.'}
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-base text-muted-foreground">
-                    {sortedMembers.length} member{sortedMembers.length !== 1 ? 's' : ''}
-                    {searchQuery && ' matching filter'}
-                  </p>
-                  {sortedMembers.map((member) => (
-                    <MemberCard
-                      key={member.id}
-                      member={member}
-                      currentUserId={user?.id}
-                      avatarVersion={avatarVersion}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder={activeTab === 'members' ? 'Search members...' : 'Search invitations...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-9 pr-3 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
 
-          {activeTab === 'invitations' && (
-            <>
-              {invLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredInvitations.length === 0 ? (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Mail className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-base font-medium mb-2">
-                      {searchQuery ? 'No matching invitations' : 'No invitations'}
-                    </p>
-                    <p className="text-md text-muted-foreground">
-                      {searchQuery ? 'Try a different search term.' : ''}
-                    </p>
-                    {!searchQuery && (
-                      <button
-                        onClick={() => setInviteModalOpen(true)}
-                        className="mt-3 text-md text-primary hover:underline"
-                      >
-                        Send your first invitation
-                      </button>
-                    )}
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-base text-muted-foreground">
-                    {filteredInvitations.length} invitation{filteredInvitations.length !== 1 ? 's' : ''}
-                    {searchQuery && ' matching filter'}
-                  </p>
-                  {filteredInvitations.map((inv) => (
-                    <InvitationCard
-                      key={inv.id}
-                      invitation={inv}
-                      onOpenInvite={() => setInviteModalOpen(true)}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+          {/* Invite button */}
+          <button
+            onClick={() => setInviteModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors shrink-0"
+          >
+            <UserPlus className="h-4 w-4" />
+            Invite Member
+          </button>
         </div>
+
+        {/* Content */}
+        {activeTab === 'members' && (
+          <>
+            {membersLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : sortedMembers.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Users className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-base font-medium mb-2">
+                    {searchQuery ? 'No matching members' : 'No team members found'}
+                  </p>
+                  <p className="text-md text-muted-foreground">
+                    {searchQuery ? 'Try a different search term.' : 'Invite members to get started.'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-base text-muted-foreground">
+                  {sortedMembers.length} member{sortedMembers.length !== 1 ? 's' : ''}
+                  {searchQuery && ' matching filter'}
+                </p>
+                {sortedMembers.map((member) => (
+                  <MemberCard
+                    key={member.id}
+                    member={member}
+                    currentUserId={user?.id}
+                    avatarVersion={avatarVersion}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'invitations' && (
+          <>
+            {invLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredInvitations.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Mail className="h-14 w-14 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-base font-medium mb-2">
+                    {searchQuery ? 'No matching invitations' : 'No invitations'}
+                  </p>
+                  <p className="text-md text-muted-foreground">
+                    {searchQuery ? 'Try a different search term.' : ''}
+                  </p>
+                  {!searchQuery && (
+                    <button
+                      onClick={() => setInviteModalOpen(true)}
+                      className="mt-3 text-md text-primary hover:underline"
+                    >
+                      Send your first invitation
+                    </button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-base text-muted-foreground">
+                  {filteredInvitations.length} invitation{filteredInvitations.length !== 1 ? 's' : ''}
+                  {searchQuery && ' matching filter'}
+                </p>
+                {filteredInvitations.map((inv) => (
+                  <InvitationCard
+                    key={inv.id}
+                    invitation={inv}
+                    onOpenInvite={() => setInviteModalOpen(true)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <InviteModal
@@ -681,5 +682,20 @@ export function TeamMembersView() {
         onClose={() => setInviteModalOpen(false)}
       />
     </>
+  )
+}
+
+
+// ============================================================================
+// FULL PAGE WRAPPER (used by legacy route)
+// ============================================================================
+
+export function TeamMembersView() {
+  return (
+    <div className="flex flex-col min-h-full p-8">
+      <div className="w-full max-w-4xl mx-auto">
+        <TeamMembersContent />
+      </div>
+    </div>
   )
 }

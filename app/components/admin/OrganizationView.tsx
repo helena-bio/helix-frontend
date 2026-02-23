@@ -3,8 +3,9 @@
 /**
  * Organization View
  *
- * Admin page for viewing and editing organization details.
- * Layout matches TeamMembersView pattern - centered max-w-4xl.
+ * Admin component for viewing and editing organization details.
+ * OrganizationContent: standalone content (used by Admin page)
+ * OrganizationView: full-page wrapper (used by legacy route)
  */
 
 import { useState, useEffect } from 'react'
@@ -12,7 +13,23 @@ import { Check, Loader2, Building2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { fetchOrganization, updateOrganization, OrganizationDetails } from '@/lib/api/admin'
 
-export function OrganizationView() {
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  })
+}
+
+function tierLabel(tier: string) {
+  const labels: Record<string, string> = {
+    founding_partner: 'Founding Partner',
+    vip: 'VIP',
+    standard: 'Standard',
+    trial: 'Trial',
+  }
+  return labels[tier] || tier
+}
+
+export function OrganizationContent() {
   const [org, setOrg] = useState<OrganizationDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -70,50 +87,29 @@ export function OrganizationView() {
     }
   }
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-    })
-  }
-
-  const tierLabel = (tier: string) => {
-    const labels: Record<string, string> = {
-      founding_partner: 'Founding Partner',
-      vip: 'VIP',
-      standard: 'Standard',
-      trial: 'Trial',
-    }
-    return labels[tier] || tier
-  }
-
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-destructive">{error}</p>
-      </div>
+      <div className="text-base text-destructive">{error}</div>
     )
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="w-full max-w-4xl mx-auto px-6 py-8 space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-semibold text-foreground">Organization</h1>
-          <p className="text-base text-muted-foreground mt-1">Manage your organization settings</p>
-        </div>
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-lg font-semibold text-foreground">Organization</h3>
+        <p className="text-md text-muted-foreground mt-1">Manage your organization settings</p>
+      </div>
 
-        {/* Organization Info Card */}
-        <Card>
-          <CardContent className="space-y-6">
+      <Card>
+        <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-14 w-14 rounded-lg bg-accent flex items-center justify-center">
               <Building2 className="h-7 w-7 text-muted-foreground" />
@@ -199,8 +195,17 @@ export function OrganizationView() {
               {saveSuccess ? 'Saved' : 'Save changes'}
             </button>
           </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export function OrganizationView() {
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <div className="w-full max-w-4xl mx-auto px-6 py-8">
+        <OrganizationContent />
       </div>
     </div>
   )

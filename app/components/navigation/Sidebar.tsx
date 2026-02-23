@@ -32,6 +32,7 @@ import {
   Building2,
   Loader2,
   ClipboardCheck,
+  Shield,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -93,7 +94,6 @@ export function Sidebar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isModulesOpen, setIsModulesOpen] = useState(true)
   const [isCasesOpen, setIsCasesOpen] = useState(true)
-  const [isAdminOpen, setIsAdminOpen] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN)
   const menuRef = useRef<HTMLDivElement>(null)
   const sidebarRef = useRef<HTMLElement>(null)
@@ -161,6 +161,9 @@ export function Sidebar() {
 
   // Home is active when on dashboard
   const isHome = pathname === '/'
+
+  // Admin is active when on /admin
+  const isAdminActive = pathname.startsWith('/admin')
 
   // User display values
   const userName = user?.full_name || 'User'
@@ -276,6 +279,20 @@ export function Sidebar() {
               </Button>
             </div>
 
+            {/* Admin - visible only for admin role */}
+            {user?.role === 'admin' && (
+              <div className="px-2 pb-1 shrink-0">
+                <Button
+                  variant={isAdminActive ? 'secondary' : 'ghost'}
+                  className="w-full justify-start h-8"
+                  onClick={() => router.push('/admin')}
+                >
+                  <Shield className="h-4 w-4 shrink-0" />
+                  <span className="ml-2 text-base">Admin</span>
+                </Button>
+              </div>
+            )}
+
             {/* Modules Navigation (collapsible) */}
             <div className="border-t border-border py-1 shrink-0">
               <button
@@ -330,44 +347,6 @@ export function Sidebar() {
             </div>
 
             {!isCasesOpen && <div className="flex-1" />}
-            {/* Admin Section - visible only for admin role */}
-            {user?.role === 'admin' && (
-              <div className="py-1 shrink-0 border-t border-border">
-                <button
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-colors"
-                  onClick={() => setIsAdminOpen(!isAdminOpen)}
-                >
-                  <span>Admin</span>
-                  <ChevronDown
-                    className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-200",
-                      !isAdminOpen && "-rotate-90"
-                    )}
-                  />
-                </button>
-
-                {isAdminOpen && (
-                <div className="mt-1 px-2 space-y-0.5">
-                  <Button
-                    variant={pathname === '/admin/organization' ? 'secondary' : 'ghost'}
-                    className="w-full justify-start"
-                    onClick={() => router.push('/admin/organization')}
-                  >
-                    <Building2 className="h-5 w-5 shrink-0" />
-                    <span className="ml-3 text-base">Organization</span>
-                  </Button>
-                  <Button
-                    variant={pathname === '/admin/team' ? 'secondary' : 'ghost'}
-                    className="w-full justify-start"
-                    onClick={() => router.push('/admin/team')}
-                  >
-                    <Users2 className="h-5 w-5 shrink-0" />
-                    <span className="ml-3 text-base">Team Members</span>
-                  </Button>
-                </div>
-                )}
-              </div>
-            )}
 
             {/* User Menu */}
             <div className="border-t border-border shrink-0 relative" ref={menuRef}>
@@ -453,6 +432,28 @@ export function Sidebar() {
                 </Tooltip>
               </TooltipProvider>
             </div>
+
+            {/* Admin icon - only for admin role */}
+            {user?.role === 'admin' && (
+              <div className="px-1 pb-2 shrink-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isAdminActive ? 'secondary' : 'ghost'}
+                        className="w-full justify-center px-0 h-8"
+                        onClick={(e) => { e.stopPropagation(); router.push('/admin') }}
+                      >
+                        <Shield className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p className="text-sm">Admin</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
 
             {/* Module icons */}
             <nav className="px-1 space-y-1 shrink-0">
