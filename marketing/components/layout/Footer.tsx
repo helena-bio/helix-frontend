@@ -30,62 +30,54 @@ const legalLinks = [
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
           {/* Platform */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
-            <div className="flex flex-col space-y-2">
-              {platformLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-md text-muted-foreground hover:text-foreground transition-colors">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+            {platformLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           {/* Use Cases */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Use Cases</p>
-            <div className="flex flex-col space-y-2">
-              {useCaseLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-md text-muted-foreground hover:text-foreground transition-colors">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+            {useCaseLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           {/* Resources */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Resources</p>
-            <div className="flex flex-col space-y-2">
-              {resourceLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-md text-muted-foreground hover:text-foreground transition-colors">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+            {resourceLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           {/* Legal */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Legal</p>
-            <div className="flex flex-col space-y-2">
-              {legalLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-md text-muted-foreground hover:text-foreground transition-colors">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+            {legalLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Bottom bar -- flush with columns */}
+        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
           <p className="text-md text-muted-foreground">
-            <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>{' '}
-            &copy; 2026. All rights reserved.
+            <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
+            {' '}&copy; 2026
           </p>
           <p className="text-md text-muted-foreground">
             EU-hosted infrastructure. Helsinki, Finland.
