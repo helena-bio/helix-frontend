@@ -232,6 +232,8 @@ export function Header() {
             Docs
           </a>
 
+          <div className="h-4 w-px bg-border" />
+
           {showDownloadReport && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
