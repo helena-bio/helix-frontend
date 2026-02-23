@@ -9,8 +9,8 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'For Geneticists | Helix Insight',
-  description: 'Helix Insight amplifies your clinical expertise. Evidence gathering in minutes, so you can focus on what only you can do -- clinical interpretation.',
+  title: 'Variant Interpretation Software for Clinical Geneticists | Helix Insight',
+  description: 'Automate VUS evidence gathering with Bayesian ACMG classification, HPO phenotype matching, AI clinical assistant, and one-click report generation. Designed for small and medium genetics labs.',
 }
 
 const helixDoes = [

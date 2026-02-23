@@ -1,14 +1,20 @@
+import type { Metadata } from 'next'
 import { Header } from '@/components'
 import { DocsSidebar, DocsPagination, DocsHighlighter } from '@/components/docs'
+import { DocsBreadcrumbJsonLd } from '@/components/seo'
 
-export const metadata = {
-  title: 'Documentation | Helix Insight',
-  description: 'Complete documentation for Helix Insight -- AI-powered genetic variant analysis platform. Classification methodology, reference databases, phenotype matching, and clinical workflows.',
+export const metadata: Metadata = {
+  title: 'Documentation -- Variant Interpretation Pipeline | Helix Insight',
+  description: 'Complete technical documentation for Helix Insight: ACMG classification, computational predictors, reference databases, phenotype matching, screening, and AI clinical assistant.',
+  alternates: {
+    canonical: 'https://helena.bio/docs',
+  },
 }
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-dvh flex flex-col">
+      <DocsBreadcrumbJsonLd />
       <Header />
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
         <DocsSidebar />

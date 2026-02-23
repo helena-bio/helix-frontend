@@ -11,8 +11,52 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: "Helix Insight | AI-Powered Genetic Variant Analysis",
-  description: "Transform genetic variant analysis from days to hours with AI-powered VUS prioritization and automated clinical interpretation.",
+  metadataBase: new URL('https://helena.bio'),
+  title: {
+    default: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
+    template: '%s | Helix Insight',
+  },
+  description: 'Automated ACMG classification, phenotype matching, and clinical reporting. From VCF upload to diagnostic insight in minutes. EU-hosted, GDPR-compliant. Free to start.',
+  keywords: [
+    'variant interpretation software',
+    'ACMG classification tool',
+    'VCF analysis software',
+    'VUS classification',
+    'clinical genetics software',
+    'phenotype matching',
+    'genetic variant analysis',
+    'GDPR compliant genomics',
+  ],
+  authors: [{ name: 'Helena Bioinformatics' }],
+  creator: 'Helena Bioinformatics',
+  publisher: 'Helena Bioinformatics',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://helena.bio',
+    siteName: 'Helix Insight',
+    title: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
+    description: 'Automated ACMG classification, phenotype matching, and clinical reporting. From VCF upload to diagnostic insight in minutes. EU-hosted, GDPR-compliant.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Helix Insight -- AI-Powered Variant Interpretation',
+    description: 'Automated ACMG classification, phenotype matching, and clinical reporting. EU-hosted, GDPR-compliant. Free to start.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: 'https://helena.bio',
+  },
 }
 
 export default function RootLayout({

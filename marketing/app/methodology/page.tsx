@@ -10,8 +10,8 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Classification Methodology | Helix Insight',
-  description: 'Complete ACMG/AMP variant classification methodology. Transparent documentation of criteria, thresholds, databases, and combining rules used by Helix Insight.',
+  title: 'ACMG Classification Methodology -- Bayesian Point-Based Framework | Helix Insight',
+  description: '19 automated ACMG criteria using Tavtigian Bayesian point system, BayesDel_noAF with ClinGen SVI calibration, SpliceAI splice impact, and ClinVar integration.',
 }
 
 /* ---------------------------------------------------------------------------
