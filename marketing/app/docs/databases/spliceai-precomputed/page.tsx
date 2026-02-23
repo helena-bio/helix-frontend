@@ -43,7 +43,7 @@ SpliceAI is a deep learning model developed by Illumina that predicts the impact
 <div className="bg-card border border-border rounded-lg p-4 space-y-2">
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Version</span>
-<span className="font-mono text-md text-muted-foreground">Ensembl MANE R113</span>
+<span className="text-md text-muted-foreground">Ensembl MANE R113</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -53,7 +53,7 @@ SpliceAI is a deep learning model developed by Illumina that predicts the impact
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Genome Build</span>
-<span className="font-mono text-md text-muted-foreground">GRCh38</span>
+<span className="text-md text-muted-foreground">GRCh38</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ SpliceAI produces four delta scores, each ranging from 0 to 1, representing the 
 {deltaScores.map((ds) => (
 <div key={ds.code} className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-md font-semibold text-foreground">{ds.code}</span>
+<span className="text-md font-semibold text-foreground">{ds.code}</span>
 <span className="px-2 py-0.5 text-sm rounded bg-muted text-muted-foreground">{ds.name}</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">{ds.description}</p>
@@ -105,7 +105,7 @@ The maximum of the four delta scores (max_score) is used for classification thre
 <tbody>
 {thresholds.map((row) => (
 <tr key={row.range} className="border-b border-border/50">
-<td className="py-2 pr-3 font-mono text-md text-foreground">{row.range}</td>
+<td className="py-2 pr-3 text-md text-foreground">{row.range}</td>
 <td className="py-2 pr-3 text-md text-muted-foreground">{row.interpretation}</td>
 <td className="py-2 text-md text-muted-foreground">{row.clinical}</td>
 </tr>
@@ -126,7 +126,7 @@ The maximum of the four delta scores (max_score) is used for classification thre
 ].map((item) => (
 <div key={item.code} className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-base font-semibold text-foreground">{item.code}</span>
+<span className="text-base font-semibold text-foreground">{item.code}</span>
 <span className="px-2 py-0.5 text-sm rounded bg-muted text-muted-foreground">{item.strength}</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">{item.desc}</p>

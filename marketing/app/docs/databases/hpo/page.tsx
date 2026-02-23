@@ -95,8 +95,8 @@ HPO data is joined on gene symbol. Each variant inherits the complete HPO profil
 {columns.map((col) => (
 <div key={col.name} className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-md font-semibold text-foreground">{col.name}</span>
-<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground font-mono">{col.type}</span>
+<span className="text-md font-semibold text-foreground">{col.name}</span>
+<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground">{col.type}</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">{col.description}</p>
 </div>

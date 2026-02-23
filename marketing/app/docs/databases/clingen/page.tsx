@@ -70,7 +70,7 @@ ClinGen dosage scores provide inheritance pattern proxies that calibrate frequen
 ].map((item) => (
 <div key={item.code} className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-base font-semibold text-foreground">{item.code}</span>
+<span className="text-base font-semibold text-foreground">{item.code}</span>
 <span className="px-2 py-0.5 text-sm rounded bg-muted text-muted-foreground">{item.strength}</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">{item.desc}</p>
@@ -88,8 +88,8 @@ ClinGen data is joined on gene symbol. Each variant inherits its gene-level dosa
 <div className="space-y-3">
 <div className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-md font-semibold text-foreground">haploinsufficiency_score</span>
-<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground font-mono">INTEGER</span>
+<span className="text-md font-semibold text-foreground">haploinsufficiency_score</span>
+<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground">INTEGER</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">
 Haploinsufficiency assessment score. Values 0-3 indicate evidence level for haploinsufficiency. Special values: 30 = autosomal recessive phenotype, 40 = dosage sensitivity unlikely.
@@ -97,8 +97,8 @@ Haploinsufficiency assessment score. Values 0-3 indicate evidence level for hapl
 </div>
 <div className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-md font-semibold text-foreground">triplosensitivity_score</span>
-<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground font-mono">INTEGER</span>
+<span className="text-md font-semibold text-foreground">triplosensitivity_score</span>
+<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground">INTEGER</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">
 Triplosensitivity assessment score. Same 0-3 scale as haploinsufficiency. Indicates sensitivity to gene duplication (three copies). Currently informational in Helix Insight and not directly used in ACMG criteria.
@@ -123,7 +123,7 @@ Triplosensitivity assessment score. Same 0-3 scale as haploinsufficiency. Indica
 <tbody>
 {hiScores.map((row) => (
 <tr key={row.score} className="border-b border-border/50">
-<td className="py-2 pr-3 font-mono text-md text-foreground">{row.score}</td>
+<td className="py-2 pr-3 text-md text-foreground">{row.score}</td>
 <td className="py-2 pr-3 text-md text-muted-foreground">{row.evidence}</td>
 <td className="py-2 pr-3 text-md text-muted-foreground">{row.meaning}</td>
 <td className="py-2 text-md text-muted-foreground">{row.usage}</td>

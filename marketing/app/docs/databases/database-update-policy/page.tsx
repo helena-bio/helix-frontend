@@ -67,9 +67,9 @@ Reference database updates affect variant classification. A variant classified a
 <tbody>
 {updateSchedule.map((row) => (
 <tr key={row.database} className="border-b border-border/50">
-<td className="py-2 pr-3 font-mono text-md text-foreground">{row.database}</td>
+<td className="py-2 pr-3 text-md text-foreground">{row.database}</td>
 <td className="py-2 pr-3 text-md text-muted-foreground">{row.frequency}</td>
-<td className="py-2 pr-3 font-mono text-md text-muted-foreground">{row.current}</td>
+<td className="py-2 pr-3 text-md text-muted-foreground">{row.current}</td>
 <td className="py-2 text-md text-muted-foreground">{row.note}</td>
 </tr>
 ))}

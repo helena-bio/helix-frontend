@@ -40,7 +40,7 @@ dbNSFP (database of Non-synonymous Functional Predictions) provides precomputed 
 <div className="bg-card border border-border rounded-lg p-4 space-y-2">
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Version</span>
-<span className="font-mono text-md text-muted-foreground">4.9c</span>
+<span className="text-md text-muted-foreground">4.9c</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -55,7 +55,7 @@ dbNSFP (database of Non-synonymous Functional Predictions) provides precomputed 
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Genome Build</span>
-<span className="font-mono text-md text-muted-foreground">GRCh38</span>
+<span className="text-md text-muted-foreground">GRCh38</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -110,8 +110,8 @@ Variants are matched by exact positional coordinates. From the 434 available fie
 {columns.map((col) => (
 <div key={col.name} className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-md font-semibold text-foreground">{col.name}</span>
-<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground font-mono">{col.type}</span>
+<span className="text-md font-semibold text-foreground">{col.name}</span>
+<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground">{col.type}</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">{col.description}</p>
 </div>

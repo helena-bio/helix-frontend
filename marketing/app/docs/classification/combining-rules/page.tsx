@@ -35,7 +35,7 @@ export default function CombiningRulesPage() {
             ].map((e) => (
               <div key={e.level} className="flex justify-between items-center px-3 py-1.5 bg-muted/50 rounded text-md">
                 <span className="text-muted-foreground">{e.level}</span>
-                <span className="font-mono text-foreground">{e.points}</span>
+                <span className="text-foreground">{e.points}</span>
               </div>
             ))}
           </div>
@@ -48,7 +48,7 @@ export default function CombiningRulesPage() {
             ].map((e) => (
               <div key={e.level} className="flex justify-between items-center px-3 py-1.5 bg-muted/50 rounded text-md">
                 <span className="text-muted-foreground">{e.level}</span>
-                <span className="font-mono text-foreground">{e.points}</span>
+                <span className="text-foreground">{e.points}</span>
               </div>
             ))}
           </div>

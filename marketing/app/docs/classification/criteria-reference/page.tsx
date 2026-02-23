@@ -196,7 +196,7 @@ function CriterionCard({ c }: { c: Criterion }) {
     <div className="bg-card border border-border rounded-lg p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-mono text-base font-semibold text-foreground">{c.code}</span>
+          <span className="text-base font-semibold text-foreground">{c.code}</span>
           <span className={`px-2 py-0.5 text-sm rounded ${strengthColors[c.strength] || 'bg-muted text-muted-foreground'}`}>{c.strength}</span>
           <span className={`px-2 py-0.5 text-sm rounded capitalize ${statusColors[c.status]}`}>{c.status}</span>
         </div>

@@ -48,7 +48,7 @@ The Genome Aggregation Database (gnomAD) provides population allele frequencies 
 <div className="bg-card border border-border rounded-lg p-4 space-y-2">
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Version</span>
-<span className="font-mono text-md text-muted-foreground">v4.1.0</span>
+<span className="text-md text-muted-foreground">v4.1.0</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ The Genome Aggregation Database (gnomAD) provides population allele frequencies 
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Genome Build</span>
-<span className="font-mono text-md text-muted-foreground">GRCh38</span>
+<span className="text-md text-muted-foreground">GRCh38</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -93,7 +93,7 @@ Population frequency is one of the strongest lines of evidence in variant classi
 ].map((item) => (
 <div key={item.code} className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-base font-semibold text-foreground">{item.code}</span>
+<span className="text-base font-semibold text-foreground">{item.code}</span>
 <span className="px-2 py-0.5 text-sm rounded bg-muted text-muted-foreground">{item.strength}</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">{item.desc}</p>
@@ -112,8 +112,8 @@ Variants are matched by exact positional coordinates: chromosome, position, refe
 {columns.map((col) => (
 <div key={col.name} className="bg-card border border-border rounded-lg p-4 space-y-1">
 <div className="flex items-center gap-2">
-<span className="font-mono text-md font-semibold text-foreground">{col.name}</span>
-<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground font-mono">{col.type}</span>
+<span className="text-md font-semibold text-foreground">{col.name}</span>
+<span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground">{col.type}</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">{col.description}</p>
 </div>
@@ -139,7 +139,7 @@ gnomAD v4.1 categorizes individuals into 8 genetic ancestry groups. The popmax f
 <tbody>
 {ancestryGroups.map((group) => (
 <tr key={group.code} className="border-b border-border/50">
-<td className="py-2 pr-3 font-mono text-md text-foreground">{group.code}</td>
+<td className="py-2 pr-3 text-md text-foreground">{group.code}</td>
 <td className="py-2 pr-3 text-md text-muted-foreground">{group.name}</td>
 <td className="py-2 text-md text-muted-foreground">{group.samples}</td>
 </tr>

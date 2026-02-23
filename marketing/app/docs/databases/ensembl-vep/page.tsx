@@ -49,12 +49,12 @@ The Ensembl Variant Effect Predictor (VEP) determines the consequence of each va
 <div className="bg-card border border-border rounded-lg p-4 space-y-2">
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Version</span>
-<span className="font-mono text-md text-muted-foreground">Ensembl Release 113</span>
+<span className="text-md text-muted-foreground">Ensembl Release 113</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Genome Build</span>
-<span className="font-mono text-md text-muted-foreground">GRCh38</span>
+<span className="text-md text-muted-foreground">GRCh38</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ VEP assigns each consequence a severity level that determines which ACMG criteri
 <tbody>
 {consequences.map((row) => (
 <tr key={row.impact} className="border-b border-border/50">
-<td className="py-2 pr-3 font-mono text-md text-foreground font-medium">{row.impact}</td>
+<td className="py-2 pr-3 text-md text-foreground font-medium">{row.impact}</td>
 <td className="py-2 pr-3 text-md text-muted-foreground">{row.examples}</td>
 <td className="py-2 text-md text-muted-foreground">{row.criteria}</td>
 </tr>
@@ -124,7 +124,7 @@ For each variant, VEP produces annotations across all overlapping transcripts. H
 <div className="space-y-3">
 {fields.map((field) => (
 <div key={field.name} className="bg-card border border-border rounded-lg p-4 space-y-1">
-<span className="font-mono text-md font-semibold text-foreground">{field.name}</span>
+<span className="text-md font-semibold text-foreground">{field.name}</span>
 <p className="text-md text-muted-foreground leading-relaxed">{field.description}</p>
 </div>
 ))}
@@ -148,7 +148,7 @@ VEP consequence and domain annotations directly determine which ACMG criteria ar
 { code: 'BP7', dependency: 'Synonymous consequence + not splice region' },
 ].map((item) => (
 <div key={item.code} className="flex items-start gap-3">
-<span className="font-mono text-md font-semibold text-foreground w-12 shrink-0">{item.code}</span>
+<span className="text-md font-semibold text-foreground w-12 shrink-0">{item.code}</span>
 <p className="text-md text-muted-foreground">{item.dependency}</p>
 </div>
 ))}
