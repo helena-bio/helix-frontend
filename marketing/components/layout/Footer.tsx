@@ -31,8 +31,14 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="px-6 py-6">
-        {/* Columns -- centered */}
-        <div className="flex justify-center">
+        <div className="flex items-end justify-center gap-16">
+          {/* Helena copyright -- left of columns, bottom-aligned */}
+          <p className="hidden md:block text-md text-muted-foreground whitespace-nowrap">
+            <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
+            {' '}&copy; 2026
+          </p>
+
+          {/* Columns */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-4">
             <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
@@ -72,8 +78,8 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Copyright -- left aligned */}
-        <p className="text-md text-muted-foreground mt-2">
+        {/* Mobile only copyright */}
+        <p className="md:hidden text-md text-muted-foreground mt-4">
           <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
           {' '}&copy; 2026
         </p>
