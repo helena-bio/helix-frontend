@@ -20,6 +20,13 @@ const resourceLinks = [
   { href: '/docs/data-and-privacy', label: 'Data and Privacy' },
 ]
 
+const companyLinks = [
+  { href: '/about', label: 'About' },
+  { href: '/contact', label: 'Contact' },
+  { href: '/docs/faq', label: 'FAQ' },
+  { href: '/docs/changelog', label: 'Changelog' },
+]
+
 const legalLinks = [
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/terms', label: 'Terms of Service' },
@@ -33,7 +40,7 @@ export function Footer() {
       <div className="px-6 py-6 relative">
         {/* Columns -- centered */}
         <div className="flex justify-center">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-x-14 gap-y-4">
             <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
               {platformLinks.map((link) => (
@@ -62,6 +69,15 @@ export function Footer() {
             </div>
 
             <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Company</p>
+              {companyLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Legal</p>
               {legalLinks.map((link) => (
                 <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
@@ -72,7 +88,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Helena -- absolute bottom-left, aligned with last row */}
+        {/* Helena -- absolute bottom-left */}
         <p className="hidden md:block absolute bottom-6 left-6 text-md text-muted-foreground">
           <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
           {' '}&copy; 2026
