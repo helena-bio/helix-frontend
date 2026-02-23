@@ -53,6 +53,9 @@ interface VariantAnalysisViewProps {
   sessionId: string
 }
 
+// Impact sort priority (lower = more severe)
+const IMPACT_PRIORITY: Record<string, number> = { HIGH: 0, MODERATE: 1, LOW: 2, MODIFIER: 3 }
+
 // Lazy loading config (for visualization, not data fetching)
 const INITIAL_LOAD = 15
 const LOAD_MORE_COUNT = 15
@@ -374,6 +377,15 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       const search = geneFilter.toLowerCase()
       filtered = filtered.filter(g => g.gene_symbol.toLowerCase().includes(search))
     }
+
+    // Sort: ACMG priority -> impact severity -> variant count
+    filtered.sort((a, b) => {
+      const acmgDiff = (a.best_acmg_priority ?? 99) - (b.best_acmg_priority ?? 99)
+      if (acmgDiff !== 0) return acmgDiff
+      const impactDiff = (IMPACT_PRIORITY[a.best_impact ?? ''] ?? 9) - (IMPACT_PRIORITY[b.best_impact ?? ''] ?? 9)
+      if (impactDiff !== 0) return impactDiff
+      return (b.variant_count ?? 0) - (a.variant_count ?? 0)
+    })
 
     return filtered
   }, [allGenes, acmgFilter, impactFilter, geneFilter])
