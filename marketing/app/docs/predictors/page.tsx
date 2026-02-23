@@ -4,6 +4,15 @@ export const metadata = {
   title: 'Computational Predictors | Helix Insight Documentation',
   description: 'How Helix Insight uses computational predictors for variant classification -- BayesDel for ACMG PP3/BP4, SpliceAI for splice impact, and displayed reference predictors.',
 }
+const subpages = [
+  { href: '/docs/predictors/spliceai', title: 'SpliceAI', description: 'Deep learning splice impact prediction. Directly contributes PP3_splice to ACMG classification.' },
+  { href: '/docs/predictors/sift', title: 'SIFT', description: 'Amino acid substitution tolerance based on sequence homology. Displayed for reference.' },
+  { href: '/docs/predictors/alphamissense', title: 'AlphaMissense', description: 'DeepMind protein structure-based pathogenicity prediction. Displayed for reference.' },
+  { href: '/docs/predictors/metasvm', title: 'MetaSVM', description: 'Ensemble meta-predictor combining multiple pathogenicity tools. Displayed for reference.' },
+  { href: '/docs/predictors/dann', title: 'DANN', description: 'Deep neural network pathogenicity score for any single nucleotide variant. Displayed for reference.' },
+  { href: '/docs/predictors/conservation-scores', title: 'Conservation Scores', description: 'PhyloP and GERP evolutionary constraint metrics. Displayed for reference.' },
+  { href: '/docs/predictors/consensus-calculation', title: 'Consensus Calculation', description: 'How BayesDel_noAF and SpliceAI scores determine PP3 and BP4 ACMG evidence.' },
+]
 
 export default function PredictorsOverviewPage() {
   return (
@@ -91,6 +100,23 @@ export default function PredictorsOverviewPage() {
         <p className="text-md text-muted-foreground leading-relaxed">
           Computational predictions are supporting evidence. They contribute PP3 or BP4 criteria to the ACMG framework, but they do not determine classification on their own. A variant is never classified as Pathogenic based solely on computational evidence, and a variant is never classified as Benign based solely on the absence of computational predictions.
         </p>
+      </section>
+
+
+      <section className="space-y-3">
+        <p className="text-lg font-semibold text-foreground">In This Section</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {subpages.map((page) => (
+            <Link
+              key={page.href}
+              href={page.href}
+              className="bg-card border border-border rounded-lg p-4 space-y-1 hover:border-primary/30 transition-colors group"
+            >
+              <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">{page.title}</p>
+              <p className="text-md text-muted-foreground">{page.description}</p>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <p className="text-md text-muted-foreground">
