@@ -248,7 +248,7 @@ function BackupRow({ backup, onDelete }: BackupRowProps) {
           className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
           title="Delete backup"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-4 w-4" />
         </button>
       </div>
     </div>
