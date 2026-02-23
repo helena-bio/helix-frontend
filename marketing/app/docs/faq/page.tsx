@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: 'How long does analysis take?',
-    a: 'Processing time depends on the input type: gene panels typically complete in 1-2 minutes, whole exome sequencing in 5-10 minutes, and whole genome sequencing in 30-60 minutes. Screening and phenotype matching add less than one minute each.',
+    a: 'Processing time depends on the input type: gene panels typically complete in 1-2 minutes, whole exome sequencing in 2-5 minutes, and whole genome sequencing in under 15 minutes. Screening and phenotype matching add less than one minute each.',
   },
   {
     q: 'Where is patient data stored?',

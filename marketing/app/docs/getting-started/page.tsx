@@ -59,7 +59,7 @@ export default function GettingStartedPage() {
       <section className="bg-card border border-border rounded-lg p-6 space-y-3">
         <p className="text-lg font-semibold text-foreground">Processing Time</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Gene panels complete in under 2 minutes, whole exome sequencing (WES) in 5-10 minutes, and whole genome sequencing (WGS) in 7-15 minutes on dedicated hardware.
+          Gene panels complete in under 2 minutes, whole exome sequencing (WES) in 2-5 minutes, and whole genome sequencing (WGS) in 7-15 minutes on dedicated hardware.
         </p>
       </section>
 

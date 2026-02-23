@@ -85,7 +85,7 @@ const pipelineFeatures = [
   {
     icon: Zap,
     title: 'Processing Speed',
-    description: 'Gene panel VCF: 1-2 minutes. Whole exome: 5-10 minutes. Whole genome: under 60 minutes. Classification, annotation, and phenotype matching run in parallel across the full variant set.',
+    description: 'Gene panel VCF: 1-2 minutes. Whole exome: 2-5 minutes. Whole genome: under 15 minutes. Classification, annotation, and phenotype matching run in parallel across the full variant set.',
   },
   {
     icon: Database,
