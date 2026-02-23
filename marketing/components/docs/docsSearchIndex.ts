@@ -259,4 +259,35 @@ export const docsSearchIndex: SearchEntry[] = [
     section: 'Screening',
     content: 'age-aware prioritization neonatal infant child adolescent adult elderly age groups 0-28 days 29 days 1 year 12 18 65 gene lists ACMG Secondary Findings v3.2 81 genes cancer predisposition 25 cardiac 34 metabolic 8 early-onset CFTR SMN1 GAA GBA HEXA DMD BTD childhood NF1 PKD1 TSC1 treatable PAH GALT adult BRCA1 BRCA2 MLH1 TP53 cardiac KCNH2 MYBPC3 SCN5A elderly actionable day-precision',
   },
+  // Screening
+  {
+    href: '/docs/screening',
+    title: 'Screening',
+    section: 'Screening',
+    content: 'screening variant prioritization multi-dimensional scoring tiered ranking Tier 1 2 3 4 clinical relevance patient demographics age sex ethnicity family history compound heterozygote seven components constraint deleteriousness phenotype dosage consequence age relevance weighted sum clinical boosts ACMG class phenotype match actionability immediate monitoring future research',
+  },
+  {
+    href: '/docs/screening/scoring-components',
+    title: 'Scoring Components',
+    section: 'Screening',
+    content: 'scoring components seven dimensions constraint pLI LOEUF mis_z missense Z-score loss-of-function deleteriousness DANN SIFT AlphaMissense MetaSVM PhyloP GERP weighted aggregate phenotype HPO overlap Jaccard gene-disease burden hpo_count dosage ClinGen haploinsufficiency HI score consequence severity stop_gained frameshift splice_donor missense synonymous compound heterozygote autosomal recessive same-gene heterozygous age relevance curated gene lists normalized 0 1',
+  },
+  {
+    href: '/docs/screening/tier-system',
+    title: 'Tier System',
+    section: 'Screening',
+    content: 'tier system four tiers priority ranking Tier 1 high priority immediate review Tier 2 moderate Tier 3 low Tier 4 very low base tier assignment total score 0.80 0.50 0.20 component peaks constraint dosage deleteriousness age_relevance 0.9 clinical boosts ACMG pathogenic likely pathogenic phenotype tier ethnicity family history sex-linked consanguinity de novo pregnancy clinical actionability immediate monitoring future research ACMG Secondary Findings 81 genes promotion',
+  },
+  {
+    href: '/docs/screening/screening-modes',
+    title: 'Screening Modes',
+    section: 'Screening',
+    content: 'screening modes diagnostic neonatal pediatric proactive adult carrier pharmacogenomics weight profiles phenotype 0.40 diagnostic constraint 0.25 neonatal deleteriousness 0.25 adult age relevance 0.30 elderly automatic mode selection HPO terms sum 1.0 clinical scenario weight distribution adaptation infant child adolescent',
+  },
+  {
+    href: '/docs/screening/age-aware-prioritization',
+    title: 'Age-Aware Prioritization',
+    section: 'Screening',
+    content: 'age-aware prioritization neonatal infant child adolescent adult elderly age groups 0-28 days 29 days 1 year 12 18 65 gene lists ACMG Secondary Findings v3.2 81 genes cancer predisposition 25 cardiac 34 metabolic 8 early-onset CFTR SMN1 GAA GBA HEXA DMD BTD childhood NF1 PKD1 TSC1 treatable PAH GALT adult BRCA1 BRCA2 MLH1 TP53 cardiac KCNH2 MYBPC3 SCN5A elderly actionable day-precision',
+  },
 ]
