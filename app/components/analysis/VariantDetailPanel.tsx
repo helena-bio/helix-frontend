@@ -636,7 +636,16 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                   <PredictionBar label="SIFT" prediction={variant.sift_pred} score={variant.sift_score} invert />
                   <PredictionBar label="AlphaMissense" prediction={variant.alphamissense_pred} score={variant.alphamissense_score} />
                   <PredictionBar label="MetaSVM" prediction={variant.metasvm_pred} score={variant.metasvm_score} />
-                  <PredictionBar label="DANN" prediction={null} score={variant.dann_score} />
+                  <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-base text-muted-foreground">DANN</span>
+                      </div>
+                      <ScoreBar
+                        barValue={parseScore(variant.dann_score)}
+                        displayValue={parseScore(variant.dann_score)}
+                        colorClass={variant.dann_score !== null && variant.dann_score >= 0.95 ? 'bg-red-500' : variant.dann_score !== null && variant.dann_score >= 0.5 ? 'bg-foreground/50' : 'bg-green-500'}
+                      />
+                    </div>
                 </div>
               </div>
             )}
