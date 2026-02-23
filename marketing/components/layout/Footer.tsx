@@ -44,7 +44,7 @@ export function Footer() {
       <div className="px-6 py-6 relative">
         {/* Columns -- centered */}
         <div className="flex justify-center">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-x-14 gap-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-x-14 gap-y-4">
             <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
               {platformLinks.map((link) => (
@@ -70,12 +70,6 @@ export function Footer() {
                   {link.label}
                 </Link>
               ))}
-              <p className="text-sm font-semibold text-foreground uppercase tracking-wider pt-2">Registries</p>
-              {registryLinks.map((link) => (
-                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
-                  {link.label}
-                </a>
-              ))}
             </div>
 
             <div className="space-y-2">
@@ -93,6 +87,15 @@ export function Footer() {
                 <Link key={link.href} href={link.href} className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
                   {link.label}
                 </Link>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Registries</p>
+              {registryLinks.map((link) => (
+                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className="block text-md text-muted-foreground hover:text-foreground transition-colors leading-relaxed">
+                  {link.label}
+                </a>
               ))}
             </div>
           </div>
