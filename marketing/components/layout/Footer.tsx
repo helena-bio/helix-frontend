@@ -30,15 +30,9 @@ const legalLinks = [
 export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
-      <div className="px-6 py-6">
-        <div className="flex items-end justify-center gap-16">
-          {/* Helena copyright -- left of columns, bottom-aligned */}
-          <p className="hidden md:block text-md text-muted-foreground whitespace-nowrap">
-            <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
-            {' '}&copy; 2026
-          </p>
-
-          {/* Columns */}
+      <div className="px-6 py-6 relative">
+        {/* Columns -- centered */}
+        <div className="flex justify-center">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-16 gap-y-4">
             <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Platform</p>
@@ -77,6 +71,12 @@ export function Footer() {
             </div>
           </div>
         </div>
+
+        {/* Helena -- absolute bottom-left, aligned with last row */}
+        <p className="hidden md:block absolute bottom-6 left-6 text-md text-muted-foreground">
+          <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
+          {' '}&copy; 2026
+        </p>
 
         {/* Mobile only copyright */}
         <p className="md:hidden text-md text-muted-foreground mt-4">
