@@ -12,6 +12,8 @@
  * - Organizations: CRUD with search, create/edit modals
  * - Users: cross-org user list with search
  * - Activity: audit log (placeholder)
+ * - Reference Data: reference database management
+ * - Backup: system backup management
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -49,9 +51,10 @@ import { UserAvatar } from '@/components/ui/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@helix/shared/lib/utils'
 import { ReferenceDatabasesContent } from '@/components/platform/ReferenceDatabasesView'
+import { BackupContent } from '@/components/platform/BackupPanel'
 
 
-type Section = 'overview' | 'organizations' | 'users' | 'activity' | 'reference-data'
+type Section = 'overview' | 'organizations' | 'users' | 'activity' | 'reference-data' | 'backup'
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -59,6 +62,7 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: 'users', label: 'Users' },
   { id: 'activity', label: 'Activity' },
   { id: 'reference-data', label: 'Reference Data' },
+  { id: 'backup', label: 'Backup' },
 ]
 
 function formatDate(dateStr: string): string {
@@ -390,10 +394,10 @@ function OverviewContent() {
         <div className="space-y-2">
           {active.map((u) => (
             <div key={u.id} className="grid grid-cols-[180px_1fr_auto] items-center gap-x-3">
-              
+
                 <span className="text-md font-medium">{u.full_name}</span>
                 <span className="text-md text-muted-foreground">{u.email}</span>
-              
+
               <span className="text-md text-muted-foreground text-right">{u.organization_name}</span>
             </div>
           ))}
@@ -459,7 +463,7 @@ function OverviewContent() {
                   <span className="text-base font-medium">{card.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  
+
                   <span className="text-md text-muted-foreground">{card.sub}</span>
                   <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
                 </div>
@@ -933,7 +937,8 @@ export default function PlatformPage() {
             {activeSection === 'organizations' && <OrganizationsContent />}
             {activeSection === 'users' && <UsersContent />}
             {activeSection === 'activity' && <ActivityContent />}
-              {activeSection === 'reference-data' && <ReferenceDatabasesContent />}
+            {activeSection === 'reference-data' && <ReferenceDatabasesContent />}
+            {activeSection === 'backup' && <BackupContent />}
           </div>
         </div>
       </div>
