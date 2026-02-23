@@ -5,6 +5,7 @@
  *
  * Full backup management for the Helix Insight platform.
  * Supports quick/full/complete backups with real-time progress polling.
+ * Restore with double confirmation (type backup_id to confirm).
  * Displays backup history with size, duration, and delete actions.
  *
  * Integrated as a tab in the Platform admin page.
@@ -24,6 +25,7 @@ import {
   Database,
   FolderArchive,
   BookOpen,
+  RotateCcw,
 } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -157,17 +159,90 @@ function ConfirmDialog({ title, message, warning, confirmLabel, onConfirm, onCan
 
 
 // =========================================================================
+// RESTORE CONFIRM DIALOG (type backup_id to confirm)
+// =========================================================================
+
+interface RestoreConfirmDialogProps {
+  backupId: string
+  level: string
+  onConfirm: () => void
+  onCancel: () => void
+  isLoading: boolean
+}
+
+function RestoreConfirmDialog({ backupId, level, onConfirm, onCancel, isLoading }: RestoreConfirmDialogProps) {
+  const [typed, setTyped] = useState('')
+  const isMatch = typed === backupId
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-lg mx-4 p-6">
+        <h3 className="text-lg font-semibold text-destructive mb-2">Restore from Backup</h3>
+
+        <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 border border-red-200 mb-4">
+          <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+          <div className="text-md text-red-800">
+            <p className="font-semibold mb-1">This is a destructive operation.</p>
+            <p>Restoring will overwrite current PostgreSQL data, session outputs{level !== 'quick' ? ', and database files' : ''}. A pre-restore backup will be created automatically as a safety net.</p>
+          </div>
+        </div>
+
+        <p className="text-base text-muted-foreground mb-3">
+          Type the backup ID below to confirm:
+        </p>
+
+        <div className="mb-2">
+          <code className="text-sm bg-muted px-2 py-1 rounded select-all">{backupId}</code>
+        </div>
+
+        <input
+          type="text"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          placeholder="Type backup ID to confirm..."
+          className="w-full px-3 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-destructive h-11 font-mono mb-4"
+          autoFocus
+        />
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onConfirm}
+            disabled={!isMatch || isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-base font-medium hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            <RotateCcw className="h-4 w-4" />
+            Restore Now
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={isLoading}
+            className="px-4 py-2 border border-border rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+// =========================================================================
 // PROGRESS PANEL
 // =========================================================================
 
 interface ProgressPanelProps {
   status: BackupStatusResponse
+  type?: 'backup' | 'restore'
 }
 
-function BackupProgressPanel({ status }: ProgressPanelProps) {
+function OperationProgressPanel({ status, type = 'backup' }: ProgressPanelProps) {
   const isRunning = status.status === 'started' || status.status === 'running'
   const isFailed = status.status === 'failed'
   const isCompleted = status.status === 'completed'
+  const label = type === 'restore' ? 'Restore' : 'Backup'
 
   return (
     <Card className={cn(
@@ -183,7 +258,7 @@ function BackupProgressPanel({ status }: ProgressPanelProps) {
             {isCompleted && <CheckCircle2 className="h-4 w-4 text-green-600" />}
             {isFailed && <XCircle className="h-4 w-4 text-destructive" />}
             <span className="text-base font-semibold">
-              {isRunning ? 'Backup in progress...' : isFailed ? 'Backup failed' : 'Backup completed'}
+              {isRunning ? label + ' in progress...' : isFailed ? label + ' failed' : label + ' completed'}
             </span>
           </div>
           <span className="text-md text-muted-foreground">{status.backup_id}</span>
@@ -191,7 +266,7 @@ function BackupProgressPanel({ status }: ProgressPanelProps) {
 
         {status.current_step && isRunning && (
           <p className="text-md text-muted-foreground mb-2">
-            Step: {status.current_step}
+            Step: {status.current_step.replace(/_/g, ' ')}
           </p>
         )}
 
@@ -211,12 +286,15 @@ function BackupProgressPanel({ status }: ProgressPanelProps) {
 interface BackupRowProps {
   backup: BackupSummary
   onDelete: (backupId: string) => void
+  onRestore: (backup: BackupSummary) => void
+  isOperationRunning: boolean
 }
 
-function BackupRow({ backup, onDelete }: BackupRowProps) {
+function BackupRow({ backup, onDelete, onRestore, isOperationRunning }: BackupRowProps) {
   const levelConf = LEVEL_CONFIG[backup.level] || LEVEL_CONFIG.quick
   const statusConf = STATUS_CONFIG[backup.status] || STATUS_CONFIG.unknown
   const StatusIcon = statusConf.icon
+  const canRestore = backup.status === 'success' || backup.status === 'completed'
 
   return (
     <div className="flex items-center justify-between px-4 py-3">
@@ -243,9 +321,20 @@ function BackupRow({ backup, onDelete }: BackupRowProps) {
         <span className="text-md text-muted-foreground w-28 text-right">
           {formatRelative(backup.created_at)}
         </span>
+        {canRestore && (
+          <button
+            onClick={() => onRestore(backup)}
+            disabled={isOperationRunning}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Restore from this backup"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        )}
         <button
           onClick={() => onDelete(backup.backup_id)}
-          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+          disabled={isOperationRunning}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           title="Delete backup"
         >
           <Trash2 className="h-4 w-4" />
@@ -265,8 +354,10 @@ export function BackupContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeStatus, setActiveStatus] = useState<BackupStatusResponse | null>(null)
+  const [activeType, setActiveType] = useState<'backup' | 'restore'>('backup')
   const [confirmLevel, setConfirmLevel] = useState<BackupLevel | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState<BackupSummary | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -282,18 +373,17 @@ export function BackupContent() {
     }
   }, [])
 
-  const startPolling = useCallback((backupId: string) => {
+  const startPolling = useCallback((opId: string) => {
     if (pollRef.current) clearInterval(pollRef.current)
 
     pollRef.current = setInterval(async () => {
       try {
-        const status = await backupApi.getStatus(backupId)
+        const status = await backupApi.getStatus(opId)
         setActiveStatus(status)
 
         if (status.status === 'completed' || status.status === 'failed') {
           if (pollRef.current) clearInterval(pollRef.current)
           pollRef.current = null
-          // Keep status visible for 5 seconds, then clear and reload
           setTimeout(() => {
             setActiveStatus(null)
             loadBackups()
@@ -320,6 +410,7 @@ export function BackupContent() {
     setActionLoading(true)
     try {
       const result = await backupApi.startBackup(confirmLevel)
+      setActiveType('backup')
       setActiveStatus({
         backup_id: result.backup_id,
         status: 'started',
@@ -350,7 +441,29 @@ export function BackupContent() {
     }
   }
 
-  const isRunning = activeStatus != null &&
+  const handleRestore = async () => {
+    if (!confirmRestore) return
+    setActionLoading(true)
+    try {
+      const result = await backupApi.restoreBackup(confirmRestore.backup_id)
+      setActiveType('restore')
+      setActiveStatus({
+        backup_id: result.restore_id,
+        status: 'started',
+        progress: 0,
+        current_step: 'pre_restore_backup',
+        error: null,
+      })
+      startPolling(result.restore_id)
+      setConfirmRestore(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start restore')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const isOperationRunning = activeStatus != null &&
     (activeStatus.status === 'started' || activeStatus.status === 'running')
 
   const lastCompleted = backups.find(
@@ -411,7 +524,7 @@ export function BackupContent() {
               return (
                 <button
                   key={level}
-                  disabled={isRunning}
+                  disabled={isOperationRunning}
                   onClick={() => setConfirmLevel(level)}
                   className={cn(
                     "flex flex-col items-start gap-1 px-4 py-3 rounded-lg border transition-colors text-left",
@@ -431,8 +544,8 @@ export function BackupContent() {
         </div>
       </div>
 
-      {/* Active backup progress */}
-      {activeStatus && <BackupProgressPanel status={activeStatus} />}
+      {/* Active operation progress */}
+      {activeStatus && <OperationProgressPanel status={activeStatus} type={activeType} />}
 
       {/* Backup history */}
       {backups.length > 0 && (
@@ -447,6 +560,8 @@ export function BackupContent() {
               key={backup.backup_id}
               backup={backup}
               onDelete={setConfirmDelete}
+              onRestore={setConfirmRestore}
+              isOperationRunning={isOperationRunning}
             />
           ))}
         </div>
@@ -481,6 +596,17 @@ export function BackupContent() {
           onCancel={() => setConfirmDelete(null)}
           isLoading={actionLoading}
           destructive
+        />
+      )}
+
+      {/* Confirm: Restore (type backup_id) */}
+      {confirmRestore && (
+        <RestoreConfirmDialog
+          backupId={confirmRestore.backup_id}
+          level={confirmRestore.level}
+          onConfirm={handleRestore}
+          onCancel={() => setConfirmRestore(null)}
+          isLoading={actionLoading}
         />
       )}
     </div>

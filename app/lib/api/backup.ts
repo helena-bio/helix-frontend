@@ -45,6 +45,13 @@ export interface DeleteBackupResponse {
   deleted: boolean
 }
 
+export interface RestoreStartedResponse {
+  backup_id: string
+  restore_id: string
+  pre_restore_backup_id: string
+  status: string
+}
+
 // =========================================================================
 // API
 // =========================================================================
@@ -64,5 +71,12 @@ export const backupApi = {
 
   async deleteBackup(backupId: string): Promise<DeleteBackupResponse> {
     return del<DeleteBackupResponse>(`/api/v1/admin/backup/${backupId}`)
+  },
+
+  async restoreBackup(backupId: string): Promise<RestoreStartedResponse> {
+    return post<RestoreStartedResponse>(
+      `/api/v1/admin/backup/${backupId}/restore`,
+      { confirm_backup_id: backupId }
+    )
   },
 }
