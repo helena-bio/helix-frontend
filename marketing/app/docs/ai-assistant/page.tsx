@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'AI Clinical Assistant | Helix Insight Documentation',
-  description: 'Helix AI -- a clinical genetics assistant powered by Qwen3-32B that queries patient variants, searches literature, generates interpretations, and produces clinical reports.',
+  description: 'Helix AI -- a clinical genetics AI assistant that queries patient variants, searches literature, generates interpretations, and produces clinical reports.',
 }
 
 const subpages = [
@@ -29,7 +29,7 @@ export default function AiAssistantOverviewPage() {
           Helix AI is a clinical genetics assistant embedded in the Helix Insight platform. It provides conversational access to patient variant data, biomedical literature, and automated clinical interpretation -- all through natural language. The assistant is designed for geneticists and clinical laboratory professionals who need to interrogate genomic analysis results, correlate findings with clinical phenotype, and produce diagnostic reports.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          The assistant runs on Qwen3-32B, a large language model hosted entirely on EU-based infrastructure. No patient data is sent to external AI services. All inference happens on-premise through a secure internal connection.
+          The assistant runs on a large language model hosted entirely on EU-based infrastructure. No patient data is sent to external AI services. All inference happens on-premise through a secure internal connection.
         </p>
       </section>
 
@@ -76,7 +76,7 @@ export default function AiAssistantOverviewPage() {
       <section className="bg-card border border-primary/20 rounded-lg p-4 space-y-2">
         <p className="text-base font-medium text-foreground">On-Premise AI</p>
         <p className="text-md text-muted-foreground leading-relaxed">
-          Helix AI runs on Qwen3-32B hosted on dedicated GPU infrastructure within the EU. The model is accessed through a secure internal tunnel -- no patient data leaves the server environment. This architecture ensures full GDPR compliance while providing the clinical reasoning capabilities of a large language model.
+          Helix AI runs on a large language model hosted on dedicated GPU infrastructure within the EU. The model is accessed through a secure internal tunnel -- no patient data leaves the server environment. This architecture ensures full GDPR compliance while providing the clinical reasoning capabilities of a large language model.
         </p>
       </section>
 
