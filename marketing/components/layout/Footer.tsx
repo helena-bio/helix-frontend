@@ -71,17 +71,21 @@ export function Footer() {
               </Link>
             ))}
           </div>
-        </div>
 
-        {/* Bottom bar -- flush with columns */}
-        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-          <p className="text-md text-muted-foreground">
-            <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
-            {' '}&copy; 2026
-          </p>
-          <p className="text-md text-muted-foreground">
-            EU-hosted infrastructure. Helsinki, Finland.
-          </p>
+          {/* Bottom row -- same grid, first and last columns */}
+          <div className="mt-2">
+            <p className="text-md text-muted-foreground">
+              <a href="https://helena.bio" target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground hover:text-primary transition-colors">Helena Bioinformatics</a>
+              {' '}&copy; 2026
+            </p>
+          </div>
+          <div className="hidden md:block" />
+          <div className="hidden md:block" />
+          <div className="mt-2 text-right">
+            <p className="text-md text-muted-foreground">
+              EU-hosted infrastructure. Helsinki, Finland.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
