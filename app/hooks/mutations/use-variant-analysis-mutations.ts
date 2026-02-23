@@ -3,7 +3,7 @@
  * React Query mutations for upload and processing
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { uploadVCFFile, startProcessing } from '@/lib/api/variant-analysis'
+import { uploadVCFFile, startProcessing, reprocessSession } from '@/lib/api/variant-analysis'
 import { useSession } from '@/contexts/SessionContext'
 import { casesKeys } from '@/hooks/queries/use-cases'
 import type { AnalysisSession } from '@/types/variant.types'
@@ -76,6 +76,30 @@ export function useStartProcessing() {
     },
     onError: (error: Error) => {
       toast.error('Failed to start processing', {
+        description: error.message,
+      })
+    },
+  })
+}
+
+/**
+ * Reprocess session mutation -- re-annotate and re-classify with latest reference data.
+ * Returns 202 with task_id for polling via useTaskStatus.
+ */
+export function useReprocessSession() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ sessionId }: { sessionId: string }) => {
+      return reprocessSession(sessionId)
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['session', variables.sessionId]
+      })
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to start reprocessing', {
         description: error.message,
       })
     },

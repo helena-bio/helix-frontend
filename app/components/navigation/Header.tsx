@@ -66,7 +66,7 @@ function getLineColor(status: StepStatus): string {
 export function Header() {
   const router = useRouter()
   const pathname = usePathname()
-  const { getStepStatus, canNavigateTo, goToStep, currentStep } = useJourney()
+  const { getStepStatus, getStepLabel, canNavigateTo, goToStep, currentStep } = useJourney()
   const { currentSessionId } = useSession()
   const { content: interpretation, hasInterpretation, status: interpretationStatus } = useClinicalInterpretation()
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
@@ -194,7 +194,7 @@ export function Header() {
                             )}
                           />
                           <p className="text-base font-medium whitespace-nowrap">
-                            {step.label}
+                            {getStepLabel(step.id)}
                           </p>
                         </button>
                       </TooltipTrigger>

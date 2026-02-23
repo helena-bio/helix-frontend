@@ -50,11 +50,12 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useCases } from '@/hooks/queries/use-cases'
-import { useReprocessCase, useDeleteCase } from '@/hooks/mutations/use-case-mutations'
+import { useDeleteCase } from '@/hooks/mutations/use-case-mutations'
 import { cn } from '@helix/shared/lib/utils'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 import { get } from '@/lib/api/client'
 import type { AnalysisSession } from '@/types/variant.types'
+import { useSession } from '@/contexts/SessionContext'
 import { getDashboardGreeting } from '@/lib/constants/dashboard-greetings'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 
@@ -177,9 +178,10 @@ interface CaseCardProps {
   showOwner: boolean
   memoryCache: React.MutableRefObject<Map<string, ClinicalProfileData>>
   onNavigate: (session: AnalysisSession) => void
+  onReprocess: (session: AnalysisSession) => void
 }
 
-function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps) {
+function CaseCard({ session, showOwner, memoryCache, onNavigate, onReprocess }: CaseCardProps) {
   const { avatarVersion, user } = useAuth()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
@@ -188,7 +190,6 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
   const [isLoadingFindings, setIsLoadingFindings] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
-  const reprocessMutation = useReprocessCase()
   const deleteMutation = useDeleteCase()
 
   const isCompleted = session.status === 'completed'
@@ -294,16 +295,8 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
 
   const handleReprocess = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    reprocessMutation.mutate(session.id, {
-      onSuccess: () => {
-        toast.success('Reprocess started -- annotations and classification will be updated')
-      },
-      onError: (err: any) => {
-        const detail = err?.response?.data?.detail || err?.message || 'Reprocess failed'
-        toast.error(detail)
-      },
-    })
-  }, [session.id, reprocessMutation])
+    onReprocess(session)
+  }, [session, onReprocess])
 
   const handleDelete = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -618,11 +611,11 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                       variant="outline"
                       size="sm"
                       className="text-sm"
-                      disabled={reprocessMutation.isPending}
+                      
                       onClick={handleReprocess}
                     >
-                      <RefreshCw className={cn("h-3 w-3 mr-1", reprocessMutation.isPending && "animate-spin")} />
-                      {reprocessMutation.isPending ? 'Reprocessing...' : 'Reprocess'}
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Reprocess
                     </Button>
                     {confirmingDelete ? (
                       <div className="flex items-center gap-1">
@@ -690,11 +683,11 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
                       variant="outline"
                       size="sm"
                       className="text-sm"
-                      disabled={reprocessMutation.isPending}
+                      
                       onClick={handleReprocess}
                     >
-                      <RefreshCw className={cn("h-3 w-3 mr-1", reprocessMutation.isPending && "animate-spin")} />
-                      {reprocessMutation.isPending ? 'Reprocessing...' : 'Reprocess'}
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Reprocess
                     </Button>
                     {confirmingDelete ? (
                       <div className="flex items-center gap-1">
@@ -749,7 +742,8 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate }: CaseCardProps
 export default function DashboardPage() {
   const router = useRouter()
   const { user, avatarVersion } = useAuth()
-  const { skipToAnalysis } = useJourney()
+  const { skipToAnalysis, startReprocess } = useJourney()
+  const { setCurrentSessionId } = useSession()
 
   const [showAll, setShowAll] = useState(false)
   const { data, isLoading } = useCases(!showAll)
@@ -775,6 +769,12 @@ export default function DashboardPage() {
     skipToAnalysis()
     router.push(`/analysis?session=${session.id}`)
   }, [router, skipToAnalysis])
+
+  const handleReprocess = useCallback((session: AnalysisSession) => {
+    setCurrentSessionId(session.id)
+    startReprocess(session.id)
+    router.push(`/upload?session=${session.id}`)
+  }, [router, setCurrentSessionId, startReprocess])
 
   return (
     <div className="flex flex-col min-h-full p-8">
@@ -868,6 +868,7 @@ export default function DashboardPage() {
                 showOwner={showAll}
                 memoryCache={memoryCache}
                 onNavigate={handleNavigate}
+                  onReprocess={handleReprocess}
               />
             ))}
           </div>

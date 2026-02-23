@@ -8,6 +8,11 @@
  * 3. Profile - Enter clinical profile and run phenotype matching (optional)
  * 4. -> Redirects to /analysis?session=<id> when complete
  *
+ * REPROCESS MODE:
+ * When journeyMode === 'reprocess', step 2 renders ReprocessFlow instead of
+ * ProcessingFlow. The stepper shows "Reprocess" instead of "Upload".
+ * Triggered via useJourney().startReprocess(sessionId) from dashboard.
+ *
  * SESSION MANAGEMENT:
  * - After upload completes, sessionId is added to URL: /upload?session=<uuid>
  * - When journey reaches analysis step, redirects to /analysis?session=<uuid>
@@ -22,6 +27,7 @@ import {
   ClinicalProfileEntry,
   ProcessingFlow,
 } from '@/components/analysis'
+import { ReprocessFlow } from '@/components/analysis/ReprocessFlow'
 import { casesKeys } from '@/hooks/queries/use-cases'
 import { Loader2 } from 'lucide-react'
 
@@ -29,14 +35,14 @@ export default function UploadPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { currentSessionId, setCurrentSessionId } = useSession()
-  const { currentStep, skipToAnalysis, resetJourney } = useJourney()
+  const { currentStep, journeyMode, skipToAnalysis, resetJourney } = useJourney()
 
   // Processing configuration - bridge between Upload and Processing steps
   const [filteringPreset, setFilteringPreset] = useState<string>('strict')
 
-  // Reset journey when landing on /upload without a session
+  // Reset journey when landing on /upload without a session (new upload only)
   useEffect(() => {
-    if (!currentSessionId) {
+    if (!currentSessionId && journeyMode === 'new') {
       resetJourney()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -71,7 +77,7 @@ export default function UploadPage() {
     )
   }
 
-  // Step 2: Processing (ACMG classification)
+  // Step 2: Processing (ACMG classification) or Reprocessing
   if (currentStep === 'processing') {
     if (!currentSessionId) {
       return (
@@ -80,6 +86,17 @@ export default function UploadPage() {
         </div>
       )
     }
+
+    // Reprocess mode: re-annotate existing session
+    if (journeyMode === 'reprocess') {
+      return (
+        <ReprocessFlow
+          sessionId={currentSessionId}
+        />
+      )
+    }
+
+    // New upload mode: full pipeline
     return (
       <ProcessingFlow
         sessionId={currentSessionId}

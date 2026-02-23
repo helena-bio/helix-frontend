@@ -87,4 +87,108 @@ export const docsSearchIndex: SearchEntry[] = [
     section: 'Classification',
     content: 'confidence score continuous Bayesian point distance classification boundary 0.80-0.99 pathogenic 0.70-0.90 likely pathogenic 0.30-0.60 VUS reclassification additional evidence functional studies family segregation probability disease causation phenotype inheritance clinical context',
   },
+  // Computational Predictors
+  {
+    href: '/docs/predictors',
+    title: 'Computational Predictors',
+    section: 'Computational Predictors',
+    content: 'computational predictors PP3 BP4 ACMG criteria BayesDel noAF ClinGen SVI calibrated classification tool SpliceAI splice impact SIFT AlphaMissense MetaSVM DANN PhyloP GERP displayed reference clinical context evidence strength modulation strong moderate supporting Pejaver 2022 circular reasoning allele frequency',
+  },
+  {
+    href: '/docs/predictors/spliceai',
+    title: 'SpliceAI',
+    section: 'Computational Predictors',
+    content: 'SpliceAI deep learning mRNA splicing Illumina Jaganathan 2019 delta scores acceptor gain acceptor loss donor gain donor loss DS_AG DS_AL DS_DG DS_DL PP3_splice supporting pathogenic threshold 0.2 BP4 guard BP7 guard PVS1 double-counting ClinGen SVI 2023 Walker precomputed MANE transcript Ensembl Release 113 RT-PCR minigene assay splice disruption intronic',
+  },
+  {
+    href: '/docs/predictors/sift',
+    title: 'SIFT',
+    section: 'Computational Predictors',
+    content: 'SIFT Sorting Intolerant From Tolerant amino acid substitution sequence homology conservation protein function deleterious tolerated score 0.05 threshold displayed clinical reference not ACMG classification BayesDel missense gain-of-function',
+  },
+  {
+    href: '/docs/predictors/alphamissense',
+    title: 'AlphaMissense',
+    section: 'Computational Predictors',
+    content: 'AlphaMissense Google DeepMind AlphaFold protein structure pathogenicity prediction Cheng 2023 Science three-dimensional structural information missense variants pathogenic benign ambiguous displayed clinical reference not ACMG classification BayesDel benchmark ClinVar validation',
+  },
+  {
+    href: '/docs/predictors/metasvm',
+    title: 'MetaSVM',
+    section: 'Computational Predictors',
+    content: 'MetaSVM meta-predictor ensemble Support Vector Machine SVM 10 individual predictors consensus score deleterious tolerated positive negative displayed clinical reference not ACMG classification BayesDel Dong 2015',
+  },
+  {
+    href: '/docs/predictors/dann',
+    title: 'DANN',
+    section: 'Computational Predictors',
+    content: 'DANN deep neural network pathogenicity genomic annotations CADD single nucleotide variant coding non-coding intronic UTR score 0.95 damaging 0.5 ambiguous benign displayed clinical reference not ACMG classification BayesDel Quang 2015',
+  },
+  {
+    href: '/docs/predictors/conservation-scores',
+    title: 'Conservation Scores',
+    section: 'Computational Predictors',
+    content: 'PhyloP 100-way vertebrate evolutionary conservation phylogenetic purifying selection GERP genomic evolutionary rate profiling constraint rejected substitutions conserved position functional importance displayed clinical reference not ACMG classification BayesDel',
+  },
+  {
+    href: '/docs/predictors/consensus-calculation',
+    title: 'Consensus Calculation',
+    section: 'Computational Predictors',
+    content: 'BayesDel noAF ClinGen SVI calibrated PP3 BP4 evidence strength modulation Pejaver 2022 missense path splice path SpliceAI PP3_Strong 0.518 PP3_Moderate 0.290 PP3_Supporting 0.130 BP4_Moderate -0.361 BP4_Supporting -0.180 PM1 PP3 point-sum cap 4 points Bayesian indeterminate zone Stenton 2024 evidence yield double-counting circular reasoning allele frequency',
+  },
+  // Reference Databases
+  {
+    href: '/docs/databases',
+    title: 'Reference Databases',
+    section: 'Reference Databases',
+    content: 'reference databases annotation pipeline eight databases zero external API calls local storage EU infrastructure Helsinki Finland no variant data sent externally database versions fixed per deployment validation testing gnomAD ClinVar dbNSFP SpliceAI gnomAD Constraint HPO ClinGen Ensembl VEP annotation phases positional match gene symbol',
+  },
+  {
+    href: '/docs/databases/gnomad',
+    title: 'gnomAD',
+    section: 'Reference Databases',
+    content: 'gnomAD Genome Aggregation Database v4.1 population allele frequency 807162 individuals 759 million variants 8 ancestry groups global_af global_ac global_an global_hom af_grpmax popmax BA1 5% BS1 BS2 homozygote count 15 PM2 0.0001 absent controls African European East Asian South Asian Finnish Ashkenazi Jewish Middle Eastern Broad Institute GRCh38 Chen 2024',
+  },
+  {
+    href: '/docs/databases/clinvar',
+    title: 'ClinVar',
+    section: 'Reference Databases',
+    content: 'ClinVar clinical significance NCBI 2025-01 4.1 million variants pathogenic likely pathogenic benign VUS review stars 0 1 2 3 4 expert panel practice guideline PS1 PP5 BP6 classification override quality filter rescue pathogenic rescue clinical_significance review_status review_stars disease_name clinvar_variation_id submitter agreement conflicting hgvsp Landrum 2020',
+  },
+  {
+    href: '/docs/databases/dbnsfp',
+    title: 'dbNSFP',
+    section: 'Reference Databases',
+    content: 'dbNSFP 4.9c functional predictions 80.6 million variant sites 434 fields 9 loaded SIFT AlphaMissense MetaSVM DANN BayesDel noAF PhyloP GERP conservation scores sift_pred sift_score alphamissense_pred alphamissense_score metasvm_pred dann_score phylop100way_vertebrate gerp_rs duplicate variant handling 701000 aggregation missense non-synonymous Liu 2020',
+  },
+  {
+    href: '/docs/databases/hpo',
+    title: 'HPO',
+    section: 'Reference Databases',
+    content: 'HPO Human Phenotype Ontology gene-phenotype associations 320000 associations Monarch Initiative Jackson Laboratory hpo_ids hpo_names hpo_count hpo_frequency_data hpo_disease_ids hpo_gene_id PP4 criterion phenotype matching screening prioritization deduplication semantic similarity clinical tiers gene symbol joined Kohler 2024',
+  },
+  {
+    href: '/docs/databases/clingen',
+    title: 'ClinGen',
+    section: 'Reference Databases',
+    content: 'ClinGen Clinical Genome Resource dosage sensitivity haploinsufficiency triplosensitivity 1600 genes NIH BS1 frequency threshold autosomal dominant recessive BP2 compound heterozygote score 0 1 2 3 30 40 dosage sensitivity unlikely gene-level inheritance proxy haploinsufficiency_score triplosensitivity_score Rehm 2015',
+  },
+  {
+    href: '/docs/databases/ensembl-vep',
+    title: 'Ensembl VEP',
+    section: 'Reference Databases',
+    content: 'Ensembl VEP Variant Effect Predictor Release 113 GRCh38 consequence annotation transcript selection local offline cache no external API calls parallel 48 workers gene_symbol transcript_id hgvs_genomic hgvs_cdna hgvs_protein consequence impact biotype exon_number domains HIGH MODERATE LOW MODIFIER frameshift missense synonymous PVS1 PM1 PM4 BP1 BP3 BP7 McLaren 2016 EMBL-EBI',
+  },
+  {
+    href: '/docs/databases/spliceai-precomputed',
+    title: 'SpliceAI Precomputed',
+    section: 'Reference Databases',
+    content: 'SpliceAI precomputed splice impact scores Illumina MANE R113 Ensembl four delta scores DS_AG DS_AL DS_DG DS_DL acceptor gain acceptor loss donor gain donor loss max_score PP3_splice threshold 0.2 BP7 guard BP4 guard PVS1 double-counting guard ClinGen SVI 2023 Walker cryptic splice site Jaganathan 2019 Cell',
+  },
+  {
+    href: '/docs/databases/database-update-policy',
+    title: 'Database Update Policy',
+    section: 'Reference Databases',
+    content: 'database update policy versioning validation regression testing reference cohort classification delta report atomic updates reproducible gnomAD major release ClinVar quarterly dbNSFP major release HPO quarterly ClinGen quarterly Ensembl VEP annual SpliceAI Ensembl release schema compatibility record count verification deployment approval existing analyses not retroactively changed',
+  },
 ]
