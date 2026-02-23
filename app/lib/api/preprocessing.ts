@@ -6,7 +6,7 @@
  */
 import { tokenUtils } from '@/lib/auth/token'
 
-const VA_API_URL = process.env.NEXT_PUBLIC_VA_API_URL || 'http://localhost:9001'
+const VA_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
 
 function authHeaders(): Record<string, string> {
   const token = tokenUtils.get()
