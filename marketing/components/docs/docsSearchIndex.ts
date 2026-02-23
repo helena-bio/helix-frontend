@@ -301,7 +301,7 @@ export const docsSearchIndex: SearchEntry[] = [
     href: '/docs/data-and-privacy/infrastructure',
     title: 'Infrastructure',
     section: 'Data and Privacy',
-    content: 'infrastructure dedicated hardware Hetzner AX162R Helsinki Finland EU AMD EPYC 9454P 48 cores 504 GB DDR5 NVMe RAID bare-metal server physical isolation jurisdiction certainty no US jurisdiction CLOUD Act FISA Hetzner German company EU law TLS 1.3 AES-256 encryption firewall RBAC audit logging no multi-tenant cloud',
+    content: 'infrastructure dedicated hardware Helsinki Finland EU bare-metal server physical isolation jurisdiction certainty no US jurisdiction CLOUD Act FISA European hosting provider EU law TLS 1.3 AES-256 encryption firewall RBAC audit logging no multi-tenant cloud genomics workloads NVMe storage',
   },
   {
     href: '/docs/data-and-privacy/gdpr-compliance',

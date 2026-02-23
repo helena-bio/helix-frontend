@@ -23,36 +23,31 @@ export default function InfrastructurePage() {
       </div>
 
       <section className="space-y-3">
-        <p className="text-lg font-semibold text-foreground">Hardware</p>
+        <p className="text-lg font-semibold text-foreground">Overview</p>
         <div className="bg-card border border-border rounded-lg p-4 space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground w-36">Server</span>
-            <span className="text-md text-muted-foreground">Hetzner AX162R -- dedicated bare-metal server</span>
-          </div>
-          <div className="border-t border-border/50" />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground w-36">Processor</span>
-            <span className="text-md text-muted-foreground">AMD EPYC 9454P (48 cores / 96 threads)</span>
-          </div>
-          <div className="border-t border-border/50" />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground w-36">Memory</span>
-            <span className="text-md text-muted-foreground">504 GB DDR5 ECC RAM</span>
-          </div>
-          <div className="border-t border-border/50" />
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground w-36">Storage</span>
-            <span className="text-md text-muted-foreground">2x KIOXIA NVMe SSD in RAID configuration</span>
+            <span className="text-sm font-medium text-foreground w-36">Type</span>
+            <span className="text-md text-muted-foreground">Dedicated bare-metal server (not shared cloud)</span>
           </div>
           <div className="border-t border-border/50" />
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground w-36">Location</span>
-            <span className="text-md text-muted-foreground">Hetzner Helsinki datacenter, Finland (EU)</span>
+            <span className="text-md text-muted-foreground">Helsinki datacenter, Finland (EU)</span>
           </div>
           <div className="border-t border-border/50" />
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground w-36">Jurisdiction</span>
             <span className="text-md text-muted-foreground">Finnish and EU data protection law</span>
+          </div>
+          <div className="border-t border-border/50" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground w-36">Provider</span>
+            <span className="text-md text-muted-foreground">European hosting provider, subject to EU law only</span>
+          </div>
+          <div className="border-t border-border/50" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground w-36">Capacity</span>
+            <span className="text-md text-muted-foreground">Enterprise-grade server optimized for genomics workloads (multi-core, high memory, NVMe storage)</span>
           </div>
         </div>
       </section>
@@ -66,8 +61,8 @@ export default function InfrastructurePage() {
           {[
             { label: 'Physical isolation', desc: 'No other customer\u2019s workloads run on the same hardware. There is no risk of side-channel attacks, noisy neighbor performance degradation, or accidental data exposure through shared resources.' },
             { label: 'Jurisdiction certainty', desc: 'The server is physically located in Helsinki, Finland. Unlike cloud providers that may move workloads between regions, the physical location of the data is fixed and verifiable.' },
-            { label: 'No US jurisdiction exposure', desc: 'Major cloud providers are subject to US laws (CLOUD Act, FISA) that can compel disclosure of data stored on their infrastructure regardless of physical location. Hetzner is a German company subject to EU law only.' },
-            { label: 'Full administrative control', desc: 'Helena Bioinformatics has exclusive root-level access to the server. No cloud provider employee has access to the operating system, storage, or network configuration.' },
+            { label: 'No US jurisdiction exposure', desc: 'Major cloud providers are subject to US laws (CLOUD Act, FISA) that can compel disclosure of data stored on their infrastructure regardless of physical location. Our hosting provider is a European company subject to EU law only.' },
+            { label: 'Full administrative control', desc: 'Helena Bioinformatics has exclusive root-level access to the server. No hosting provider employee has access to the operating system, storage, or network configuration.' },
           ].map((item) => (
             <div key={item.label} className="bg-card border border-border rounded-lg p-4 space-y-1">
               <p className="text-base font-medium text-foreground">{item.label}</p>
