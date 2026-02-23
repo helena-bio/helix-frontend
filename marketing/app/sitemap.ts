@@ -19,6 +19,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/dpia`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ]
 
+  // Use cases pages (high SEO value - Tier 2/4 keywords)
+  const useCasePages: MetadataRoute.Sitemap = [
+    { url: `${BASE_URL}/use-cases/rare-disease`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/use-cases/newborn-screening`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/use-cases/carrier-screening`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+  ]
+
   // Documentation section pages (high SEO value)
   const docsSectionPages = [
     '/docs',
@@ -97,5 +104,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   })
 
-  return [...marketingPages, ...docsPages]
+  return [...marketingPages, ...useCasePages, ...docsPages]
 }

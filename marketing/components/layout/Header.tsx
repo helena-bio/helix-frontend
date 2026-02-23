@@ -11,6 +11,12 @@ const platformLinks = [
   { href: '/methodology', label: 'Methodology' },
 ]
 
+const useCaseLinks = [
+  { href: '/use-cases/rare-disease', label: 'Rare Disease' },
+  { href: '/use-cases/newborn-screening', label: 'Newborn Screening' },
+  { href: '/use-cases/carrier-screening', label: 'Carrier Screening' },
+]
+
 export function Header() {
   const { openModal } = useDemoModal()
   const { openModal: openLoginModal } = useLoginModal()
@@ -71,8 +77,20 @@ export function Header() {
                 <ChevronDown className={`w-4 h-4 transition-transform ${isPlatformOpen ? 'rotate-180' : ''}`} />
               </button>
               {isPlatformOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
+                <div className="absolute top-full left-0 mt-2 w-56 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
                   {platformLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="block px-4 py-2 text-base text-foreground hover:text-primary hover:bg-muted/50 transition-colors"
+                      onClick={() => setIsPlatformOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <div className="my-2 mx-4 border-t border-border" />
+                  <p className="px-4 py-1 text-sm text-muted-foreground font-medium">Use Cases</p>
+                  {useCaseLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
@@ -144,6 +162,17 @@ export function Header() {
             {isMobilePlatformOpen && (
               <div className="flex flex-col pl-4 space-y-3">
                 {platformLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-base text-muted-foreground hover:text-primary transition-colors py-1"
+                    onClick={closeMobileMenu}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <p className="text-sm text-muted-foreground font-medium pt-2">Use Cases</p>
+                {useCaseLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
