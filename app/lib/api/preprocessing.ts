@@ -1,20 +1,10 @@
 /**
  * Preprocessing API Client
  *
- * Calls variant-analysis-service (port 9001) for reference database
- * status, updates, and task management.
+ * Uses the shared API client (same base URL, auth, error handling).
+ * Endpoints hit variant-analysis-service via nginx proxy.
  */
-import { tokenUtils } from '@/lib/auth/token'
-
-const VA_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9001'
-
-function authHeaders(): Record<string, string> {
-  const token = tokenUtils.get()
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  }
-}
+import { get, post } from './client'
 
 // =========================================================================
 // Types
@@ -151,73 +141,38 @@ export interface TaskCreatedResponse {
 export const preprocessingApi = {
 
   async getDatabases(): Promise<AllDatabasesResponse> {
-    const res = await fetch(`${VA_API_URL}/preprocessing/databases`, {
-      headers: authHeaders(),
-    })
-    if (!res.ok) throw new Error(`Failed to fetch databases (${res.status})`)
-    return res.json()
+    return get<AllDatabasesResponse>('/preprocessing/databases')
   },
 
   async getDatabase(dbName: string): Promise<DatabaseDetailResponse> {
-    const res = await fetch(`${VA_API_URL}/preprocessing/databases/${dbName}`, {
-      headers: authHeaders(),
-    })
-    if (!res.ok) throw new Error(`Failed to fetch database (${res.status})`)
-    return res.json()
+    return get<DatabaseDetailResponse>('/preprocessing/databases/' + dbName)
   },
 
   async updateDatabase(dbName: string, force: boolean = false): Promise<TaskCreatedResponse> {
-    const res = await fetch(`${VA_API_URL}/preprocessing/databases/${dbName}/update`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ steps: ['download', 'convert', 'load'], force }),
+    return post<TaskCreatedResponse>('/preprocessing/databases/' + dbName + '/update', {
+      steps: ['download', 'convert', 'load'],
+      force,
     })
-    if (!res.ok) {
-      const err = await res.json().catch(() => null)
-      throw new Error(err?.detail || `Failed to start update (${res.status})`)
-    }
-    return res.json()
   },
 
   async updateAll(force: boolean = false): Promise<TaskCreatedResponse> {
-    const res = await fetch(`${VA_API_URL}/preprocessing/update-all`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ databases: null, force }),
+    return post<TaskCreatedResponse>('/preprocessing/update-all', {
+      databases: null,
+      force,
     })
-    if (!res.ok) {
-      const err = await res.json().catch(() => null)
-      throw new Error(err?.detail || `Failed to start update all (${res.status})`)
-    }
-    return res.json()
   },
 
   async rebuildReferenceDB(): Promise<TaskCreatedResponse> {
-    const res = await fetch(`${VA_API_URL}/preprocessing/rebuild-reference-db`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ confirm: true }),
+    return post<TaskCreatedResponse>('/preprocessing/rebuild-reference-db', {
+      confirm: true,
     })
-    if (!res.ok) {
-      const err = await res.json().catch(() => null)
-      throw new Error(err?.detail || `Failed to start rebuild (${res.status})`)
-    }
-    return res.json()
   },
 
   async getTask(taskId: string): Promise<TaskStatus> {
-    const res = await fetch(`${VA_API_URL}/preprocessing/tasks/${taskId}`, {
-      headers: authHeaders(),
-    })
-    if (!res.ok) throw new Error(`Failed to fetch task (${res.status})`)
-    return res.json()
+    return get<TaskStatus>('/preprocessing/tasks/' + taskId)
   },
 
   async getTasks(): Promise<TaskListResponse> {
-    const res = await fetch(`${VA_API_URL}/preprocessing/tasks`, {
-      headers: authHeaders(),
-    })
-    if (!res.ok) throw new Error(`Failed to fetch tasks (${res.status})`)
-    return res.json()
+    return get<TaskListResponse>('/preprocessing/tasks')
   },
 }
