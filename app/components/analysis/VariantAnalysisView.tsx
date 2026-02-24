@@ -61,20 +61,13 @@ const INITIAL_LOAD = 15
 const LOAD_MORE_COUNT = 15
 
 // ACMG filter type
-type ACMGFilter = 'all' | 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely Benign' | 'Benign'
+type ACMGFilter = 'all' | 'P' | 'LP' | 'VUS' | 'LB' | 'B'
 
 // Impact filter type
 type ImpactFilter = 'all' | 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
 
 // Zero impact counts constant
 const ZERO_IMPACT = { HIGH: 0, MODERATE: 0, LOW: 0, MODIFIER: 0 }
-
-// Convert filter to backend ACMG class format
-const acmgFilterToBackend = (filter: ACMGFilter): string | undefined => {
-  if (filter === 'all') return undefined
-  if (filter === 'VUS') return 'Uncertain Significance'
-  return filter
-}
 
 // Check if gene matches filters using SUMMARY COUNTS (no variant iteration)
 const geneMatchesFilters = (
@@ -84,13 +77,12 @@ const geneMatchesFilters = (
 ): boolean => {
   // ACMG filter check using summary counts
   if (acmgFilter !== 'all') {
-    const acmgClass = acmgFilterToBackend(acmgFilter)
     let hasAcmg = false
-    if (acmgClass === 'Pathogenic') hasAcmg = gene.pathogenic_count > 0
-    else if (acmgClass === 'Likely Pathogenic') hasAcmg = gene.likely_pathogenic_count > 0
-    else if (acmgClass === 'Uncertain Significance') hasAcmg = gene.vus_count > 0
-    else if (acmgClass === 'Likely Benign') hasAcmg = gene.likely_benign_count > 0
-    else if (acmgClass === 'Benign') hasAcmg = gene.benign_count > 0
+    if (acmgFilter === 'P') hasAcmg = gene.pathogenic_count > 0
+    else if (acmgFilter === 'LP') hasAcmg = gene.likely_pathogenic_count > 0
+    else if (acmgFilter === 'VUS') hasAcmg = gene.vus_count > 0
+    else if (acmgFilter === 'LB') hasAcmg = gene.likely_benign_count > 0
+    else if (acmgFilter === 'B') hasAcmg = gene.benign_count > 0
     if (!hasAcmg) return false
   }
 
@@ -110,8 +102,7 @@ const geneMatchesFilters = (
 // Check if variant matches ACMG filter (used for visible variants in expanded gene)
 const variantMatchesACMG = (variant: VariantInGene, filter: ACMGFilter): boolean => {
   if (filter === 'all') return true
-  const acmgClass = acmgFilterToBackend(filter)
-  return variant.acmg_class === acmgClass
+  return variant.acmg_class === filter
 }
 
 // Check if variant matches Impact filter (used for visible variants in expanded gene)
@@ -431,8 +422,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       }
     }
 
-    const acmgKey = acmgFilterToBackend(acmgFilter) || 'all'
-    const matrix = impactByAcmg[acmgKey] || ZERO_IMPACT
+    const matrix = impactByAcmg[acmgFilter] || ZERO_IMPACT
 
     return {
       high: matrix.HIGH || 0,
@@ -510,16 +500,16 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             count={acmgCounts.pathogenic}
             label="P"
             tooltip="Pathogenic variants - strong evidence of disease association"
-            isSelected={acmgFilter === 'Pathogenic'}
-            onClick={() => handleAcmgClick('Pathogenic')}
+            isSelected={acmgFilter === 'P'}
+            onClick={() => handleAcmgClick('P')}
             colorClasses="border-red-200 bg-red-50 text-red-900"
           />
           <FilterCard
             count={acmgCounts.likely_pathogenic}
             label="LP"
             tooltip="Likely Pathogenic variants - probable disease association"
-            isSelected={acmgFilter === 'Likely Pathogenic'}
-            onClick={() => handleAcmgClick('Likely Pathogenic')}
+            isSelected={acmgFilter === 'LP'}
+            onClick={() => handleAcmgClick('LP')}
             colorClasses="border-orange-200 bg-orange-50 text-orange-900"
           />
           <FilterCard
@@ -534,16 +524,16 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
             count={acmgCounts.likely_benign}
             label="LB"
             tooltip="Likely Benign variants - probably not disease-causing"
-            isSelected={acmgFilter === 'Likely Benign'}
-            onClick={() => handleAcmgClick('Likely Benign')}
+            isSelected={acmgFilter === 'LB'}
+            onClick={() => handleAcmgClick('LB')}
             colorClasses="border-blue-200 bg-blue-50 text-blue-900"
           />
           <FilterCard
             count={acmgCounts.benign}
             label="B"
             tooltip="Benign variants - not disease-causing"
-            isSelected={acmgFilter === 'Benign'}
-            onClick={() => handleAcmgClick('Benign')}
+            isSelected={acmgFilter === 'B'}
+            onClick={() => handleAcmgClick('B')}
             colorClasses="border-green-200 bg-green-50 text-green-900"
           />
         </div>

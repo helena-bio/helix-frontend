@@ -13,13 +13,12 @@ import { Badge } from '@/components/ui/badge'
 
 export const getACMGColor = (acmg: string | null | undefined) => {
   if (!acmg) return 'bg-gray-100 text-gray-900 border-gray-300'
-  const acmgLower = acmg.toLowerCase()
-  if (acmgLower.includes('pathogenic/likely') || acmgLower === 'pathogenic/likely_pathogenic') return 'bg-red-100 text-red-900 border-red-300'
-  if (acmgLower === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
-  if (acmgLower === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (acmgLower.includes('uncertain') || acmgLower === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  if (acmgLower === 'likely benign') return 'bg-blue-100 text-blue-900 border-blue-300'
-  if (acmgLower === 'benign') return 'bg-green-100 text-green-900 border-green-300'
+  const code = acmg.toUpperCase()
+  if (code === 'P') return 'bg-red-100 text-red-900 border-red-300'
+  if (code === 'LP') return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (code === 'VUS') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (code === 'LB') return 'bg-blue-100 text-blue-900 border-blue-300'
+  if (code === 'B') return 'bg-green-100 text-green-900 border-green-300'
   return 'bg-gray-100 text-gray-900 border-gray-300'
 }
 
@@ -80,11 +79,8 @@ export const getZygosityBadge = (genotype: string | null | undefined) => {
 
 export const formatACMGDisplay = (acmg: string | null | undefined): string => {
   if (!acmg) return 'Unknown'
-  if (acmg.toLowerCase().includes('uncertain')) return 'VUS'
-  if (acmg.toLowerCase() === 'likely pathogenic') return 'LP'
-  if (acmg.toLowerCase() === 'likely benign') return 'LB'
-  if (acmg.toLowerCase() === 'pathogenic') return 'P'
-  if (acmg.toLowerCase() === 'benign') return 'B'
+  const code = acmg.toUpperCase()
+  if (code === 'P' || code === 'LP' || code === 'VUS' || code === 'LB' || code === 'B') return code
   return acmg
 }
 

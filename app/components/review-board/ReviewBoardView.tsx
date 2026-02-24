@@ -50,11 +50,11 @@ interface ReviewBoardViewProps {
 }
 
 const ACMG_PRIORITY: Record<string, number> = {
-  'Pathogenic': 0,
-  'Likely Pathogenic': 1,
-  'Uncertain Significance': 2,
-  'Likely Benign': 3,
-  'Benign': 4,
+  'P': 0,
+  'LP': 1,
+  'VUS': 2,
+  'LB': 3,
+  'B': 4,
 }
 
 const IMPACT_PRIORITY: Record<string, number> = {
@@ -64,14 +64,8 @@ const IMPACT_PRIORITY: Record<string, number> = {
   'MODIFIER': 3,
 }
 
-type ACMGFilter = 'all' | 'Pathogenic' | 'Likely Pathogenic' | 'VUS' | 'Likely Benign' | 'Benign'
+type ACMGFilter = 'all' | 'P' | 'LP' | 'VUS' | 'LB' | 'B'
 type ImpactFilter = 'all' | 'HIGH' | 'MODERATE' | 'LOW' | 'MODIFIER'
-
-const acmgFilterToClass = (filter: ACMGFilter): string | undefined => {
-  if (filter === 'all') return undefined
-  if (filter === 'VUS') return 'Uncertain Significance'
-  return filter
-}
 
 const ACMG_OPTIONS: { code: string; label: string }[] = [
   { code: 'P', label: 'Pathogenic' },
@@ -744,11 +738,11 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
   const acmgCounts = useMemo(() => {
     const counts = { total: variants.length, pathogenic: 0, likely_pathogenic: 0, vus: 0, likely_benign: 0, benign: 0 }
     for (const v of variants) {
-      if (v.acmg_class === 'Pathogenic') counts.pathogenic++
-      else if (v.acmg_class === 'Likely Pathogenic') counts.likely_pathogenic++
-      else if (v.acmg_class === 'Uncertain Significance') counts.vus++
-      else if (v.acmg_class === 'Likely Benign') counts.likely_benign++
-      else if (v.acmg_class === 'Benign') counts.benign++
+      if (v.acmg_class === 'P') counts.pathogenic++
+      else if (v.acmg_class === 'LP') counts.likely_pathogenic++
+      else if (v.acmg_class === 'VUS') counts.vus++
+      else if (v.acmg_class === 'LB') counts.likely_benign++
+      else if (v.acmg_class === 'B') counts.benign++
     }
     return counts
   }, [variants])
@@ -756,7 +750,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
   const impactCounts = useMemo(() => {
     const base = acmgFilter === 'all'
       ? variants
-      : variants.filter((v) => v.acmg_class === acmgFilterToClass(acmgFilter))
+      : variants.filter((v) => v.acmg_class === acmgFilter)
     return {
       high: base.filter((v) => v.impact === 'HIGH').length,
       moderate: base.filter((v) => v.impact === 'MODERATE').length,
@@ -769,8 +763,7 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
     let filtered = variants
 
     if (acmgFilter !== 'all') {
-      const acmgClass = acmgFilterToClass(acmgFilter)
-      filtered = filtered.filter((v) => v.acmg_class === acmgClass)
+      filtered = filtered.filter((v) => v.acmg_class === acmgFilter)
     }
 
     if (impactFilter !== 'all') {
@@ -856,11 +849,11 @@ export function ReviewBoardView({ sessionId }: ReviewBoardViewProps) {
         <>
           <div className="grid grid-cols-6 gap-3">
             <FilterCard count={acmgCounts.total} label="Total" tooltip="Show all starred variants" isSelected={acmgFilter === 'all'} onClick={() => handleAcmgClick('all')} colorClasses="" />
-            <FilterCard count={acmgCounts.pathogenic} label="P" tooltip="Pathogenic variants" isSelected={acmgFilter === 'Pathogenic'} onClick={() => handleAcmgClick('Pathogenic')} colorClasses="border-red-200 bg-red-50 text-red-900" />
-            <FilterCard count={acmgCounts.likely_pathogenic} label="LP" tooltip="Likely Pathogenic variants" isSelected={acmgFilter === 'Likely Pathogenic'} onClick={() => handleAcmgClick('Likely Pathogenic')} colorClasses="border-orange-200 bg-orange-50 text-orange-900" />
+            <FilterCard count={acmgCounts.pathogenic} label="P" tooltip="Pathogenic variants" isSelected={acmgFilter === 'P'} onClick={() => handleAcmgClick('P')} colorClasses="border-red-200 bg-red-50 text-red-900" />
+            <FilterCard count={acmgCounts.likely_pathogenic} label="LP" tooltip="Likely Pathogenic variants" isSelected={acmgFilter === 'LP'} onClick={() => handleAcmgClick('LP')} colorClasses="border-orange-200 bg-orange-50 text-orange-900" />
             <FilterCard count={acmgCounts.vus} label="VUS" tooltip="Variants of Uncertain Significance" isSelected={acmgFilter === 'VUS'} onClick={() => handleAcmgClick('VUS')} colorClasses="border-yellow-200 bg-yellow-50 text-yellow-900" />
-            <FilterCard count={acmgCounts.likely_benign} label="LB" tooltip="Likely Benign variants" isSelected={acmgFilter === 'Likely Benign'} onClick={() => handleAcmgClick('Likely Benign')} colorClasses="border-blue-200 bg-blue-50 text-blue-900" />
-            <FilterCard count={acmgCounts.benign} label="B" tooltip="Benign variants" isSelected={acmgFilter === 'Benign'} onClick={() => handleAcmgClick('Benign')} colorClasses="border-green-200 bg-green-50 text-green-900" />
+            <FilterCard count={acmgCounts.likely_benign} label="LB" tooltip="Likely Benign variants" isSelected={acmgFilter === 'LB'} onClick={() => handleAcmgClick('LB')} colorClasses="border-blue-200 bg-blue-50 text-blue-900" />
+            <FilterCard count={acmgCounts.benign} label="B" tooltip="Benign variants" isSelected={acmgFilter === 'B'} onClick={() => handleAcmgClick('B')} colorClasses="border-green-200 bg-green-50 text-green-900" />
           </div>
 
           <div className="flex items-center gap-2">

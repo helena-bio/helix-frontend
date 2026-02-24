@@ -226,8 +226,8 @@ export interface GeneAggregatedFilters {
 }
 
 /**
- * Impact counts keyed by ACMG class (pre-computed cross-matrix)
- * Keys: all, Pathogenic, Likely Pathogenic, Uncertain Significance, etc.
+ * Impact counts keyed by ACMG short code (pre-computed cross-matrix)
+ * Keys: all, P, LP, VUS, LB, B
  */
 export interface ImpactByAcmg {
   [acmgClass: string]: {
