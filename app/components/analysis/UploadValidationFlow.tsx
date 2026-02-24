@@ -107,6 +107,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   // Settings panel state
   const [showSettings, setShowSettings] = useState(false)
+  const [retainFile, setRetainFile] = useState(false)
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -416,6 +417,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
         analysisType: 'germline',
         genomeBuild: 'GRCh38',
         caseLabel: caseName,
+        retainFile: retainFile,
         onProgress: (progress) => {
           setUploadProgress(progress)
 
@@ -522,6 +524,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     setWasCompressed(false)
     setDuplicateSession(null)
     setShowSettings(false)
+    setRetainFile(false)
     uploadMutation.reset()
     startValidationMutation.reset()
     if (fileInputRef.current) {
@@ -926,6 +929,19 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                       maxLength={200}
                     />
                   </div>
+                )}
+                {/* Retain file checkbox (debug) */}
+                {!isProcessing && selectedFile && (
+                  <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={retainFile}
+                      onChange={(e) => setRetainFile(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-border accent-primary"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <span className="text-sm text-muted-foreground">Retain original file</span>
+                  </label>
                 )}
 
                 {/* Duplicate file warning */}

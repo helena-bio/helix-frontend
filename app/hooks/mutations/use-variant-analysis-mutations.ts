@@ -22,15 +22,17 @@ export function useUploadVCF() {
       analysisType = 'germline',
       genomeBuild = 'GRCh38',
       caseLabel = '',
+      retainFile = false,
       onProgress,
     }: {
       file: File
       analysisType?: string
       genomeBuild?: string
       caseLabel?: string
+      retainFile?: boolean
       onProgress?: (progress: number) => void
     }) => {
-      return uploadVCFFile(file, analysisType, genomeBuild, caseLabel, onProgress)
+      return uploadVCFFile(file, analysisType, genomeBuild, caseLabel, retainFile, onProgress)
     },
     onSuccess: (session: AnalysisSession) => {
       setCurrentSessionId(session.id)

@@ -39,6 +39,7 @@ export async function uploadVCFFile(
   analysisType: string = 'germline',
   genomeBuild: string = 'GRCh38',
   caseLabel: string = '',
+  retainFile: boolean = false,
   onProgress?: (progress: number) => void
 ): Promise<AnalysisSession> {
   const response = await uploadFileWithProgress<UploadVCFBackendResponse>(
@@ -48,6 +49,7 @@ export async function uploadVCFFile(
       analysis_type: analysisType,
       genome_build: genomeBuild,
       case_label: caseLabel,
+      retain_file: String(retainFile),
     },
     onProgress
   )
