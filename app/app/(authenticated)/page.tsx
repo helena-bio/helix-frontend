@@ -45,6 +45,7 @@ import {
 import { downloadClinicalReport, type ReportFormat } from '@/lib/utils/download-report'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { getACMGColor, formatACMGDisplay } from '@/components/shared/variant-helpers'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@helix/shared/components/ui/tooltip'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { useAuth } from '@/contexts/AuthContext'
@@ -436,14 +437,9 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate, onNavigateToVar
                               <td className="px-3 py-1.5">
                                 <Badge
                                   variant="outline"
-                                  className={cn(
-                                    "text-sm",
-                                    f.acmg_class === 'Pathogenic'
-                                      ? "bg-red-100 text-red-900 border-red-300"
-                                      : "bg-orange-100 text-orange-900 border-orange-300"
-                                  )}
+                                  className={cn("text-sm", getACMGColor(f.acmg_class))}
                                 >
-                                  {f.acmg_class === 'Pathogenic' ? 'P' : 'LP'}
+                                  {formatACMGDisplay(f.acmg_class)}
                                 </Badge>
                               </td>
                               <td className="px-3 py-1.5 text-md text-muted-foreground">

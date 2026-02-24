@@ -23,20 +23,20 @@ interface PieChartProps {
 
 // Dashboard-matching colors
 const CHART_FILL_COLORS: Record<string, string> = {
-  'Pathogenic': '#fff085',
-  'Likely Pathogenic': '#ffd6a7',
-  'Uncertain Significance': '#fff085',
-  'Likely Benign': '#bedbff',
-  'Benign': '#b9f8cf',
+  'P': '#fff085',
+  'LP': '#ffd6a7',
+  'VUS': '#fff085',
+  'LB': '#bedbff',
+  'B': '#b9f8cf',
   'default': '#cbd5e1',
 }
 
 const CHART_TEXT_COLORS: Record<string, string> = {
-  'Pathogenic': '#c10007',
-  'Likely Pathogenic': '#a65f00',
-  'Uncertain Significance': '#ca3500',
-  'Likely Benign': '#1447e6',
-  'Benign': '#008236',
+  'P': '#c10007',
+  'LP': '#a65f00',
+  'VUS': '#ca3500',
+  'LB': '#1447e6',
+  'B': '#008236',
   'default': '#475569',
 }
 
