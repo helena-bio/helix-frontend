@@ -6,6 +6,7 @@
  * Shows starred variants grouped by gene, consistent with VariantAnalysisView.
  * Gene sections expand to show individual variant rows.
  * Notes integration for collaborative clinical annotation.
+ * Reclassification (override) support for clinical variant review.
  */
 
 import { useState, useMemo, useEffect } from 'react'
@@ -23,6 +24,7 @@ import {
   Trash2,
   Check,
   X,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,10 +39,11 @@ import {
   getImpactColor,
   formatImpactDisplay,
   formatACMGDisplay,
+  getEffectiveACMGClass,
   SharedVariantCard,
   type SharedVariantData,
 } from '@/components/shared'
-import type { Variant, CaseNote } from '@/types/variant.types'
+import type { Variant, CaseNote, VariantOverride } from '@/types/variant.types'
 
 interface ReviewBoardViewProps {
   sessionId: string
@@ -69,6 +72,8 @@ const acmgFilterToClass = (filter: ACMGFilter): string | undefined => {
   if (filter === 'VUS') return 'Uncertain Significance'
   return filter
 }
+
+const ACMG_CLASSES = ['Pathogenic', 'Likely Pathogenic', 'Uncertain Significance', 'Likely Benign', 'Benign']
 
 interface GeneGroup {
   gene_symbol: string
@@ -349,6 +354,166 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
 }
 
 // ============================================================================
+// RECLASSIFY SECTION
+// ============================================================================
+
+interface ReclassifySectionProps {
+  variantIdx: number
+  originalClass: string | null
+}
+
+function ReclassifySection({ variantIdx, originalClass }: ReclassifySectionProps) {
+  const { getOverrides, getLatestOverride, addOverride } = useReviewBoard()
+  const [newClass, setNewClass] = useState('')
+  const [reason, setReason] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const overrides = getOverrides(variantIdx)
+  const latestOverride = getLatestOverride(variantIdx)
+  const effectiveClass = latestOverride?.new_class || originalClass
+
+  const availableClasses = ACMG_CLASSES.filter((c) => c !== effectiveClass)
+  const canSubmit = newClass !== '' && reason.trim().length >= 10 && !isSubmitting
+
+  const handleSubmit = async () => {
+    if (!canSubmit) return
+    setIsSubmitting(true)
+    setSubmitError(null)
+    try {
+      await addOverride(variantIdx, newClass, reason.trim())
+      setNewClass('')
+      setReason('')
+    } catch (err) {
+      console.error('Failed to submit reclassification:', err)
+      setSubmitError('Failed to submit reclassification')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="border-t pt-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+        <p className="text-md font-semibold">Reclassify Variant</p>
+      </div>
+
+      {/* Reclassification form */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-md text-muted-foreground mb-1">Current</p>
+            <Badge variant="outline" className={`text-tiny ${getACMGColor(effectiveClass)}`}>
+              {formatACMGDisplay(effectiveClass)}
+            </Badge>
+          </div>
+          <ArrowRightLeft className="h-4 w-4 text-muted-foreground mt-5" />
+          <div className="flex-1">
+            <p className="text-md text-muted-foreground mb-1">New Classification</p>
+            <select
+              value={newClass}
+              onChange={(e) => setNewClass(e.target.value)}
+              className="w-full h-9 px-3 rounded-md border border-input bg-background text-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              disabled={isSubmitting}
+            >
+              <option value="">Select classification...</option>
+              {availableClasses.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-md text-muted-foreground mb-1">
+            Clinical Justification
+            <span className="text-muted-foreground/50 ml-1">(min. 10 characters)</span>
+          </p>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Describe the clinical evidence supporting this reclassification..."
+            className="w-full min-h-[80px] px-3 py-2 rounded-md border border-input bg-background text-md resize-y focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            disabled={isSubmitting}
+          />
+          {reason.length > 0 && reason.trim().length < 10 && (
+            <p className="text-tiny text-muted-foreground mt-1">
+              {10 - reason.trim().length} more characters required
+            </p>
+          )}
+        </div>
+
+        {submitError && (
+          <p className="text-md text-destructive">{submitError}</p>
+        )}
+
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            className="text-sm"
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <Check className="h-3 w-3 mr-1" />
+            )}
+            Submit Reclassification
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-sm"
+            onClick={() => { setNewClass(''); setReason(''); setSubmitError(null) }}
+            disabled={isSubmitting}
+          >
+            Clear
+          </Button>
+        </div>
+      </div>
+
+      {/* Override history */}
+      {overrides.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <p className="text-md font-semibold text-muted-foreground">
+            Reclassification History ({overrides.length})
+          </p>
+          {overrides.map((override) => (
+            <div key={override.id} className="flex gap-3 p-3 rounded-lg bg-violet-50/50">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center">
+                <span className="text-tiny font-medium text-violet-700">{override.user.initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-md font-medium">{override.user.name}</span>
+                  <span className="text-tiny text-muted-foreground">
+                    {new Date(override.created_at).toLocaleDateString('en-GB', {
+                      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="outline" className={`text-tiny ${getACMGColor(override.original_class)}`}>
+                    <span className="line-through">{formatACMGDisplay(override.original_class)}</span>
+                  </Badge>
+                  <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                  <Badge variant="outline" className={`text-tiny ${getACMGColor(override.new_class)}`}>
+                    {formatACMGDisplay(override.new_class)}
+                  </Badge>
+                </div>
+                <p className="text-md mt-1 text-muted-foreground whitespace-pre-wrap">{override.reason}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
 // VARIANT ROW
 // ============================================================================
 
@@ -359,25 +524,60 @@ interface ReviewVariantRowProps {
 }
 
 function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRowProps) {
+  const { getLatestOverride } = useReviewBoard()
   const [showNotes, setShowNotes] = useState(false)
+  const [showReclassify, setShowReclassify] = useState(false)
+
+  const latestOverride = getLatestOverride(variant.variant_idx)
+  const { displayClass, isOverridden } = getEffectiveACMGClass(variant.acmg_class, latestOverride)
+
+  const sharedVariant = useMemo(() => {
+    const base = toSharedVariant(variant)
+    if (isOverridden && displayClass) {
+      return { ...base, acmgClass: displayClass }
+    }
+    return base
+  }, [variant, isOverridden, displayClass])
 
   return (
     <SharedVariantCard
-      variant={toSharedVariant(variant)}
+      variant={sharedVariant}
       onViewDetails={onViewDetails}
+      collapsedRight={
+        isOverridden ? (
+          <Badge variant="outline" className="text-tiny bg-violet-100 text-violet-900 border-violet-300">
+            <ArrowRightLeft className="h-3 w-3 mr-1" />
+            Reclassified
+          </Badge>
+        ) : undefined
+      }
       footerActions={
-        <Button
-          variant={showNotes ? 'secondary' : 'outline'}
-          size="sm"
-          className="text-sm"
-          onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes) }}
-        >
-          <MessageSquare className="h-3 w-3 mr-1" />
-          Notes
-        </Button>
+        <>
+          <Button
+            variant={showNotes ? 'secondary' : 'outline'}
+            size="sm"
+            className="text-sm"
+            onClick={(e) => { e.stopPropagation(); setShowNotes(!showNotes) }}
+          >
+            <MessageSquare className="h-3 w-3 mr-1" />
+            Notes
+          </Button>
+          <Button
+            variant={showReclassify ? 'secondary' : 'outline'}
+            size="sm"
+            className="text-sm"
+            onClick={(e) => { e.stopPropagation(); setShowReclassify(!showReclassify) }}
+          >
+            <ArrowRightLeft className="h-3 w-3 mr-1" />
+            Reclassify
+          </Button>
+        </>
       }
       afterFooter={
-        showNotes ? <NotesSection sessionId={sessionId} variantIdx={variant.variant_idx} /> : undefined
+        <>
+          {showNotes && <NotesSection sessionId={sessionId} variantIdx={variant.variant_idx} />}
+          {showReclassify && <ReclassifySection variantIdx={variant.variant_idx} originalClass={variant.acmg_class} />}
+        </>
       }
     />
   )

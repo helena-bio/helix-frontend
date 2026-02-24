@@ -5,6 +5,7 @@
  *
  * Loads starred items from API on session change.
  * Provides isStarred/toggleStar for star buttons across all views.
+ * Provides override state (reclassifications) for Review Board.
  * Owner-only mutations (API returns 403 for non-owners).
  */
 
@@ -16,8 +17,8 @@ import {
   useEffect,
   type ReactNode,
 } from 'react'
-import { listReviewBoard, starVariant, unstarVariant, listNotes, deleteNote } from '@/lib/api/variant-analysis'
-import type { ReviewBoardItem } from '@/types/variant.types'
+import { listReviewBoard, starVariant, unstarVariant, listNotes, deleteNote, listOverrides, createOverride } from '@/lib/api/variant-analysis'
+import type { ReviewBoardItem, VariantOverride } from '@/types/variant.types'
 import { useSession } from './SessionContext'
 
 interface ReviewBoardContextType {
@@ -35,6 +36,14 @@ interface ReviewBoardContextType {
   refresh: () => Promise<void>
   /** Last error message (cleared on next action) */
   errorMessage: string | null
+  /** Get all overrides for a variant */
+  getOverrides: (variantIdx: number) => VariantOverride[]
+  /** Get the latest (active) override for a variant, or null */
+  getLatestOverride: (variantIdx: number) => VariantOverride | null
+  /** Submit a reclassification. Returns the created override. */
+  addOverride: (variantIdx: number, newClass: string, reason: string) => Promise<VariantOverride>
+  /** Whether overrides are still loading */
+  isLoadingOverrides: boolean
 }
 
 const ReviewBoardContext = createContext<ReviewBoardContextType | undefined>(undefined)
@@ -52,10 +61,15 @@ export function ReviewBoardProvider({ children }: ReviewBoardProviderProps) {
   // Set of starred variant_idx for O(1) lookup
   const [starredSet, setStarredSet] = useState<Set<number>>(new Set())
 
+  // Override state: variant_idx -> overrides (newest first)
+  const [overridesMap, setOverridesMap] = useState<Map<number, VariantOverride[]>>(new Map())
+  const [isLoadingOverrides, setIsLoadingOverrides] = useState(false)
+
   const loadItems = useCallback(async () => {
     if (!currentSessionId) {
       setItems([])
       setStarredSet(new Set())
+      setOverridesMap(new Map())
       return
     }
 
@@ -74,10 +88,43 @@ export function ReviewBoardProvider({ children }: ReviewBoardProviderProps) {
     }
   }, [currentSessionId])
 
+  // Bulk load all overrides for the session when items change
+  const loadOverrides = useCallback(async () => {
+    if (!currentSessionId || items.length === 0) {
+      setOverridesMap(new Map())
+      return
+    }
+
+    setIsLoadingOverrides(true)
+    try {
+      const response = await listOverrides(currentSessionId)
+      const map = new Map<number, VariantOverride[]>()
+      for (const override of response.overrides) {
+        const existing = map.get(override.variant_idx) || []
+        existing.push(override)
+        map.set(override.variant_idx, existing)
+      }
+      // Sort each group newest first
+      map.forEach((overrides) => {
+        overrides.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      })
+      setOverridesMap(map)
+    } catch (err) {
+      console.error('Failed to load overrides:', err)
+    } finally {
+      setIsLoadingOverrides(false)
+    }
+  }, [currentSessionId, items.length])
+
   // Reload when session changes
   useEffect(() => {
     loadItems()
   }, [loadItems])
+
+  // Load overrides after items are loaded
+  useEffect(() => {
+    loadOverrides()
+  }, [loadOverrides])
 
   const isStarred = useCallback(
     (variantIdx: number): boolean => starredSet.has(variantIdx),
@@ -110,6 +157,14 @@ export function ReviewBoardProvider({ children }: ReviewBoardProviderProps) {
           } catch (noteErr) {
             console.error("Failed to delete notes on unstar:", noteErr)
           }
+
+          // Clear overrides from local state for this variant
+          setOverridesMap((prev) => {
+            const next = new Map(prev)
+            next.delete(variantIdx)
+            return next
+          })
+
           return false
         } else {
           // Optimistic update
@@ -147,6 +202,39 @@ export function ReviewBoardProvider({ children }: ReviewBoardProviderProps) {
     [currentSessionId, starredSet, loadItems]
   )
 
+  const getOverrides = useCallback(
+    (variantIdx: number): VariantOverride[] => overridesMap.get(variantIdx) || [],
+    [overridesMap]
+  )
+
+  const getLatestOverride = useCallback(
+    (variantIdx: number): VariantOverride | null => {
+      const overrides = overridesMap.get(variantIdx)
+      return overrides && overrides.length > 0 ? overrides[0] : null
+    },
+    [overridesMap]
+  )
+
+  const addOverride = useCallback(
+    async (variantIdx: number, newClass: string, reason: string): Promise<VariantOverride> => {
+      if (!currentSessionId) throw new Error('No active session')
+      setErrorMessage(null)
+
+      const override = await createOverride(currentSessionId, variantIdx, newClass, reason)
+
+      // Update local state: prepend to existing overrides for this variant
+      setOverridesMap((prev) => {
+        const next = new Map(prev)
+        const existing = next.get(variantIdx) || []
+        next.set(variantIdx, [override, ...existing])
+        return next
+      })
+
+      return override
+    },
+    [currentSessionId]
+  )
+
   const value: ReviewBoardContextType = {
     items,
     count: items.length,
@@ -155,6 +243,10 @@ export function ReviewBoardProvider({ children }: ReviewBoardProviderProps) {
     toggleStar,
     refresh: loadItems,
     errorMessage,
+    getOverrides,
+    getLatestOverride,
+    addOverride,
+    isLoadingOverrides,
   }
 
   return (

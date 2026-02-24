@@ -14,6 +14,7 @@ export {
   ConsequenceBadges,
   truncateSequence,
   formatAlleles,
+  getEffectiveACMGClass,
 } from './variant-helpers'
 export { StarButton } from './StarButton'
 export {

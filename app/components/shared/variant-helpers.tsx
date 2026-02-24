@@ -222,3 +222,21 @@ export const formatAlleles = (ref: string | null | undefined, alt: string | null
   if (r.length + a.length <= maxLen + 3) return `${r}/${a}`
   return `${truncateSequence(r, maxLen)}/${truncateSequence(a, maxLen)}`
 }
+
+// ============================================================================
+// OVERRIDE HELPERS
+// ============================================================================
+
+/**
+ * Resolve the effective ACMG class considering overrides.
+ * Returns the display class and whether it was overridden.
+ */
+export function getEffectiveACMGClass(
+  originalClass: string | null | undefined,
+  override: { new_class: string } | null | undefined
+): { displayClass: string | null; isOverridden: boolean } {
+  if (override) {
+    return { displayClass: override.new_class, isOverridden: true }
+  }
+  return { displayClass: originalClass ?? null, isOverridden: false }
+}
