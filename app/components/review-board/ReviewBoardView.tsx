@@ -73,7 +73,20 @@ const acmgFilterToClass = (filter: ACMGFilter): string | undefined => {
   return filter
 }
 
-const ACMG_CLASSES = ['Pathogenic', 'Likely Pathogenic', 'Uncertain Significance', 'Likely Benign', 'Benign']
+const ACMG_OPTIONS: { code: string; label: string }[] = [
+  { code: 'P', label: 'Pathogenic' },
+  { code: 'LP', label: 'Likely Pathogenic' },
+  { code: 'VUS', label: 'Uncertain Significance' },
+  { code: 'LB', label: 'Likely Benign' },
+  { code: 'B', label: 'Benign' },
+]
+
+/** Convert full ACMG class name to short API code */
+const acmgToCode = (cls: string | null | undefined): string => {
+  if (!cls) return ''
+  const opt = ACMG_OPTIONS.find((o) => o.label === cls || o.code === cls)
+  return opt?.code ?? ''
+}
 
 interface GeneGroup {
   gene_symbol: string
@@ -373,7 +386,8 @@ function ReclassifySection({ variantIdx, originalClass }: ReclassifySectionProps
   const latestOverride = getLatestOverride(variantIdx)
   const effectiveClass = latestOverride?.new_class || originalClass
 
-  const availableClasses = ACMG_CLASSES.filter((c) => c !== effectiveClass)
+  const effectiveCode = acmgToCode(effectiveClass)
+  const availableOptions = ACMG_OPTIONS.filter((o) => o.code !== effectiveCode)
   const canSubmit = newClass !== '' && reason.trim().length >= 10 && !isSubmitting
 
   const handleSubmit = async () => {
@@ -418,8 +432,8 @@ function ReclassifySection({ variantIdx, originalClass }: ReclassifySectionProps
               disabled={isSubmitting}
             >
               <option value="">Select classification...</option>
-              {availableClasses.map((c) => (
-                <option key={c} value={c}>{c}</option>
+              {availableOptions.map((o) => (
+                <option key={o.code} value={o.code}>{o.label}</option>
               ))}
             </select>
           </div>
