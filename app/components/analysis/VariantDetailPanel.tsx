@@ -59,13 +59,20 @@ interface VariantDetailPanelProps {
 // ---------------------------------------------------------------------------
 const getACMGColor = (classification: string | null) => {
   if (!classification) return 'bg-muted text-muted-foreground border-border'
-  const c = classification.toLowerCase()
-  if (c.includes('pathogenic/likely') || c === 'pathogenic/likely_pathogenic') return 'bg-red-100 text-red-900 border-red-300'
-  if (c === 'pathogenic') return 'bg-red-100 text-red-900 border-red-300'
-  if (c === 'likely pathogenic') return 'bg-orange-100 text-orange-900 border-orange-300'
-  if (c.includes('uncertain') || c === 'vus') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
-  if (c === 'likely benign') return 'bg-blue-100 text-blue-900 border-blue-300'
-  if (c === 'benign') return 'bg-green-100 text-green-900 border-green-300'
+  const c = classification.toUpperCase()
+  if (c === 'P') return 'bg-red-100 text-red-900 border-red-300'
+  if (c === 'LP') return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (c === 'VUS') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (c === 'LB') return 'bg-blue-100 text-blue-900 border-blue-300'
+  if (c === 'B') return 'bg-green-100 text-green-900 border-green-300'
+  // ClinVar significance still uses full strings
+  const cl = classification.toLowerCase()
+  if (cl.includes('pathogenic/likely') || cl === 'pathogenic/likely_pathogenic') return 'bg-red-100 text-red-900 border-red-300'
+  if (cl.includes('pathogenic')) return 'bg-red-100 text-red-900 border-red-300'
+  if (cl.includes('likely_pathogenic') || cl.includes('likely pathogenic')) return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (cl.includes('uncertain')) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (cl.includes('likely_benign') || cl.includes('likely benign')) return 'bg-blue-100 text-blue-900 border-blue-300'
+  if (cl.includes('benign')) return 'bg-green-100 text-green-900 border-green-300'
   return 'bg-muted text-muted-foreground border-border'
 }
 

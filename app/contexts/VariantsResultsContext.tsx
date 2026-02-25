@@ -209,20 +209,42 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       return
     }
 
-    // Check IndexedDB (persists across refreshes)
-    clearState()
+    // No memory cache -- check IndexedDB (async)
+    // CRITICAL: Set isLoading=true to prevent LayoutContent from triggering
+    // loadAllVariants during the async IndexedDB check. Without this,
+    // a race condition causes variant detail panel to not open:
+    //   1. clearState sets isLoading=false, allGenes=[]
+    //   2. LayoutContent sees !isLoading && allGenes.length===0 -> calls loadAllVariants
+    //   3. loadAllVariants wipes disk cache data with setAllGenes([])
+    //   4. variantsReady flickers -> VariantAnalysisView unmounts/remounts
+    //   5. URL ?variant= param already cleaned on first mount -> lost
+    setAllGenes([])
+    setTotalVariants(0)
+    setImpactByAcmg(EMPTY_IMPACT)
+    setLoadProgress(0)
+    setError(null)
+    setIsLoading(true)
+
     getCached<VariantsDiskData>('variant-summaries', sessionId).then(diskData => {
-      if (diskData && currentSessionId.current === sessionId) {
+      // Guard: session may have changed during async IndexedDB read
+      if (currentSessionId.current !== sessionId) return
+
+      if (diskData) {
         console.log('[VariantsResultsContext] Disk cache hit: ' + diskData.allGenes.length + ' genes')
         setAllGenes(diskData.allGenes)
         setTotalVariants(diskData.totalVariants)
         setImpactByAcmg(diskData.impactByAcmg)
         setLoadProgress(100)
-      } else if (!diskData) {
+        setIsLoading(false)
+      } else {
         console.log('[VariantsResultsContext] Disk cache miss for ' + sessionId)
+        setIsLoading(false)
       }
     }).catch(() => {
-      // IndexedDB unavailable, will fetch from network
+      // IndexedDB unavailable, allow network fetch
+      if (currentSessionId.current === sessionId) {
+        setIsLoading(false)
+      }
     })
   }, [sessionId, saveToMemoryCache, clearState])
 
