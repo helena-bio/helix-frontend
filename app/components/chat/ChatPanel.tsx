@@ -484,7 +484,7 @@ export function ChatPanel() {
           {isEmpty && (
             <div className="flex flex-col items-center justify-center h-full gap-8 select-none px-2">
               <div className="flex flex-col items-center gap-2">
-                <img src="/images/logos/logo_helena_text.svg" alt="Helena" className="h-10 w-auto opacity-50 mt-2" />
+                <img src="/images/logos/logo_helena_text.svg" alt="Helena" className="h-10 w-auto opacity-85 mt-2" />
                 <h2 className="text-2xl font-bold tracking-tight text-foreground/70">
                   {chatPrompt.title}
                 </h2>
