@@ -10,10 +10,10 @@ interface HelixLoaderProps {
 }
 
 const sizeMap = {
-  xs: { width: 48, height: 70 },
-  sm: { width: 80, height: 116 },
-  md: { width: 120, height: 174 },
-  lg: { width: 180, height: 262 }
+  xs: { width: 64, height: 93 },
+  sm: { width: 112, height: 163 },
+  md: { width: 160, height: 233 },
+  lg: { width: 224, height: 326 }
 };
 
 export const HelixLoader: React.FC<HelixLoaderProps> = ({
