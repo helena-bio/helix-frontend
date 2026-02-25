@@ -8,7 +8,6 @@
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
@@ -144,16 +143,14 @@ export function Header() {
   return (
     <>
       <div className="h-full flex items-center gap-6 overflow-hidden">
-        {/* Logo */}
-        <Link href="/" className="flex items-center shrink-0 pl-4">
-          <Image
-            src="/images/logos/logo_helena.svg"
-            alt="Helena"
-            width={828}
-            height={170}
-            className="h-8 w-auto"
-            priority
-          />
+        {/* Logo - matching helena.bio header style */}
+        <Link href="/" className="flex flex-col shrink-0 pl-4" style={{ gap: '2px' }}>
+          <span style={{ fontSize: '24px', fontWeight: 300, letterSpacing: '0.28em', lineHeight: 1, color: '#333' }}>
+            HELENA
+          </span>
+          <span style={{ fontSize: '8.5px', fontWeight: 300, letterSpacing: '0.32em', lineHeight: 1, color: '#888' }}>
+            BIOINFORMATICS
+          </span>
         </Link>
 
         {/* Workflow progress - Only during upload workflow */}
@@ -217,7 +214,7 @@ export function Header() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
-           <a
+           
             href="https://helena.bio/docs"
             target="_blank"
             rel="noopener noreferrer"
