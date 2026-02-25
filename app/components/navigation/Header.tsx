@@ -158,7 +158,7 @@ export function Header() {
             alt="Helena"
             width={828}
             height={170}
-            className="h-7 w-auto mt-2"
+            className="h-7 w-auto mt-3"
             priority
           />
         </Link>
