@@ -557,10 +557,8 @@ export function Sidebar() {
               </TooltipProvider>
             </div>
 
-            {/* Chevron centered vertically */}
-            <div className="flex-1 flex items-center justify-center">
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </div>
+            {/* Spacer to push avatar to bottom */}
+            <div className="flex-1" />
 
             {/* User avatar at bottom */}
             <div className="border-t border-border p-1 shrink-0">
