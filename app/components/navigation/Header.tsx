@@ -145,20 +145,20 @@ export function Header() {
     <>
       <div className="h-full flex items-center gap-6 overflow-hidden">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
+        <Link href="/" className="flex items-center gap-2 shrink-0 pl-3">
           <Image
             src="/images/logos/logo_helena_woman.svg"
             alt=""
             width={349}
             height={525}
-            className="h-24 w-auto -my-8"
+            className="h-24 w-auto -my-8 mt-1"
           />
           <Image
             src="/images/logos/logo_helena_text.svg"
             alt="Helena"
             width={828}
             height={170}
-            className="h-7 w-auto"
+            className="h-7 w-auto mt-1"
             priority
           />
         </Link>
