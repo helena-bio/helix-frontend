@@ -144,19 +144,16 @@ export function Header() {
   return (
     <>
       <div className="h-full flex items-center gap-6 overflow-hidden">
-        {/* Logo + tagline */}
-        <Link href="/" className="flex flex-col items-start shrink-0 pl-4">
+        {/* Logo */}
+        <Link href="/" className="flex items-center shrink-0 pl-4">
           <Image
-            src="/images/logos/logo_helena_text.svg"
+            src="/images/logos/logo_helena.svg"
             alt="Helena"
             width={828}
             height={170}
-            className="h-6 w-auto"
+            className="h-8 w-auto"
             priority
           />
-          <span className="text-[10px] tracking-widest text-muted-foreground uppercase mt-0.5">
-            Intelligence for Genomics
-          </span>
         </Link>
 
         {/* Workflow progress - Only during upload workflow */}
@@ -220,7 +217,7 @@ export function Header() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
-           <a  
+           
             href="https://helena.bio/docs"
             target="_blank"
             rel="noopener noreferrer"
