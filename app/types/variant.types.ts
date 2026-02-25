@@ -75,6 +75,9 @@ export interface Variant {
   haploinsufficiency_score: number | null
   triplosensitivity_score: number | null
   acmg_class: string | null
+  acmg_class_original: string | null
+  override_reason: string | null
+  override_user_name: string | null
   acmg_criteria: string | null
   confidence_score: number | null
   pass_quality_filter: boolean | null
@@ -144,7 +147,7 @@ export interface VariantsResponse {
 }
 
 // =============================================================================
-// Gene Aggregated Types (NEW - matches backend /by-gene endpoint)
+// Gene Aggregated Types (matches backend /by-gene endpoint)
 // =============================================================================
 
 /**
@@ -161,6 +164,7 @@ export interface VariantInGene {
   hgvs_protein: string | null
   hgvs_cdna: string | null
   acmg_class: string | null
+  acmg_class_original: string | null
   acmg_criteria: string | null
   confidence_score: number | null
   priority_score: number | null
@@ -277,14 +281,16 @@ export interface CaseNote {
   created_at: string
 }
 
+/**
+ * Override result from DuckDB-native storage (v4.0).
+ * When acmg_class_original is non-null, variant has been reclassified.
+ */
 export interface VariantOverride {
-  id: string
-  user: NoteAuthor
   variant_idx: number
-  original_class: string
-  new_class: string
-  reason: string
-  created_at: string
+  acmg_class: string
+  acmg_class_original: string | null
+  override_reason: string | null
+  override_user_name: string | null
 }
 
 // =============================================================================

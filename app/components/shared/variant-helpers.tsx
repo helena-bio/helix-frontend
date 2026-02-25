@@ -222,17 +222,25 @@ export const formatAlleles = (ref: string | null | undefined, alt: string | null
 // ============================================================================
 // OVERRIDE HELPERS
 // ============================================================================
-
 /**
  * Resolve the effective ACMG class considering overrides.
- * Returns the display class and whether it was overridden.
+ * In v4.0, override data lives directly on the variant object.
+ * When acmg_class_original is non-null, variant has been reclassified.
  */
 export function getEffectiveACMGClass(
-  originalClass: string | null | undefined,
-  override: { new_class: string } | null | undefined
+  variant: { acmg_class?: string | null; acmg_class_original?: string | null }
 ): { displayClass: string | null; isOverridden: boolean } {
-  if (override) {
-    return { displayClass: override.new_class, isOverridden: true }
+  if (variant.acmg_class_original) {
+    return { displayClass: variant.acmg_class ?? null, isOverridden: true }
   }
-  return { displayClass: originalClass ?? null, isOverridden: false }
+  return { displayClass: variant.acmg_class ?? null, isOverridden: false }
+}
+
+/**
+ * Check if a variant has been reclassified.
+ */
+export function isReclassified(
+  variant: { acmg_class_original?: string | null }
+): boolean {
+  return variant.acmg_class_original != null
 }

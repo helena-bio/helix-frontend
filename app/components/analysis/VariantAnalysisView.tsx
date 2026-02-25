@@ -30,6 +30,7 @@ import {
   ChevronUp,
   Filter,
   Info,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -152,6 +153,14 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
     <SharedVariantCard
       variant={toSharedVariant(variant)}
       onViewDetails={onViewDetails}
+      collapsedRight={
+        variant.acmg_class_original ? (
+          <Badge variant="outline" className="text-tiny bg-violet-100 text-violet-900 border-violet-300">
+            <ArrowRightLeft className="h-3 w-3 mr-1" />
+            Reclassified
+          </Badge>
+        ) : undefined
+      }
     />
   )
 }

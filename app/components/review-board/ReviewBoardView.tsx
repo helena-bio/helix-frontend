@@ -7,6 +7,8 @@
  * Gene sections expand to show individual variant rows.
  * Notes integration for collaborative clinical annotation.
  * Reclassification (override) support for clinical variant review.
+ *
+ * v4.0: Overrides stored in DuckDB. Only latest override per variant.
  */
 
 import { useState, useMemo, useEffect } from 'react'
@@ -25,6 +27,7 @@ import {
   Check,
   X,
   ArrowRightLeft,
+  Undo2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -39,11 +42,10 @@ import {
   getImpactColor,
   formatImpactDisplay,
   formatACMGDisplay,
-  getEffectiveACMGClass,
   SharedVariantCard,
   type SharedVariantData,
 } from '@/components/shared'
-import type { Variant, CaseNote, VariantOverride } from '@/types/variant.types'
+import type { Variant, CaseNote } from '@/types/variant.types'
 
 interface ReviewBoardViewProps {
   sessionId: string
@@ -74,13 +76,6 @@ const ACMG_OPTIONS: { code: string; label: string }[] = [
   { code: 'LB', label: 'Likely Benign' },
   { code: 'B', label: 'Benign' },
 ]
-
-/** Convert full ACMG class name to short API code */
-const acmgToCode = (cls: string | null | undefined): string => {
-  if (!cls) return ''
-  const opt = ACMG_OPTIONS.find((o) => o.label === cls || o.code === cls)
-  return opt?.code ?? ''
-}
 
 interface GeneGroup {
   gene_symbol: string
@@ -361,26 +356,26 @@ function NotesSection({ sessionId, variantIdx }: NotesSectionProps) {
 }
 
 // ============================================================================
-// RECLASSIFY SECTION
+// RECLASSIFY SECTION (v4.0: DuckDB-native, single override)
 // ============================================================================
 
 interface ReclassifySectionProps {
   variantIdx: number
-  originalClass: string | null
+  currentClass: string | null
 }
 
-function ReclassifySection({ variantIdx, originalClass }: ReclassifySectionProps) {
-  const { getOverrides, getLatestOverride, addOverride } = useReviewBoard()
+function ReclassifySection({ variantIdx, currentClass }: ReclassifySectionProps) {
+  const { getOverride, addOverride, removeOverride } = useReviewBoard()
   const [newClass, setNewClass] = useState('')
   const [reason, setReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isReverting, setIsReverting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const overrides = getOverrides(variantIdx)
-  const latestOverride = getLatestOverride(variantIdx)
-  const effectiveClass = latestOverride?.new_class || originalClass
+  const override = getOverride(variantIdx)
+  const effectiveClass = override ? override.acmg_class : currentClass
 
-  const effectiveCode = acmgToCode(effectiveClass)
+  const effectiveCode = effectiveClass?.toUpperCase() ?? ''
   const availableOptions = ACMG_OPTIONS.filter((o) => o.code !== effectiveCode)
   const canSubmit = newClass !== '' && reason.trim().length >= 10 && !isSubmitting
 
@@ -400,12 +395,64 @@ function ReclassifySection({ variantIdx, originalClass }: ReclassifySectionProps
     }
   }
 
+  const handleRevert = async () => {
+    setIsReverting(true)
+    setSubmitError(null)
+    try {
+      await removeOverride(variantIdx)
+    } catch (err) {
+      console.error('Failed to revert reclassification:', err)
+      setSubmitError('Failed to revert reclassification')
+    } finally {
+      setIsReverting(false)
+    }
+  }
+
   return (
     <div className="border-t pt-4 space-y-4">
       <div className="flex items-center gap-2">
         <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
         <p className="text-md font-semibold">Reclassify Variant</p>
       </div>
+
+      {/* Current override info */}
+      {override && (
+        <div className="p-3 rounded-lg bg-violet-50/50 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={`text-tiny ${getACMGColor(override.acmg_class_original)}`}>
+                <span className="line-through">{formatACMGDisplay(override.acmg_class_original)}</span>
+              </Badge>
+              <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+              <Badge variant="outline" className={`text-tiny ${getACMGColor(override.acmg_class)}`}>
+                {formatACMGDisplay(override.acmg_class)}
+              </Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-sm text-muted-foreground"
+              onClick={handleRevert}
+              disabled={isReverting}
+            >
+              {isReverting ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <Undo2 className="h-3 w-3 mr-1" />
+              )}
+              Revert
+            </Button>
+          </div>
+          {override.override_user_name && (
+            <p className="text-tiny text-muted-foreground">
+              Reclassified by {override.override_user_name}
+            </p>
+          )}
+          {override.override_reason && (
+            <p className="text-md text-muted-foreground whitespace-pre-wrap">{override.override_reason}</p>
+          )}
+        </div>
+      )}
 
       {/* Reclassification form */}
       <div className="space-y-3">
@@ -468,7 +515,7 @@ function ReclassifySection({ variantIdx, originalClass }: ReclassifySectionProps
             ) : (
               <Check className="h-3 w-3 mr-1" />
             )}
-            Submit Reclassification
+            {override ? 'Update Reclassification' : 'Submit Reclassification'}
           </Button>
           <Button
             variant="outline"
@@ -481,42 +528,6 @@ function ReclassifySection({ variantIdx, originalClass }: ReclassifySectionProps
           </Button>
         </div>
       </div>
-
-      {/* Override history */}
-      {overrides.length > 0 && (
-        <div className="space-y-2 pt-2">
-          <p className="text-md font-semibold text-muted-foreground">
-            Reclassification History ({overrides.length})
-          </p>
-          {overrides.map((override) => (
-            <div key={override.id} className="flex gap-3 p-3 rounded-lg bg-violet-50/50">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center">
-                <span className="text-tiny font-medium text-violet-700">{override.user.initials}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-md font-medium">{override.user.name}</span>
-                  <span className="text-tiny text-muted-foreground">
-                    {new Date(override.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className={`text-tiny ${getACMGColor(override.original_class)}`}>
-                    <span className="line-through">{formatACMGDisplay(override.original_class)}</span>
-                  </Badge>
-                  <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                  <Badge variant="outline" className={`text-tiny ${getACMGColor(override.new_class)}`}>
-                    {formatACMGDisplay(override.new_class)}
-                  </Badge>
-                </div>
-                <p className="text-md mt-1 text-muted-foreground whitespace-pre-wrap">{override.reason}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
@@ -532,12 +543,14 @@ interface ReviewVariantRowProps {
 }
 
 function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRowProps) {
-  const { getLatestOverride } = useReviewBoard()
+  const { getOverride } = useReviewBoard()
   const [showNotes, setShowNotes] = useState(false)
   const [showReclassify, setShowReclassify] = useState(false)
 
-  const latestOverride = getLatestOverride(variant.variant_idx)
-  const { displayClass, isOverridden } = getEffectiveACMGClass(variant.acmg_class, latestOverride)
+  // Check context first (for just-created overrides), then variant data
+  const override = getOverride(variant.variant_idx)
+  const isOverridden = override != null || variant.acmg_class_original != null
+  const displayClass = override ? override.acmg_class : variant.acmg_class
 
   const sharedVariant = useMemo(() => {
     const base = toSharedVariant(variant)
@@ -584,7 +597,7 @@ function ReviewVariantRow({ variant, sessionId, onViewDetails }: ReviewVariantRo
       afterFooter={
         <>
           {showNotes && <NotesSection sessionId={sessionId} variantIdx={variant.variant_idx} />}
-          {showReclassify && <ReclassifySection variantIdx={variant.variant_idx} originalClass={variant.acmg_class} />}
+          {showReclassify && <ReclassifySection variantIdx={variant.variant_idx} currentClass={variant.acmg_class} />}
         </>
       }
     />

@@ -391,6 +391,16 @@ export async function createOverride(
   })
 }
 
+/**
+ * Revert a variant to its original AI-assigned classification.
+ */
+export async function revertOverride(
+  sessionId: string,
+  variantIdx: number
+): Promise<VariantOverride> {
+  return del<VariantOverride>(`/sessions/${sessionId}/overrides/${variantIdx}`)
+}
+
 // =============================================================================
 // Review Board API
 // =============================================================================
