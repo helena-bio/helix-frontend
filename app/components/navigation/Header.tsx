@@ -144,15 +144,8 @@ export function Header() {
   return (
     <>
       <div className="h-full flex items-center gap-6 overflow-hidden">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 pl-3">
-          <Image
-            src="/images/logos/logo_helena_woman.svg"
-            alt=""
-            width={349}
-            height={525}
-            className="h-28 w-auto -my-10 -mt-5"
-          />
+        {/* Logo + tagline */}
+        <Link href="/" className="flex flex-col items-start shrink-0 pl-4">
           <Image
             src="/images/logos/logo_helena_text.svg"
             alt="Helena"
@@ -161,6 +154,9 @@ export function Header() {
             className="h-6 w-auto"
             priority
           />
+          <span className="text-[10px] tracking-widest text-muted-foreground uppercase mt-0.5">
+            Intelligence for Genomics
+          </span>
         </Link>
 
         {/* Workflow progress - Only during upload workflow */}
@@ -224,8 +220,8 @@ export function Header() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
-          <a 
-            href="https://helixinsight.bio/docs"
+           <a  
+            href="https://helena.bio/docs"
             target="_blank"
             rel="noopener noreferrer"
             className="text-md text-muted-foreground hover:text-foreground transition-colors"
