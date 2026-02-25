@@ -214,7 +214,7 @@ export function Header() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
-           
+           <a
             href="https://helena.bio/docs"
             target="_blank"
             rel="noopener noreferrer"
