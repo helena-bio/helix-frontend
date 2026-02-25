@@ -20,8 +20,14 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
   size = 'sm',
   className = '',
   centered = false,
+  animated = true,
 }) => {
   const { width, height } = sizeMap[size];
+
+  // Static PNG when not loading, animated GIF when loading
+  const imageSrc = animated
+    ? '/images/logos/loader_helena.gif'
+    : '/images/logos/logo_helena_woman.png';
 
   const content = (
     <div
@@ -29,8 +35,8 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
       style={{ width: `${width}px`, height: `${height}px` }}
     >
       <img
-        src="/images/logos/loader_helena.gif"
-        alt="Loading"
+        src={imageSrc}
+        alt={animated ? 'Loading' : 'Helena'}
         style={{
           width: `${width}px`,
           height: `${height}px`,
