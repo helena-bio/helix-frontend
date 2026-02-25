@@ -19,10 +19,16 @@
  * - Clickable ACMG cards with local filtering
  * - Clickable Impact cards with local filtering
  * - Sorted by ACMG classification priority (backend)
+ *
+ * VARIANT SELECTION:
+ * - URL ?variant= is source of truth for deep links (from dashboard)
+ * - Local state for in-page clicks (gene list -> detail panel)
+ * - URL survives component remounts (layout switches)
+ * - URL cleaned only on explicit Back action
  */
 
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import {
   Microscope,
   Loader2,
@@ -322,31 +328,56 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
     loadGeneVariants,
   } = useVariantsResults()
 
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // ========================================================================
+  // VARIANT SELECTION - URL as source of truth for deep links
+  //
+  // Two sources of variant selection:
+  // 1. URL ?variant= (from dashboard deep link) - survives remounts
+  // 2. Local state (from gene list click) - fast, no navigation
+  //
+  // URL takes priority. This prevents the race condition where:
+  //   1. LayoutContent switches from <main> to <SplitView>
+  //   2. Component unmounts/remounts (different React tree)
+  //   3. Local state resets to null
+  //   4. But URL still has ?variant= so detail panel shows
+  // ========================================================================
+  const urlVariantIdx = useMemo(() => {
+    const v = searchParams.get('variant')
+    if (v !== null) {
+      const idx = parseInt(v, 10)
+      return isNaN(idx) ? null : idx
+    }
+    return null
+  }, [searchParams])
+
+  const [localVariantIdx, setLocalVariantIdx] = useState<number | null>(null)
+
+  // Effective selection: URL deep link takes priority over local clicks
+  const selectedVariantIdx = urlVariantIdx ?? localVariantIdx
+
+  // Back handler: clear both sources
+  const handleBackToAnalysis = useCallback(() => {
+    setLocalVariantIdx(null)
+    if (urlVariantIdx !== null) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('variant')
+      router.replace(url.pathname + url.search, { scroll: false })
+    }
+  }, [urlVariantIdx, router])
+
+  // View variant detail from gene list click (local state, instant)
+  const handleViewVariantDetails = useCallback((variantIdx: number) => {
+    setLocalVariantIdx(variantIdx)
+  }, [])
+
   // Local state for filters
   const [geneFilter, setGeneFilter] = useState('')
   const [acmgFilter, setAcmgFilter] = useState<ACMGFilter>('all')
   const [impactFilter, setImpactFilter] = useState<ImpactFilter>('all')
-  const [selectedVariantIdx, setSelectedVariantIdx] = useState<number | null>(null)
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
-
-  // Read variant from URL param (deep link from dashboard findings)
-  const searchParams = useSearchParams()
-  const variantParamConsumed = useRef(false)
-  useEffect(() => {
-    if (variantParamConsumed.current) return
-    const variantParam = searchParams.get('variant')
-    if (variantParam !== null) {
-      const idx = parseInt(variantParam, 10)
-      if (!isNaN(idx)) {
-        setSelectedVariantIdx(idx)
-        variantParamConsumed.current = true
-        // Clean variant from URL to prevent re-triggering on back navigation
-        const url = new URL(window.location.href)
-        url.searchParams.delete('variant')
-        window.history.replaceState({}, '', url.toString())
-      }
-    }
-  }, [searchParams])
 
   // Intersection Observer for lazy loading VISUALIZATION (not data)
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -462,7 +493,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
       <VariantDetailPanel
         sessionId={sessionId}
         variantIdx={selectedVariantIdx}
-        onBack={() => setSelectedVariantIdx(null)}
+        onBack={handleBackToAnalysis}
       />
     )
   }
@@ -616,7 +647,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
               gene={gene}
               rank={idx + 1}
               sessionId={sessionId}
-              onViewVariantDetails={setSelectedVariantIdx}
+              onViewVariantDetails={handleViewVariantDetails}
               onLoadVariants={handleLoadGeneVariants}
               acmgFilter={acmgFilter}
               impactFilter={impactFilter}
