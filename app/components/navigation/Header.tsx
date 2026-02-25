@@ -144,21 +144,15 @@ export function Header() {
   return (
     <>
       <div className="h-full flex items-center gap-6 overflow-hidden">
-        {/* Logo - Bulb first, then text */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
+        {/* Logo */}
+        <Link href="/" className="flex items-center shrink-0 pl-6">
           <Image
-            src="/images/logos/logo_bulb.svg"
-            alt=""
-            width={32}
-            height={40}
-            className="h-11 w-auto"
-          />
-          <Image
-            src="/images/logos/logo_helix.svg"
-            alt="Helix Insight"
-            width={160}
-            height={48}
+            src="/images/logos/logo_helena_text.svg"
+            alt="Helena"
+            width={828}
+            height={170}
             className="h-10 w-auto"
+            priority
           />
         </Link>
 
@@ -223,7 +217,7 @@ export function Header() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
-           <a
+          <a 
             href="https://helixinsight.bio/docs"
             target="_blank"
             rel="noopener noreferrer"
