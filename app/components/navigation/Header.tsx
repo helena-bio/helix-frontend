@@ -151,7 +151,7 @@ export function Header() {
             alt=""
             width={349}
             height={525}
-            className="h-18 w-auto -my-5"
+            className="h-20 w-auto -my-6"
           />
           <Image
             src="/images/logos/logo_helena_text.svg"
