@@ -207,6 +207,32 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
     )
   }, [gene.variants, acmgFilter, impactFilter])
 
+    // Variant count respects active filters
+    const displayCount = useMemo(() => {
+      if (acmgFilter === 'all' && impactFilter === 'all') return gene.variant_count
+      if (acmgFilter !== 'all' && impactFilter === 'all') {
+        switch (acmgFilter) {
+          case 'P': return gene.pathogenic_count
+          case 'LP': return gene.likely_pathogenic_count
+          case 'VUS': return gene.vus_count
+          case 'LB': return gene.likely_benign_count
+          case 'B': return gene.benign_count
+          default: return gene.variant_count
+        }
+      }
+      if (acmgFilter === 'all' && impactFilter !== 'all') {
+        switch (impactFilter) {
+          case 'HIGH': return gene.high_impact_count
+          case 'MODERATE': return gene.moderate_impact_count
+          case 'LOW': return gene.low_impact_count
+          case 'MODIFIER': return gene.modifier_impact_count
+          default: return gene.variant_count
+        }
+      }
+      if (gene.variants) return visibleVariants.length
+      return gene.variant_count
+    }, [acmgFilter, impactFilter, gene, visibleVariants.length])
+
   return (
     <Card className="gap-0">
       <CardHeader
@@ -233,7 +259,7 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, onLoadVarian
           {/* Right: Variant count + Chevron */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
-              {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
+              {displayCount} variant{displayCount !== 1 ? 's' : ''}
             </span>
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>

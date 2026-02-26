@@ -230,6 +230,18 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, tierFilter }
     return gene.variants.filter(v => v.tier === tierFilter)
   }, [gene.variants, tierFilter])
 
+    // Variant count respects tier filter
+    const displayCount = useMemo(() => {
+      if (tierFilter === 'all') return gene.variant_count
+      switch (tierFilter) {
+        case 'TIER_1': return gene.tier_1_count ?? 0
+        case 'TIER_2': return gene.tier_2_count ?? 0
+        case 'TIER_3': return gene.tier_3_count ?? 0
+        case 'TIER_4': return gene.tier_4_count ?? 0
+        default: return gene.variant_count
+      }
+    }, [tierFilter, gene])
+
   return (
     <Card className="gap-0">
       <CardHeader
@@ -245,7 +257,7 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, tierFilter }
               {formatTierDisplay(gene.best_tier)}
             </Badge>
             <Badge variant="secondary" className="text-sm">
-              {gene.variant_count} variant{gene.variant_count !== 1 ? 's' : ''}
+              {displayCount} variant{displayCount !== 1 ? 's' : ''}
             </Badge>
             <Badge variant="outline" className={`text-sm ${getACMGColor(gene.best_acmg_class)}`}>
               {formatACMGDisplay(gene.best_acmg_class)}
