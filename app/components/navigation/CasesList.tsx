@@ -168,13 +168,16 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
     deleteMutation.mutate(sessionId, {
       onSettled: () => {
         setDeletingId(null)
+        if (sessionId === upload.sessionId) {
+          upload.resetUpload()
+        }
         if (sessionId === currentSessionId) {
           setCurrentSessionId(null)
           router.push('/')
         }
       },
     })
-  }, [deleteMutation, currentSessionId, setCurrentSessionId, router])
+  }, [deleteMutation, currentSessionId, setCurrentSessionId, router, upload])
 
   const handleNewCase = useCallback(() => {
     setCurrentSessionId(null)
@@ -273,13 +276,39 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                       <p className="text-md font-medium truncate leading-tight">
                         {upload.caseName || upload.fileName || "Uploading..."}
                       </p>
-                      <button
-                        className="p-0.5 rounded hover:bg-destructive/10 shrink-0 opacity-0 group-hover/upload:opacity-100 transition-opacity"
-                        onClick={(e) => { e.stopPropagation(); upload.resetUpload() }}
-                        title="Cancel"
-                      >
-                        <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                      </button>
+                      <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover/upload:opacity-100 transition-opacity">
+                        {upload.phase === "qc_results" && upload.sessionId && (
+                          <button
+                            className="p-0.5 rounded hover:bg-accent"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingId(upload.sessionId)
+                              setEditValue(upload.caseName || upload.fileName || "")
+                            }}
+                            title="Rename"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                        )}
+                        <button
+                          className="p-0.5 rounded hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (upload.phase === 'qc_results' && upload.sessionId) {
+                              handleDelete(e, upload.sessionId)
+                            } else {
+                              upload.resetUpload()
+                            }
+                          }}
+                          title={upload.phase === "qc_results" ? "Delete" : "Cancel"}
+                        >
+                          {upload.phase === "qc_results" ? (
+                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                          ) : (
+                            <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-sm text-muted-foreground">
