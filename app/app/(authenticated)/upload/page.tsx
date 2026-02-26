@@ -18,7 +18,7 @@
  * - When journey reaches analysis step, redirects to /analysis?session=<uuid>
  */
 import { useEffect, useCallback, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -48,11 +48,13 @@ export default function UploadPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Redirect to /analysis when journey reaches analysis step
+  // Guard: only redirect if we're actually on /upload (not mid-navigation from sidebar)
+  const pathname = usePathname()
   useEffect(() => {
-    if (currentStep === 'analysis' && currentSessionId) {
+    if (currentStep === 'analysis' && currentSessionId && pathname === '/upload') {
       router.push(`/analysis?session=${currentSessionId}`)
     }
-  }, [currentStep, currentSessionId, router])
+  }, [currentStep, currentSessionId, router, pathname])
 
   // Handle upload complete - add sessionId to URL
   const handleUploadComplete = (sessionId: string) => {
