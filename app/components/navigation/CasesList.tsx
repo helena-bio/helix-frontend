@@ -252,7 +252,9 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
               <div
                 className={cn(
                   "group/upload relative rounded-md px-2 py-1.5 cursor-pointer transition-colors",
-                  "bg-primary/5 border border-primary/20 hover:bg-primary/10"
+                  upload.phase === "qc_results" || upload.phase === "error"
+                    ? "hover:bg-accent"
+                    : "bg-primary/5 border border-primary/20 hover:bg-primary/10"
                 )}
                 onClick={() => router.push("/upload")}
               >
