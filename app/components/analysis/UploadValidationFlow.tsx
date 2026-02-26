@@ -131,18 +131,19 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   // Computed values
   const fileSize = useMemo(() => {
-    if (!selectedFile) return null
-    const mb = selectedFile.size / (1024 * 1024)
-    const gb = selectedFile.size / (1024 * 1024 * 1024)
+    const size = selectedFile?.size ?? upload.fileSize
+    if (!size) return null
+    const mb = size / (1024 * 1024)
+    const gb = size / (1024 * 1024 * 1024)
 
     if (gb >= 1) {
       return `${gb.toFixed(2)} GB`
     } else if (mb < 1) {
-      return `${(selectedFile.size / 1024).toFixed(1)} KB`
+      return `${(size / 1024).toFixed(1)} KB`
     } else {
       return `${mb.toFixed(2)} MB`
     }
-  }, [selectedFile])
+  }, [selectedFile, upload.fileSize])
 
   const canSubmit = useMemo(() => {
     return !!(selectedFile && !upload.isActive && !validationError)
@@ -332,10 +333,11 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   // Download QC report
   const handleDownloadQC = useCallback(() => {
-    if (!qcResults || !selectedFile) return
+    if (!qcResults) return
+    const displayName = selectedFile?.name || upload.fileName || 'unknown'
 
     const report = {
-      file: selectedFile.name,
+      file: displayName,
       timestamp: new Date().toISOString(),
       qc: {
         samples: qcResults.sampleCount,
@@ -350,7 +352,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     a.download = 'qc-report.json'
     a.click()
     URL.revokeObjectURL(url)
-  }, [qcResults, selectedFile])
+  }, [qcResults, selectedFile, upload.fileName])
 
   // Get current preset info for display
   const currentPresetInfo = FILTERING_PRESETS.find(p => p.id === filteringPreset) || FILTERING_PRESETS[0]
@@ -383,7 +385,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 <h3 className="text-lg font-semibold mb-2">File</h3>
                 <div className="flex items-center gap-2">
                   <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <p className="text-base font-medium">{selectedFile?.name}</p>
+                  <p className="text-base font-medium">{selectedFile?.name || upload.fileName || "-"}</p>
                   <span className="text-muted-foreground">-</span>
                   <p className="text-md text-muted-foreground">{fileSize}</p>
                     {/* Subtle indicator that file was auto-compressed (only visible after QC) */}
