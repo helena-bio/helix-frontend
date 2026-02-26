@@ -112,10 +112,9 @@ export function Sidebar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isUserMenuOpen])
 
-  // Auto-collapse cases and open modules when a case is selected
+  // Open modules when a case is selected (keep cases open)
   useEffect(() => {
     if (currentSessionId) {
-      setIsCasesOpen(false)
       setIsModulesOpen(true)
     }
   }, [currentSessionId])
