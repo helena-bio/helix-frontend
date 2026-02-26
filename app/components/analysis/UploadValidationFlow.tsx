@@ -621,6 +621,51 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     )
   }
 
+  // Render - Active upload in progress (returned to page without file object)
+  if (isProcessing && !selectedFile) {
+    return (
+      <div className="flex flex-col min-h-[600px] p-8">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
+          <div className="flex items-center justify-center gap-4">
+            <HelixLoader size="xs" speed={3} animated={true} />
+            <div className="text-center">
+              <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
+              <p className="text-base text-muted-foreground">
+                Upload a genetic variant file
+              </p>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center gap-6 text-center">
+                <div className="p-6 rounded-full bg-primary/10">
+                  <FileCode className="h-12 w-12 text-primary" />
+                </div>
+
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-lg font-medium">{upload.fileName || 'Processing...'}</p>
+                  <p className="text-base text-muted-foreground">
+                    {upload.phase === 'compressing' && 'Auto-compressing...'}
+                    {upload.phase === 'uploading' && 'Uploading to server...'}
+                    {upload.phase === 'validating' && 'Validating file format...'}
+                  </p>
+                </div>
+
+                <div className="w-full max-w-sm space-y-2">
+                  <Progress value={currentProgress} className="h-2" />
+                  <p className="text-sm text-muted-foreground text-center">
+                    {upload.phase === 'uploading' ? `${uploadProgress}%` : `${currentProgress}%`}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   // Render - Unified Selection/Upload/Validation State
   return (
     <div className="flex flex-col min-h-[600px] p-8">
