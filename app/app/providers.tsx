@@ -15,6 +15,7 @@ import { Toaster } from '@helix/shared/components/ui/sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { SessionProvider } from '@/contexts/SessionContext'
 import { JourneyProvider } from '@/contexts/JourneyContext'
+import { UploadProvider } from '@/contexts/UploadContext'
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -48,7 +49,9 @@ export function Providers({ children }: ProvidersProps) {
         <AuthProvider>
           <SessionProvider>
             <JourneyProvider>
-              {children}
+              <UploadProvider>
+                {children}
+              </UploadProvider>
               <Toaster />
             </JourneyProvider>
           </SessionProvider>

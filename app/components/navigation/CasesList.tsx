@@ -44,6 +44,7 @@ import { useRenameCase, useDeleteCase } from '@/hooks/mutations/use-case-mutatio
 import { Button } from '@helix/shared/components/ui/button'
 import { cn } from '@helix/shared/lib/utils'
 import type { AnalysisSession } from '@/types/variant.types'
+import { useUploadContext } from '@/contexts/UploadContext'
 
 
 function formatRelativeDate(dateStr: string): string {
@@ -95,6 +96,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const { skipToAnalysis, resetJourney } = useJourney()
   const { user } = useAuth()
 
+  const upload = useUploadContext()
   const [showAll, setShowAll] = useState(false)
   const { data, isLoading } = useCases(!showAll)
   const renameMutation = useRenameCase()
@@ -244,6 +246,51 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
 
           {/* Cases list */}
           <div className="overflow-y-auto space-y-0.5 scrollbar-thin">
+
+            {/* Active upload entry */}
+            {upload.isActive && (
+              <div
+                className={cn(
+                  "relative rounded-md px-2 py-1.5 cursor-pointer transition-colors",
+                  "bg-primary/5 border border-primary/20 hover:bg-primary/10"
+                )}
+                onClick={() => router.push("/upload")}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5">
+                    {upload.phase === "error" ? (
+                      <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
+                    ) : upload.phase === "qc_results" ? (
+                      <CheckCircle2 className="h-3 w-3 text-green-600 shrink-0" />
+                    ) : (
+                      <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-md font-medium truncate leading-tight">
+                      {upload.caseName || upload.fileName || "Uploading..."}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-sm text-muted-foreground">
+                        {upload.phase === "compressing" && "Compressing..."}
+                        {upload.phase === "uploading" && `Uploading ${upload.uploadProgress}%`}
+                        {upload.phase === "validating" && "Validating..."}
+                        {upload.phase === "qc_results" && "Ready to process"}
+                        {upload.phase === "error" && "Failed"}
+                      </span>
+                    </div>
+                    {(upload.phase === "compressing" || upload.phase === "uploading" || upload.phase === "validating") && (
+                      <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-300"
+                          style={{ width: `${upload.currentProgress}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

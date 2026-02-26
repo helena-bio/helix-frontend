@@ -36,12 +36,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelixLoader } from '@/components/ui/helix-loader'
-import { useUploadVCF, useStartValidation } from '@/hooks/mutations'
+// Upload/validation logic moved to UploadContext
 import { useCases } from '@/hooks/queries/use-cases'
-import { useTaskStatus } from '@/hooks/queries'
+
 import { useRouter } from 'next/navigation'
 import { useJourney } from '@/contexts/JourneyContext'
-import { useFileCompression } from '@/hooks/useFileCompression'
+import { useUploadContext } from '@/contexts/UploadContext'
+
 import { toast } from 'sonner'
 
 // Constants
@@ -87,22 +88,28 @@ interface UploadValidationFlowProps {
 }
 
 export function UploadValidationFlow({ onComplete, onError, filteringPreset = 'strict', onFilteringPresetChange }: UploadValidationFlowProps) {
-  // Flow state
-  const [phase, setPhase] = useState<FlowPhase>('selection')
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [taskId, setTaskId] = useState<string | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [qcResults, setQcResults] = useState<QCResults | null>(null)
+  // Upload state from global context (survives navigation)
+  const upload = useUploadContext()
+
+  // Derive local aliases for backward-compatible JSX
+  const phase: FlowPhase = upload.phase === 'idle' ? 'selection' : upload.phase as FlowPhase
+  const sessionId = upload.sessionId
+  const errorMessage = upload.errorMessage
+  const qcResults = upload.qcResults ? {
+    totalVariants: upload.qcResults.totalVariants,
+    sampleCount: upload.qcResults.sampleCount,
+    genomeBuild: upload.qcResults.genomeBuild,
+  } : null
 
   // File selection state
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [caseName, setCaseName] = useState<string>('')
   const [validationError, setValidationError] = useState<string | null>(null)
-  const [compressionProgress, setCompressionProgress] = useState(0)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [validationProgress, setValidationProgress] = useState(0)
-  const [wasCompressed, setWasCompressed] = useState(false) // Track if file was auto-compressed
+  const compressionProgress = upload.compressionProgress
+  const uploadProgress = upload.uploadProgress
+  const validationProgress = upload.validationProgress
+  const wasCompressed = upload.wasCompressed
   const [duplicateSession, setDuplicateSession] = useState<{ id: string; label: string } | null>(null)
 
   // Settings panel state
@@ -113,54 +120,14 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
 
-  // Mutations
-  const uploadMutation = useUploadVCF()
-  const startValidationMutation = useStartValidation()
-
-  // Compression hook
-  const { compress, shouldCompress, isSupported: isCompressionSupported } = useFileCompression()
-
   // Journey context
   const { nextStep } = useJourney()
   const router = useRouter()
   const { skipToAnalysis } = useJourney()
   const { data: casesData } = useCases()
 
-  // Poll task status when validating
-  const { data: taskStatus } = useTaskStatus(taskId, {
-    enabled: !!taskId && phase === 'validating',
-  })
+  // Validation handled by UploadContext
 
-  // Handle validation task completion
-  useEffect(() => {
-    if (!taskStatus || phase !== 'validating') return
-
-    // Update progress from task info
-    if (taskStatus.info?.progress) {
-      setValidationProgress(taskStatus.info.progress)
-    }
-
-    if (taskStatus.ready) {
-      if (taskStatus.successful) {
-        // Store QC results and show QC screen
-        setQcResults({
-          totalVariants: taskStatus.result?.total_variants || 0,
-          sampleCount: taskStatus.result?.sample_count || 1,
-          genomeBuild: taskStatus.result?.genome_build || 'Unknown',
-        })
-        setPhase('qc_results')
-
-        toast.success('File validated successfully', {
-          description: `${taskStatus.result?.total_variants?.toLocaleString() || 'Unknown'} variants found`,
-        })
-      } else if (taskStatus.failed) {
-        const error = taskStatus.result?.error || 'Validation failed'
-        setPhase('error')
-        setErrorMessage(error)
-        onError?.(new Error(error))
-      }
-    }
-  }, [taskStatus, phase, onError])
 
   // Computed values
   const fileSize = useMemo(() => {
@@ -178,11 +145,11 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   }, [selectedFile])
 
   const canSubmit = useMemo(() => {
-    return !!(selectedFile && phase === 'selection' && !validationError)
+    return !!(selectedFile && !upload.isActive && !validationError)
   }, [selectedFile, phase, validationError])
 
   // Is processing (compressing, uploading or validating)
-  const isProcessing = phase === 'compressing' || phase === 'uploading' || phase === 'validating'
+  const isProcessing = upload.phase === 'compressing' || upload.phase === 'uploading' || upload.phase === 'validating'
 
   // Get button text based on phase
   const getButtonText = () => {
@@ -198,19 +165,8 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     }
   }
 
-  // Get current progress based on phase
-  const currentProgress = useMemo(() => {
-    switch (phase) {
-      case 'compressing':
-        return compressionProgress
-      case 'uploading':
-        return uploadProgress
-      case 'validating':
-        return validationProgress || 10
-      default:
-        return 0
-    }
-  }, [phase, compressionProgress, uploadProgress, validationProgress])
+  // Get current progress from context
+  const currentProgress = upload.currentProgress
 
   // File validation
   const validateFile = useCallback((file: File): string | null => {
@@ -341,196 +297,32 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     }
   }, [])
 
-  // Submit handler - AUTO-COMPRESS then upload
+  // Submit handler - delegates to UploadContext
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !selectedFile) return
+    upload.startUpload(selectedFile, caseName, retainFile)
+  }, [canSubmit, selectedFile, caseName, retainFile, upload])
 
-    const totalStartTime = performance.now()
-
-    setCompressionProgress(0)
-    setUploadProgress(0)
-    setValidationProgress(0)
-
-    console.log('='.repeat(80))
-    console.log('[FRONTEND UPLOAD] START')
-    console.log('='.repeat(80))
-    console.log(`[FILE INFO] Name: ${selectedFile.name}`)
-    console.log(`[FILE INFO] Size: ${(selectedFile.size / (1024**2)).toFixed(2)} MB (${selectedFile.size.toLocaleString()} bytes)`)
-    console.log(`[FILE INFO] Type: ${selectedFile.type}`)
-    console.log(`[COMPRESSION] Supported: ${isCompressionSupported}`)
-
-    try {
-      let fileToUpload = selectedFile
-      let compressionTime = 0
-      let compressionRatio = 1
-
-      // AUTO-COMPRESS if beneficial (ONLY .vcf files, NOT .vcf.gz)
-      if (isCompressionSupported && shouldCompress(selectedFile)) {
-        try {
-          console.log('[COMPRESSION] Starting compression...')
-          setPhase('compressing')
-
-          const compressionStart = performance.now()
-
-          // Compress file with progress tracking
-          fileToUpload = await compress(selectedFile, (progress) => {
-            setCompressionProgress(progress)
-          })
-
-          compressionTime = (performance.now() - compressionStart) / 1000
-          compressionRatio = selectedFile.size / fileToUpload.size
-          setWasCompressed(true)
-
-          console.log(`[COMPRESSION] Complete in ${compressionTime.toFixed(2)}s`)
-          console.log(`[COMPRESSION] Original: ${(selectedFile.size / (1024**2)).toFixed(2)} MB`)
-          console.log(`[COMPRESSION] Compressed: ${(fileToUpload.size / (1024**2)).toFixed(2)} MB`)
-          console.log(`[COMPRESSION] Ratio: ${compressionRatio.toFixed(2)}x (${((1 - 1/compressionRatio) * 100).toFixed(1)}% smaller)`)
-
-        } catch (compressionError) {
-          // Compression failed - fallback to original file silently
-          console.warn('[COMPRESSION] Failed, uploading original file:', compressionError)
-          fileToUpload = selectedFile
-          setWasCompressed(false)
-        }
-      } else {
-        if (!isCompressionSupported) {
-          console.log('[COMPRESSION] Not supported in this browser')
-        } else {
-          console.log('[COMPRESSION] Skipped (file already compressed or not beneficial)')
-        }
-      }
-
-      // Phase 1: Upload (compressed or original file)
-      console.log('-'.repeat(80))
-      console.log('[UPLOAD] Starting upload...')
-      console.log(`[UPLOAD] File to upload: ${(fileToUpload.size / (1024**2)).toFixed(2)} MB`)
-
-      setPhase('uploading')
-      setUploadProgress(0) // Reset progress for upload phase
-
-      const uploadStart = performance.now()
-      let lastProgressTime = uploadStart
-      let lastProgressBytes = 0
-
-      const uploadResult = await uploadMutation.mutateAsync({
-        file: fileToUpload,
-        analysisType: 'germline',
-        genomeBuild: 'GRCh38',
-        caseLabel: caseName,
-        retainFile: retainFile,
-        onProgress: (progress) => {
-          setUploadProgress(progress)
-
-          // Log progress every 10% or every 5 seconds
-          if (progress % 10 === 0 || performance.now() - lastProgressTime > 5000) {
-            const currentTime = performance.now()
-            const uploadedBytes = (fileToUpload.size * progress) / 100
-            const elapsedTime = (currentTime - uploadStart) / 1000
-
-            // Instant throughput
-            const instantBytes = uploadedBytes - lastProgressBytes
-            const instantTime = (currentTime - lastProgressTime) / 1000
-            const instantThroughput = instantTime > 0 ? (instantBytes / (1024**2)) / instantTime : 0
-
-            // Average throughput
-            const avgThroughput = elapsedTime > 0 ? (uploadedBytes / (1024**2)) / elapsedTime : 0
-
-            console.log(`[UPLOAD PROGRESS] ${progress}% - ${(uploadedBytes / (1024**2)).toFixed(1)} MB ` +
-                       `(${avgThroughput.toFixed(1)} MB/s avg, ${instantThroughput.toFixed(1)} MB/s now)`)
-
-            lastProgressTime = currentTime
-            lastProgressBytes = uploadedBytes
-          }
-        },
-      })
-
-      const uploadTime = (performance.now() - uploadStart) / 1000
-      const uploadThroughput = (fileToUpload.size / (1024**2)) / uploadTime
-
-      console.log(`[UPLOAD] Complete in ${uploadTime.toFixed(2)}s`)
-      console.log(`[UPLOAD] Average throughput: ${uploadThroughput.toFixed(2)} MB/s`)
-      console.log(`[UPLOAD] Session ID: ${uploadResult.id}`)
-
-      setSessionId(uploadResult.id)
-      setUploadProgress(100)
-
-      // Phase 2: Start validation
-      console.log('-'.repeat(80))
-      console.log('[VALIDATION] Starting validation...')
-
-      setValidationProgress(0)
-      setPhase('validating')
-
-      // Notify parent to update URL
-      onComplete?.(uploadResult.id)
-
-      const validationStart = performance.now()
-      const validationResult = await startValidationMutation.mutateAsync(uploadResult.id)
-      const validationTime = (performance.now() - validationStart) / 1000
-
-      setTaskId(validationResult.task_id)
-
-      console.log(`[VALIDATION] Task started in ${validationTime.toFixed(2)}s`)
-      console.log(`[VALIDATION] Task ID: ${validationResult.task_id}`)
-
-      // Task polling will be handled by useTaskStatus hook
-
-      // Final summary
-      const totalTime = (performance.now() - totalStartTime) / 1000
-      console.log('='.repeat(80))
-      console.log('[FRONTEND UPLOAD] COMPLETE')
-      console.log(`[TIMING] Total: ${totalTime.toFixed(2)}s`)
-      console.log(`[TIMING]   - Compression: ${compressionTime.toFixed(2)}s`)
-      console.log(`[TIMING]   - Upload: ${uploadTime.toFixed(2)}s`)
-      console.log(`[TIMING]   - Validation init: ${validationTime.toFixed(2)}s`)
-      if (wasCompressed) {
-        const effectiveSize = selectedFile.size / compressionRatio
-        const effectiveThroughput = (selectedFile.size / (1024**2)) / uploadTime
-        console.log(`[EFFECTIVE] Original file uploaded at ${effectiveThroughput.toFixed(2)} MB/s (equivalent)`)
-        console.log(`[EFFECTIVE] Time saved by compression: ${(selectedFile.size / effectiveSize * uploadTime - uploadTime).toFixed(2)}s`)
-      }
-      console.log('='.repeat(80))
-
-    } catch (error) {
-      const err = error as Error
-      const errorTime = (performance.now() - totalStartTime) / 1000
-
-      console.error('='.repeat(80))
-      console.error('[FRONTEND UPLOAD] FAILED')
-      console.error(`[ERROR] After ${errorTime.toFixed(2)}s`)
-      console.error(`[ERROR] ${err.message}`)
-      console.error('='.repeat(80))
-
-      setPhase('error')
-      setErrorMessage(err.message)
-      toast.error('Process failed', { description: err.message })
-      onError?.(err)
+  // Sync sessionId from context to parent (for URL update)
+  useEffect(() => {
+    if (upload.sessionId && upload.phase !== 'idle') {
+      onComplete?.(upload.sessionId)
     }
-  }, [canSubmit, selectedFile, caseName, uploadMutation, startValidationMutation, onComplete, onError, compress, shouldCompress, isCompressionSupported])
+  }, [upload.sessionId, upload.phase, onComplete])
 
   // Reset handler
   const handleReset = useCallback(() => {
-    setPhase('selection')
+    upload.resetUpload()
     setSelectedFile(null)
     setCaseName('')
-    setSessionId(null)
-    setTaskId(null)
-    setErrorMessage(null)
     setValidationError(null)
-    setQcResults(null)
-    setCompressionProgress(0)
-    setUploadProgress(0)
-    setValidationProgress(0)
-    setWasCompressed(false)
     setDuplicateSession(null)
     setShowSettings(false)
     setRetainFile(false)
-    uploadMutation.reset()
-    startValidationMutation.reset()
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-  }, [uploadMutation, startValidationMutation])
+  }, [upload])
 
   // Handle processing button click
   const handleProcessingClick = useCallback(() => {
