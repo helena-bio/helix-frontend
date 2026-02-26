@@ -251,7 +251,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
             {upload.isActive && (
               <div
                 className={cn(
-                  "relative rounded-md px-2 py-1.5 cursor-pointer transition-colors",
+                  "group relative rounded-md px-2 py-1.5 cursor-pointer transition-colors",
                   "bg-primary/5 border border-primary/20 hover:bg-primary/10"
                 )}
                 onClick={() => router.push("/upload")}
@@ -261,15 +261,24 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                     {upload.phase === "error" ? (
                       <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
                     ) : upload.phase === "qc_results" ? (
-                      <CheckCircle2 className="h-3 w-3 text-green-600 shrink-0" />
+                      <Clock className="h-3 w-3 text-amber-500 shrink-0" />
                     ) : (
                       <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-md font-medium truncate leading-tight">
-                      {upload.caseName || upload.fileName || "Uploading..."}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-md font-medium truncate leading-tight">
+                        {upload.caseName || upload.fileName || "Uploading..."}
+                      </p>
+                      <button
+                        className="p-0.5 rounded hover:bg-destructive/10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); upload.resetUpload() }}
+                        title="Cancel"
+                      >
+                        <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-sm text-muted-foreground">
                         {upload.phase === "compressing" && "Compressing..."}

@@ -300,12 +300,14 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     upload.startUpload(selectedFile, caseName, retainFile)
   }, [canSubmit, selectedFile, caseName, retainFile, upload])
 
-  // Sync sessionId from context to parent (for URL update)
+  // Sync sessionId from context to parent (for URL update) - fire once per sessionId
+  const syncedSessionRef = useRef<string | null>(null)
   useEffect(() => {
-    if (upload.sessionId && upload.phase !== 'idle') {
+    if (upload.sessionId && upload.sessionId !== syncedSessionRef.current) {
+      syncedSessionRef.current = upload.sessionId
       onComplete?.(upload.sessionId)
     }
-  }, [upload.sessionId, upload.phase, onComplete])
+  }, [upload.sessionId, onComplete])
 
   // Reset handler
   const handleReset = useCallback(() => {
