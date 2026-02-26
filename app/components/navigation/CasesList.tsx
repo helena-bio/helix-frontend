@@ -111,6 +111,8 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const cases = data?.sessions ?? []
 
   const filteredCases = cases.filter((c) => {
+    // Hide session managed by upload context (avoids duplicate)
+    if (upload.isActive && upload.sessionId && c.id === upload.sessionId) return false
     if (!searchQuery) return true
     const name = getCaseDisplayName(c).toLowerCase()
     const owner = (c.owner_name || '').toLowerCase()
