@@ -15,7 +15,7 @@
  *
  * SESSION MANAGEMENT:
  * - After upload completes, sessionId is added to URL: /upload?session=<uuid>
- * - When journey reaches analysis step, redirects to /analysis?session=<uuid>
+ * - When profile completes, handleAnalysisReady redirects to /analysis
  */
 import { useEffect, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -49,26 +49,22 @@ export default function UploadPage() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Redirect to /analysis when journey reaches analysis step
-  // Guard: only redirect if currentSessionId matches our upload session
-  // This prevents hijacking when sidebar navigates to a different case
-  useEffect(() => {
-    if (currentStep === 'analysis' && currentSessionId && upload.sessionId === currentSessionId) {
-      router.push(`/analysis?session=${currentSessionId}`)
-    }
-  }, [currentStep, currentSessionId, router, upload.sessionId])
-
   // Handle upload complete - add sessionId to URL
   const handleUploadComplete = (sessionId: string) => {
     setCurrentSessionId(sessionId)
     router.push(`/upload?session=${sessionId}`)
   }
 
-  // Handle analysis ready - invalidate cases list so sidebar updates
+  // Handle analysis ready - invalidate cases list and navigate to analysis
+  // NOTE: No useEffect redirect -- only this callback triggers the /analysis navigation.
+  // This prevents sidebar case clicks (which also call skipToAnalysis) from being hijacked.
   const handleAnalysisReady = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: casesKeys.all })
     skipToAnalysis()
-  }, [queryClient, skipToAnalysis])
+    if (currentSessionId) {
+      router.push(`/analysis?session=${currentSessionId}`)
+    }
+  }, [queryClient, skipToAnalysis, currentSessionId, router])
 
   // Step 1: Upload (includes validation and QC)
   if (currentStep === 'upload') {
@@ -121,7 +117,7 @@ export default function UploadPage() {
     return <ClinicalProfileEntry sessionId={currentSessionId} onComplete={handleAnalysisReady} />
   }
 
-  // Fallback - analysis step redirect is handled by useEffect above
+  // Fallback - shows briefly during navigation transitions
   return (
     <div className="flex items-center justify-center min-h-[400px]">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
