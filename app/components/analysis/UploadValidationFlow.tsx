@@ -288,9 +288,6 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     setSelectedFile(null)
     setCaseName('')
     setValidationError(null)
-    setCompressionProgress(0)
-    setUploadProgress(0)
-    setWasCompressed(false)
     setDuplicateSession(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
