@@ -58,6 +58,7 @@ const getZygosityBadge = (genotype: string | null) => {
 
 
 const truncateAllele = (allele: string, maxLength: number = 6): string => {
+  if (!allele) return '-'
   if (allele.length <= maxLength) return allele
   return allele.substring(0, maxLength) + '...'
 }
@@ -70,7 +71,7 @@ const VariantRow = memo(function VariantRow({
   onVariantClick?: (variantIdx: number) => void
 }) {
   const zygosity = getZygosityBadge(variant.genotype)
-  const changeText = `${variant.reference_allele}/${variant.alternate_allele}`
+  const changeText = `${variant.reference_allele ?? '-'}/${variant.alternate_allele ?? '-'}`
 
   const handleClick = () => {
     if (onVariantClick) {
@@ -91,7 +92,7 @@ const VariantRow = memo(function VariantRow({
       </td>
       <td className="px-2 py-2">
         <div className="text-sm font-mono text-muted-foreground">
-          {variant.chromosome}:{variant.position.toLocaleString()}
+          {variant.chromosome ?? '-'}:{variant.position != null ? variant.position.toLocaleString() : '-'}
         </div>
       </td>
       <td className="px-2 py-2">
@@ -162,9 +163,9 @@ export const VariantsCompactTable = memo(function VariantsCompactTable({
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((variant: any) => (
+            {paginatedData.map((variant: any, i: number) => (
               <VariantRow
-                key={variant.variant_idx}
+                key={variant.variant_idx ?? i}
                 variant={variant}
                 onVariantClick={onVariantClick}
               />
