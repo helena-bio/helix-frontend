@@ -18,10 +18,11 @@
  * - When journey reaches analysis step, redirects to /analysis?session=<uuid>
  */
 import { useEffect, useCallback, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
+import { useUploadContext } from '@/contexts/UploadContext'
 import {
   UploadValidationFlow,
   ClinicalProfileEntry,
@@ -36,6 +37,7 @@ export default function UploadPage() {
   const queryClient = useQueryClient()
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { currentStep, journeyMode, skipToAnalysis, resetJourney } = useJourney()
+  const upload = useUploadContext()
 
   // Processing configuration - bridge between Upload and Processing steps
   const [filteringPreset, setFilteringPreset] = useState<string>('strict')
@@ -48,13 +50,13 @@ export default function UploadPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Redirect to /analysis when journey reaches analysis step
-  // Guard: only redirect if we're actually on /upload (not mid-navigation from sidebar)
-  const pathname = usePathname()
+  // Guard: only redirect if currentSessionId matches our upload session
+  // This prevents hijacking when sidebar navigates to a different case
   useEffect(() => {
-    if (currentStep === 'analysis' && currentSessionId && pathname === '/upload') {
+    if (currentStep === 'analysis' && currentSessionId && upload.sessionId === currentSessionId) {
       router.push(`/analysis?session=${currentSessionId}`)
     }
-  }, [currentStep, currentSessionId, router, pathname])
+  }, [currentStep, currentSessionId, router, upload.sessionId])
 
   // Handle upload complete - add sessionId to URL
   const handleUploadComplete = (sessionId: string) => {
