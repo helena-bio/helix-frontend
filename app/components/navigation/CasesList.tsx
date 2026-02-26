@@ -251,7 +251,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
             {upload.isActive && (
               <div
                 className={cn(
-                  "group relative rounded-md px-2 py-1.5 cursor-pointer transition-colors",
+                  "group/upload relative rounded-md px-2 py-1.5 cursor-pointer transition-colors",
                   "bg-primary/5 border border-primary/20 hover:bg-primary/10"
                 )}
                 onClick={() => router.push("/upload")}
@@ -272,7 +272,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                         {upload.caseName || upload.fileName || "Uploading..."}
                       </p>
                       <button
-                        className="p-0.5 rounded hover:bg-destructive/10 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="p-0.5 rounded hover:bg-destructive/10 shrink-0 opacity-0 group-hover/upload:opacity-100 transition-opacity"
                         onClick={(e) => { e.stopPropagation(); upload.resetUpload() }}
                         title="Cancel"
                       >
@@ -320,7 +320,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                   <div
                     key={session.id}
                     className={cn(
-                      "group relative rounded-md px-2 py-1 transition-colors",
+                      "group/case relative rounded-md px-2 py-1 transition-colors",
                       isActive && "bg-secondary",
                       isCompleted && !isActive && "hover:bg-accent cursor-pointer",
                       !isCompleted && "opacity-60"
@@ -390,7 +390,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             )}
                           </div>
                         </div>
-                        <div className={cn("items-center gap-0.5 shrink-0", isOwner ? "hidden group-hover:flex" : "hidden")}>
+                        <div className={cn("items-center gap-0.5 shrink-0", isOwner ? "hidden group-hover/case:flex" : "hidden")}>
                           <button
                             className="p-0.5 rounded hover:bg-accent"
                             onClick={(e) => handleStartRename(e, session)}
