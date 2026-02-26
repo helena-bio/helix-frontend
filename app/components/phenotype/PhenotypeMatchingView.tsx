@@ -180,6 +180,19 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
     return geneResult.variants.filter(v => getShortTier(v.clinical_tier) === tierFilter)
   }, [geneResult.variants, tierFilter])
 
+    // Variant count respects tier filter
+    const displayCount = useMemo(() => {
+      if (tierFilter === 'all') return geneResult.variant_count
+      switch (tierFilter) {
+        case 'T1': return geneResult.tier_1_count ?? 0
+        case 'T2': return geneResult.tier_2_count ?? 0
+        case 'IF': return geneResult.incidental_count ?? 0
+        case 'T3': return geneResult.tier_3_count ?? 0
+        case 'T4': return geneResult.tier_4_count ?? 0
+        default: return geneResult.variant_count
+      }
+    }, [tierFilter, geneResult])
+
   return (
     <Card className="gap-0">
       <CardHeader
@@ -203,7 +216,7 @@ function GeneSection({ geneResult, rank, sessionId, onViewVariantDetails, tierFi
             {/* Right: Variant count + Chevron */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                {geneResult.variant_count} variant{geneResult.variant_count !== 1 ? 's' : ''}
+                {displayCount} variant{displayCount !== 1 ? 's' : ''}
               </span>
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </div>
