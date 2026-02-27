@@ -375,7 +375,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                       "group/case relative rounded-md px-2 py-1 transition-colors",
                       isActive && "bg-secondary",
                       isCompleted && !isActive && "hover:bg-accent cursor-pointer",
-                      !isCompleted && "opacity-60"
+                      !isCompleted && "opacity-60 hover:opacity-100"
                     )}
                     onClick={() => handleCaseClick(session)}
                   >
