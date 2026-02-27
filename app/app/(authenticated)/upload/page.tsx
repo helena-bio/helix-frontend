@@ -33,6 +33,9 @@ export default function UploadPage() {
   // Processing configuration
   const [filteringPreset, setFilteringPreset] = useState<string>('strict')
 
+  // DEBUG: Log every render with current state
+  console.log("[UploadPage] RENDER", { currentStep, currentSessionId, journeyMode })
+
   // Handle upload complete - add sessionId to URL
   const handleUploadComplete = useCallback((sessionId: string) => {
     setCurrentSessionId(sessionId)

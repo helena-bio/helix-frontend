@@ -123,6 +123,9 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     if (startedRef.current) return
     if (!session) return
 
+    // DEBUG
+    console.log("[ProcessingFlow] useEffect", { status: session.status, task_id: session.task_id, vcf_file_path: session.vcf_file_path, startedRef: startedRef.current })
+
     // RECOVERY: If session is already processing, recover task_id from session data
     if (session.status === 'processing') {
       startedRef.current = true
