@@ -182,10 +182,11 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   }, [deleteMutation, currentSessionId, setCurrentSessionId, router, upload])
 
   const handleNewCase = useCallback(() => {
+    upload.resetUpload()
     setCurrentSessionId(null)
     resetJourney()
     router.push('/upload')
-  }, [setCurrentSessionId, resetJourney, router])
+  }, [upload, setCurrentSessionId, resetJourney, router])
 
   return (
     <div className="py-1">
@@ -263,6 +264,23 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                 )}
                 onClick={() => router.push("/upload")}
               >
+                  {deletingId === upload.sessionId ? (
+                    <div className="flex items-center gap-2 py-0.5">
+                      <span className="text-md text-destructive flex-1 truncate">Delete?</span>
+                      <button
+                        className="p-0.5 rounded hover:bg-destructive/10"
+                        onClick={(e) => { e.stopPropagation(); if (upload.sessionId) handleConfirmDelete(upload.sessionId) }}
+                      >
+                        <Check className="h-4 w-4 text-destructive" />
+                      </button>
+                      <button
+                        className="p-0.5 rounded hover:bg-accent"
+                        onClick={(e) => { e.stopPropagation(); setDeletingId(null) }}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
                 <div className="flex items-start gap-2">
                   <div className="mt-0.5">
                     {upload.phase === "error" ? (
@@ -331,6 +349,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                     )}
                   </div>
                 </div>
+                  )}
               </div>
             )}
             {isLoading ? (
