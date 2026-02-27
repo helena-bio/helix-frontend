@@ -258,6 +258,26 @@ export function VariantsResultsProvider({ sessionId, children }: VariantsResults
       return
     }
 
+    // FIX: Check memory cache before starting network fetch.
+    // This prevents the race condition where LayoutContent triggers
+    // loadAllVariants in the same render cycle before the session change
+    // effect has restored data from memory cache. Without this guard,
+    // loadAllVariants clears allGenes with setAllGenes([]) and starts
+    // a redundant network fetch, causing a visible flicker.
+    const memoryCached = sessionCache.current.get(sid)
+    if (memoryCached) {
+      console.log('[VariantsResultsContext] loadAllVariants: memory cache hit, restoring ' + memoryCached.allGenes.length + ' genes')
+      sessionCache.current.delete(sid)
+      sessionCache.current.set(sid, memoryCached)
+      setAllGenes(memoryCached.allGenes)
+      setTotalVariants(memoryCached.totalVariants)
+      setImpactByAcmg(memoryCached.impactByAcmg)
+      setLoadProgress(100)
+      setError(null)
+      setIsLoading(false)
+      return
+    }
+
     setIsLoading(true)
     setLoadProgress(0)
     setError(null)
