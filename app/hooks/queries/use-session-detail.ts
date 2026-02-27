@@ -22,7 +22,10 @@ export const sessionDetailKeys = {
 /**
  * Fetch single session by ID.
  * Returns AnalysisSession with status, filename, genome_build, etc.
- * Stale time 30s -- session status can change during pipeline.
+ *
+ * FIX: placeholderData explicitly undefined so React Query does NOT
+ * return stale data from a previous query key when sessionId changes.
+ * Without this, switching from session A to null briefly returns A's data.
  */
 export function useSessionDetail(sessionId: string | null) {
   return useQuery<AnalysisSession>({
@@ -30,6 +33,7 @@ export function useSessionDetail(sessionId: string | null) {
     queryFn: () => getSession(sessionId!),
     enabled: !!sessionId,
     staleTime: 0,
+    placeholderData: undefined,
   })
 }
 

@@ -40,7 +40,7 @@ import { HelixLoader } from '@/components/ui/helix-loader'
 import { useCases } from '@/hooks/queries/use-cases'
 import { useSessionDetail } from '@/hooks/queries/use-session-detail'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useUploadContext } from '@/contexts/UploadContext'
 import { useSession } from '@/contexts/SessionContext'
@@ -86,6 +86,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   const { currentSessionId } = useSession()
   const { nextStep, goToStep, skipToAnalysis } = useJourney()
   const router = useRouter()
+  const pathname = usePathname()
   const { data: casesData } = useCases()
 
   // -- URL-driven display logic --
@@ -115,15 +116,24 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   )
 
   // -- Redirect effects for processing/completed sessions --
+  // FIX: Guard with pathname check and session.id match to prevent
+  // stale React Query data from firing redirects when user navigates away.
+  // This is the PRIMARY fix for the "snap back" bug where navigating to
+  // /upload bounces back to /analysis?session=OLD_ID.
   useEffect(() => {
+    // Only redirect when we are actually on the /upload page
+    if (pathname !== '/upload') return
+    // Must have both server data and a matching session
     if (!session || !currentSessionId) return
+    // Guard: React Query data must match the current URL session
+    if (session.id !== currentSessionId) return
+
     if (session.status === 'processing') {
       goToStep('processing')
     } else if (session.status === 'completed') {
-      skipToAnalysis()
       router.push(`/analysis?session=${currentSessionId}`)
     }
-  }, [session?.status, currentSessionId, goToStep, skipToAnalysis, router])
+  }, [session?.status, session?.id, currentSessionId, pathname, goToStep, router])
 
   // -- File selection state --
   const [isDragging, setIsDragging] = useState(false)
@@ -196,9 +206,8 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   const handleOpenExisting = useCallback(() => {
     if (!duplicateSession) return
-    skipToAnalysis()
     router.push('/analysis?session=' + duplicateSession.id)
-  }, [duplicateSession, skipToAnalysis, router])
+  }, [duplicateSession, router])
 
   // -- Drag & Drop handlers --
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
