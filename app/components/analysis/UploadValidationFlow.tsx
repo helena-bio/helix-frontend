@@ -42,6 +42,7 @@ import { useCases } from '@/hooks/queries/use-cases'
 import { useRouter } from 'next/navigation'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useUploadContext } from '@/contexts/UploadContext'
+import { useSession } from '@/contexts/SessionContext'
 
 import { toast } from 'sonner'
 
@@ -90,9 +91,13 @@ interface UploadValidationFlowProps {
 export function UploadValidationFlow({ onComplete, onError, filteringPreset = 'strict', onFilteringPresetChange }: UploadValidationFlowProps) {
   // Upload state from global context (survives navigation)
   const upload = useUploadContext()
+  const { currentSessionId } = useSession()
 
   // Derive local aliases for backward-compatible JSX
-  const phase: FlowPhase = upload.phase === 'idle' ? 'selection' : upload.phase as FlowPhase
+  // If upload context has state from a different session (e.g. pending upload)
+  // but we're on a fresh /upload (no currentSessionId), show selection form
+  const isOtherSession = upload.sessionId && upload.sessionId !== currentSessionId
+  const phase: FlowPhase = (upload.phase === 'idle' || isOtherSession) ? 'selection' : upload.phase as FlowPhase
   const sessionId = upload.sessionId
   const errorMessage = upload.errorMessage
   const qcResults = upload.qcResults ? {
@@ -150,7 +155,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   }, [selectedFile, phase, validationError])
 
   // Is processing (compressing, uploading or validating)
-  const isProcessing = upload.phase === 'compressing' || upload.phase === 'uploading' || upload.phase === 'validating'
+  const isProcessing = !isOtherSession && (upload.phase === 'compressing' || upload.phase === 'uploading' || upload.phase === 'validating')
 
   // Get button text based on phase
   const getButtonText = () => {

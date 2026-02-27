@@ -182,11 +182,10 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   }, [deleteMutation, currentSessionId, setCurrentSessionId, router, upload])
 
   const handleNewCase = useCallback(() => {
-    upload.resetUpload()
     setCurrentSessionId(null)
     resetJourney()
     router.push('/upload')
-  }, [upload, setCurrentSessionId, resetJourney, router])
+  }, [setCurrentSessionId, resetJourney, router])
 
   return (
     <div className="py-1">
