@@ -7,6 +7,10 @@
  * - Backend Stages (1-7): Celery task stages from backend
  * - Frontend Stage: Loading variants into browser memory
  * - Clean separation, no hacks
+ *
+ * RECOVERY: When remounting (user navigated away and back),
+ * checks session.status and recovers task_id from session data
+ * instead of starting a duplicate pipeline.
  */
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
@@ -114,32 +118,76 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     enabled: !!taskId && phase === 'backend',
   })
 
-  // Start backend processing on mount
+  // Start or recover backend processing on mount
   useEffect(() => {
-    if (!session?.vcf_file_path || startedRef.current) return
+    if (startedRef.current) return
+    if (!session) return
 
-    startedRef.current = true
-    setHasStarted(true)
+    // RECOVERY: If session is already processing, recover task_id from session data
+    if (session.status === 'processing') {
+      startedRef.current = true
+      setHasStarted(true)
 
-    const startProcessing = async () => {
-      try {
-        const result = await startProcessingMutation.mutateAsync({
-          sessionId,
-          vcfFilePath: session.vcf_file_path!,
-          filteringPreset,
-        })
-        setTaskId(result.task_id)
-      } catch (error) {
-        const err = error as Error
-        setPhase('error')
-        setErrorMessage(err.message)
-        toast.error('Failed to start processing', { description: err.message })
-        onError?.(err)
+      if (session.task_id) {
+        // Resume polling the existing task
+        setTaskId(session.task_id)
+        return
       }
+
+      // No task_id available but status is processing -- call start endpoint
+      // which is idempotent and will return existing task if one is running
+      if (session.vcf_file_path) {
+        const recoverTask = async () => {
+          try {
+            const result = await startProcessingMutation.mutateAsync({
+              sessionId,
+              vcfFilePath: session.vcf_file_path!,
+              filteringPreset,
+            })
+            setTaskId(result.task_id)
+          } catch (error) {
+            // If start fails, still show pipeline UI -- backend is likely still running
+            console.warn('[ProcessingFlow] Recovery start failed, showing progress without polling')
+          }
+        }
+        recoverTask()
+      }
+      return
     }
 
-    startProcessing()
-  }, [session?.vcf_file_path, sessionId, filteringPreset, startProcessingMutation, onError])
+    // NORMAL: Session is uploaded -- start fresh pipeline
+    if (session.status === 'uploaded' && session.vcf_file_path) {
+      startedRef.current = true
+      setHasStarted(true)
+
+      const startProcessing = async () => {
+        try {
+          const result = await startProcessingMutation.mutateAsync({
+            sessionId,
+            vcfFilePath: session.vcf_file_path!,
+            filteringPreset,
+          })
+          setTaskId(result.task_id)
+        } catch (error) {
+          const err = error as Error
+          setPhase('error')
+          setErrorMessage(err.message)
+          toast.error('Failed to start processing', { description: err.message })
+          onError?.(err)
+        }
+      }
+
+      startProcessing()
+      return
+    }
+
+    // Session is completed -- advance to next step
+    if (session.status === 'completed') {
+      startedRef.current = true
+      nextStep()
+      return
+    }
+  }, [session, sessionId, filteringPreset, startProcessingMutation, onError, nextStep])
 
   // Handle backend completion -> Start frontend streaming
   useEffect(() => {

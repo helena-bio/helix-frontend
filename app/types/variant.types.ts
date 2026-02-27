@@ -125,6 +125,7 @@ export interface AnalysisSession {
   classifier_is_outdated: boolean
   total_variants: number | null
   sample_count: number | null
+  task_id: string | null
 }
 
 export interface VariantFilters {
