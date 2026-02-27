@@ -29,7 +29,7 @@ export function useSessionDetail(sessionId: string | null) {
     queryKey: sessionDetailKeys.detail(sessionId!),
     queryFn: () => getSession(sessionId!),
     enabled: !!sessionId,
-    staleTime: 30 * 1000,
+    staleTime: 0,
   })
 }
 
