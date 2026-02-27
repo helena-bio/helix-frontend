@@ -52,6 +52,7 @@ import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationCont
 
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { CasesList } from './CasesList'
+import { useUploadContext } from '@/contexts/UploadContext'
 import { cn } from '@helix/shared/lib/utils'
 
 const SIDEBAR_MIN = 256
@@ -76,6 +77,7 @@ export function Sidebar() {
   } = useSession()
 
   const { currentStep, resetJourney } = useJourney()
+  const upload = useUploadContext()
   const { user, logout, avatarVersion } = useAuth()
   const { enableScreening, enablePhenotypeMatching, enableClinicalReport } = useClinicalProfileContext()
   const { aggregatedResults: phenotypeData } = usePhenotypeResults()
@@ -251,7 +253,7 @@ export function Sidebar() {
               <Button
                 variant="ghost"
                 className="h-8 flex-1 justify-start mr-2"
-                onClick={() => { setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
+                onClick={() => { upload.resetUpload(); setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
               >
                 <Plus className="h-4 w-4 shrink-0" />
                 <span className="ml-2 text-base">New Case</span>
@@ -415,7 +417,7 @@ export function Sidebar() {
                       <Button
                         variant="ghost"
                         className="w-full justify-center px-0 h-8"
-                        onClick={(e) => { e.stopPropagation(); setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
+                        onClick={(e) => { e.stopPropagation(); upload.resetUpload(); setCurrentSessionId(null); resetJourney(); router.push("/upload") }}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
