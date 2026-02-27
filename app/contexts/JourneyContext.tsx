@@ -1,20 +1,20 @@
 /**
- * Journey Context - Workflow Step Management
+ * Journey Context - Derived from URL (no state, no localStorage)
  *
- * Manages the current step in the analysis workflow:
- * Upload -> Processing -> Profile -> Analysis
+ * Follows Stripe/Vercel pattern: URL is the single source of truth.
  *
- * Supports two modes:
- * - 'new': Standard upload flow (Upload -> Processing -> Profile -> Analysis)
- * - 'reprocess': Re-annotation flow (Reprocess -> Processing -> Profile -> Analysis)
+ * Step is derived from:
+ *   pathname + searchParams.get('step')
  *
- * Upload includes: file selection, compression, upload, validation, and QC results
+ * URL mapping:
+ *   /upload                             -> 'upload'
+ *   /upload?session=XXX                 -> 'upload'  (QC results)
+ *   /upload?session=XXX&step=processing -> 'processing'
+ *   /upload?session=XXX&step=profile    -> 'profile'
+ *   /analysis?session=XXX              -> 'analysis'
  *
- * Following Lumiere pattern: UI state only, no server data
- * IMPORTANT: currentStep is persisted to localStorage to survive page refresh
- *
- * SESSION INTEGRATION:
- * Journey resets to 'upload' when sessionId becomes null (multi-tab isolation)
+ * Navigation actions are just router.push() calls.
+ * No localStorage. No race conditions. Refresh always works.
  */
 
 'use client'
@@ -22,34 +22,20 @@
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
   useMemo,
-  useEffect,
   type ReactNode
 } from 'react'
-import { useSession } from './SessionContext'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
-const STORAGE_KEY = 'helix_journey_step'
+// -----------------------------------------------------------------------
+// Types (public API unchanged -- all consumers keep working)
+// -----------------------------------------------------------------------
 
-/**
- * Workflow steps in order
- */
 export type JourneyStep = 'upload' | 'processing' | 'profile' | 'analysis'
-
-/**
- * Journey mode: new upload or reprocess existing
- */
 export type JourneyMode = 'new' | 'reprocess'
-
-/**
- * Step status for UI rendering
- */
 export type StepStatus = 'completed' | 'current' | 'locked'
 
-/**
- * Step metadata for rendering
- */
 export interface StepInfo {
   id: JourneyStep
   label: string
@@ -57,245 +43,174 @@ export interface StepInfo {
   order: number
 }
 
-/**
- * All steps with metadata
- * Order: Upload -> Processing -> Profile -> Analysis
- *
- * Upload includes validation automatically
- * Profile is AFTER Processing because:
- * 1. We need variants in DuckDB to run phenotype matching
- * 2. User can skip profile and go directly to analysis
- * 3. Better UX - user sees clinical context before analysis
- */
 export const JOURNEY_STEPS: readonly StepInfo[] = [
-  {
-    id: 'upload',
-    label: 'Upload',
-    description: 'Upload and validate VCF file',
-    order: 0,
-  },
-  {
-    id: 'processing',
-    label: 'Processing',
-    description: 'Analyzing variants with ACMG classification',
-    order: 1,
-  },
-  {
-    id: 'profile',
-    label: 'Profile',
-    description: 'Patient clinical profile and phenotype matching',
-    order: 2,
-  },
-  {
-    id: 'analysis',
-    label: 'Analysis',
-    description: 'View and analyze variants',
-    order: 3,
-  },
+  { id: 'upload',     label: 'Upload',     description: 'Upload and validate VCF file', order: 0 },
+  { id: 'processing', label: 'Processing', description: 'Analyzing variants with ACMG classification', order: 1 },
+  { id: 'profile',    label: 'Profile',    description: 'Patient clinical profile and phenotype matching', order: 2 },
+  { id: 'analysis',   label: 'Analysis',   description: 'View and analyze variants', order: 3 },
 ] as const
 
-/**
- * Step labels that change based on journey mode
- */
-const MODE_STEP_LABELS: Record<JourneyMode, Record<string, string>> = {
-  new: {},
-  reprocess: {
-    upload: 'Reprocess',
-  },
-}
+// -----------------------------------------------------------------------
+// Context type (same public API as before)
+// -----------------------------------------------------------------------
 
-/**
- * Context type definition
- */
 interface JourneyContextType {
-  // Current step
   currentStep: JourneyStep
-
-  // Journey mode
   journeyMode: JourneyMode
   setJourneyMode: (mode: JourneyMode) => void
   startReprocess: (sessionId: string) => void
-
-  // Navigation actions
   goToStep: (step: JourneyStep) => void
   nextStep: () => void
   previousStep: () => void
   resetJourney: () => void
   skipToAnalysis: () => void
-
-  // Step utilities
   getStepStatus: (step: JourneyStep) => StepStatus
   getStepInfo: (step: JourneyStep) => StepInfo | undefined
   getStepLabel: (step: JourneyStep) => string
   canNavigateTo: (step: JourneyStep) => boolean
-
-  // Computed values
   isFirstStep: boolean
   isLastStep: boolean
   currentStepIndex: number
   completedSteps: JourneyStep[]
-
-  // Progress
   progressPercentage: number
 }
 
 const JourneyContext = createContext<JourneyContextType | undefined>(undefined)
 
-interface JourneyProviderProps {
-  children: ReactNode
-  initialStep?: JourneyStep
+// -----------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------
+
+function getStepIndex(step: JourneyStep): number {
+  const info = JOURNEY_STEPS.find(s => s.id === step)
+  return info?.order ?? 0
 }
 
-export function JourneyProvider({
-  children,
-  initialStep = 'upload'
-}: JourneyProviderProps) {
-  const { currentSessionId } = useSession()
-  const [currentStep, setCurrentStepState] = useState<JourneyStep>(initialStep)
-  const [journeyMode, setJourneyModeState] = useState<JourneyMode>('new')
-  const [isHydrated, setIsHydrated] = useState(false)
+function deriveStep(pathname: string, stepParam: string | null): JourneyStep {
+  // /analysis route is always 'analysis'
+  if (pathname === '/analysis') return 'analysis'
 
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        const step = parsed.step
-        const mode = parsed.mode
+  // /upload route -- check step param
+  if (pathname === '/upload') {
+    if (stepParam === 'processing') return 'processing'
+    if (stepParam === 'profile') return 'profile'
+    return 'upload'
+  }
 
-        if (step && JOURNEY_STEPS.some(s => s.id === step)) {
-          setCurrentStepState(step)
-        }
-        if (mode === 'new' || mode === 'reprocess') {
-          setJourneyModeState(mode)
-        }
-      } catch (e) {
-        console.error('Failed to parse stored journey step:', e)
-        localStorage.removeItem(STORAGE_KEY)
-      }
+  // Any other route defaults to upload
+  return 'upload'
+}
+
+function deriveMode(modeParam: string | null): JourneyMode {
+  return modeParam === 'reprocess' ? 'reprocess' : 'new'
+}
+
+// Build URL for a given step, preserving session
+function buildUrl(step: JourneyStep, sessionId: string | null, mode?: JourneyMode): string {
+  if (step === 'analysis' && sessionId) {
+    return `/analysis?session=${sessionId}`
+  }
+
+  // All other steps are on /upload
+  const params = new URLSearchParams()
+  if (sessionId) params.set('session', sessionId)
+  if (step !== 'upload') params.set('step', step)
+  if (mode === 'reprocess') params.set('mode', 'reprocess')
+
+  const qs = params.toString()
+  return `/upload${qs ? `?${qs}` : ''}`
+}
+
+// -----------------------------------------------------------------------
+// Provider
+// -----------------------------------------------------------------------
+
+export function JourneyProvider({ children }: { children: ReactNode }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Derive everything from URL
+  const sessionId = searchParams.get('session')
+  const stepParam = searchParams.get('step')
+  const modeParam = searchParams.get('mode')
+
+  const currentStep = deriveStep(pathname, stepParam)
+  const journeyMode = deriveMode(modeParam)
+  const currentStepIndex = getStepIndex(currentStep)
+
+  // Navigation: just change the URL
+  const goToStep = useCallback((step: JourneyStep) => {
+    router.push(buildUrl(step, sessionId, journeyMode !== 'new' ? journeyMode : undefined))
+  }, [router, sessionId, journeyMode])
+
+  const nextStep = useCallback(() => {
+    const nextIdx = currentStepIndex + 1
+    if (nextIdx < JOURNEY_STEPS.length) {
+      const next = JOURNEY_STEPS[nextIdx].id
+      router.push(buildUrl(next, sessionId, journeyMode !== 'new' ? journeyMode : undefined))
     }
-    setIsHydrated(true)
-  }, [])
+  }, [router, currentStepIndex, sessionId, journeyMode])
 
-  // REMOVED: Auto-reset on null sessionId -- was fragile (temporary nulls during re-renders)
-  // Journey reset is now EXPLICIT from: Sidebar "New Case", CasesList clicks, Upload page mount
+  const previousStep = useCallback(() => {
+    const prevIdx = currentStepIndex - 1
+    if (prevIdx >= 0) {
+      router.push(buildUrl(JOURNEY_STEPS[prevIdx].id, sessionId, journeyMode !== 'new' ? journeyMode : undefined))
+    }
+  }, [router, currentStepIndex, sessionId, journeyMode])
 
-  // Persist step and mode to localStorage
-  const persistState = useCallback((step: JourneyStep, mode: JourneyMode) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, mode }))
-  }, [])
+  const resetJourney = useCallback(() => {
+    router.push('/upload')
+  }, [router])
 
-  const setCurrentStep = useCallback((step: JourneyStep) => {
-    setCurrentStepState(step)
-    setJourneyModeState(prev => {
-      persistState(step, prev)
-      return prev
-    })
-  }, [persistState])
+  const skipToAnalysis = useCallback(() => {
+    if (sessionId) {
+      router.push(`/analysis?session=${sessionId}`)
+    }
+  }, [router, sessionId])
 
   const setJourneyMode = useCallback((mode: JourneyMode) => {
-    setJourneyModeState(mode)
-    setCurrentStepState(prev => {
-      persistState(prev, mode)
-      return prev
-    })
-  }, [persistState])
-
-  /**
-   * Start reprocess flow: set mode, jump to processing step
-   */
-  const startReprocess = useCallback((sessionId: string) => {
-    const mode: JourneyMode = 'reprocess'
-    const step: JourneyStep = 'processing'
-    setCurrentStepState(step)
-    setJourneyModeState(mode)
-    persistState(step, mode)
-  }, [persistState])
-
-  // Get step order index
-  const getStepIndex = useCallback((step: JourneyStep): number => {
-    const stepInfo = JOURNEY_STEPS.find(s => s.id === step)
-    return stepInfo?.order ?? 0
-  }, [])
-
-  // Current step index
-  const currentStepIndex = useMemo(() => {
-    return getStepIndex(currentStep)
-  }, [currentStep, getStepIndex])
-
-  // Check if can navigate to a step
-  const canNavigateTo = useCallback((step: JourneyStep): boolean => {
-    const targetIndex = getStepIndex(step)
-    return targetIndex <= currentStepIndex
-  }, [currentStepIndex, getStepIndex])
-
-  // Navigate to specific step
-  const goToStep = useCallback((step: JourneyStep) => {
-    const targetIndex = getStepIndex(step)
-    if (targetIndex <= currentStepIndex + 1) {
-      setCurrentStep(step)
+    // Rebuild current URL with new mode
+    const params = new URLSearchParams(searchParams.toString())
+    if (mode === 'reprocess') {
+      params.set('mode', 'reprocess')
+    } else {
+      params.delete('mode')
     }
-  }, [currentStepIndex, getStepIndex, setCurrentStep])
+    router.push(`${pathname}?${params.toString()}`)
+  }, [router, pathname, searchParams])
 
-  // Go to next step
-  const nextStep = useCallback(() => {
-    const nextIndex = currentStepIndex + 1
-    if (nextIndex < JOURNEY_STEPS.length) {
-      setCurrentStep(JOURNEY_STEPS[nextIndex].id)
-    }
-  }, [currentStepIndex, setCurrentStep])
+  const startReprocess = useCallback((sid: string) => {
+    router.push(`/upload?session=${sid}&step=processing&mode=reprocess`)
+  }, [router])
 
-  // Go to previous step
-  const previousStep = useCallback(() => {
-    const prevIndex = currentStepIndex - 1
-    if (prevIndex >= 0) {
-      setCurrentStep(JOURNEY_STEPS[prevIndex].id)
-    }
-  }, [currentStepIndex, setCurrentStep])
-
-  // Skip profile and go directly to analysis
-  const skipToAnalysis = useCallback(() => {
-    setCurrentStep('analysis')
-  }, [setCurrentStep])
-
-  // Reset to first step and clear storage
-  const resetJourney = useCallback(() => {
-    setCurrentStepState('upload')
-    setJourneyModeState('new')
-    localStorage.removeItem(STORAGE_KEY)
-  }, [])
-
-  // Get status of a step relative to current
+  // Step status (for stepper visualization)
   const getStepStatus = useCallback((step: JourneyStep): StepStatus => {
-    const stepIndex = getStepIndex(step)
-
-    if (stepIndex < currentStepIndex) return 'completed'
-    if (stepIndex === currentStepIndex) return 'current'
+    const idx = getStepIndex(step)
+    if (idx < currentStepIndex) return 'completed'
+    if (idx === currentStepIndex) return 'current'
     return 'locked'
-  }, [currentStepIndex, getStepIndex])
+  }, [currentStepIndex])
 
-  // Get step info by id
   const getStepInfo = useCallback((step: JourneyStep): StepInfo | undefined => {
     return JOURNEY_STEPS.find(s => s.id === step)
   }, [])
 
-  // Get step label (mode-aware)
   const getStepLabel = useCallback((step: JourneyStep): string => {
-    const modeOverride = MODE_STEP_LABELS[journeyMode]?.[step]
-    if (modeOverride) return modeOverride
-    const info = JOURNEY_STEPS.find(s => s.id === step)
-    return info?.label ?? step
+    if (journeyMode === 'reprocess' && step === 'upload') return 'Reprocess'
+    return JOURNEY_STEPS.find(s => s.id === step)?.label ?? step
   }, [journeyMode])
 
-  // Computed values
+  const canNavigateTo = useCallback((step: JourneyStep): boolean => {
+    return getStepIndex(step) <= currentStepIndex
+  }, [currentStepIndex])
+
+  // Computed
   const isFirstStep = currentStepIndex === 0
   const isLastStep = currentStepIndex === JOURNEY_STEPS.length - 1
 
   const completedSteps = useMemo((): JourneyStep[] => {
-    return JOURNEY_STEPS
-      .filter(step => step.order < currentStepIndex)
-      .map(step => step.id)
+    return JOURNEY_STEPS.filter(s => s.order < currentStepIndex).map(s => s.id)
   }, [currentStepIndex])
 
   const progressPercentage = useMemo(() => {
@@ -323,11 +238,6 @@ export function JourneyProvider({
     progressPercentage,
   }
 
-  // Don't render children until hydrated to avoid hydration mismatch
-  if (!isHydrated) {
-    return null
-  }
-
   return (
     <JourneyContext.Provider value={value}>
       {children}
@@ -335,9 +245,10 @@ export function JourneyProvider({
   )
 }
 
-/**
- * Hook to access journey context
- */
+// -----------------------------------------------------------------------
+// Hooks (same API as before)
+// -----------------------------------------------------------------------
+
 export function useJourney(): JourneyContextType {
   const context = useContext(JourneyContext)
   if (!context) {
@@ -346,17 +257,11 @@ export function useJourney(): JourneyContextType {
   return context
 }
 
-/**
- * Hook to check if a specific step is active
- */
 export function useIsStepActive(step: JourneyStep): boolean {
   const { currentStep } = useJourney()
   return currentStep === step
 }
 
-/**
- * Hook to check if a specific step is completed
- */
 export function useIsStepCompleted(step: JourneyStep): boolean {
   const { getStepStatus } = useJourney()
   return getStepStatus(step) === 'completed'

@@ -109,7 +109,7 @@ export interface AnalysisSession {
   organization_id: string
   case_label: string | null
   analysis_type: string
-  status: 'pending' | 'uploaded' | 'validated' | 'processing' | 'completed' | 'failed'
+  status: 'created' | 'uploaded' | 'processing' | 'completed' | 'failed'
   vcf_file_path: string | null
   original_filename: string | null
   genome_build: string | null

@@ -7,7 +7,7 @@
  */
 'use client'
 
-import { ReactNode } from 'react'
+import { ReactNode, Suspense } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ThemeProvider } from 'next-themes'
@@ -48,12 +48,14 @@ export function Providers({ children }: ProvidersProps) {
       >
         <AuthProvider>
           <SessionProvider>
-            <JourneyProvider>
-              <UploadProvider>
-                {children}
-              </UploadProvider>
-              <Toaster />
-            </JourneyProvider>
+            <Suspense fallback={null}>
+              <JourneyProvider>
+                <UploadProvider>
+                  {children}
+                </UploadProvider>
+              </JourneyProvider>
+            </Suspense>
+            <Toaster />
           </SessionProvider>
         </AuthProvider>
       </ThemeProvider>

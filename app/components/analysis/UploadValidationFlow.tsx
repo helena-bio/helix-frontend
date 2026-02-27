@@ -10,7 +10,7 @@
  *   /upload?session=XXX  -> Fetch session from server, show appropriate UI:
  *     - Upload context active for this session -> progress
  *     - session.status === 'uploaded'         -> QC results from server
- *     - session.status === 'pending'           -> waiting view
+ *     - session.status === 'created'           -> waiting view
  *     - session.status === 'processing'        -> redirect to processing step
  *     - session.status === 'completed'         -> redirect to analysis
  *     - session.status === 'failed'            -> error view
@@ -562,9 +562,9 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   }
 
   // =====================================================================
-  // RENDER: Server-driven Pending (session.status === 'pending')
+  // RENDER: Server-driven Pending (session.status === 'created')
   // =====================================================================
-  if (showServerView && session?.status === 'pending') {
+  if (showServerView && session?.status === 'created') {
     return (
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">

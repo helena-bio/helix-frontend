@@ -140,7 +140,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
     if (session.id === currentSessionId) return
 
     // Pending or validated -> go to upload flow with session param
-    if (session.status === 'pending' || session.status === 'uploaded') {
+    if (session.status === 'created' || session.status === 'uploaded') {
       resetJourney()
       router.push(`/upload?session=${session.id}`)
       return
@@ -422,7 +422,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                                 &middot; Ready to process
                               </span>
                             )}
-                            {session.status === 'pending' && (
+                            {session.status === 'created' && (
                               <span className="text-sm text-muted-foreground">
                                 &middot; Validating...
                               </span>
