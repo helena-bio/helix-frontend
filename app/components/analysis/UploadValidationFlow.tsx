@@ -93,12 +93,28 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   const upload = useUploadContext()
   const { currentSessionId } = useSession()
 
-  // Derive local aliases for backward-compatible JSX
-  // If upload context has state from a different session (e.g. pending upload)
-  // but we're on a fresh /upload (no currentSessionId), show selection form
-  const isOtherSession = upload.sessionId && upload.sessionId !== currentSessionId
-  const phase: FlowPhase = (upload.phase === 'idle' || isOtherSession) ? 'selection' : upload.phase as FlowPhase
-  const sessionId = upload.sessionId
+    // URL-driven display logic:
+    //   /upload              -> ALWAYS fresh form (selection)
+    //   /upload?session=XXX  -> show data for session XXX if upload context matches
+    //
+    // During new upload: both currentSessionId and upload.sessionId start null.
+    // Once server returns sessionId, onComplete fires -> URL updates -> both match.
+    const isActiveUpload = upload.phase === 'compressing' || upload.phase === 'uploading' || upload.phase === 'validating'
+    const justStarted = isActiveUpload && !currentSessionId && !upload.sessionId
+    const urlMatches = currentSessionId != null && currentSessionId === upload.sessionId
+
+    let phase: FlowPhase = 'selection'
+    if (isActiveUpload && (justStarted || urlMatches)) {
+      // Active pipeline: either just started (pre-URL-update) or URL matches
+      phase = upload.phase as FlowPhase
+    } else if (urlMatches) {
+      // Terminal state: URL session matches upload session
+      if (upload.phase === 'qc_results') phase = 'qc_results'
+      else if (upload.phase === 'error') phase = 'error'
+    }
+    // else: selection (fresh form - New Case or no matching upload)
+
+    const sessionId = upload.sessionId
   const errorMessage = upload.errorMessage
   const qcResults = upload.qcResults ? {
     totalVariants: upload.qcResults.totalVariants,
@@ -155,7 +171,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   }, [selectedFile, phase, validationError])
 
   // Is processing (compressing, uploading or validating)
-  const isProcessing = !isOtherSession && (upload.phase === 'compressing' || upload.phase === 'uploading' || upload.phase === 'validating')
+  const isProcessing = isActiveUpload && (justStarted || urlMatches)
 
   // Get button text based on phase
   const getButtonText = () => {

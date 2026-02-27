@@ -182,10 +182,8 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   }, [deleteMutation, currentSessionId, setCurrentSessionId, router, upload])
 
   const handleNewCase = useCallback(() => {
-    setCurrentSessionId(null)
-    resetJourney()
     router.push('/upload')
-  }, [setCurrentSessionId, resetJourney, router])
+  }, [router])
 
   return (
     <div className="py-1">
@@ -261,7 +259,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                     ? "hover:bg-accent"
                     : "bg-primary/5 border border-primary/20 hover:bg-primary/10"
                 )}
-                onClick={() => router.push("/upload")}
+                onClick={() => { resetJourney(); upload.sessionId ? router.push(`/upload?session=${upload.sessionId}`) : router.push('/upload') }}
               >
                   {deletingId === upload.sessionId ? (
                     <div className="flex items-center gap-2 py-0.5">
