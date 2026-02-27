@@ -185,8 +185,8 @@ export async function getTaskStatus(
 /**
  * Get QC metrics
  */
-export async function getQCMetrics(sessionId: string): Promise<QCMetrics> {
-  return get<QCMetrics>(`/sessions/${sessionId}/qc`)
+export async function getQCMetrics(sessionId: string, analysisType: string = 'germline'): Promise<QCMetrics> {
+  return post<QCMetrics>(`/sessions/${sessionId}/qc`, { analysis_type: analysisType })
 }
 
 /**
