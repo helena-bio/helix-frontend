@@ -44,7 +44,6 @@ import {
 } from 'lucide-react'
 import { useSession } from '@/contexts/SessionContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { useJourney } from '@/contexts/JourneyContext'
 import { useCases } from '@/hooks/queries/use-cases'
 import { useRenameCase, useDeleteCase } from '@/hooks/mutations/use-case-mutations'
 import { Button } from '@helix/shared/components/ui/button'
@@ -101,7 +100,7 @@ interface CasesListProps {
 export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const router = useRouter()
   const { currentSessionId, setCurrentSessionId, setSelectedModule } = useSession()
-  const { skipToAnalysis, resetJourney } = useJourney()
+  // JourneyContext not needed -- step is derived from URL
   const { user } = useAuth()
 
   const upload = useUploadContext()
@@ -139,35 +138,16 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const handleCaseClick = useCallback((session: AnalysisSession) => {
     if (session.id === currentSessionId) return
 
-    // Pending or validated -> go to upload flow with session param
-    if (session.status === 'created' || session.status === 'uploaded') {
-      resetJourney()
-      router.push(`/upload?session=${session.id}`)
-      return
-    }
-
-    // Processing -> go to upload flow (step router will show ProcessingFlow)
-    if (session.status === 'processing') {
-      resetJourney()
-      router.push(`/upload?session=${session.id}`)
-      return
-    }
-
     // Completed -> analysis view
     if (session.status === 'completed') {
-      skipToAnalysis()
       setSelectedModule('analysis')
       router.push(`/analysis?session=${session.id}`)
       return
     }
 
-    // Failed -> upload flow will show error from server
-    if (session.status === 'failed') {
-      resetJourney()
-      router.push(`/upload?session=${session.id}`)
-      return
-    }
-  }, [currentSessionId, skipToAnalysis, setSelectedModule, resetJourney, router])
+    // All other statuses -> upload flow (step derived from URL by JourneyContext)
+    router.push(`/upload?session=${session.id}`)
+  }, [currentSessionId, setSelectedModule, router])
 
   const handleStartRename = useCallback((e: React.MouseEvent, session: AnalysisSession) => {
     e.stopPropagation()
