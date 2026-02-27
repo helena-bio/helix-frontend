@@ -1,19 +1,22 @@
 /**
- * Upload Context - Background Upload Management
+ * Upload Context - Background Upload Management (REFACTORED)
  *
- * Manages the entire upload lifecycle independent of component mounting:
+ * TRANSIENT PIPELINE TRACKER ONLY. Does NOT hold QC results.
+ * Server is the source of truth for session data (via React Query).
+ *
+ * Manages:
  * - File compression (Web Worker)
  * - XHR upload with progress
  * - Server-side validation polling
- * - QC results
+ *
+ * After validation succeeds:
+ * - Phase goes to 'idle' (not 'qc_results')
+ * - completedSessionId is set for reference
+ * - React Query caches invalidated so UI picks up validated session
+ * - localStorage cleared (server has the data now)
  *
  * Mounted in providers.tsx (root level), so upload continues
  * even when user navigates away from /upload page.
- *
- * PERSISTENCE (localStorage key: 'helix_upload_state'):
- * - Saves: sessionId, taskId, phase, fileName, caseName, fileSize, qcResults
- * - On hydration: resumes validation polling if taskId exists
- * - File object cannot be persisted - upload is lost on page refresh
  *
  * SINGLE UPLOAD: Only one upload at a time.
  */
@@ -50,19 +53,13 @@ const POLL_INTERVAL = 2000
 // Types
 // ---------------------------------------------------------------------------
 
-export interface QCResults {
-  totalVariants: number
-  sampleCount: number
-  genomeBuild: string
-}
-
 export type UploadPhase =
   | 'idle'
   | 'compressing'
   | 'uploading'
   | 'validating'
-  | 'qc_results'
   | 'error'
+// REMOVED: 'qc_results' -- QC data comes from server via React Query
 
 /** Subset of state that survives page refresh */
 interface PersistedState {
@@ -72,7 +69,6 @@ interface PersistedState {
   fileSize: number | null
   sessionId: string | null
   taskId: string | null
-  qcResults: QCResults | null
   errorMessage: string | null
   wasCompressed: boolean
 }
@@ -85,7 +81,6 @@ export interface UploadContextType {
   fileSize: number | null
   sessionId: string | null
   taskId: string | null
-  qcResults: QCResults | null
   errorMessage: string | null
   wasCompressed: boolean
   compressionProgress: number
@@ -95,6 +90,9 @@ export interface UploadContextType {
   // Computed
   isActive: boolean
   currentProgress: number
+
+  // Reference to last completed upload (for sidebar link)
+  completedSessionId: string | null
 
   // Actions
   startUpload: (file: File, caseName: string, retainFile: boolean) => void
@@ -121,9 +119,11 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   const [fileSize, setFileSize] = useState<number | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [taskId, setTaskId] = useState<string | null>(null)
-  const [qcResults, setQcResults] = useState<QCResults | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [wasCompressed, setWasCompressed] = useState(false)
+
+  // Completed session reference (persists until next upload)
+  const [completedSessionId, setCompletedSessionId] = useState<string | null>(null)
 
   // Progress (not persisted - transient UI state)
   const [compressionProgress, setCompressionProgress] = useState(0)
@@ -162,7 +162,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const startPolling = useCallback((tid: string) => {
+  const startPolling = useCallback((tid: string, sid: string) => {
     stopPolling()
 
     pollRef.current = setInterval(async () => {
@@ -179,17 +179,20 @@ export function UploadProvider({ children }: { children: ReactNode }) {
           stopPolling()
 
           if (status.successful) {
-            const qc: QCResults = {
-              totalVariants: status.result?.total_variants || 0,
-              sampleCount: status.result?.sample_count || 1,
-              genomeBuild: status.result?.genome_build || 'Unknown',
-            }
-            setQcResults(qc)
-            setPhase('qc_results')
-            persist({ phase: 'qc_results', qcResults: qc })
+            // -- KEY CHANGE: go idle, let React Query handle QC data --
+            const totalVariants = status.result?.total_variants || 0
+
+            setCompletedSessionId(sid)
+            setPhase('idle')
+            clearPersisted()
+
+            // Invalidate React Query caches so UI picks up validated session
+            queryClient.invalidateQueries({ queryKey: casesKeys.all })
+            queryClient.invalidateQueries({ queryKey: ['session-detail', sid] })
+            queryClient.invalidateQueries({ queryKey: ['session-qc', sid] })
 
             toast.success('File validated successfully', {
-              description: `${qc.totalVariants.toLocaleString()} variants found`,
+              description: `${totalVariants.toLocaleString()} variants found`,
             })
           } else if (status.failed) {
             const error = status.result?.error || 'Validation failed'
@@ -202,7 +205,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         // Network blip - keep polling, next interval will retry
       }
     }, POLL_INTERVAL)
-  }, [stopPolling, persist])
+  }, [stopPolling, clearPersisted, persist, queryClient])
 
   // -----------------------------------------------------------------------
   // Hydrate persisted state on mount
@@ -221,7 +224,6 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       if (saved.fileSize) setFileSize(saved.fileSize)
       if (saved.sessionId) setSessionId(saved.sessionId)
       if (saved.taskId) setTaskId(saved.taskId)
-      if (saved.qcResults) setQcResults(saved.qcResults)
       if (saved.wasCompressed) setWasCompressed(saved.wasCompressed)
 
       // Phase-specific recovery
@@ -230,17 +232,16 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         setPhase('error')
         setErrorMessage('Upload was interrupted. Please upload the file again.')
         persist({ phase: 'error', errorMessage: 'Upload was interrupted. Please upload the file again.' })
-      } else if (saved.phase === 'validating' && saved.taskId) {
+      } else if (saved.phase === 'validating' && saved.taskId && saved.sessionId) {
         // Server-side task still running - resume polling
         setPhase('validating')
-        startPolling(saved.taskId)
-      } else if (saved.phase === 'qc_results' && saved.qcResults) {
-        setPhase('qc_results')
+        startPolling(saved.taskId, saved.sessionId)
       } else if (saved.phase === 'error') {
         setPhase('error')
         setErrorMessage(saved.errorMessage || 'Unknown error')
       }
-      // else: 'idle' or unknown - stay idle
+      // else: idle or unknown - stay idle
+      // REMOVED: 'qc_results' recovery -- server has the data
     } catch {
       localStorage.removeItem(STORAGE_KEY)
     }
@@ -266,9 +267,9 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     setFileSize(file.size)
     setSessionId(null)
     setTaskId(null)
-    setQcResults(null)
     setErrorMessage(null)
     setWasCompressed(false)
+    setCompletedSessionId(null)
     setCompressionProgress(0)
     setUploadProgress(0)
     setValidationProgress(0)
@@ -281,7 +282,6 @@ export function UploadProvider({ children }: { children: ReactNode }) {
       fileSize: file.size,
       sessionId: null,
       taskId: null,
-      qcResults: null,
       errorMessage: null,
       wasCompressed: false,
     }
@@ -338,7 +338,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         persist({ ...base, phase: 'validating', sessionId: sid, taskId: tid })
 
         // Step 4: Poll for validation completion
-        startPolling(tid)
+        startPolling(tid, sid)
 
       } catch (error) {
         const err = error as Error
@@ -362,9 +362,9 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     setFileSize(null)
     setSessionId(null)
     setTaskId(null)
-    setQcResults(null)
     setErrorMessage(null)
     setWasCompressed(false)
+    setCompletedSessionId(null)
     setCompressionProgress(0)
     setUploadProgress(0)
     setValidationProgress(0)
@@ -375,7 +375,8 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   // Computed values
   // -----------------------------------------------------------------------
 
-  const isActive = phase !== 'idle'
+  // CHANGED: isActive only during pipeline execution, NOT idle/error
+  const isActive = phase === 'compressing' || phase === 'uploading' || phase === 'validating'
 
   const currentProgress = (() => {
     switch (phase) {
@@ -397,7 +398,6 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     fileSize,
     sessionId,
     taskId,
-    qcResults,
     errorMessage,
     wasCompressed,
     compressionProgress,
@@ -405,6 +405,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     validationProgress,
     isActive,
     currentProgress,
+    completedSessionId,
     startUpload,
     resetUpload,
   }

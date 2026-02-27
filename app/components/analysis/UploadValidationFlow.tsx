@@ -1,15 +1,24 @@
 "use client"
 
 /**
- * UploadValidationFlow Component - Unified Upload + Validation + QC Experience
+ * UploadValidationFlow Component - URL-Driven Upload + Validation + QC Experience
  *
- * AUTO-COMPRESSION: Files are automatically compressed before upload for faster speeds
- * - Happens transparently with visible progress
- * - Shows "Auto-compressing..." during compression
- * - Shows "Uploading..." during upload
- * - User can upload .vcf.gz if they want (no re-compression)
+ * REFACTORED: Display state driven by URL and server data, not UploadContext.
  *
- * PERFORMANCE LOGGING: Detailed console logs for debugging upload performance
+ * Display logic:
+ *   /upload              -> Fresh file selection form
+ *   /upload?session=XXX  -> Fetch session from server, show appropriate UI:
+ *     - Upload context active for this session -> progress
+ *     - session.status === 'validated'         -> QC results from server
+ *     - session.status === 'pending'           -> waiting view
+ *     - session.status === 'processing'        -> redirect to processing step
+ *     - session.status === 'completed'         -> redirect to analysis
+ *     - session.status === 'failed'            -> error view
+ *
+ * Data sources:
+ *   - UploadContext: ONLY for transient pipeline progress (compression/upload/validation)
+ *   - React Query useSessionDetail: session status, filename, genome_build
+ *   - React Query useSessionQC: total_variants, ti_tv_ratio, mean_depth, qc_passed
  *
  * Typography Scale:
  * - text-3xl: Page titles
@@ -18,14 +27,6 @@
  * - text-md: Secondary descriptions
  * - text-sm: Helper text, file info
  * - text-xs: Technical metadata
- *
- * Seamless flow:
- * 1. File Selection (drag & drop or browse)
- * 2. Compression (if .vcf) - Shows progress
- * 3. Upload Progress
- * 4. Validation Progress
- * 5. QC Results display - Upload shows completed (visual override in JourneyPanel)
- * 6. User clicks "Start Processing" -> Advances journey to processing
  */
 
 import { useCallback, useMemo, useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
@@ -36,8 +37,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelixLoader } from '@/components/ui/helix-loader'
-// Upload/validation logic moved to UploadContext
 import { useCases } from '@/hooks/queries/use-cases'
+import { useSessionDetail, useSessionQC } from '@/hooks/queries/use-session-detail'
 
 import { useRouter } from 'next/navigation'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -47,17 +48,8 @@ import { useSession } from '@/contexts/SessionContext'
 import { toast } from 'sonner'
 
 // Constants
-const MAX_FILE_SIZE = 20 * 1024 * 1024 * 1024 // 20GB (increased for nuclear server optimizations)
+const MAX_FILE_SIZE = 20 * 1024 * 1024 * 1024 // 20GB
 const ALLOWED_EXTENSIONS = ['.vcf', '.vcf.gz']
-
-// Flow phases
-type FlowPhase = 'selection' | 'compressing' | 'uploading' | 'validating' | 'qc_results' | 'error'
-
-interface QCResults {
-  totalVariants: number
-  sampleCount: number
-  genomeBuild: string
-}
 
 // Filtering preset definitions for UI
 const FILTERING_PRESETS = [
@@ -89,48 +81,58 @@ interface UploadValidationFlowProps {
 }
 
 export function UploadValidationFlow({ onComplete, onError, filteringPreset = 'strict', onFilteringPresetChange }: UploadValidationFlowProps) {
-  // Upload state from global context (survives navigation)
+  // -- Contexts --
   const upload = useUploadContext()
   const { currentSessionId } = useSession()
+  const { nextStep, goToStep, skipToAnalysis } = useJourney()
+  const router = useRouter()
+  const { data: casesData } = useCases()
 
-    // URL-driven display logic:
-    //   /upload              -> ALWAYS fresh form (selection)
-    //   /upload?session=XXX  -> show data for session XXX if upload context matches
-    //
-    // During new upload: both currentSessionId and upload.sessionId start null.
-    // Once server returns sessionId, onComplete fires -> URL updates -> both match.
-    const isActiveUpload = upload.phase === 'compressing' || upload.phase === 'uploading' || upload.phase === 'validating'
-    const justStarted = isActiveUpload && !currentSessionId && !upload.sessionId
-    const urlMatches = currentSessionId != null && currentSessionId === upload.sessionId
+  // -- URL-driven display logic --
+  // Is upload context actively working on a pipeline?
+  const isUploadActive = upload.isActive
 
-    let phase: FlowPhase = 'selection'
-    if (isActiveUpload && (justStarted || urlMatches)) {
-      // Active pipeline: either just started (pre-URL-update) or URL matches
-      phase = upload.phase as FlowPhase
-    } else if (urlMatches) {
-      // Terminal state: URL session matches upload session
-      if (upload.phase === 'qc_results') phase = 'qc_results'
-      else if (upload.phase === 'error') phase = 'error'
+  // Does the upload context match the current URL session?
+  const uploadMatchesUrl = !!(currentSessionId && upload.sessionId === currentSessionId)
+
+  // Upload just started, no sessionId from server yet, no URL param
+  const uploadPreSession = isUploadActive && !upload.sessionId && !currentSessionId
+
+  // Should we show progress from upload context?
+  const showUploadProgress = isUploadActive && (uploadMatchesUrl || uploadPreSession)
+
+  // Is upload context in error state for the relevant session?
+  const isUploadError = upload.phase === 'error' && (
+    uploadMatchesUrl || (!upload.sessionId && !currentSessionId)
+  )
+
+  // Should we fetch server data? Only when URL has session and upload is NOT active for it
+  const showServerView = !!currentSessionId && !showUploadProgress && !isUploadError
+
+  // -- React Query: server data --
+  const { data: session, isLoading: sessionLoading } = useSessionDetail(
+    showServerView ? currentSessionId : null
+  )
+  const { data: qcMetrics, isLoading: qcLoading } = useSessionQC(
+    showServerView && session?.status === 'validated' ? currentSessionId : null
+  )
+
+  // -- Redirect effects for processing/completed sessions --
+  useEffect(() => {
+    if (!session || !currentSessionId) return
+    if (session.status === 'processing') {
+      goToStep('processing')
+    } else if (session.status === 'completed') {
+      skipToAnalysis()
+      router.push(`/analysis?session=${currentSessionId}`)
     }
-    // else: selection (fresh form - New Case or no matching upload)
+  }, [session?.status, currentSessionId, goToStep, skipToAnalysis, router])
 
-    const sessionId = upload.sessionId
-  const errorMessage = upload.errorMessage
-  const qcResults = upload.qcResults ? {
-    totalVariants: upload.qcResults.totalVariants,
-    sampleCount: upload.qcResults.sampleCount,
-    genomeBuild: upload.qcResults.genomeBuild,
-  } : null
-
-  // File selection state
+  // -- File selection state --
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [caseName, setCaseName] = useState<string>('')
   const [validationError, setValidationError] = useState<string | null>(null)
-  const compressionProgress = upload.compressionProgress
-  const uploadProgress = upload.uploadProgress
-  const validationProgress = upload.validationProgress
-  const wasCompressed = upload.wasCompressed
   const [duplicateSession, setDuplicateSession] = useState<{ id: string; label: string } | null>(null)
 
   // Settings panel state
@@ -141,76 +143,46 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
 
-  // Journey context
-  const { nextStep } = useJourney()
-  const router = useRouter()
-  const { skipToAnalysis } = useJourney()
-  const { data: casesData } = useCases()
-
-  // Validation handled by UploadContext
-
-
-  // Computed values
+  // -- Computed values --
   const fileSize = useMemo(() => {
     const size = selectedFile?.size ?? upload.fileSize
     if (!size) return null
     const mb = size / (1024 * 1024)
     const gb = size / (1024 * 1024 * 1024)
-
-    if (gb >= 1) {
-      return `${gb.toFixed(2)} GB`
-    } else if (mb < 1) {
-      return `${(size / 1024).toFixed(1)} KB`
-    } else {
-      return `${mb.toFixed(2)} MB`
-    }
+    if (gb >= 1) return `${gb.toFixed(2)} GB`
+    if (mb < 1) return `${(size / 1024).toFixed(1)} KB`
+    return `${mb.toFixed(2)} MB`
   }, [selectedFile, upload.fileSize])
 
   const canSubmit = useMemo(() => {
     return !!(selectedFile && !upload.isActive && !validationError)
-  }, [selectedFile, phase, validationError])
+  }, [selectedFile, upload.isActive, validationError])
 
-  // Is processing (compressing, uploading or validating)
-  const isProcessing = isActiveUpload && (justStarted || urlMatches)
+  const compressionProgress = upload.compressionProgress
+  const uploadProgress = upload.uploadProgress
+  const validationProgress = upload.validationProgress
+  const wasCompressed = upload.wasCompressed
+  const currentProgress = upload.currentProgress
 
-  // Get button text based on phase
   const getButtonText = () => {
-    switch (phase) {
-      case 'compressing':
-        return 'Auto-compressing...'
-      case 'uploading':
-        return 'Uploading...'
-      case 'validating':
-        return 'Validating...'
-      default:
-        return 'Upload & Analyze'
+    switch (upload.phase) {
+      case 'compressing': return 'Auto-compressing...'
+      case 'uploading': return 'Uploading...'
+      case 'validating': return 'Validating...'
+      default: return 'Upload & Analyze'
     }
   }
 
-  // Get current progress from context
-  const currentProgress = upload.currentProgress
-
-  // File validation
+  // -- File validation --
   const validateFile = useCallback((file: File): string | null => {
     const fileName = file.name.toLowerCase()
     const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext))
-
-    if (!hasValidExtension) {
-      return `Invalid file type. Please upload ${ALLOWED_EXTENSIONS.join(' or ')} files.`
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return `File too large. Maximum size is 20GB.`
-    }
-
-    if (file.size === 0) {
-      return 'File is empty.'
-    }
-
+    if (!hasValidExtension) return `Invalid file type. Please upload ${ALLOWED_EXTENSIONS.join(' or ')} files.`
+    if (file.size > MAX_FILE_SIZE) return `File too large. Maximum size is 20GB.`
+    if (file.size === 0) return 'File is empty.'
     return null
   }, [])
 
-  // Check for duplicate filename among existing cases
   const checkDuplicate = useCallback((fileName: string) => {
     if (!casesData?.sessions) return null
     const match = casesData.sessions.find(
@@ -225,30 +197,25 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     return null
   }, [casesData])
 
-  // Open existing duplicate case
   const handleOpenExisting = useCallback(() => {
     if (!duplicateSession) return
     skipToAnalysis()
     router.push('/analysis?session=' + duplicateSession.id)
   }, [duplicateSession, skipToAnalysis, router])
 
-  // Drag & Drop handlers
+  // -- Drag & Drop handlers --
   const handleDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     dragCounterRef.current++
-    if (dragCounterRef.current === 1) {
-      setIsDragging(true)
-    }
+    if (dragCounterRef.current === 1) setIsDragging(true)
   }, [])
 
   const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.stopPropagation()
     dragCounterRef.current--
-    if (dragCounterRef.current === 0) {
-      setIsDragging(false)
-    }
+    if (dragCounterRef.current === 0) setIsDragging(false)
   }, [])
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
@@ -261,18 +228,15 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     e.stopPropagation()
     setIsDragging(false)
     dragCounterRef.current = 0
-
     const files = e.dataTransfer.files
     if (files && files[0]) {
       const file = files[0]
       const error = validateFile(file)
-
       if (error) {
         setValidationError(error)
         toast.error('Invalid file', { description: error })
         return
       }
-
       setSelectedFile(file)
       setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
       setValidationError(null)
@@ -281,19 +245,16 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     }
   }, [validateFile, checkDuplicate])
 
-  // File input handler
   const handleFileSelect = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files[0]) {
       const file = files[0]
       const error = validateFile(file)
-
       if (error) {
         setValidationError(error)
         toast.error('Invalid file', { description: error })
         return
       }
-
       setSelectedFile(file)
       setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
       setValidationError(null)
@@ -311,12 +272,10 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     setCaseName('')
     setValidationError(null)
     setDuplicateSession(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
-  // Submit handler - delegates to UploadContext
+  // -- Submit handler --
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || !selectedFile) return
     upload.startUpload(selectedFile, caseName, retainFile)
@@ -331,7 +290,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     }
   }, [upload.sessionId, onComplete])
 
-  // Reset handler
+  // -- Reset handler --
   const handleReset = useCallback(() => {
     upload.resetUpload()
     setSelectedFile(null)
@@ -340,30 +299,29 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     setDuplicateSession(null)
     setShowSettings(false)
     setRetainFile(false)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }, [upload])
 
-  // Handle processing button click
+  // -- Processing button --
   const handleProcessingClick = useCallback(() => {
-    if (sessionId) {
+    if (currentSessionId) {
       nextStep() // upload -> processing
     }
-  }, [sessionId, nextStep])
+  }, [currentSessionId, nextStep])
 
-  // Download QC report
+  // -- Download QC report (server data) --
   const handleDownloadQC = useCallback(() => {
-    if (!qcResults) return
-    const displayName = selectedFile?.name || upload.fileName || 'unknown'
-
+    if (!session || !qcMetrics) return
     const report = {
-      file: displayName,
+      file: session.original_filename || '-',
       timestamp: new Date().toISOString(),
       qc: {
-        samples: qcResults.sampleCount,
-        genomeBuild: qcResults.genomeBuild,
-        variants: qcResults.totalVariants,
+        genomeBuild: session.genome_build,
+        variants: qcMetrics.total_variants,
+        tiTvRatio: qcMetrics.ti_tv_ratio,
+        hetHomRatio: qcMetrics.het_hom_ratio,
+        meanDepth: qcMetrics.mean_depth,
+        qcPassed: qcMetrics.qc_passed,
       },
     }
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
@@ -373,28 +331,27 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     a.download = 'qc-report.json'
     a.click()
     URL.revokeObjectURL(url)
-  }, [qcResults, selectedFile, upload.fileName])
+  }, [session, qcMetrics])
 
-  // Get current preset info for display
   const currentPresetInfo = FILTERING_PRESETS.find(p => p.id === filteringPreset) || FILTERING_PRESETS[0]
 
-  // Render - QC Results State
-  if (phase === 'qc_results' && qcResults) {
-    // Check if genome build is supported
-    const isGRCh37 = qcResults.genomeBuild === 'GRCh37'
-    const isSupported = qcResults.genomeBuild === 'GRCh38' || isGRCh37
+  // =====================================================================
+  // RENDER: Server-driven QC Results (session.status === 'validated')
+  // =====================================================================
+  if (showServerView && session?.status === 'validated') {
+    const genomeBuild = session.genome_build || 'Unknown'
+    const isGRCh37 = genomeBuild === 'GRCh37'
+    const isSupported = genomeBuild === 'GRCh38' || isGRCh37
 
     return (
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
-          {/* Header - HelixLoader + Title (same as upload screen, not animated) */}
+          {/* Header */}
           <div className="flex items-center justify-center gap-4">
             <HelixLoader size="xs" speed={3} animated={false} />
             <div className="text-center">
               <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
-              <p className="text-base text-muted-foreground">
-                Upload a genetic variant file
-              </p>
+              <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
             </div>
           </div>
 
@@ -406,39 +363,46 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 <h3 className="text-lg font-semibold mb-2">File</h3>
                 <div className="flex items-center gap-2">
                   <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <p className="text-base font-medium">{selectedFile?.name || upload.fileName || "-"}</p>
-                  <span className="text-muted-foreground">-</span>
-                  <p className="text-md text-muted-foreground">{fileSize}</p>
-                    {/* Subtle indicator that file was auto-compressed (only visible after QC) */}
-                    {wasCompressed && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Zap className="h-3 w-3 text-blue-500" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-sm">Auto-compressed for faster upload</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
+                  <p className="text-base font-medium">{session.original_filename || '-'}</p>
+                  {fileSize && (
+                    <>
+                      <span className="text-muted-foreground">-</span>
+                      <p className="text-md text-muted-foreground">{fileSize}</p>
+                    </>
+                  )}
+                  {wasCompressed && upload.sessionId === currentSessionId && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Zap className="h-3 w-3 text-blue-500" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-sm">Auto-compressed for faster upload</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
               </div>
 
               {/* QC Results Header */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Quality Control Results</h3>
-                <Button variant="ghost" size="sm" onClick={handleDownloadQC}>
+                <Button variant="ghost" size="sm" onClick={handleDownloadQC} disabled={!qcMetrics}>
                   <Download className="h-4 w-4 mr-2" />
                   <span className="text-base">Download Report</span>
                 </Button>
               </div>
 
-              {/* QC Metrics Grid */}
+              {/* QC Metrics Grid - data from server */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-ml font-semibold mb-1">Samples Detected</p>
-                  <p className="text-base">{qcResults.sampleCount}</p>
+                  <p className="text-ml font-semibold mb-1">Variants</p>
+                  {qcLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <p className="text-base">{qcMetrics?.total_variants?.toLocaleString() || '-'}</p>
+                  )}
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
@@ -450,18 +414,21 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p className="text-sm">
-                            <strong>GRCh38</strong> - Current human genome reference assembly (released December 2013).
-                            Also known as hg38.
+                            <strong>GRCh38</strong> - Current human genome reference assembly (released December 2013). Also known as hg38.
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-base">{qcResults.genomeBuild}</p>
+                  <p className="text-base">{genomeBuild}</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-ml font-semibold mb-1">Variants</p>
-                  <p className="text-base">{qcResults.totalVariants.toLocaleString()}</p>
+                  <p className="text-ml font-semibold mb-1">Mean Depth</p>
+                  {qcLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <p className="text-base">{qcMetrics?.mean_depth ? `${qcMetrics.mean_depth.toFixed(1)}x` : '-'}</p>
+                  )}
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-ml font-semibold mb-1">Status</p>
@@ -484,7 +451,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 </div>
               </div>
 
-              {/* GRCh37 Info - auto-conversion notice */}
+              {/* GRCh37 Info */}
               {isGRCh37 && (
                 <Alert className="mt-4 border-amber-300 bg-amber-50 text-amber-900">
                   <Info className="h-4 w-4 text-amber-600" />
@@ -497,7 +464,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
             </CardContent>
           </Card>
 
-          {/* Next Step CTA - only show if GRCh38 */}
+          {/* Next Step CTA */}
           {isSupported && (
             <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
               <div className="flex flex-col gap-4">
@@ -553,12 +520,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowSettings(!showSettings)}
-                          className="flex-shrink-0"
-                        >
+                        <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)} className="flex-shrink-0">
                           <Settings className="h-4 w-4 mr-2" />
                           <span className="text-base">Settings</span>
                         </Button>
@@ -568,7 +530,6 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -600,38 +561,165 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     )
   }
 
-  // Render - Error State
-  if (phase === 'error') {
+  // =====================================================================
+  // RENDER: Server-driven Pending (session.status === 'pending')
+  // =====================================================================
+  if (showServerView && session?.status === 'pending') {
     return (
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
-          {/* Header - HelixLoader + Title (same as upload screen, not animated) */}
+          <div className="flex items-center justify-center gap-4">
+            <HelixLoader size="xs" speed={3} animated={true} />
+            <div className="text-center">
+              <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
+              <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
+            </div>
+          </div>
+          <Card>
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center gap-6 text-center">
+                <div className="p-6 rounded-full bg-primary/10">
+                  <FileCode className="h-12 w-12 text-primary" />
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-lg font-medium">{session.original_filename || 'Processing...'}</p>
+                  <p className="text-base text-muted-foreground">
+                    Validation in progress. This session is being processed.
+                  </p>
+                </div>
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // =====================================================================
+  // RENDER: Server-driven redirect (processing/completed)
+  // =====================================================================
+  if (showServerView && session && (session.status === 'processing' || session.status === 'completed')) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  // =====================================================================
+  // RENDER: Server-driven failed session
+  // =====================================================================
+  if (showServerView && session?.status === 'failed') {
+    return (
+      <div className="flex flex-col min-h-[600px] p-8">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
           <div className="flex items-center justify-center gap-4">
             <HelixLoader size="xs" speed={3} animated={false} />
             <div className="text-center">
               <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
-              <p className="text-base text-muted-foreground">
-                Upload a genetic variant file
-              </p>
+              <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
             </div>
           </div>
-
           <Card className="border-destructive">
             <CardContent className="pt-6">
               <div className="text-center space-y-6">
                 <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
                   <AlertCircle className="h-8 w-8 text-destructive" />
                 </div>
-
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Process Failed</h3>
                   <p className="text-md text-muted-foreground">
-                    {errorMessage || 'An unexpected error occurred'}
+                    {session.error_message || 'An unexpected error occurred'}
                   </p>
                 </div>
-
                 <div className="flex gap-2 justify-center">
-                  <Button onClick={handleSubmit}>
+                  <Button variant="outline" onClick={() => router.push('/upload')}>
+                    <span className="text-base">Start Over</span>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // =====================================================================
+  // RENDER: Server loading
+  // =====================================================================
+  if (showServerView && sessionLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  // =====================================================================
+  // RENDER: Session not found
+  // =====================================================================
+  if (showServerView && !session && !sessionLoading) {
+    return (
+      <div className="flex flex-col min-h-[600px] p-8">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
+          <div className="flex items-center justify-center gap-4">
+            <HelixLoader size="xs" speed={3} animated={false} />
+            <div className="text-center">
+              <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
+              <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
+            </div>
+          </div>
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-6">
+                <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Session Not Found</h3>
+                  <p className="text-md text-muted-foreground">The requested session could not be loaded.</p>
+                </div>
+                <Button variant="outline" onClick={() => router.push('/upload')}>
+                  <span className="text-base">Start New Upload</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // =====================================================================
+  // RENDER: Upload context error
+  // =====================================================================
+  if (isUploadError) {
+    return (
+      <div className="flex flex-col min-h-[600px] p-8">
+        <div className="w-full max-w-2xl mx-auto space-y-6">
+          <div className="flex items-center justify-center gap-4">
+            <HelixLoader size="xs" speed={3} animated={false} />
+            <div className="text-center">
+              <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
+              <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
+            </div>
+          </div>
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-6">
+                <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Process Failed</h3>
+                  <p className="text-md text-muted-foreground">
+                    {upload.errorMessage || 'An unexpected error occurred'}
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={handleSubmit} disabled={!selectedFile}>
                     <span className="text-base">Try Again</span>
                   </Button>
                   <Button variant="outline" onClick={handleReset}>
@@ -646,8 +734,10 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     )
   }
 
-  // Render - Active upload in progress (returned to page without file object)
-  if (isProcessing && !selectedFile) {
+  // =====================================================================
+  // RENDER: Active upload progress (navigated back, no file object)
+  // =====================================================================
+  if (showUploadProgress && !selectedFile) {
     return (
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
@@ -655,19 +745,15 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
             <HelixLoader size="xs" speed={3} animated={true} />
             <div className="text-center">
               <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
-              <p className="text-base text-muted-foreground">
-                Upload a genetic variant file
-              </p>
+              <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
             </div>
           </div>
-
           <Card>
             <CardContent className="p-8">
               <div className="flex flex-col items-center gap-6 text-center">
                 <div className="p-6 rounded-full bg-primary/10">
                   <FileCode className="h-12 w-12 text-primary" />
                 </div>
-
                 <div className="flex flex-col items-center gap-2">
                   <p className="text-lg font-medium">{upload.fileName || 'Processing...'}</p>
                   <p className="text-base text-muted-foreground">
@@ -676,7 +762,6 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                     {upload.phase === 'validating' && 'Validating file format...'}
                   </p>
                 </div>
-
                 <div className="w-full max-w-sm space-y-2">
                   <Progress value={currentProgress} className="h-2" />
                   <p className="text-sm text-muted-foreground text-center">
@@ -691,22 +776,24 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     )
   }
 
-  // Render - Unified Selection/Upload/Validation State
+  // =====================================================================
+  // RENDER: File Selection / Upload Form (default)
+  // =====================================================================
+  const isProcessing = showUploadProgress && !!selectedFile
+
   return (
     <div className="flex flex-col min-h-[600px] p-8">
       <div className="w-full max-w-2xl mx-auto space-y-6">
-        {/* Header - HelixLoader + Title (fixed position from top) */}
+        {/* Header */}
         <div className="flex items-center justify-center gap-4">
           <HelixLoader size="xs" speed={3} animated={isProcessing} />
           <div className="text-center">
             <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
-            <p className="text-base text-muted-foreground">
-              Upload a genetic variant file
-            </p>
+            <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
           </div>
         </div>
 
-        {/* Dotted Upload Zone - expands downward, not upward */}
+        {/* Dotted Upload Zone */}
         <div
           onDragEnter={!isProcessing ? handleDragEnter : undefined}
           onDragLeave={!isProcessing ? handleDragLeave : undefined}
@@ -714,10 +801,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
           onDrop={!isProcessing ? handleDrop : undefined}
           className={`
             relative border-2 border-dashed rounded-lg p-12 transition-all
-            ${isDragging
-              ? 'border-primary bg-primary/5 scale-[1.02]'
-              : 'border-border'
-            }
+            ${isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-border'}
             ${!isProcessing ? 'hover:border-primary/50 hover:bg-accent/5 cursor-pointer' : ''}
           `}
           role={!isProcessing ? 'button' : undefined}
@@ -725,10 +809,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
           aria-label="File upload area"
           onClick={!isProcessing && !selectedFile ? handleBrowseClick : undefined}
           onKeyDown={!isProcessing ? (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              handleBrowseClick()
-            }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBrowseClick() }
           } : undefined}
         >
           <input
@@ -742,24 +823,18 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
           />
 
           <div className="flex flex-col items-center gap-6 text-center">
-            {/* Icon - always show */}
             <div className="p-6 rounded-full bg-primary/10">
               <FileCode className="h-12 w-12 text-primary" />
             </div>
 
-            {/* Content varies by state */}
             {selectedFile ? (
-              /* File selected or processing state */
               <>
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-medium">{selectedFile.name}</p>
                     {!isProcessing && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleRemoveFile()
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleRemoveFile() }}
                         className="p-1 hover:bg-destructive/10 rounded-full transition-colors"
                         aria-label="Remove file"
                       >
@@ -789,7 +864,8 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                     />
                   </div>
                 )}
-                {/* Retain file checkbox (debug) */}
+
+                {/* Retain file checkbox */}
                 {!isProcessing && selectedFile && (
                   <label className="flex items-center gap-2 cursor-pointer" onClick={(e) => e.stopPropagation()}>
                     <input
@@ -841,13 +917,10 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                   </div>
                 )}
 
-                {/* Button - always visible, disabled during processing */}
+                {/* Button */}
                 <Button
                   size="lg"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleSubmit()
-                  }}
+                  onClick={(e) => { e.stopPropagation(); handleSubmit() }}
                   disabled={isProcessing || !canSubmit}
                 >
                   {isProcessing ? (
@@ -864,18 +937,11 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 </Button>
               </>
             ) : (
-              /* No file state */
               <>
                 <div>
-                  <p className="text-lg font-medium mb-2">
-                    Drag and drop your VCF file here
-                  </p>
-                  <p className="text-base text-muted-foreground mb-1">
-                    or click to browse
-                  </p>
-                  <p className="text-md text-muted-foreground">
-                    Supports .vcf and .vcf.gz files (max 20GB)
-                  </p>
+                  <p className="text-lg font-medium mb-2">Drag and drop your VCF file here</p>
+                  <p className="text-base text-muted-foreground mb-1">or click to browse</p>
+                  <p className="text-md text-muted-foreground">Supports .vcf and .vcf.gz files (max 20GB)</p>
                 </div>
                 <Button size="lg" onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}>
                   <Upload className="h-5 w-5 mr-2" />

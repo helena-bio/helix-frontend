@@ -16,8 +16,9 @@
  * SESSION MANAGEMENT:
  * - After upload completes, sessionId is added to URL: /upload?session=<uuid>
  * - When profile completes, handleAnalysisReady redirects to /analysis
+ * - REMOVED: useEffect that resets journey -- URL sync handles this
  */
-import { useEffect, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
@@ -36,18 +37,14 @@ export default function UploadPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { currentSessionId, setCurrentSessionId } = useSession()
-  const { currentStep, journeyMode, skipToAnalysis, resetJourney } = useJourney()
+  const { currentStep, journeyMode, skipToAnalysis } = useJourney()
   const upload = useUploadContext()
 
   // Processing configuration - bridge between Upload and Processing steps
   const [filteringPreset, setFilteringPreset] = useState<string>('strict')
 
-  // Reset journey when landing on /upload without a session (new upload only)
-  useEffect(() => {
-    if (!currentSessionId && journeyMode === 'new') {
-      resetJourney()
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // REMOVED: useEffect that resets journey on mount without session
+  // URL sync in layout.tsx handles this: no ?session param -> sessionId=null -> JourneyContext auto-resets
 
   // Handle upload complete - add sessionId to URL
   const handleUploadComplete = (sessionId: string) => {
@@ -56,8 +53,6 @@ export default function UploadPage() {
   }
 
   // Handle analysis ready - invalidate cases list and navigate to analysis
-  // NOTE: No useEffect redirect -- only this callback triggers the /analysis navigation.
-  // This prevents sidebar case clicks (which also call skipToAnalysis) from being hijacked.
   const handleAnalysisReady = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: casesKeys.all })
     skipToAnalysis()

@@ -4,12 +4,18 @@
  * Expandable list of analysis cases in the sidebar.
  * - My Cases / All Cases toggle (org-wide visibility)
  * - Search filtering (client-side)
- * - Click completed case to load into analysis view
+ * - Click completed case -> /analysis?session=<id>
+ * - Click pending/validated case -> /upload?session=<id>
  * - Inline rename (pencil icon -> input -> Enter/Escape)
  * - Delete with inline confirmation
  * - Status indicator per case
  * - Active case highlighted
  * - Owner name shown for other users' cases
+ *
+ * UPLOAD ENTRY:
+ * - Shows ONLY during active upload (compressing/uploading/validating)
+ * - After validation completes, session appears in cases list via API
+ * - No more 'qc_results' state in sidebar
  *
  * SESSION MANAGEMENT:
  * - Navigation is via router.push ONLY
@@ -72,6 +78,8 @@ function StatusDot({ status }: { status: string }) {
       return <Loader2 className="h-3 w-3 text-orange-500 animate-spin shrink-0" />
     case 'failed':
       return <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
+    case 'validated':
+      return <Clock className="h-3 w-3 text-amber-500 shrink-0" />
     default:
       return <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
   }
@@ -111,7 +119,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const cases = data?.sessions ?? []
 
   const filteredCases = cases.filter((c) => {
-    // Hide session managed by upload context (avoids duplicate)
+    // Hide session being actively uploaded (shown as upload entry instead)
     if (upload.isActive && upload.sessionId && c.id === upload.sessionId) return false
     if (!searchQuery) return true
     const name = getCaseDisplayName(c).toLowerCase()
@@ -127,16 +135,39 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
     }
   }, [editingId])
 
-  // Load completed case into analysis view
-  // NOTE: Only router.push -- layout URL sync handles setCurrentSessionId
+  // CHANGED: Handle all session statuses, not just completed
   const handleCaseClick = useCallback((session: AnalysisSession) => {
-    if (session.status !== 'completed') return
     if (session.id === currentSessionId) return
 
-    skipToAnalysis()
-    setSelectedModule('analysis')
-    router.push(`/analysis?session=${session.id}`)
-  }, [currentSessionId, skipToAnalysis, setSelectedModule, router])
+    // Pending or validated -> go to upload flow with session param
+    if (session.status === 'pending' || session.status === 'validated') {
+      resetJourney()
+      router.push(`/upload?session=${session.id}`)
+      return
+    }
+
+    // Processing -> go to upload flow (step router will show ProcessingFlow)
+    if (session.status === 'processing') {
+      resetJourney()
+      router.push(`/upload?session=${session.id}`)
+      return
+    }
+
+    // Completed -> analysis view
+    if (session.status === 'completed') {
+      skipToAnalysis()
+      setSelectedModule('analysis')
+      router.push(`/analysis?session=${session.id}`)
+      return
+    }
+
+    // Failed -> upload flow will show error from server
+    if (session.status === 'failed') {
+      resetJourney()
+      router.push(`/upload?session=${session.id}`)
+      return
+    }
+  }, [currentSessionId, skipToAnalysis, setSelectedModule, resetJourney, router])
 
   const handleStartRename = useCallback((e: React.MouseEvent, session: AnalysisSession) => {
     e.stopPropagation()
@@ -250,43 +281,19 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
           {/* Cases list */}
           <div className="overflow-y-auto space-y-0.5 scrollbar-thin">
 
-            {/* Active upload entry */}
+            {/* Active upload entry -- ONLY during compressing/uploading/validating */}
             {upload.isActive && (
               <div
-                className={cn(
-                  "group/upload relative rounded-md px-2 py-1.5 cursor-pointer transition-colors",
-                  upload.phase === "qc_results" || upload.phase === "error"
-                    ? "hover:bg-accent"
-                    : "bg-primary/5 border border-primary/20 hover:bg-primary/10"
-                )}
-                onClick={() => { resetJourney(); upload.sessionId ? router.push(`/upload?session=${upload.sessionId}`) : router.push('/upload') }}
+                className="group/upload relative rounded-md px-2 py-1.5 cursor-pointer transition-colors bg-primary/5 border border-primary/20 hover:bg-primary/10"
+                onClick={() => {
+                  upload.sessionId
+                    ? router.push(`/upload?session=${upload.sessionId}`)
+                    : router.push('/upload')
+                }}
               >
-                  {deletingId === upload.sessionId ? (
-                    <div className="flex items-center gap-2 py-0.5">
-                      <span className="text-md text-destructive flex-1 truncate">Delete?</span>
-                      <button
-                        className="p-0.5 rounded hover:bg-destructive/10"
-                        onClick={(e) => { e.stopPropagation(); if (upload.sessionId) handleConfirmDelete(upload.sessionId) }}
-                      >
-                        <Check className="h-4 w-4 text-destructive" />
-                      </button>
-                      <button
-                        className="p-0.5 rounded hover:bg-accent"
-                        onClick={(e) => { e.stopPropagation(); setDeletingId(null) }}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
                 <div className="flex items-start gap-2">
                   <div className="mt-0.5">
-                    {upload.phase === "error" ? (
-                      <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
-                    ) : upload.phase === "qc_results" ? (
-                      <Clock className="h-3 w-3 text-amber-500 shrink-0" />
-                    ) : (
-                      <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
-                    )}
+                    <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
@@ -294,36 +301,12 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                         {upload.caseName || upload.fileName || "Uploading..."}
                       </p>
                       <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover/upload:opacity-100 transition-opacity">
-                        {upload.phase === "qc_results" && upload.sessionId && (
-                          <button
-                            className="p-0.5 rounded hover:bg-accent"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setEditingId(upload.sessionId)
-                              setEditValue(upload.caseName || upload.fileName || "")
-                            }}
-                            title="Rename"
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
-                        )}
                         <button
                           className="p-0.5 rounded hover:bg-destructive/10"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (upload.phase === 'qc_results' && upload.sessionId) {
-                              handleDelete(e, upload.sessionId)
-                            } else {
-                              upload.resetUpload()
-                            }
-                          }}
-                          title={upload.phase === "qc_results" ? "Delete" : "Cancel"}
+                          onClick={(e) => { e.stopPropagation(); upload.resetUpload() }}
+                          title="Cancel"
                         >
-                          {upload.phase === "qc_results" ? (
-                            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          ) : (
-                            <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                          )}
+                          <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                         </button>
                       </div>
                     </div>
@@ -332,23 +315,19 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                         {upload.phase === "compressing" && "Compressing..."}
                         {upload.phase === "uploading" && `Uploading ${upload.uploadProgress}%`}
                         {upload.phase === "validating" && "Validating..."}
-                        {upload.phase === "qc_results" && "Ready to process"}
-                        {upload.phase === "error" && "Failed"}
                       </span>
                     </div>
-                    {(upload.phase === "compressing" || upload.phase === "uploading" || upload.phase === "validating") && (
-                      <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all duration-300"
-                          style={{ width: `${upload.currentProgress}%` }}
-                        />
-                      </div>
-                    )}
+                    <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all duration-300"
+                        style={{ width: `${upload.currentProgress}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-                  )}
               </div>
             )}
+
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -361,6 +340,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
               filteredCases.map((session) => {
                 const isActive = session.id === currentSessionId
                 const isCompleted = session.status === 'completed'
+                const isClickable = true // All statuses are now clickable
                 const isOwner = session.user_id === user?.id
                 const isEditing = editingId === session.id
                 const isDeleting = deletingId === session.id
@@ -371,8 +351,8 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                     className={cn(
                       "group/case relative rounded-md px-2 py-1 transition-colors",
                       isActive && "bg-secondary",
-                      isCompleted && !isActive && "hover:bg-accent cursor-pointer",
-                      !isCompleted && "opacity-60 hover:opacity-100"
+                      !isActive && "hover:bg-accent cursor-pointer",
+                      !isCompleted && !isActive && "opacity-70 hover:opacity-100"
                     )}
                     onClick={() => handleCaseClick(session)}
                   >
