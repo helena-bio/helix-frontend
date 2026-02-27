@@ -33,6 +33,7 @@ export function useSessionDetail(sessionId: string | null) {
     queryFn: () => getSession(sessionId!),
     enabled: !!sessionId,
     staleTime: 0,
+    refetchOnMount: 'always',
     placeholderData: undefined,
   })
 }
