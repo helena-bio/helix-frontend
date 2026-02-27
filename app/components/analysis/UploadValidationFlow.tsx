@@ -40,7 +40,7 @@ import { HelixLoader } from '@/components/ui/helix-loader'
 import { useCases } from '@/hooks/queries/use-cases'
 import { useSessionDetail } from '@/hooks/queries/use-session-detail'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useUploadContext } from '@/contexts/UploadContext'
 import { useSession } from '@/contexts/SessionContext'
@@ -87,6 +87,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   const { nextStep, goToStep, skipToAnalysis } = useJourney()
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { data: casesData } = useCases()
 
   // -- URL-driven display logic --
@@ -123,6 +124,10 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   useEffect(() => {
     // Only redirect when we are actually on the /upload page
     if (pathname !== '/upload') return
+    // Check URL directly -- SessionContext may lag behind URL by one render cycle
+    // If URL has no ?session= param, user clicked New Case -- do NOT redirect
+    const urlSessionId = searchParams.get('session')
+    if (!urlSessionId) return
     // Must have both server data and a matching session
     if (!session || !currentSessionId) return
     // Guard: React Query data must match the current URL session
