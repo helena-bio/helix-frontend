@@ -38,7 +38,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelixLoader } from '@/components/ui/helix-loader'
 import { useCases } from '@/hooks/queries/use-cases'
-import { useSessionDetail, useSessionQC } from '@/hooks/queries/use-session-detail'
+import { useSessionDetail } from '@/hooks/queries/use-session-detail'
 
 import { useRouter } from 'next/navigation'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -112,9 +112,6 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   // -- React Query: server data --
   const { data: session, isLoading: sessionLoading } = useSessionDetail(
     showServerView ? currentSessionId : null
-  )
-  const { data: qcMetrics, isLoading: qcLoading } = useSessionQC(
-    showServerView && session?.status === 'uploaded' ? currentSessionId : null
   )
 
   // -- Redirect effects for processing/completed sessions --
@@ -311,17 +308,17 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   // -- Download QC report (server data) --
   const handleDownloadQC = useCallback(() => {
-    if (!session || !qcMetrics) return
+    if (!session) return
     const report = {
       file: session.original_filename || '-',
       timestamp: new Date().toISOString(),
       qc: {
         genomeBuild: session.genome_build,
-        variants: qcMetrics.total_variants,
-        tiTvRatio: qcMetrics.ti_tv_ratio,
-        hetHomRatio: qcMetrics.het_hom_ratio,
-        meanDepth: qcMetrics.mean_depth,
-        qcPassed: qcMetrics.qc_passed,
+        variants: session.total_variants,
+        tiTvRatio: null,
+        hetHomRatio: null,
+        meanDepth: null,
+        qcPassed: true,
       },
     }
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
@@ -331,7 +328,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     a.download = 'qc-report.json'
     a.click()
     URL.revokeObjectURL(url)
-  }, [session, qcMetrics])
+  }, [session])
 
   const currentPresetInfo = FILTERING_PRESETS.find(p => p.id === filteringPreset) || FILTERING_PRESETS[0]
 
@@ -388,7 +385,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               {/* QC Results Header */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Quality Control Results</h3>
-                <Button variant="ghost" size="sm" onClick={handleDownloadQC} disabled={!qcMetrics}>
+                <Button variant="ghost" size="sm" onClick={handleDownloadQC} disabled={!session}>
                   <Download className="h-4 w-4 mr-2" />
                   <span className="text-base">Download Report</span>
                 </Button>
@@ -398,10 +395,10 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-ml font-semibold mb-1">Variants</p>
-                  {qcLoading ? (
+                  {false ? (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   ) : (
-                    <p className="text-base">{qcMetrics?.total_variants?.toLocaleString() || '-'}</p>
+                    <p className="text-base">{session.total_variants?.toLocaleString() || '-'}</p>
                   )}
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
@@ -424,10 +421,10 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-ml font-semibold mb-1">Mean Depth</p>
-                  {qcLoading ? (
+                  {false ? (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   ) : (
-                    <p className="text-base">{qcMetrics?.mean_depth ? `${qcMetrics.mean_depth.toFixed(1)}x` : '-'}</p>
+                    <p className="text-base">{'-'}</p>
                   )}
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">

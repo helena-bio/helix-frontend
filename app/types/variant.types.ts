@@ -123,6 +123,8 @@ export interface AnalysisSession {
   classifier_version: string | null
   classifier_version_label: string | null
   classifier_is_outdated: boolean
+  total_variants: number | null
+  sample_count: number | null
 }
 
 export interface VariantFilters {

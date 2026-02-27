@@ -75,6 +75,8 @@ export async function uploadVCFFile(
       classifier_version: null,
       classifier_version_label: null,
       classifier_is_outdated: false,
+      total_variants: null,
+      sample_count: null,
   }
 }
 
