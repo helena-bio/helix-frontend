@@ -352,7 +352,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                       "group/case relative rounded-md px-2 py-1 transition-colors",
                       isActive && "bg-secondary",
                       !isActive && "hover:bg-accent cursor-pointer",
-                      !isCompleted && !isActive && "opacity-70 hover:opacity-100"
+                      !isCompleted && !isActive && session.status !== 'validated' && "opacity-70 hover:opacity-100"
                     )}
                     onClick={() => handleCaseClick(session)}
                   >
@@ -415,6 +415,26 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             {showAll && session.owner_name && (
                               <span className="text-sm text-muted-foreground truncate">
                                 &middot; {session.owner_name}
+                              </span>
+                            )}
+                            {session.status === 'validated' && (
+                              <span className="text-sm text-amber-600 font-medium">
+                                &middot; Ready to process
+                              </span>
+                            )}
+                            {session.status === 'pending' && (
+                              <span className="text-sm text-muted-foreground">
+                                &middot; Validating...
+                              </span>
+                            )}
+                            {session.status === 'processing' && (
+                              <span className="text-sm text-orange-500">
+                                &middot; Processing...
+                              </span>
+                            )}
+                            {session.status === 'failed' && (
+                              <span className="text-sm text-destructive">
+                                &middot; Failed
                               </span>
                             )}
                           </div>
