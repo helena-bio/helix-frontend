@@ -72,6 +72,8 @@ export function useStartProcessing() {
       queryClient.invalidateQueries({
         queryKey: ['session', variables.sessionId]
       })
+      // Invalidate cases list so sidebar shows processing status
+      queryClient.invalidateQueries({ queryKey: casesKeys.all })
       toast.success('Processing started', {
         description: 'Your file is being analyzed',
       })
