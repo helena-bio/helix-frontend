@@ -145,6 +145,12 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
       return
     }
 
+      // Processing -> show ProcessingFlow immediately (not QC view)
+      if (session.status === 'processing') {
+        router.push(`/upload?session=${session.id}&step=processing`)
+        return
+      }
+
     // All other statuses -> upload flow (step derived from URL by JourneyContext)
     router.push(`/upload?session=${session.id}`)
   }, [currentSessionId, setSelectedModule, router])
