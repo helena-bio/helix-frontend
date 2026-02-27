@@ -9,7 +9,7 @@
  *   /upload              -> Fresh file selection form
  *   /upload?session=XXX  -> Fetch session from server, show appropriate UI:
  *     - Upload context active for this session -> progress
- *     - session.status === 'validated'         -> QC results from server
+ *     - session.status === 'uploaded'         -> QC results from server
  *     - session.status === 'pending'           -> waiting view
  *     - session.status === 'processing'        -> redirect to processing step
  *     - session.status === 'completed'         -> redirect to analysis
@@ -114,7 +114,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     showServerView ? currentSessionId : null
   )
   const { data: qcMetrics, isLoading: qcLoading } = useSessionQC(
-    showServerView && session?.status === 'validated' ? currentSessionId : null
+    showServerView && session?.status === 'uploaded' ? currentSessionId : null
   )
 
   // -- Redirect effects for processing/completed sessions --
@@ -336,9 +336,9 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   const currentPresetInfo = FILTERING_PRESETS.find(p => p.id === filteringPreset) || FILTERING_PRESETS[0]
 
   // =====================================================================
-  // RENDER: Server-driven QC Results (session.status === 'validated')
+  // RENDER: Server-driven QC Results (session.status === 'uploaded')
   // =====================================================================
-  if (showServerView && session?.status === 'validated') {
+  if (showServerView && session?.status === 'uploaded') {
     const genomeBuild = session.genome_build || 'Unknown'
     const isGRCh37 = genomeBuild === 'GRCh37'
     const isSupported = genomeBuild === 'GRCh38' || isGRCh37

@@ -78,7 +78,7 @@ function StatusDot({ status }: { status: string }) {
       return <Loader2 className="h-3 w-3 text-orange-500 animate-spin shrink-0" />
     case 'failed':
       return <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
-    case 'validated':
+    case 'uploaded':
       return <Clock className="h-3 w-3 text-amber-500 shrink-0" />
     default:
       return <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -140,7 +140,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
     if (session.id === currentSessionId) return
 
     // Pending or validated -> go to upload flow with session param
-    if (session.status === 'pending' || session.status === 'validated') {
+    if (session.status === 'pending' || session.status === 'uploaded') {
       resetJourney()
       router.push(`/upload?session=${session.id}`)
       return
@@ -352,7 +352,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                       "group/case relative rounded-md px-2 py-1 transition-colors",
                       isActive && "bg-secondary",
                       !isActive && "hover:bg-accent cursor-pointer",
-                      !isCompleted && !isActive && session.status !== 'validated' && "opacity-70 hover:opacity-100"
+                      !isCompleted && !isActive && session.status !== 'uploaded' && "opacity-70 hover:opacity-100"
                     )}
                     onClick={() => handleCaseClick(session)}
                   >
@@ -417,7 +417,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                                 &middot; {session.owner_name}
                               </span>
                             )}
-                            {session.status === 'validated' && (
+                            {session.status === 'uploaded' && (
                               <span className="text-sm text-amber-600 font-medium">
                                 &middot; Ready to process
                               </span>
