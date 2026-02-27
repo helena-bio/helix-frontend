@@ -18,7 +18,7 @@
  * - When profile completes, handleAnalysisReady redirects to /analysis
  * - REMOVED: useEffect that resets journey -- URL sync handles this
  */
-import { useCallback, useState } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
@@ -37,14 +37,19 @@ export default function UploadPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { currentSessionId, setCurrentSessionId } = useSession()
-  const { currentStep, journeyMode, skipToAnalysis } = useJourney()
+  const { currentStep, journeyMode, skipToAnalysis, resetJourney } = useJourney()
   const upload = useUploadContext()
 
   // Processing configuration - bridge between Upload and Processing steps
   const [filteringPreset, setFilteringPreset] = useState<string>('strict')
 
-  // REMOVED: useEffect that resets journey on mount without session
-  // URL sync in layout.tsx handles this: no ?session param -> sessionId=null -> JourneyContext auto-resets
+  // Reset journey on mount when URL has no ?session param (explicit, not reactive)
+  // Only fires once on mount -- safe from re-render race conditions
+  useEffect(() => {
+    if (!currentSessionId && journeyMode === 'new') {
+      resetJourney()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle upload complete - add sessionId to URL
   const handleUploadComplete = (sessionId: string) => {

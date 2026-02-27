@@ -178,15 +178,8 @@ export function JourneyProvider({
     setIsHydrated(true)
   }, [])
 
-  // Auto-reset journey when sessionId becomes null
-  useEffect(() => {
-    if (currentSessionId === null) {
-      console.log('[JourneyContext] Session cleared - resetting to upload')
-      setCurrentStepState('upload')
-      setJourneyModeState('new')
-      localStorage.removeItem(STORAGE_KEY)
-    }
-  }, [currentSessionId])
+  // REMOVED: Auto-reset on null sessionId -- was fragile (temporary nulls during re-renders)
+  // Journey reset is now EXPLICIT from: Sidebar "New Case", CasesList clicks, Upload page mount
 
   // Persist step and mode to localStorage
   const persistState = useCallback((step: JourneyStep, mode: JourneyMode) => {

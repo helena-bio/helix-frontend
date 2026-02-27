@@ -251,7 +251,7 @@ export function Sidebar() {
               <Button
                 variant="ghost"
                 className="h-8 flex-1 justify-start mr-2"
-                onClick={() => router.push("/upload")}
+                onClick={() => { resetJourney(); router.push("/upload") }}
               >
                 <Plus className="h-4 w-4 shrink-0" />
                 <span className="ml-2 text-base">New Case</span>
@@ -415,7 +415,7 @@ export function Sidebar() {
                       <Button
                         variant="ghost"
                         className="w-full justify-center px-0 h-8"
-                        onClick={(e) => { e.stopPropagation(); router.push("/upload") }}
+                        onClick={(e) => { e.stopPropagation(); resetJourney(); router.push("/upload") }}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
