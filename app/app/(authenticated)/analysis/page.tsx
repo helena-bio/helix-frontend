@@ -7,13 +7,14 @@
  * No manual step manipulation needed.
  */
 import { useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from '@/contexts/SessionContext'
 import { ModuleRouter } from '@/components/analysis'
 import { Loader2 } from 'lucide-react'
 
 export default function AnalysisPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const { currentSessionId } = useSession()
 
   // Ref to track current sessionId for timeout callback
@@ -22,17 +23,17 @@ export default function AnalysisPage() {
     sessionIdRef.current = currentSessionId
   }, [currentSessionId])
 
-  // Redirect to home if no session
+  // Redirect to home if no session -- ONLY if still on /analysis route
   useEffect(() => {
-    if (currentSessionId === null) {
+    if (currentSessionId === null && pathname === '/analysis') {
       const timeout = setTimeout(() => {
         if (!sessionIdRef.current) {
           router.replace('/')
         }
-      }, 100)
+      }, 300)
       return () => clearTimeout(timeout)
     }
-  }, [currentSessionId, router])
+  }, [currentSessionId, router, pathname])
 
   if (!currentSessionId) {
     return (
