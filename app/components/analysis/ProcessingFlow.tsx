@@ -118,7 +118,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
   const startProcessingMutation = useStartProcessing()
   const { loadAllVariants } = useVariantsResults()
 
-  const { data: session } = useSession(sessionId)
+  const { data: session } = useSession(sessionId, { staleTime: 0 })
   const { data: taskStatus } = useTaskStatus(taskId, {
     enabled: !!taskId && phase === 'backend',
   })
