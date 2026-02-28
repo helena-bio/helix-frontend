@@ -6,6 +6,10 @@
  * to immediately set session status to 'processing' + task_id.
  * This eliminates the race condition where CasesList reads stale
  * 'uploaded' status from React Query cache before backend updates.
+ *
+ * FIX: cancelQueries BEFORE setQueryData prevents in-flight refetches
+ * from overwriting optimistic data. invalidateQueries is delayed by 5s
+ * to give the Celery worker time to update status in PostgreSQL.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadVCFFile, startProcessing, reprocessSession } from '@/lib/api/variant-analysis'
@@ -59,9 +63,10 @@ export function useUploadVCF() {
  * Start processing pipeline mutation with configurable filtering preset.
  *
  * On success, performs optimistic cache update:
- * 1. Updates session query data with status='processing' and task_id
- * 2. Updates cases list cache so sidebar immediately reflects processing state
- * 3. Then invalidates both to eventually sync with backend
+ * 1. CANCELS any in-flight queries to prevent stale data overwriting
+ * 2. Updates session query data with status='processing' and task_id
+ * 3. Updates cases list cache so sidebar immediately reflects processing state
+ * 4. Delays invalidation by 5s to give Celery worker time to update PostgreSQL
  *
  * This eliminates the race condition where navigation reads stale 'uploaded'
  * status from cache before backend has updated to 'processing'.
@@ -85,13 +90,21 @@ export function useStartProcessing() {
       const { sessionId } = variables
       const taskId = data.task_id
 
-      // Optimistic update: session detail cache
+      // Step 1: Cancel any in-flight queries BEFORE setting optimistic data.
+      // This prevents a pending refetch from resolving AFTER our setQueryData
+      // and overwriting the optimistic status with stale 'uploaded' from server.
+      queryClient.cancelQueries({ queryKey: ['session', sessionId] })
+      queryClient.cancelQueries({ queryKey: casesKeys.all })
+
+      // Step 2: Optimistic update -- session detail cache
       queryClient.setQueryData<AnalysisSession>(
         ['session', sessionId],
-        (old) => old ? { ...old, status: 'processing', task_id: taskId } : old
+        (old) => old ? { ...old, status: 'processing' as const, task_id: taskId } : old
       )
 
-      // Optimistic update: cases list cache
+      // Step 3: Optimistic update -- ALL cases list queries (mine + team tabs)
+      // casesKeys.all is ['cases'] which matches ['cases', 'list', {mine: true}]
+      // and ['cases', 'list', {mine: false}] via prefix matching.
       queryClient.setQueriesData<{ sessions: AnalysisSession[]; total_count: number; statistics: Record<string, any> }>(
         { queryKey: casesKeys.all },
         (old) => {
@@ -107,9 +120,14 @@ export function useStartProcessing() {
         }
       )
 
-      // Background refetch to sync with backend eventually
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] })
-      queryClient.invalidateQueries({ queryKey: casesKeys.all })
+      // Step 4: Delay invalidation by 5 seconds to give Celery worker time
+      // to pick up the task and update status to 'processing' in PostgreSQL.
+      // Without this delay, the refetch would return stale 'uploaded' status
+      // and overwrite our optimistic data.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['session', sessionId] })
+        queryClient.invalidateQueries({ queryKey: casesKeys.all })
+      }, 5000)
 
       toast.success('Processing started', {
         description: 'Your file is being analyzed',
