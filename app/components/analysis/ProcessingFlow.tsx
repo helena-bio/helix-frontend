@@ -118,25 +118,36 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
   const startProcessingMutation = useStartProcessing()
   const { loadAllVariants } = useVariantsResults()
 
-  const { data: session } = useSession(sessionId, { staleTime: 0 })
+  const { data: session, isFetching: sessionFetching, dataUpdatedAt } = useSession(sessionId, { staleTime: 0 })
   const { data: taskStatus } = useTaskStatus(taskId, {
     enabled: !!taskId && phase === 'backend',
   })
+
+  // Track whether we have received fresh data from server (not stale cache)
+  const hasFreshData = useRef(false)
+  useEffect(() => {
+    console.log("[ProcessingFlow] freshData check", { sessionFetching, hasSession: !!session, sessionStatus: session?.status, sessionIdMatch: session?.id === sessionId, hasFresh: hasFreshData.current })
+    if (!sessionFetching && session && session.id === sessionId) {
+      hasFreshData.current = true
+      console.log("[ProcessingFlow] FRESH data received:", session.status)
+    }
+  }, [sessionFetching, session, sessionId])
 
   // Start or recover backend processing on mount
   useEffect(() => {
     if (startedRef.current) return
     if (!session) return
-    // Guard: session data must match our sessionId prop.
-    // useSession has staleTime=5min so React Query may return cached data
-    // from a DIFFERENT session during the render cycle before layout URL
-    // sync updates SessionContext. Without this guard, ProcessingFlow sees
-    // session.status==='completed' for the OLD (completed) session and
-    // immediately calls nextStep() -> step=profile.
+    // Guard: session data must match our sessionId prop
     if (session.id !== sessionId) return
+    // CRITICAL: Do NOT act on stale cached data. Wait for fresh server response.
+    // With staleTime:0, React Query returns cached data immediately AND triggers
+    // background refetch. Without this guard, we act on stale "processing" status
+    // when the session is actually "processed" on the server.
+    if (!hasFreshData.current) return
 
     // DEBUG
-    console.log("[ProcessingFlow] useEffect", { status: session.status, task_id: session.task_id, vcf_file_path: session.vcf_file_path, startedRef: startedRef.current })
+    console.log("[ProcessingFlow] useEffect", { status: session.status, task_id: session.task_id, vcf_file_path: session.vcf_file_path, startedRef: startedRef.current, fresh: hasFreshData.current })
+
 
     // RECOVERY: If session is already processing, recover task_id from session data
     if (session.status === 'processing') {
