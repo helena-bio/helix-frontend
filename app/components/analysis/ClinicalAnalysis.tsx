@@ -39,6 +39,7 @@ import {
   BookOpen,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { updateSessionStatus } from '@/lib/api/variant-analysis'
 
 interface ClinicalAnalysisProps {
   sessionId: string
@@ -350,6 +351,14 @@ export function ClinicalAnalysis({
         console.log('Clinical interpretation continues in background')
         console.log('='.repeat(80))
 
+
+          // Transition session: profiling -> completed
+          try {
+            await updateSessionStatus(sessionId, 'completed')
+            console.log('Session status updated to completed')
+          } catch (statusError) {
+            console.warn('Failed to update session status to completed:', statusError)
+          }
         toast.success('Analysis pipeline complete')
         onComplete?.()
         nextStep()

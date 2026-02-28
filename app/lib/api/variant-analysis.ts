@@ -313,6 +313,17 @@ export async function getGeneVariants(
   return get(`/sessions/${sessionId}/variants/by-gene/${encodeURIComponent(geneSymbol)}`)
 }
 
+/**
+ * Update session status (lifecycle transition).
+ * Used by ClinicalAnalysis to mark session as completed after modules finish.
+ */
+export async function updateSessionStatus(
+  sessionId: string,
+  status: string
+): Promise<AnalysisSession> {
+  return patch<AnalysisSession>(\`/sessions/\${sessionId}\`, { status })
+}
+
 // =============================================================================
 // Collaboration API
 // =============================================================================

@@ -73,6 +73,10 @@ function StatusDot({ status }: { status: string }) {
   switch (status) {
     case 'completed':
       return <CheckCircle2 className="h-3 w-3 text-green-600 shrink-0" />
+    case 'profiling':
+      return <Loader2 className="h-3 w-3 text-purple-500 animate-spin shrink-0" />
+    case 'processed':
+      return <CheckCircle2 className="h-3 w-3 text-orange-500 shrink-0" />
     case 'processing':
       return <Loader2 className="h-3 w-3 text-orange-500 animate-spin shrink-0" />
     case 'failed':
@@ -134,24 +138,30 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
     }
   }, [editingId])
 
-  // CHANGED: Handle all session statuses, not just completed
+  // Status-based routing -- no task_id check (session lifecycle refactor)
   const handleCaseClick = useCallback((session: AnalysisSession) => {
     if (session.id === currentSessionId) return
 
-    // Completed -> analysis view
-    if (session.status === 'completed') {
+    // Has variants and past profile -- analysis view
+    if (['profiling', 'completed'].includes(session.status)) {
       setSelectedModule('analysis')
       router.push(`/analysis?session=${session.id}`)
       return
     }
 
-      // Processing -> show ProcessingFlow immediately (not QC view)
-      if (session.status === 'processing' || (session.task_id && session.status !== 'failed')) {
-        router.push(`/upload?session=${session.id}&step=processing`)
-        return
-      }
+    // Processed -- needs clinical profile
+    if (session.status === 'processed') {
+      router.push(`/upload?session=${session.id}&step=profile`)
+      return
+    }
 
-    // All other statuses -> upload flow (step derived from URL by JourneyContext)
+    // Processing -- show pipeline progress
+    if (session.status === 'processing') {
+      router.push(`/upload?session=${session.id}&step=processing`)
+      return
+    }
+
+    // All other (created, uploaded, failed) -> upload flow
     router.push(`/upload?session=${session.id}`)
   }, [currentSessionId, setSelectedModule, router])
 
@@ -338,7 +348,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                       "group/case relative rounded-md px-2 py-1 transition-colors",
                       isActive && "bg-secondary",
                       !isActive && "hover:bg-accent cursor-pointer",
-                      !isCompleted && !isActive && session.status !== 'uploaded' && "opacity-70 hover:opacity-100"
+                      !isCompleted && !isActive && !['uploaded', 'processed', 'profiling'].includes(session.status) && "opacity-70 hover:opacity-100"
                     )}
                     onClick={() => handleCaseClick(session)}
                   >
@@ -416,6 +426,16 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             {session.status === 'processing' && (
                               <span className="text-sm text-orange-500">
                                 &middot; Processing...
+                              </span>
+                            )}
+                            {session.status === 'processed' && (
+                              <span className="text-sm text-orange-500 font-medium">
+                                &middot; Needs Profile
+                              </span>
+                            )}
+                            {session.status === 'profiling' && (
+                              <span className="text-sm text-purple-500">
+                                &middot; Analyzing...
                               </span>
                             )}
                             {session.status === 'failed' && (

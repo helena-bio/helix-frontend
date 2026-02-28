@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { flushSync } from 'react-dom'
 import { useStartProcessing } from '@/hooks/mutations'
 import { useTaskStatus, useSession } from '@/hooks/queries'
@@ -112,6 +113,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
   const startedRef = useRef(false)
   const frontendStartedRef = useRef(false)
 
+  const router = useRouter()
   const { nextStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
   const { loadAllVariants } = useVariantsResults()
@@ -194,10 +196,17 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
       return
     }
 
-    // Session is completed -- advance to next step
-    if (session.status === 'completed') {
+    // Session is processed -- pipeline done, advance to profile step
+    if (session.status === 'processed') {
       startedRef.current = true
       nextStep()
+      return
+    }
+
+    // Session is already past processing (profiling/completed) -- go to analysis
+    if (['profiling', 'completed'].includes(session.status)) {
+      startedRef.current = true
+      router.push(\`/analysis?session=\${sessionId}\`)
       return
     }
   }, [session, sessionId, filteringPreset, startProcessingMutation, onError, nextStep])
