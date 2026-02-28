@@ -310,6 +310,19 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     }
   }, [session?.vcf_file_path, sessionId, filteringPreset, startProcessingMutation, onError])
 
+  // Wait for fresh server data before showing any UI (prevents flash of
+  // processing UI when session is actually processed on the server)
+  if (!hasFreshData.current && !startedRef.current) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px] p-8">
+        <div className="flex items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-base text-muted-foreground">Loading session...</p>
+        </div>
+      </div>
+    )
+  }
+
   // Error State
   if (phase === 'error') {
     return (
