@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { flushSync } from 'react-dom'
 import { useStartProcessing } from '@/hooks/mutations'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTaskStatus, useSession } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useVariantsResults } from '@/contexts/VariantsResultsContext'
@@ -114,6 +115,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
   const frontendStartedRef = useRef(false)
 
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { nextStep } = useJourney()
   const startProcessingMutation = useStartProcessing()
   const { loadAllVariants } = useVariantsResults()
@@ -284,6 +286,19 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     if (!taskStatus?.info?.stage) return null
     return taskStatus.info.stage as string
   }, [taskStatus])
+
+  // Sync processing progress to React Query cache for sidebar to read
+  useEffect(() => {
+    if (!taskStatus?.info) return
+    const stage = taskStatus.info.stage as string | undefined
+    const progress = taskStatus.info.progress as number | undefined
+    if (stage || progress !== undefined) {
+      queryClient.setQueryData(['processing-progress', sessionId], {
+        stage: stage || null,
+        progress: typeof progress === 'number' ? progress : 0,
+      })
+    }
+  }, [taskStatus, sessionId, queryClient])
 
   // Retry handler
   const handleRetry = useCallback(async () => {

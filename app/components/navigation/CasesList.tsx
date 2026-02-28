@@ -26,6 +26,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   ChevronDown,
@@ -96,6 +97,16 @@ function getCaseDisplayName(session: AnalysisSession): string {
   return session.id.slice(0, 8)
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  parsing: 'Parsing',
+  filtering: 'Filtering',
+  vep_annotation: 'Annotating',
+  reference_annotation: 'References',
+  classification: 'Classifying',
+  export: 'Exporting',
+  streaming: 'Preparing',
+}
+
 interface CasesListProps {
   isOpen: boolean
   onToggle: () => void
@@ -103,6 +114,7 @@ interface CasesListProps {
 
 export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { currentSessionId, setCurrentSessionId, setSelectedModule } = useSession()
   // JourneyContext not needed -- step is derived from URL
   const { user } = useAuth()
