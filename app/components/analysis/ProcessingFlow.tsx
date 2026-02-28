@@ -11,6 +11,9 @@
  * RECOVERY: When remounting (user navigated away and back),
  * checks session.status and recovers task_id from session data
  * instead of starting a duplicate pipeline.
+ *
+ * FIX: Both useEffects guard session.id === sessionId to prevent
+ * acting on stale cached session data from a different session.
  */
 
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
@@ -122,6 +125,13 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
   useEffect(() => {
     if (startedRef.current) return
     if (!session) return
+    // Guard: session data must match our sessionId prop.
+    // useSession has staleTime=5min so React Query may return cached data
+    // from a DIFFERENT session during the render cycle before layout URL
+    // sync updates SessionContext. Without this guard, ProcessingFlow sees
+    // session.status==='completed' for the OLD (completed) session and
+    // immediately calls nextStep() -> step=profile.
+    if (session.id !== sessionId) return
 
     // DEBUG
     console.log("[ProcessingFlow] useEffect", { status: session.status, task_id: session.task_id, vcf_file_path: session.vcf_file_path, startedRef: startedRef.current })
@@ -197,6 +207,8 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     if (phase !== 'backend') return
     if (!taskStatus?.ready) return
     if (frontendStartedRef.current) return
+    // Guard: only act on completion if session still matches our prop
+    if (!session || session.id !== sessionId) return
 
     if (taskStatus.successful) {
       frontendStartedRef.current = true
@@ -228,7 +240,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
       toast.error('Processing failed', { description: error })
       onError?.(new Error(error))
     }
-  }, [taskStatus, phase, sessionId, loadAllVariants, nextStep, onComplete, onError])
+  }, [taskStatus, phase, session, sessionId, loadAllVariants, nextStep, onComplete, onError])
 
   // Get backend progress
 

@@ -8,9 +8,15 @@
  *   /upload?session=XXX&step=profile    -> ClinicalProfileEntry
  *
  * No localStorage. No manual step state. URL is truth.
+ *
+ * FIX: sessionId is read directly from URL searchParams, NOT from
+ * SessionContext. Layout URL sync effect runs AFTER render, so
+ * SessionContext may hold the OLD sessionId for one render cycle.
+ * This caused ProcessingFlow to receive a completed session's ID
+ * and immediately call nextStep() -> step=profile.
  */
 import { useCallback, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
 import { useJourney } from '@/contexts/JourneyContext'
@@ -27,28 +33,35 @@ import { Loader2 } from 'lucide-react'
 export default function UploadPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
   const { currentSessionId, setCurrentSessionId } = useSession()
   const { currentStep, journeyMode, skipToAnalysis } = useJourney()
+
+  // Read sessionId directly from URL to avoid layout sync race condition.
+  // SessionContext may still hold the OLD sessionId for one render cycle
+  // after URL changes. This caused ProcessingFlow to receive a completed
+  // session's ID and immediately call nextStep().
+  const sessionId = searchParams.get('session') || currentSessionId
 
   // Processing configuration
   const [filteringPreset, setFilteringPreset] = useState<string>('strict')
 
   // DEBUG: Log every render with current state
-  console.log("[UploadPage] RENDER step=" + currentStep + " session=" + currentSessionId + " mode=" + journeyMode)
+  console.log("[UploadPage] RENDER step=" + currentStep + " session=" + sessionId + " (ctx=" + currentSessionId + ") mode=" + journeyMode)
 
   // Handle upload complete - add sessionId to URL
-  const handleUploadComplete = useCallback((sessionId: string) => {
-    setCurrentSessionId(sessionId)
-    router.push(`/upload?session=${sessionId}`)
+  const handleUploadComplete = useCallback((sid: string) => {
+    setCurrentSessionId(sid)
+    router.push(`/upload?session=${sid}`)
   }, [setCurrentSessionId, router])
 
   // Handle analysis ready - navigate to analysis
   const handleAnalysisReady = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: casesKeys.all })
-    if (currentSessionId) {
-      router.push(`/analysis?session=${currentSessionId}`)
+    if (sessionId) {
+      router.push(`/analysis?session=${sessionId}`)
     }
-  }, [queryClient, currentSessionId, router])
+  }, [queryClient, sessionId, router])
 
   // Step 1: Upload (includes validation and QC)
   if (currentStep === 'upload') {
@@ -63,7 +76,7 @@ export default function UploadPage() {
 
   // Step 2: Processing
   if (currentStep === 'processing') {
-    if (!currentSessionId) {
+    if (!sessionId) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -72,12 +85,12 @@ export default function UploadPage() {
     }
 
     if (journeyMode === 'reprocess') {
-      return <ReprocessFlow sessionId={currentSessionId} />
+      return <ReprocessFlow sessionId={sessionId} />
     }
 
     return (
       <ProcessingFlow
-        sessionId={currentSessionId}
+        sessionId={sessionId}
         filteringPreset={filteringPreset}
       />
     )
@@ -85,14 +98,14 @@ export default function UploadPage() {
 
   // Step 3: Clinical Profile
   if (currentStep === 'profile') {
-    if (!currentSessionId) {
+    if (!sessionId) {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       )
     }
-    return <ClinicalProfileEntry sessionId={currentSessionId} onComplete={handleAnalysisReady} />
+    return <ClinicalProfileEntry sessionId={sessionId} onComplete={handleAnalysisReady} />
   }
 
   // Fallback
