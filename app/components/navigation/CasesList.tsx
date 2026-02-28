@@ -77,7 +77,7 @@ function StatusDot({ status }: { status: string }) {
     case 'profiling':
       return <Loader2 className="h-3 w-3 text-purple-500 animate-spin shrink-0" />
     case 'processed':
-      return <CheckCircle2 className="h-3 w-3 text-orange-500 shrink-0" />
+      return <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
     case 'processing':
       return <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
     case 'failed':
@@ -358,7 +358,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                     key={session.id}
                       className={cn(
                         "group/case relative rounded-md px-2 transition-colors",
-                        ['processing', 'uploaded'].includes(session.status)
+                        ['processing', 'uploaded', 'processed'].includes(session.status)
                           ? "py-1.5 bg-primary/5 border border-primary/20 hover:bg-primary/10 cursor-pointer"
                           : cn(
                               "py-1",
@@ -422,7 +422,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             {getCaseDisplayName(session)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                              {!['processing', 'uploaded'].includes(session.status) && (
+                              {!['processing', 'uploaded', 'processed'].includes(session.status) && (
                                 <span className="text-sm text-muted-foreground">
                                   {formatRelativeDate(session.created_at)}
                                 </span>
@@ -448,8 +448,8 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                               </span>
                             )}
                             {session.status === 'processed' && (
-                              <span className="text-sm text-orange-500 font-medium">
-                                &middot; Needs Profile
+                              <span className="text-sm text-primary font-medium">
+                                Needs Profile
                               </span>
                             )}
                             {session.status === 'profiling' && (
