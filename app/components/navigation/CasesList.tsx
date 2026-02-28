@@ -78,7 +78,7 @@ function StatusDot({ status }: { status: string }) {
     case 'processed':
       return <CheckCircle2 className="h-3 w-3 text-orange-500 shrink-0" />
     case 'processing':
-      return <Loader2 className="h-3 w-3 text-orange-500 animate-spin shrink-0" />
+      return <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
     case 'failed':
       return <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
     case 'uploaded':
@@ -344,12 +344,17 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                 return (
                   <div
                     key={session.id}
-                    className={cn(
-                      "group/case relative rounded-md px-2 py-1 transition-colors",
-                      isActive && "bg-secondary",
-                      !isActive && "hover:bg-accent cursor-pointer",
-                      !isCompleted && !isActive && !['uploaded', 'processed', 'profiling'].includes(session.status) && "opacity-70 hover:opacity-100"
-                    )}
+                      className={cn(
+                        "group/case relative rounded-md px-2 transition-colors",
+                        session.status === 'processing'
+                          ? "py-1.5 bg-primary/5 border border-primary/20 hover:bg-primary/10 cursor-pointer"
+                          : cn(
+                              "py-1",
+                              isActive && "bg-secondary",
+                              !isActive && "hover:bg-accent cursor-pointer",
+                              !isCompleted && !isActive && !['uploaded', 'processed', 'profiling'].includes(session.status) && "opacity-70 hover:opacity-100"
+                            )
+                      )}
                     onClick={() => handleCaseClick(session)}
                   >
                     {isDeleting ? (
@@ -424,7 +429,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                               </span>
                             )}
                             {session.status === 'processing' && (
-                              <span className="text-sm text-orange-500">
+                              <span className="text-sm text-primary font-medium">
                                 &middot; Processing...
                               </span>
                             )}
@@ -444,6 +449,11 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                               </span>
                             )}
                           </div>
+                            {session.status === 'processing' && (
+                              <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '100%' }} />
+                              </div>
+                            )}
                         </div>
                         <div className={cn("items-center gap-0.5 shrink-0", isOwner ? "hidden group-hover/case:flex" : "hidden")}>
                           <button
