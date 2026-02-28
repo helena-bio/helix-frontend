@@ -83,7 +83,7 @@ function StatusDot({ status }: { status: string }) {
     case 'failed':
       return <AlertCircle className="h-3 w-3 text-destructive shrink-0" />
     case 'uploaded':
-      return <Clock className="h-3 w-3 text-amber-500 shrink-0" />
+      return <Clock className="h-3 w-3 text-primary shrink-0" />
     default:
       return <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
   }
@@ -358,7 +358,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                     key={session.id}
                       className={cn(
                         "group/case relative rounded-md px-2 transition-colors",
-                        session.status === 'processing'
+                        ['processing', 'uploaded'].includes(session.status)
                           ? "py-1.5 bg-primary/5 border border-primary/20 hover:bg-primary/10 cursor-pointer"
                           : cn(
                               "py-1",
@@ -422,16 +422,18 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             {getCaseDisplayName(session)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-sm text-muted-foreground">
-                              {formatRelativeDate(session.created_at)}
-                            </span>
+                              {!['processing', 'uploaded'].includes(session.status) && (
+                                <span className="text-sm text-muted-foreground">
+                                  {formatRelativeDate(session.created_at)}
+                                </span>
+                              )}
                             {showAll && session.owner_name && (
                               <span className="text-sm text-muted-foreground truncate">
                                 &middot; {session.owner_name}
                               </span>
                             )}
                             {session.status === 'uploaded' && (
-                              <span className="text-sm text-amber-600 font-medium">
+                              <span className="text-sm text-primary font-medium">
                                 &middot; Ready to process
                               </span>
                             )}
