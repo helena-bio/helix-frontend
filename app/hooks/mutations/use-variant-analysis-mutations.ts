@@ -1,6 +1,11 @@
 /**
  * Variant Analysis Mutations
  * React Query mutations for upload and processing
+ *
+ * ARCHITECTURE NOTE: useStartProcessing uses optimistic cache update
+ * to immediately set session status to 'processing' + task_id.
+ * This eliminates the race condition where CasesList reads stale
+ * 'uploaded' status from React Query cache before backend updates.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadVCFFile, startProcessing, reprocessSession } from '@/lib/api/variant-analysis'
@@ -51,7 +56,15 @@ export function useUploadVCF() {
 }
 
 /**
- * Start processing pipeline mutation with configurable filtering preset
+ * Start processing pipeline mutation with configurable filtering preset.
+ *
+ * On success, performs optimistic cache update:
+ * 1. Updates session query data with status='processing' and task_id
+ * 2. Updates cases list cache so sidebar immediately reflects processing state
+ * 3. Then invalidates both to eventually sync with backend
+ *
+ * This eliminates the race condition where navigation reads stale 'uploaded'
+ * status from cache before backend has updated to 'processing'.
  */
 export function useStartProcessing() {
   const queryClient = useQueryClient()
@@ -69,11 +82,35 @@ export function useStartProcessing() {
       return startProcessing(sessionId, vcfFilePath, filteringPreset)
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['session', variables.sessionId]
-      })
-      // Invalidate cases list so sidebar shows processing status
+      const { sessionId } = variables
+      const taskId = data.task_id
+
+      // Optimistic update: session detail cache
+      queryClient.setQueryData<AnalysisSession>(
+        ['session', sessionId],
+        (old) => old ? { ...old, status: 'processing', task_id: taskId } : old
+      )
+
+      // Optimistic update: cases list cache
+      queryClient.setQueriesData<{ sessions: AnalysisSession[]; total_count: number; statistics: Record<string, any> }>(
+        { queryKey: casesKeys.all },
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            sessions: old.sessions.map((s) =>
+              s.id === sessionId
+                ? { ...s, status: 'processing' as const, task_id: taskId }
+                : s
+            ),
+          }
+        }
+      )
+
+      // Background refetch to sync with backend eventually
+      queryClient.invalidateQueries({ queryKey: ['session', sessionId] })
       queryClient.invalidateQueries({ queryKey: casesKeys.all })
+
       toast.success('Processing started', {
         description: 'Your file is being analyzed',
       })
