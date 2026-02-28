@@ -434,7 +434,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             )}
                             {session.status === 'uploaded' && (
                               <span className="text-sm text-primary font-medium">
-                                &middot; Ready to process
+                                Ready to process
                               </span>
                             )}
                             {session.status === 'created' && (
