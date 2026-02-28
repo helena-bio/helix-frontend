@@ -146,7 +146,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
     }
 
       // Processing -> show ProcessingFlow immediately (not QC view)
-      if (session.status === 'processing') {
+      if (session.status === 'processing' || (session.task_id && session.status !== 'completed' && session.status !== 'failed')) {
         router.push(`/upload?session=${session.id}&step=processing`)
         return
       }
