@@ -206,7 +206,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     // Session is already past processing (profiling/completed) -- go to analysis
     if (['profiling', 'completed'].includes(session.status)) {
       startedRef.current = true
-      router.push(\`/analysis?session=\${sessionId}\`)
+      router.push(`/analysis?session=${sessionId}`)
       return
     }
   }, [session, sessionId, filteringPreset, startProcessingMutation, onError, nextStep])

@@ -321,7 +321,7 @@ export async function updateSessionStatus(
   sessionId: string,
   status: string
 ): Promise<AnalysisSession> {
-  return patch<AnalysisSession>(\`/sessions/\${sessionId}\`, { status })
+  return patch<AnalysisSession>(`/sessions/${sessionId}`, { status })
 }
 
 // =============================================================================
