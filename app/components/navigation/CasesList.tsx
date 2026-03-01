@@ -154,10 +154,16 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
   const handleCaseClick = useCallback((session: AnalysisSession) => {
     if (session.id === currentSessionId) return
 
-    // Has variants and past profile -- analysis view
-    if (['profiling', 'completed'].includes(session.status)) {
+    // Completed -- analysis view (pipeline fully done)
+    if (session.status === 'completed') {
       setSelectedModule('analysis')
       router.push(`/analysis?session=${session.id}`)
+      return
+    }
+
+    // Profiling -- clinical analysis pipeline still running, go to profile step
+    if (session.status === 'profiling') {
+      router.push(`/upload?session=${session.id}&step=profile`)
       return
     }
 

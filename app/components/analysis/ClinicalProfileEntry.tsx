@@ -7,6 +7,10 @@
  * completion indicators. Sections tied to disabled modules appear
  * grayed out and are not clickable.
  *
+ * RECOVERY: If user navigates away during ClinicalAnalysis pipeline
+ * and returns, session status will be 'profiling'. We detect this
+ * on mount and show ClinicalAnalysis directly instead of the form.
+ *
  * SECTIONS:
  * 1. Patient (always) - demographics + module selection
  * 2. Clinical Info (requires screening) - ethnicity, context, family, sample
@@ -36,6 +40,7 @@ import { HelixLoader } from '@/components/ui/helix-loader'
 import { ClinicalAnalysis } from './ClinicalAnalysis'
 import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
+import { useSession as useSessionQuery } from '@/hooks/queries/use-variant-analysis-queries'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
 import type {
   Sex,
@@ -87,6 +92,25 @@ interface ClinicalProfileEntryProps {
 
 export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileEntryProps) {
   const queryClient = useQueryClient()
+
+  // Check session status to recover from navigation during ClinicalAnalysis pipeline.
+  // If status is 'profiling', the pipeline was started but user navigated away --
+  // show ClinicalAnalysis directly instead of the form.
+  const { data: sessionData } = useSessionQuery(sessionId, { staleTime: 0 })
+  const [showAnalysis, setShowAnalysis] = useState(false)
+  const recoveryCheckedRef = useRef(false)
+
+  useEffect(() => {
+    if (recoveryCheckedRef.current) return
+    if (!sessionData || sessionData.id !== sessionId) return
+    recoveryCheckedRef.current = true
+
+    if (sessionData.status === 'profiling') {
+      console.log('[ClinicalProfileEntry] Session is profiling -- showing ClinicalAnalysis directly')
+      setShowAnalysis(true)
+    }
+  }, [sessionData, sessionId])
+
   const {
     enableScreening,
     enablePhenotypeMatching,
@@ -124,7 +148,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [showAIAssist, setShowAIAssist] = useState(false)
   const [aiInput, setAiInput] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  const [showAnalysis, setShowAnalysis] = useState(false)
 
   // LOCAL STATE - Demographics
   const [ageYears, setAgeYears] = useState<string>('')
