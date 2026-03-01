@@ -24,6 +24,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useTaskStatus, useSession } from '@/hooks/queries'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useVariantsResults } from '@/contexts/VariantsResultsContext'
+import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -242,6 +243,9 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
       // Load summaries into memory (instant with summary-first architecture)
       // then advance to next step
       const finalize = async () => {
+        // Invalidate all session caches so sidebar and other components see fresh status
+        invalidateSessionCaches(queryClient, sessionId)
+
         try {
           await loadAllVariants(sessionId)
         } catch (error) {
@@ -262,7 +266,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
       toast.error('Processing failed', { description: error })
       onError?.(new Error(error))
     }
-  }, [taskStatus, phase, session, sessionId, loadAllVariants, nextStep, onComplete, onError])
+  }, [taskStatus, phase, session, sessionId, loadAllVariants, nextStep, onComplete, onError, queryClient])
 
   // Get backend progress
 

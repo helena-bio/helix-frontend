@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
@@ -25,6 +26,7 @@ import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationCont
 import { useRunScreening } from '@/hooks/mutations/use-screening'
 import { useRunLiteratureSearch } from '@/hooks/mutations/use-literature-search'
 import { isTier1, isTier2 } from '@/types/tiers.types'
+import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -95,6 +97,7 @@ export function ClinicalAnalysis({
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const startedRef = useRef(false)
 
+  const queryClient = useQueryClient()
   const { nextStep } = useJourney()
   const {
     enableScreening,
@@ -359,6 +362,10 @@ export function ClinicalAnalysis({
           } catch (statusError) {
             console.warn('Failed to update session status to completed:', statusError)
           }
+
+        // Invalidate all session caches so sidebar reflects completed status
+        invalidateSessionCaches(queryClient, sessionId)
+
         toast.success('Analysis pipeline complete')
         onComplete?.()
         nextStep()
@@ -389,6 +396,7 @@ export function ClinicalAnalysis({
     nextStep,
     onComplete,
     onError,
+    queryClient,
   ])
 
   const progress = calculateProgress()

@@ -15,6 +15,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadVCFFile, startProcessing, reprocessSession } from '@/lib/api/variant-analysis'
 import { useSession } from '@/contexts/SessionContext'
 import { casesKeys } from '@/hooks/queries/use-cases'
+import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import type { AnalysisSession } from '@/types/variant.types'
 import { toast } from 'sonner'
 
@@ -46,7 +47,7 @@ export function useUploadVCF() {
     onSuccess: (session: AnalysisSession) => {
       setCurrentSessionId(session.id)
       queryClient.setQueryData(['session', session.id], session)
-      queryClient.invalidateQueries({ queryKey: casesKeys.all })
+      invalidateSessionCaches(queryClient, session.id)
       toast.success('File uploaded successfully', {
         description: `Session ${session.id} created`,
       })
@@ -125,8 +126,7 @@ export function useStartProcessing() {
       // Without this delay, the refetch would return stale 'uploaded' status
       // and overwrite our optimistic data.
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['session', sessionId] })
-        queryClient.invalidateQueries({ queryKey: casesKeys.all })
+        invalidateSessionCaches(queryClient, sessionId)
       }, 5000)
 
       toast.success('Processing started', {

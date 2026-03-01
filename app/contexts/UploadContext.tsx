@@ -39,7 +39,7 @@ import {
   shouldCompress,
   isCompressionSupported,
 } from '@/lib/utils/file-compression'
-import { casesKeys } from '@/hooks/queries/use-cases'
+import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { toast } from 'sonner'
 
 // ---------------------------------------------------------------------------
@@ -187,9 +187,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
             clearPersisted()
 
             // Invalidate React Query caches so UI picks up validated session
-            queryClient.invalidateQueries({ queryKey: casesKeys.all })
-            queryClient.invalidateQueries({ queryKey: ['session-detail', sid] })
-            queryClient.invalidateQueries({ queryKey: ['session-qc', sid] })
+            invalidateSessionCaches(queryClient, sid)
 
             toast.success('File validated successfully', {
               description: `${totalVariants.toLocaleString()} variants found`,
@@ -326,7 +324,7 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         base.sessionId = sid
 
         // Invalidate cases list so sidebar picks up the new session
-        queryClient.invalidateQueries({ queryKey: casesKeys.all })
+        invalidateSessionCaches(queryClient, sid)
 
         // Step 3: Start server-side validation
         setPhase('validating')

@@ -27,7 +27,7 @@ import {
   ProcessingFlow,
 } from '@/components/analysis'
 import { ReprocessFlow } from '@/components/analysis/ReprocessFlow'
-import { casesKeys } from '@/hooks/queries/use-cases'
+import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { Loader2 } from 'lucide-react'
 
 export default function UploadPage() {
@@ -57,7 +57,7 @@ export default function UploadPage() {
 
   // Handle analysis ready - navigate to analysis
   const handleAnalysisReady = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: casesKeys.all })
+    invalidateSessionCaches(queryClient, sessionId!)
     if (sessionId) {
       router.push(`/analysis?session=${sessionId}`)
     }

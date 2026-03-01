@@ -20,6 +20,7 @@ import {
   ArrowRight, Loader2, User, Microscope, ScanSearch, FileText, Info,
   Check,
 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -33,6 +34,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { HPOTermCard } from './HPOTermCard'
 import { HelixLoader } from '@/components/ui/helix-loader'
 import { ClinicalAnalysis } from './ClinicalAnalysis'
+import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
 import type {
@@ -84,6 +86,7 @@ interface ClinicalProfileEntryProps {
 // =========================================================================
 
 export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileEntryProps) {
+  const queryClient = useQueryClient()
   const {
     enableScreening,
     enablePhenotypeMatching,
@@ -474,6 +477,9 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         },
       })
 
+      // Invalidate all session caches so sidebar reflects profiling status
+      invalidateSessionCaches(queryClient, sessionId)
+
       toast.success('Clinical profile saved')
       setShowAnalysis(true)
 
@@ -494,6 +500,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     hpoTerms, localClinicalNotes,
     setDemographics, setEthnicity, setClinicalContext, setReproductive,
     setSampleInfo, setConsent, setClinicalNotes, saveProfile,
+    queryClient,
   ])
 
   // =========================================================================
