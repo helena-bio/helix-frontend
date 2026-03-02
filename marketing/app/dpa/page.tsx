@@ -1,9 +1,9 @@
 import { Header, Footer } from '@/components'
 
 export const metadata = {
-  title: 'Data Processing Agreement | Helix Insight',
-  description: 'Standard Data Processing Agreement for Helix Insight laboratory partners.',
-  alternates: { canonical: 'https://helixinsight.bio/dpa' },
+  title: 'Data Processing Agreement | Helena',
+  description: 'Standard Data Processing Agreement for Helena laboratory partners.',
+  alternates: { canonical: 'https://helena.bio/dpa' },
 }
 
 export default function DPAPage() {
@@ -17,14 +17,14 @@ export default function DPAPage() {
             <h1 className="text-3xl font-semibold text-primary">Data Processing Agreement</h1>
             <p className="text-sm text-muted-foreground">Last updated: February 2026</p>
             <p className="text-base text-foreground leading-relaxed">
-              This Data Processing Agreement (&quot;DPA&quot;) forms part of the service agreement between the laboratory (&quot;Data Controller&quot;) and Helena Bioinformatics EOOD (&quot;Data Processor&quot;) for the use of the Helix Insight platform, pursuant to Article 28 of the EU General Data Protection Regulation (GDPR).
+              This Data Processing Agreement (&quot;DPA&quot;) forms part of the service agreement between the laboratory (&quot;Data Controller&quot;) and Helena Bioinformatics EOOD (&quot;Data Processor&quot;) for the use of the Helena platform, pursuant to Article 28 of the EU General Data Protection Regulation (GDPR).
             </p>
           </div>
 
           <section className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">1. Scope and Purpose</h2>
             <div className="text-base text-muted-foreground leading-relaxed space-y-3">
-              <p>The Data Processor processes personal data, including special category genetic data, on behalf of the Data Controller solely for the purpose of providing variant analysis services through the Helix Insight platform. Processing activities include: ingestion and parsing of VCF files; variant annotation against reference databases (gnomAD, ClinVar, dbNSFP); automated ACMG/AMP classification; phenotype-genotype correlation using HPO ontology; biomedical literature analysis; and generation of clinical interpretation reports.</p>
+              <p>The Data Processor processes personal data, including special category genetic data, on behalf of the Data Controller solely for the purpose of providing variant analysis services through the Helena platform. Processing activities include: ingestion and parsing of VCF files; variant annotation against reference databases (gnomAD, ClinVar, dbNSFP); automated ACMG/AMP classification; phenotype-genotype correlation using HPO ontology; biomedical literature analysis; and generation of clinical interpretation reports.</p>
             </div>
           </section>
 

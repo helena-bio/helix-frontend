@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'HPO Overview | Helix Insight Documentation',
-  description: 'The Human Phenotype Ontology -- standardized vocabulary of phenotypic abnormalities used in Helix Insight.',
+  title: 'HPO Overview | Helena Documentation',
+  description: 'The Human Phenotype Ontology -- standardized vocabulary of phenotypic abnormalities used in Helena.',
 }
 
 export default function HpoOverviewPage() {
@@ -18,7 +18,7 @@ export default function HpoOverviewPage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">HPO Overview</h1>
         <p className="text-base text-muted-foreground leading-relaxed mt-3">
-          The Human Phenotype Ontology (HPO) is a standardized vocabulary of phenotypic abnormalities observed in human disease. It provides the foundation for computational phenotype comparison in Helix Insight.
+          The Human Phenotype Ontology (HPO) is a standardized vocabulary of phenotypic abnormalities observed in human disease. It provides the foundation for computational phenotype comparison in Helena.
         </p>
       </div>
 
@@ -63,12 +63,12 @@ export default function HpoOverviewPage() {
           Clinical descriptions in medical records use varied language. One physician writes "fits", another "seizures", a third "epileptic episodes". Without standardization, computational comparison across patients, diseases, and databases is impossible. HPO solves this by assigning each clinical concept a unique identifier.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          When a geneticist selects "Seizure" (HP:0001250) in Helix Insight, the platform knows exactly which concept is meant and can compute its similarity to every other HPO term in the ontology -- including terms the geneticist did not explicitly select.
+          When a geneticist selects "Seizure" (HP:0001250) in Helena, the platform knows exactly which concept is meant and can compute its similarity to every other HPO term in the ontology -- including terms the geneticist did not explicitly select.
         </p>
       </section>
 
       <section className="space-y-3">
-        <p className="text-lg font-semibold text-foreground">How HPO Is Used in Helix Insight</p>
+        <p className="text-lg font-semibold text-foreground">How HPO Is Used in Helena</p>
         <div className="space-y-3">
           {[
             { label: 'Patient Phenotype Input', desc: 'The geneticist selects HPO terms describing the patient\'s clinical presentation. The platform provides autocomplete search across all 17,000+ terms and can extract terms automatically from free-text clinical descriptions.' },

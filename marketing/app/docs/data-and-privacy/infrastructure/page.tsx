@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Infrastructure | Helix Insight Documentation',
-  description: 'Where Helix Insight processes and stores genomic data: dedicated EU hardware in Helsinki, Finland.',
+  title: 'Infrastructure | Helena Documentation',
+  description: 'Where Helena processes and stores genomic data: dedicated EU hardware in Helsinki, Finland.',
 }
 
 export default function InfrastructurePage() {

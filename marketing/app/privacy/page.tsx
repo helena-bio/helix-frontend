@@ -1,9 +1,9 @@
 import { Header, Footer } from '@/components'
 
 export const metadata = {
-  title: 'Privacy Policy | Helix Insight',
+  title: 'Privacy Policy | Helena',
   description: 'How Helena Bioinformatics collects, processes, and protects your personal and genomic data.',
-  alternates: { canonical: 'https://helixinsight.bio/privacy' },
+  alternates: { canonical: 'https://helena.bio/privacy' },
 }
 
 export default function PrivacyPolicyPage() {
@@ -17,7 +17,7 @@ export default function PrivacyPolicyPage() {
             <h1 className="text-3xl font-semibold text-primary">Privacy Policy</h1>
             <p className="text-sm text-muted-foreground">Last updated: February 2026</p>
             <p className="text-base text-foreground leading-relaxed">
-              Helena Bioinformatics EOOD (&quot;Helena Bioinformatics&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the Helix Insight platform. This Privacy Policy explains how we collect, use, store, and protect personal data, including genomic data, in compliance with the EU General Data Protection Regulation (GDPR) and applicable Bulgarian data protection legislation.
+              Helena Bioinformatics EOOD (&quot;Helena Bioinformatics&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) operates the Helena platform. This Privacy Policy explains how we collect, use, store, and protect personal data, including genomic data, in compliance with the EU General Data Protection Regulation (GDPR) and applicable Bulgarian data protection legislation.
             </p>
           </div>
 
@@ -53,7 +53,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">3. Purpose of Processing</h2>
             <div className="text-base text-muted-foreground leading-relaxed space-y-3">
-              <p>We process personal data for the following purposes: providing and maintaining the Helix Insight platform, including variant annotation, ACMG classification, phenotype matching, and literature analysis; authenticating users and managing access control; communicating with users about their accounts and platform updates; responding to demo requests and support inquiries; security monitoring, fraud prevention, and audit logging; and complying with legal obligations.</p>
+              <p>We process personal data for the following purposes: providing and maintaining the Helena platform, including variant annotation, ACMG classification, phenotype matching, and literature analysis; authenticating users and managing access control; communicating with users about their accounts and platform updates; responding to demo requests and support inquiries; security monitoring, fraud prevention, and audit logging; and complying with legal obligations.</p>
               <p>Genomic data is processed solely for the purpose of providing variant analysis services as instructed by the data controller (laboratory). We do not use genomic data for marketing, profiling, automated decision-making, or any purpose beyond the contracted analysis services.</p>
             </div>
           </section>

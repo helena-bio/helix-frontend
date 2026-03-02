@@ -3,21 +3,21 @@ import { Header, Footer, VideoHero, BenefitsSection, FeaturesSection, HowItWorks
 import { JsonLd } from '@/components/seo'
 
 export const metadata: Metadata = {
-  title: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
+  title: 'Helena -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
   description: 'Automated ACMG classification, phenotype matching, and clinical reporting. From VCF upload to diagnostic insight in minutes. EU-hosted, GDPR-compliant. Free to start.',
   alternates: {
-    canonical: 'https://helixinsight.bio',
+    canonical: 'https://helena.bio',
   },
 }
 
 const softwareApplicationData = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  'name': 'Helix Insight',
+  'name': 'Helena',
   'applicationCategory': 'HealthApplication',
   'applicationSubCategory': 'Clinical Genetics Software',
   'operatingSystem': 'Web',
-  'url': 'https://helixinsight.bio',
+  'url': 'https://helena.bio',
   'description': 'AI-powered variant interpretation platform for clinical genetics laboratories. Automated ACMG/AMP classification, HPO phenotype matching, biomedical literature mining, and clinical report generation.',
   'featureList': [
     'Automated ACMG/AMP variant classification',

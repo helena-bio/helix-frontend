@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Redirect to app subdomain
       const appUrl = process.env.NODE_ENV === 'production'
-        ? 'https://app.helixinsight.bio'
+        ? 'https://app.helena.bio'
         : 'http://localhost:3001'; // Assuming app runs on 3001 in dev
       
       window.location.href = appUrl;

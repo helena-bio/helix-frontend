@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Screening Modes | Helix Insight Documentation',
-  description: 'Six screening modes in Helix Insight with mode-specific weight profiles for diagnostic, neonatal, pediatric, adult, carrier, and pharmacogenomics screening.',
+  title: 'Screening Modes | Helena Documentation',
+  description: 'Six screening modes in Helena with mode-specific weight profiles for diagnostic, neonatal, pediatric, adult, carrier, and pharmacogenomics screening.',
 }
 
 export default function ScreeningModesPage() {

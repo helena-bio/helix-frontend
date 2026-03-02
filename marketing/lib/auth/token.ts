@@ -22,7 +22,7 @@ export const tokenUtils = {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax' as const,
         domain: process.env.NODE_ENV === 'production' 
-          ? '.helixinsight.bio'  // Shared across all subdomains
+          ? '.helena.bio'  // Shared across all subdomains
           : undefined,           // localhost for development
       };
       
@@ -50,7 +50,7 @@ export const tokenUtils = {
   remove(): void {
     const removeOptions = {
       domain: process.env.NODE_ENV === 'production' 
-        ? '.helixinsight.bio' 
+        ? '.helena.bio' 
         : undefined,
     };
     

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Neonatal Genomic Screening Software | Helix Insight',
+  title: 'Neonatal Genomic Screening Software | Helena',
   description: 'Age-aware variant prioritization for neonatal and pediatric genomic screening. Curated neonatal gene lists, time-critical interpretation, and phenotype-agnostic whole-genome analysis.',
   keywords: [
     'neonatal screening variant tool',
@@ -19,7 +19,7 @@ export const metadata = {
     'age-aware variant prioritization',
     'neonatal gene panel',
   ],
-  alternates: { canonical: 'https://helixinsight.bio/use-cases/newborn-screening' },
+  alternates: { canonical: 'https://helena.bio/use-cases/newborn-screening' },
 }
 
 const nicuChallenges = [
@@ -69,7 +69,7 @@ const screeningModes = [
 const phenotypeAgnosticAdvantages = [
   {
     title: 'No Phenotype Required to Start',
-    description: 'Helix Insight performs genome-wide pathogenicity-first prioritization. Every variant is classified and scored based on population frequency, functional predictions, gene constraint, and clinical databases -- independent of phenotypic input. When HPO terms are available, phenotype matching adds a correlation layer. When they are not yet available (common in NICU), the system still produces a clinically useful prioritized variant list.',
+    description: 'Helena performs genome-wide pathogenicity-first prioritization. Every variant is classified and scored based on population frequency, functional predictions, gene constraint, and clinical databases -- independent of phenotypic input. When HPO terms are available, phenotype matching adds a correlation layer. When they are not yet available (common in NICU), the system still produces a clinically useful prioritized variant list.',
   },
   {
     title: 'Phenotype Matching as Evolving Layer',
@@ -183,7 +183,7 @@ export default function NewbornScreeningPage() {
                 Phenotype-Agnostic Analysis
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Traditional variant interpretation starts with phenotype and works backward to genes. In neonatal care, where phenotype is incomplete and evolving, Helix Insight starts with pathogenicity and works forward to clinical relevance.
+                Traditional variant interpretation starts with phenotype and works backward to genes. In neonatal care, where phenotype is incomplete and evolving, Helena starts with pathogenicity and works forward to clinical relevance.
               </p>
             </div>
 
@@ -277,7 +277,7 @@ export default function NewbornScreeningPage() {
               See Neonatal Screening in Action
             </h2>
             <p className="text-base text-muted-foreground">
-              Request a demo to see how Helix Insight processes a neonatal case -- from whole genome VCF to age-aware clinical prioritization.
+              Request a demo to see how Helena processes a neonatal case -- from whole genome VCF to age-aware clinical prioritization.
             </p>
             <div className="flex items-center justify-center gap-4">
               <RequestDemoButton />

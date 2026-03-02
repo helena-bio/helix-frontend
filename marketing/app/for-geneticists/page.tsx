@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Variant Interpretation Software for Clinical Geneticists | Helix Insight',
+  title: 'Variant Interpretation Software for Clinical Geneticists | Helena',
   description: 'Automate VUS evidence gathering with Bayesian ACMG classification, HPO phenotype matching, AI clinical assistant, and one-click report generation. Designed for small and medium genetics labs.',
 }
 
@@ -91,7 +91,7 @@ export default function ForGeneticistsPage() {
                 Interpreting genetic variants requires years of specialized training, deep clinical knowledge, and the kind of judgment that cannot be automated. What can be automated is the hours spent cross-referencing databases, searching literature, and compiling evidence before your interpretation begins.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Helix Insight handles the evidence gathering. You do what only you can do.
+                Helena handles the evidence gathering. You do what only you can do.
               </p>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function ForGeneticistsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-card border border-border rounded-lg p-8 space-y-6">
                 <div className="text-center">
-                  <p className="text-lg font-semibold text-foreground">Without Helix Insight</p>
+                  <p className="text-lg font-semibold text-foreground">Without Helena</p>
                   <p className="text-md text-muted-foreground">Per case, typical workflow</p>
                 </div>
                 <div className="space-y-3">
@@ -145,7 +145,7 @@ export default function ForGeneticistsPage() {
 
               <div className="bg-card border-2 border-primary/30 rounded-lg p-8 space-y-6">
                 <div className="text-center">
-                  <p className="text-lg font-semibold text-foreground">With Helix Insight</p>
+                  <p className="text-lg font-semibold text-foreground">With Helena</p>
                   <p className="text-md text-muted-foreground">Same case, same rigor</p>
                 </div>
                 <div className="space-y-3">
@@ -182,7 +182,7 @@ export default function ForGeneticistsPage() {
                 Clear Division of Responsibility
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Helix Insight is a tool, not a colleague. It has a clearly defined scope -- and everything outside that scope is yours.
+                Helena is a tool, not a colleague. It has a clearly defined scope -- and everything outside that scope is yours.
               </p>
             </div>
 
@@ -190,7 +190,7 @@ export default function ForGeneticistsPage() {
               {/* Helix Column */}
               <div className="space-y-4">
                 <div className="bg-muted/50 rounded-lg px-6 py-3 text-center">
-                  <p className="text-lg font-semibold text-foreground">What Helix Insight Does</p>
+                  <p className="text-lg font-semibold text-foreground">What Helena Does</p>
                   <p className="text-md text-muted-foreground">Automated evidence gathering</p>
                 </div>
                 <div className="space-y-3">
@@ -240,7 +240,7 @@ export default function ForGeneticistsPage() {
                 Your Expertise, Amplified
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Helix Insight does not make geneticists faster by cutting corners. It makes them faster by removing the bottleneck that has nothing to do with clinical skill.
+                Helena does not make geneticists faster by cutting corners. It makes them faster by removing the bottleneck that has nothing to do with clinical skill.
               </p>
             </div>
 
@@ -269,7 +269,7 @@ export default function ForGeneticistsPage() {
           </div>
         </section>
 
-        {/* What Helix Insight Never Does */}
+        {/* What Helena Never Does */}
         <section className="py-12 px-6">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12 space-y-3">
@@ -277,12 +277,12 @@ export default function ForGeneticistsPage() {
                 What Always Stays in Your Hands
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                These are not limitations of the software. These are design decisions. Clinical genetics requires human judgment, and Helix Insight is built to respect that.
+                These are not limitations of the software. These are design decisions. Clinical genetics requires human judgment, and Helena is built to respect that.
               </p>
             </div>
 
             <div className="bg-card border border-border rounded-lg p-8">
-              <p className="text-lg font-semibold text-foreground mb-6">Helix Insight will never:</p>
+              <p className="text-lg font-semibold text-foreground mb-6">Helena will never:</p>
               <div className="space-y-4">
                 {neverDoes.map((item) => (
                   <div key={item} className="flex items-start gap-3">
@@ -295,7 +295,7 @@ export default function ForGeneticistsPage() {
               </div>
               <div className="mt-8 pt-6 border-t border-border">
                 <p className="text-base text-foreground font-medium text-center leading-relaxed">
-                  The geneticist decides. Helix Insight does the research.
+                  The geneticist decides. Helena does the research.
                 </p>
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function ForGeneticistsPage() {
               See How It Supports Your Workflow
             </h2>
             <p className="text-base text-muted-foreground">
-              Request a demo to see Helix Insight process a real case -- and see exactly what lands on your desk for review.
+              Request a demo to see Helena process a real case -- and see exactly what lands on your desk for review.
             </p>
             <div className="flex items-center justify-center gap-4">
               <RequestDemoButton />

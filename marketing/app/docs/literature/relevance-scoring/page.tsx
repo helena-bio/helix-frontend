@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Relevance Scoring | Helix Insight Documentation',
+  title: 'Relevance Scoring | Helena Documentation',
   description: 'Six-component weighted scoring system for ranking literature publications by clinical relevance.',
 }
 

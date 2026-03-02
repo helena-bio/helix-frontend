@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'ACMG Classification Methodology -- Bayesian Point-Based Framework | Helix Insight',
+  title: 'ACMG Classification Methodology -- Bayesian Point-Based Framework | Helena',
   description: '19 automated ACMG criteria using Tavtigian Bayesian point system, BayesDel_noAF with ClinGen SVI calibration, SpliceAI splice impact, and ClinVar integration.',
 }
 
@@ -671,7 +671,7 @@ const versionHistory = [
 
 /* Limitations */
 const limitations = [
-  'Helix Insight is a clinical decision support tool, not a diagnostic device. All classifications require review and confirmation by a qualified clinical geneticist.',
+  'Helena is a clinical decision support tool, not a diagnostic device. All classifications require review and confirmation by a qualified clinical geneticist.',
   '9 of 28 ACMG criteria require information not available from single-sample VCF analysis (segregation, functional studies, de novo confirmation). These criteria must be evaluated manually by the reviewing geneticist.',
   'SpliceAI predictions are computational. RNA splicing studies remain the gold standard for confirming splice-altering effects.',
   'Population frequency data from gnomAD may underrepresent certain ethnic groups and geographic populations. Allele frequency thresholds should be interpreted in the context of the patient\'s ancestry.',
@@ -774,7 +774,7 @@ export default function MethodologyPage() {
             </div>
 
             <p className="text-base text-muted-foreground leading-relaxed">
-              Complete documentation of how Helix Insight processes, annotates, and classifies genetic variants. Every threshold, database version, and classification rule used in production is documented on this page. This documentation is intended for clinical geneticists, laboratory directors, and accreditation auditors.
+              Complete documentation of how Helena processes, annotates, and classifies genetic variants. Every threshold, database version, and classification rule used in production is documented on this page. This documentation is intended for clinical geneticists, laboratory directors, and accreditation auditors.
             </p>
 
             <p className="text-base text-muted-foreground leading-relaxed">
@@ -834,7 +834,7 @@ export default function MethodologyPage() {
             <div className="mt-8 bg-card border border-border rounded-lg p-6 space-y-3">
               <p className="text-lg font-semibold text-foreground">Maximum Sensitivity Approach</p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Helix Insight classifies all variants that pass quality filtering. There is no frequency-based or impact-based pre-filtering at any stage. A common variant (e.g., gnomAD allele frequency 40%) is still classified -- it will receive a Benign classification via BA1, but it is not silently discarded before classification. This design ensures that no variant is excluded from clinical review by an automated filter. The geneticist decides clinical relevance based on the complete classification and annotation data.
+                Helena classifies all variants that pass quality filtering. There is no frequency-based or impact-based pre-filtering at any stage. A common variant (e.g., gnomAD allele frequency 40%) is still classified -- it will receive a Benign classification via BA1, but it is not silently discarded before classification. This design ensures that no variant is excluded from clinical review by an automated filter. The geneticist decides clinical relevance based on the complete classification and annotation data.
               </p>
             </div>
           </div>
@@ -1257,7 +1257,7 @@ export default function MethodologyPage() {
             <div className="text-center mb-12 space-y-3">
               <h2 className="text-3xl font-semibold text-primary">VCEP Gene-Specific Specifications</h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                ClinGen Variant Curation Expert Panels (VCEPs) adapt generic ACMG/AMP 2015 criteria to specific genes or diseases. Helix Insight implements approved VCEP specifications as an optional overlay on top of the standard classification.
+                ClinGen Variant Curation Expert Panels (VCEPs) adapt generic ACMG/AMP 2015 criteria to specific genes or diseases. Helena implements approved VCEP specifications as an optional overlay on top of the standard classification.
               </p>
             </div>
 

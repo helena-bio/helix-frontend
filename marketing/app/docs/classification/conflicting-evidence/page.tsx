@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Conflicting Evidence | Helix Insight Documentation',
-  description: 'How Helix Insight handles variants with both pathogenic and benign evidence in ACMG classification.',
+  title: 'Conflicting Evidence | Helena Documentation',
+  description: 'How Helena handles variants with both pathogenic and benign evidence in ACMG classification.',
 }
 
 export default function ConflictingEvidencePage() {
@@ -29,7 +29,7 @@ export default function ConflictingEvidencePage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Two-Level Approach</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight handles conflicting evidence at two levels, prioritizing clinical safety.
+          Helena handles conflicting evidence at two levels, prioritizing clinical safety.
         </p>
         <div className="space-y-3">
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">

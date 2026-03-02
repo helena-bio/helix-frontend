@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Data and Privacy | Helix Insight Documentation',
-  description: 'How Helix Insight protects genomic data: EU infrastructure, GDPR compliance, data retention, and zero external calls.',
+  title: 'Data and Privacy | Helena Documentation',
+  description: 'How Helena protects genomic data: EU infrastructure, GDPR compliance, data retention, and zero external calls.',
 }
 
 const subpages = [
@@ -18,7 +18,7 @@ export default function DataAndPrivacyPage() {
       <section className="space-y-4">
         <h1 className="text-3xl font-semibold tracking-tight text-primary">Data and Privacy</h1>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Genomic data is the most sensitive category of personal data under EU law. It is immutable, uniquely identifying, and carries implications for the data subject and their biological relatives. Helix Insight is designed from the ground up to process this data with clinical-grade security and full GDPR compliance.
+          Genomic data is the most sensitive category of personal data under EU law. It is immutable, uniquely identifying, and carries implications for the data subject and their biological relatives. Helena is designed from the ground up to process this data with clinical-grade security and full GDPR compliance.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
           The platform operates on dedicated hardware in the European Union, makes zero external API calls during variant processing, and provides transparent data retention with automatic deletion. Every access, modification, and analysis is tracked and auditable.

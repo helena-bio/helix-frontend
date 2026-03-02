@@ -33,11 +33,11 @@ export function RequestDemoModal() {
       if (response.ok) {
         setIsSuccess(true)
       } else {
-        alert('Something went wrong. Please try again or email us at demo@helixinsight.bio')
+        alert('Something went wrong. Please try again or email us at demo@helena.bio')
       }
     } catch (error) {
       console.error('Submit error:', error)
-      alert('Failed to submit. Please email us directly at demo@helixinsight.bio')
+      alert('Failed to submit. Please email us directly at demo@helena.bio')
     } finally {
       setIsSubmitting(false)
     }

@@ -1,9 +1,9 @@
 import { Header, Footer } from '@/components'
 
 export const metadata = {
-  title: 'Data Protection Impact Assessment | Helix Insight',
-  description: 'DPIA summary for the Helix Insight genomic variant analysis platform.',
-  alternates: { canonical: 'https://helixinsight.bio/dpia' },
+  title: 'Data Protection Impact Assessment | Helena',
+  description: 'DPIA summary for the Helena genomic variant analysis platform.',
+  alternates: { canonical: 'https://helena.bio/dpia' },
 }
 
 export default function DPIAPage() {
@@ -17,7 +17,7 @@ export default function DPIAPage() {
             <h1 className="text-3xl font-semibold text-primary">Data Protection Impact Assessment</h1>
             <p className="text-sm text-muted-foreground">Last updated: February 2026</p>
             <p className="text-base text-foreground leading-relaxed">
-              This document provides a summary of the Data Protection Impact Assessment (DPIA) conducted by Helena Bioinformatics for the Helix Insight platform, pursuant to GDPR Article 35. A DPIA is mandatory when processing genetic data on a large scale, as it constitutes high-risk processing of special category data.
+              This document provides a summary of the Data Protection Impact Assessment (DPIA) conducted by Helena Bioinformatics for the Helena platform, pursuant to GDPR Article 35. A DPIA is mandatory when processing genetic data on a large scale, as it constitutes high-risk processing of special category data.
             </p>
           </div>
 
@@ -77,7 +77,7 @@ export default function DPIAPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-semibold text-foreground">5. Conclusion</h2>
             <div className="text-base text-muted-foreground leading-relaxed space-y-3">
-              <p>This DPIA concludes that the Helix Insight platform can process genetic data with an acceptable level of residual risk, provided all identified measures are maintained and regularly reviewed. The key factors supporting this conclusion are: data is received only in pseudonymized form; all processing occurs within the EU on dedicated infrastructure; encryption is applied both in transit and at rest; the platform functions as decision support requiring mandatory human review; and data retention is time-limited with automatic deletion.</p>
+              <p>This DPIA concludes that the Helena platform can process genetic data with an acceptable level of residual risk, provided all identified measures are maintained and regularly reviewed. The key factors supporting this conclusion are: data is received only in pseudonymized form; all processing occurs within the EU on dedicated infrastructure; encryption is applied both in transit and at rest; the platform functions as decision support requiring mandatory human review; and data retention is time-limited with automatic deletion.</p>
               <p>This DPIA will be reviewed annually or when significant changes are made to the processing activities, infrastructure, or regulatory landscape.</p>
               <p>For questions regarding this assessment, contact our Data Protection Officer at privacy@helena.bio.</p>
             </div>

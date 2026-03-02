@@ -1,12 +1,12 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Classification | Helix Insight Documentation',
-  description: 'ACMG/AMP variant classification methodology in Helix Insight -- framework, criteria, combining rules, ClinVar integration, and confidence scoring.',
+  title: 'Classification | Helena Documentation',
+  description: 'ACMG/AMP variant classification methodology in Helena -- framework, criteria, combining rules, ClinVar integration, and confidence scoring.',
 }
 
 const subpages = [
-  { href: '/docs/classification/acmg-framework', title: 'ACMG Framework', description: 'The ACMG/AMP 2015 variant classification standard and how Helix Insight implements it.' },
+  { href: '/docs/classification/acmg-framework', title: 'ACMG Framework', description: 'The ACMG/AMP 2015 variant classification standard and how Helena implements it.' },
   { href: '/docs/classification/criteria-reference', title: 'Criteria Reference', description: 'Complete reference for all 28 ACMG criteria -- 19 automated, 9 manual.' },
   { href: '/docs/classification/combining-rules', title: 'Combining Rules', description: 'How individual criteria are combined using the Bayesian point system to reach a classification.' },
   { href: '/docs/classification/clinvar-integration', title: 'ClinVar Integration', description: 'How ClinVar assertions are used as evidence and when they override computational classification.' },

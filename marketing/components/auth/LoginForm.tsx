@@ -41,7 +41,7 @@ export function LoginForm() {
           Partner Login
         </h2>
         <p className="mt-2 text-sm text-gray-600">
-          Sign in to access your Helix Insight dashboard
+          Sign in to access your Helena dashboard
         </p>
       </div>
 

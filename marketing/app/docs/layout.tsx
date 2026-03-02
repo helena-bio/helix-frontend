@@ -4,10 +4,10 @@ import { DocsSidebar, DocsPagination, DocsHighlighter } from '@/components/docs'
 import { DocsBreadcrumbJsonLd } from '@/components/seo'
 
 export const metadata: Metadata = {
-  title: 'Documentation -- Variant Interpretation Pipeline | Helix Insight',
-  description: 'Complete technical documentation for Helix Insight: ACMG classification, computational predictors, reference databases, phenotype matching, screening, and AI clinical assistant.',
+  title: 'Documentation -- Variant Interpretation Pipeline | Helena',
+  description: 'Complete technical documentation for Helena: ACMG classification, computational predictors, reference databases, phenotype matching, screening, and AI clinical assistant.',
   alternates: {
-    canonical: 'https://helixinsight.bio/docs',
+    canonical: 'https://helena.bio/docs',
   },
 }
 

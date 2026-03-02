@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Understanding Results | Helix Insight Documentation',
-  description: 'How to read and interpret Helix Insight variant analysis results -- ACMG classifications, annotations, scores, and clinical tiers.',
+  title: 'Understanding Results | Helena Documentation',
+  description: 'How to read and interpret Helena variant analysis results -- ACMG classifications, annotations, scores, and clinical tiers.',
 }
 
 const variantFields = [

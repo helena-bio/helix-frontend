@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Rare Disease Variant Interpretation | Helix Insight',
+  title: 'Rare Disease Variant Interpretation | Helena',
   description: 'Phenotype-driven variant prioritization for rare disease diagnostics. HPO semantic similarity matching, automated VUS evidence gathering, and genotype-phenotype correlation in one platform.',
   keywords: [
     'rare disease variant interpretation',
@@ -19,7 +19,7 @@ export const metadata = {
     'HPO term variant matching',
     'rare disease genomics software',
   ],
-  alternates: { canonical: 'https://helixinsight.bio/use-cases/rare-disease' },
+  alternates: { canonical: 'https://helena.bio/use-cases/rare-disease' },
 }
 
 const odysseyStats = [
@@ -75,7 +75,7 @@ const helixApproach = [
     step: 4,
     icon: BookOpen,
     title: 'Automated Literature Evidence',
-    description: 'For every candidate gene and variant, Helix Insight searches a local database of millions of genetics-relevant PubMed publications with pre-extracted gene mentions, variant mentions, and phenotype associations. Evidence is ranked by clinical relevance and returned with full PMID attribution.',
+    description: 'For every candidate gene and variant, Helena searches a local database of millions of genetics-relevant PubMed publications with pre-extracted gene mentions, variant mentions, and phenotype associations. Evidence is ranked by clinical relevance and returned with full PMID attribution.',
   },
   {
     step: 5,
@@ -106,7 +106,7 @@ const differentiators = [
   },
   {
     title: 'Whole Genome Processing',
-    description: 'Gene panels and whole exome sequencing miss variants outside their target regions. Helix Insight processes full whole genome VCF files -- 4-5 million variants classified, annotated, and phenotype-matched in under an hour. No pre-filtering means no missed diagnoses.',
+    description: 'Gene panels and whole exome sequencing miss variants outside their target regions. Helena processes full whole genome VCF files -- 4-5 million variants classified, annotated, and phenotype-matched in under an hour. No pre-filtering means no missed diagnoses.',
     link: '/how-it-works',
     linkText: 'See the full pipeline',
   },
@@ -131,7 +131,7 @@ export default function RareDiseasePage() {
               Rare Disease Variant Interpretation
             </h1>
             <p className="text-base text-muted-foreground leading-relaxed">
-              Rare disease patients wait years for a diagnosis. A significant part of that wait is not clinical uncertainty -- it is the time required to systematically evaluate candidate variants against databases, literature, and phenotype associations. Helix Insight compresses that evidence-gathering from days to minutes.
+              Rare disease patients wait years for a diagnosis. A significant part of that wait is not clinical uncertainty -- it is the time required to systematically evaluate candidate variants against databases, literature, and phenotype associations. Helena compresses that evidence-gathering from days to minutes.
             </p>
           </div>
         </section>
@@ -183,7 +183,7 @@ export default function RareDiseasePage() {
           </div>
         </section>
 
-        {/* Helix Insight Approach */}
+        {/* Helena Approach */}
         <section className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12 space-y-3">
@@ -191,7 +191,7 @@ export default function RareDiseasePage() {
                 From VCF to Clinical Insight
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Helix Insight processes rare disease cases through a six-stage pipeline that mirrors the geneticist's workflow -- but executes it systematically across every variant in minutes.
+                Helena processes rare disease cases through a six-stage pipeline that mirrors the geneticist's workflow -- but executes it systematically across every variant in minutes.
               </p>
             </div>
 
@@ -229,7 +229,7 @@ export default function RareDiseasePage() {
                 Built for Rare Disease Complexity
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Rare disease interpretation demands capabilities beyond standard variant classification. These are not add-on features -- they are core to how Helix Insight processes every case.
+                Rare disease interpretation demands capabilities beyond standard variant classification. These are not add-on features -- they are core to how Helena processes every case.
               </p>
             </div>
 
@@ -259,14 +259,14 @@ export default function RareDiseasePage() {
                 The Geneticist Remains Central
               </h2>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Rare disease diagnostics requires clinical judgment that cannot be automated -- interpreting incomplete phenotypes, recognizing atypical presentations, integrating family history, and communicating uncertain findings to patients. Helix Insight does not attempt to replicate this expertise.
+                Rare disease diagnostics requires clinical judgment that cannot be automated -- interpreting incomplete phenotypes, recognizing atypical presentations, integrating family history, and communicating uncertain findings to patients. Helena does not attempt to replicate this expertise.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed">
                 What it does is ensure that when the geneticist sits down to interpret a rare disease case, the evidence is already gathered, structured, and prioritized. The databases have been queried, the literature has been searched, the phenotype has been matched, and the ACMG criteria have been applied. The geneticist's time is spent on clinical reasoning, not data retrieval.
               </p>
               <div className="pt-4 border-t border-border">
                 <p className="text-base text-foreground font-medium text-center">
-                  The geneticist decides. Helix Insight does the research.
+                  The geneticist decides. Helena does the research.
                 </p>
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function RareDiseasePage() {
               See How It Handles Rare Disease Cases
             </h2>
             <p className="text-base text-muted-foreground">
-              Request a demo to see Helix Insight process a rare disease genome -- from VCF upload through phenotype matching to clinical report.
+              Request a demo to see Helena process a rare disease genome -- from VCF upload through phenotype matching to clinical report.
             </p>
             <div className="flex items-center justify-center gap-4">
               <RequestDemoButton />

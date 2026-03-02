@@ -50,7 +50,7 @@ export function DatabaseIntegrationsSection() {
         <div className="text-center space-y-3">
           <h2 className="text-3xl font-semibold text-primary">Powered by Established Clinical Databases</h2>
           <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-            Helix Insight integrates with authoritative genomic and clinical databases to provide comprehensive, evidence-based variant analysis.
+            Helena integrates with authoritative genomic and clinical databases to provide comprehensive, evidence-based variant analysis.
           </p>
         </div>
 

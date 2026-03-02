@@ -12,10 +12,10 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://helixinsight.bio'),
+  metadataBase: new URL('https://helena.bio'),
   title: {
-    default: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
-    template: '%s | Helix Insight',
+    default: 'Helena -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
+    template: '%s | Helena',
   },
   description: 'Automated ACMG classification, phenotype matching, and clinical reporting. From VCF upload to diagnostic insight in minutes. EU-hosted, GDPR-compliant. Free to start.',
   keywords: [
@@ -34,14 +34,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://helixinsight.bio',
-    siteName: 'Helix Insight',
-    title: 'Helix Insight -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
+    url: 'https://helena.bio',
+    siteName: 'Helena',
+    title: 'Helena -- AI-Powered Variant Interpretation for Clinical Genetics Laboratories',
     description: 'Automated ACMG classification, phenotype matching, and clinical reporting. From VCF upload to diagnostic insight in minutes. EU-hosted, GDPR-compliant.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Helix Insight -- AI-Powered Variant Interpretation',
+    title: 'Helena -- AI-Powered Variant Interpretation',
     description: 'Automated ACMG classification, phenotype matching, and clinical reporting. EU-hosted, GDPR-compliant. Free to start.',
   },
   robots: {
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://helixinsight.bio',
+    canonical: 'https://helena.bio',
   },
 }
 

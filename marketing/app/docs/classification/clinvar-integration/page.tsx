@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'ClinVar Integration | Helix Insight Documentation',
-  description: 'How ClinVar clinical significance assertions are used in Helix Insight variant classification.',
+  title: 'ClinVar Integration | Helena Documentation',
+  description: 'How ClinVar clinical significance assertions are used in Helena variant classification.',
 }
 
 export default function ClinvarIntegrationPage() {

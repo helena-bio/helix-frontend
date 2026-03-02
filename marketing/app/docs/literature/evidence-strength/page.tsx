@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Evidence Strength | Helix Insight Documentation',
+  title: 'Evidence Strength | Helena Documentation',
   description: 'How literature evidence maps to ACMG-aligned strength categories.',
 }
 

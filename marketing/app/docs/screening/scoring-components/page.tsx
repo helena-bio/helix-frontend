@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Scoring Components | Helix Insight Documentation',
-  description: 'Seven dimensions of variant scoring in Helix Insight screening: constraint, deleteriousness, phenotype, dosage, consequence, compound het, and age relevance.',
+  title: 'Scoring Components | Helena Documentation',
+  description: 'Seven dimensions of variant scoring in Helena screening: constraint, deleteriousness, phenotype, dosage, consequence, compound het, and age relevance.',
 }
 
 export default function ScoringComponentsPage() {

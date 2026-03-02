@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-title: 'HPO | Helix Insight Documentation',
-description: 'Human Phenotype Ontology (HPO) gene-phenotype associations used for PP4 criteria and phenotype matching in Helix Insight.',
+title: 'HPO | Helena Documentation',
+description: 'Human Phenotype Ontology (HPO) gene-phenotype associations used for PP4 criteria and phenotype matching in Helena.',
 }
 
 const columns = [
@@ -27,7 +27,7 @@ return (
 </p>
 <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">HPO</h1>
 <p className="text-base text-muted-foreground leading-relaxed mt-3">
-The Human Phenotype Ontology (HPO) provides a standardized vocabulary of phenotypic abnormalities and their associations with genes and diseases. In Helix Insight, HPO data enables genotype-phenotype correlation by matching patient clinical features to gene-associated phenotypes.
+The Human Phenotype Ontology (HPO) provides a standardized vocabulary of phenotypic abnormalities and their associations with genes and diseases. In Helena, HPO data enables genotype-phenotype correlation by matching patient clinical features to gene-associated phenotypes.
 </p>
 </div>
 

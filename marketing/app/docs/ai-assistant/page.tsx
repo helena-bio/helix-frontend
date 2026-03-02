@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'AI Clinical Assistant | Helix Insight Documentation',
+  title: 'AI Clinical Assistant | Helena Documentation',
   description: 'Helix AI -- a clinical genetics AI assistant that queries patient variants, searches literature, generates interpretations, and produces clinical reports.',
 }
 
@@ -26,7 +26,7 @@ export default function AiAssistantOverviewPage() {
 
       <section className="space-y-3">
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix AI is a clinical genetics assistant embedded in the Helix Insight platform. It provides conversational access to patient variant data, biomedical literature, and automated clinical interpretation -- all through natural language. The assistant is designed for geneticists and clinical laboratory professionals who need to interrogate genomic analysis results, correlate findings with clinical phenotype, and produce diagnostic reports.
+          Helix AI is a clinical genetics assistant embedded in the Helena platform. It provides conversational access to patient variant data, biomedical literature, and automated clinical interpretation -- all through natural language. The assistant is designed for geneticists and clinical laboratory professionals who need to interrogate genomic analysis results, correlate findings with clinical phenotype, and produce diagnostic reports.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
           The assistant runs on a large language model hosted entirely on EU-based infrastructure. No patient data is sent to external AI services. All inference happens on-premise through a secure internal connection.

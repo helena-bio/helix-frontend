@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Changelog | Helix Insight Documentation',
-  description: 'Version history and release notes for the Helix Insight platform.',
+  title: 'Changelog | Helena Documentation',
+  description: 'Version history and release notes for the Helena platform.',
 }
 
 const releases = [
@@ -46,7 +46,7 @@ const releases = [
         'Conversational variant analysis with natural language database queries',
         'Biomedical literature search (1M+ publications, local PubMed mirror)',
         'Four-level adaptive clinical interpretation generation',
-        'PDF and DOCX report export with Helix Insight branding',
+        'PDF and DOCX report export with Helena branding',
         'Genomics-aware visualization suggestions',
         'On-premise LLM inference within EU infrastructure',
       ]},
@@ -72,7 +72,7 @@ export default function ChangelogPage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">Changelog</h1>
         <p className="text-base text-muted-foreground leading-relaxed mt-3">
-          Version history and release notes for the Helix Insight platform.
+          Version history and release notes for the Helena platform.
         </p>
       </div>
 

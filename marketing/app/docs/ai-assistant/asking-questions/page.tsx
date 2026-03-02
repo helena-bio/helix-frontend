@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Asking Questions | Helix Insight Documentation',
+  title: 'Asking Questions | Helena Documentation',
   description: 'How to interact with Helix AI effectively -- question patterns, tool invocation, multi-turn conversations, and phenotype-driven analysis.',
 }
 

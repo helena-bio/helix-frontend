@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Screening | Helix Insight Documentation',
-  description: 'How Helix Insight prioritizes variants after ACMG classification using multi-dimensional scoring, clinical context, and tiered ranking.',
+  title: 'Screening | Helena Documentation',
+  description: 'How Helena prioritizes variants after ACMG classification using multi-dimensional scoring, clinical context, and tiered ranking.',
 }
 
 const subpages = [

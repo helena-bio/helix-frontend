@@ -2,13 +2,13 @@ import Link from 'next/link'
 import { JsonLd } from '@/components/seo'
 
 export const metadata = {
-  title: 'FAQ | Helix Insight Documentation',
-  description: 'Frequently asked questions about Helix Insight -- data handling, classification methodology, supported formats, and clinical use.',
+  title: 'FAQ | Helena Documentation',
+  description: 'Frequently asked questions about Helena -- data handling, classification methodology, supported formats, and clinical use.',
 }
 
 const faqs = [
   {
-    q: 'What file formats does Helix Insight accept?',
+    q: 'What file formats does Helena accept?',
     a: 'Single-sample VCF files in version 4.1 or 4.2 format, either plain text (.vcf) or bgzipped (.vcf.gz). Multi-sample VCFs must be split into individual samples before upload.',
   },
   {
@@ -29,19 +29,19 @@ const faqs = [
   },
   {
     q: 'Which ACMG criteria are automated?',
-    a: 'Helix Insight automates 19 of 28 ACMG criteria: PVS1, PS1, PM1, PM2, PM4, PM5, PP2, PP3, PP4, PP5, BA1, BS1, BS2, BP1, BP3, BP4, BP5, BP6, and BP7. The remaining 9 require clinical judgment, functional studies, or family segregation data.',
+    a: 'Helena automates 19 of 28 ACMG criteria: PVS1, PS1, PM1, PM2, PM4, PM5, PP2, PP3, PP4, PP5, BA1, BS1, BS2, BP1, BP3, BP4, BP5, BP6, and BP7. The remaining 9 require clinical judgment, functional studies, or family segregation data.',
   },
   {
     q: 'What computational predictor is used for PP3/BP4?',
     a: 'BayesDel_noAF with ClinGen SVI-calibrated thresholds (Pejaver et al. 2022). The "_noAF" variant excludes allele frequency from its model to avoid circular reasoning with PM2, BA1, and BS1. SpliceAI is used independently for splice impact (PP3_splice).',
   },
   {
-    q: 'Can Helix Insight detect structural variants or CNVs?',
+    q: 'Can Helena detect structural variants or CNVs?',
     a: 'No. The platform currently analyzes single nucleotide variants (SNVs) and small insertions/deletions (indels). Structural variants, copy number variants, repeat expansions, and mitochondrial variants require specialized pipelines.',
   },
   {
     q: 'Does the platform support somatic variant interpretation?',
-    a: 'No. Helix Insight is designed for germline variant interpretation in Mendelian disease contexts. Somatic variant analysis requires tumor-normal paired analysis with different classification frameworks (AMP/ASCO/CAP).',
+    a: 'No. Helena is designed for germline variant interpretation in Mendelian disease contexts. Somatic variant analysis requires tumor-normal paired analysis with different classification frameworks (AMP/ASCO/CAP).',
   },
   {
     q: 'What databases are used for annotation?',
@@ -68,12 +68,12 @@ const faqs = [
     a: 'ClinVar is updated quarterly or more frequently for clinically significant changes. gnomAD major releases are adopted within 3 months of publication. All updates undergo validation testing with a reference cohort before deployment. See the Database Update Policy for the complete schedule.',
   },
   {
-    q: 'Can I use Helix Insight for research purposes?',
+    q: 'Can I use Helena for research purposes?',
     a: 'Yes. The platform is suitable for both clinical and research use. For research applications, the same analytical rigor applies but reporting requirements may differ from clinical diagnostic settings.',
   },
   {
     q: 'What happens if ClinVar and the automated classification disagree?',
-    a: 'Helix Insight applies a transparent priority system: BA1 always overrides ClinVar, expert-panel ClinVar assertions can override the automated classification, and conflicting evidence is flagged for manual review. See the ClinVar Integration documentation for the complete decision logic.',
+    a: 'Helena applies a transparent priority system: BA1 always overrides ClinVar, expert-panel ClinVar assertions can override the automated classification, and conflicting evidence is flagged for manual review. See the ClinVar Integration documentation for the complete decision logic.',
   },
 ]
 

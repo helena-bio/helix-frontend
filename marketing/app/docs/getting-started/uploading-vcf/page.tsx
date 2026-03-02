@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Uploading a VCF File | Helix Insight Documentation',
-  description: 'Supported VCF formats, genome build requirements, file size limits, and what happens after upload in Helix Insight.',
+  title: 'Uploading a VCF File | Helena Documentation',
+  description: 'Supported VCF formats, genome build requirements, file size limits, and what happens after upload in Helena.',
 }
 
 export default function UploadingVcfPage() {
@@ -24,7 +24,7 @@ export default function UploadingVcfPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Supported Formats</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight accepts VCF files in version 4.1 and 4.2 format, either as plain text (.vcf) or bgzipped (.vcf.gz). Whole genome sequencing files containing approximately 4 million variants (1-2 GB compressed) are fully supported.
+          Helena accepts VCF files in version 4.1 and 4.2 format, either as plain text (.vcf) or bgzipped (.vcf.gz). Whole genome sequencing files containing approximately 4 million variants (1-2 GB compressed) are fully supported.
         </p>
       </section>
 
@@ -40,7 +40,7 @@ export default function UploadingVcfPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Single-Sample Analysis</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight currently supports single-sample VCF files. If your file contains multiple samples, extract the sample of interest using a tool such as bcftools before uploading. Trio analysis (proband plus parents) is on the development roadmap.
+          Helena currently supports single-sample VCF files. If your file contains multiple samples, extract the sample of interest using a tool such as bcftools before uploading. Trio analysis (proband plus parents) is on the development roadmap.
         </p>
       </section>
 

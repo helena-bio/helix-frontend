@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Carrier Screening Variant Interpretation | Helix Insight',
+  title: 'Carrier Screening Variant Interpretation | Helena',
   description: 'Automated ACMG classification for carrier screening panels. Population-specific frequency analysis, structured clinical reports, and transparent evidence chains for reproductive genetics.',
   keywords: [
     'carrier screening variant interpretation',
@@ -18,7 +18,7 @@ export const metadata = {
     'population frequency carrier screening',
     'carrier screening ACMG classification',
   ],
-  alternates: { canonical: 'https://helixinsight.bio/use-cases/carrier-screening' },
+  alternates: { canonical: 'https://helena.bio/use-cases/carrier-screening' },
 }
 
 const carrierChallenges = [
@@ -51,7 +51,7 @@ const platformCapabilities = [
   },
   {
     title: 'Population-Aware Frequency Analysis',
-    description: 'gnomAD v4.1 provides global and population-specific allele frequencies across multiple ancestry groups. Helix Insight displays both global frequency and population-maximum frequency (popmax) for every variant, enabling the geneticist to assess carrier frequency in the context of the patient\'s reported ancestry.',
+    description: 'gnomAD v4.1 provides global and population-specific allele frequencies across multiple ancestry groups. Helena displays both global frequency and population-maximum frequency (popmax) for every variant, enabling the geneticist to assess carrier frequency in the context of the patient\'s reported ancestry.',
   },
   {
     title: 'Founder Variant Recognition',
@@ -92,7 +92,7 @@ export default function CarrierScreeningPage() {
               Carrier Screening Variant Interpretation
             </h1>
             <p className="text-base text-muted-foreground leading-relaxed">
-              Expanded carrier screening panels are growing in scope -- from dozens of conditions to hundreds. As panel sizes increase, so does the volume of variants requiring systematic evidence evaluation. Helix Insight provides full ACMG classification with population-aware frequency analysis for every variant, at any panel scale.
+              Expanded carrier screening panels are growing in scope -- from dozens of conditions to hundreds. As panel sizes increase, so does the volume of variants requiring systematic evidence evaluation. Helena provides full ACMG classification with population-aware frequency analysis for every variant, at any panel scale.
             </p>
           </div>
         </section>
@@ -182,7 +182,7 @@ export default function CarrierScreeningPage() {
               See Carrier Screening Classification
             </h2>
             <p className="text-base text-muted-foreground">
-              Request a demo to see how Helix Insight classifies carrier screening variants with full ACMG evidence and population-specific frequency data.
+              Request a demo to see how Helena classifies carrier screening variants with full ACMG evidence and population-specific frequency data.
             </p>
             <div className="flex items-center justify-center gap-4">
               <RequestDemoButton />

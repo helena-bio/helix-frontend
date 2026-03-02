@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'SpliceAI | Helix Insight Documentation',
-  description: 'How Helix Insight uses SpliceAI deep learning predictions to assess variant impact on mRNA splicing for ACMG classification.',
+  title: 'SpliceAI | Helena Documentation',
+  description: 'How Helena uses SpliceAI deep learning predictions to assess variant impact on mRNA splicing for ACMG classification.',
 }
 
 export default function SpliceAIPage() {
@@ -25,7 +25,7 @@ export default function SpliceAIPage() {
           SpliceAI is a deep learning model developed by Illumina that predicts whether a genetic variant will disrupt normal mRNA splicing. Splicing is the process by which the cell removes non-coding sections (introns) from the pre-mRNA and joins the coding sections (exons) to produce the final messenger RNA. Variants that disrupt this process can lead to abnormal proteins or complete loss of protein production, even if they do not directly change the amino acid sequence.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          The model was published in Cell (Jaganathan et al., 2019) and is widely used in clinical genetics laboratories. It is one of two computational tools in Helix Insight that directly influences ACMG classification.
+          The model was published in Cell (Jaganathan et al., 2019) and is widely used in clinical genetics laboratories. It is one of two computational tools in Helena that directly influences ACMG classification.
         </p>
       </section>
 
@@ -90,7 +90,7 @@ export default function SpliceAIPage() {
       </section>
 
       <section className="space-y-3">
-        <p className="text-lg font-semibold text-foreground">How Helix Insight Uses SpliceAI</p>
+        <p className="text-lg font-semibold text-foreground">How Helena Uses SpliceAI</p>
         <p className="text-base text-muted-foreground leading-relaxed">
           SpliceAI scores are used in three distinct ways within the classification engine. Each role has a specific threshold and clinical rationale.
         </p>

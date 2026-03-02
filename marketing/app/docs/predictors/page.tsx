@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Computational Predictors | Helix Insight Documentation',
-  description: 'How Helix Insight uses computational predictors for variant classification -- BayesDel for ACMG PP3/BP4, SpliceAI for splice impact, and displayed reference predictors.',
+  title: 'Computational Predictors | Helena Documentation',
+  description: 'How Helena uses computational predictors for variant classification -- BayesDel for ACMG PP3/BP4, SpliceAI for splice impact, and displayed reference predictors.',
 }
 const subpages = [
   { href: '/docs/predictors/spliceai', title: 'SpliceAI', description: 'Deep learning splice impact prediction. Directly contributes PP3_splice to ACMG classification.' },
@@ -32,7 +32,7 @@ export default function PredictorsOverviewPage() {
           In ACMG variant classification, two criteria depend on computational predictions: PP3 (computational evidence supports a deleterious effect) and BP4 (computational evidence suggests no impact). These are evidence criteria -- they contribute to the overall classification but do not determine it on their own.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight uses two computational tools that directly influence ACMG classification: BayesDel_noAF for missense variant pathogenicity assessment, and SpliceAI for splice impact prediction. Both were selected based on ClinGen Sequence Variant Interpretation (SVI) Working Group recommendations and are calibrated against clinical truth sets.
+          Helena uses two computational tools that directly influence ACMG classification: BayesDel_noAF for missense variant pathogenicity assessment, and SpliceAI for splice impact prediction. Both were selected based on ClinGen Sequence Variant Interpretation (SVI) Working Group recommendations and are calibrated against clinical truth sets.
         </p>
       </section>
 

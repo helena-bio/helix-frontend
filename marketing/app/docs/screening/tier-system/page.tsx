@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Tier System | Helix Insight Documentation',
+  title: 'Tier System | Helena Documentation',
   description: 'Four-tier variant priority ranking with clinical boosts, actionability labels, and tier promotion rules.',
 }
 

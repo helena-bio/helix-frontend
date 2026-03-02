@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Database Queries | Helix Insight Documentation',
+  title: 'Database Queries | Helena Documentation',
   description: 'How Helix AI translates natural language to SQL and queries patient variant and biomedical literature databases.',
 }
 

@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'GDPR Compliance | Helix Insight Documentation',
-  description: 'How Helix Insight complies with GDPR for processing genetic data as special category data.',
+  title: 'GDPR Compliance | Helena Documentation',
+  description: 'How Helena complies with GDPR for processing genetic data as special category data.',
 }
 
 export default function GDPRCompliancePage() {
@@ -18,7 +18,7 @@ export default function GDPRCompliancePage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">GDPR Compliance</h1>
         <p className="text-base text-muted-foreground leading-relaxed mt-3">
-          Genetic data is classified as special category data under GDPR Article 9, requiring additional legal safeguards beyond those for ordinary personal data. Helix Insight is designed to meet these requirements at every level -- legal, organizational, and technical.
+          Genetic data is classified as special category data under GDPR Article 9, requiring additional legal safeguards beyond those for ordinary personal data. Helena is designed to meet these requirements at every level -- legal, organizational, and technical.
         </p>
       </div>
 

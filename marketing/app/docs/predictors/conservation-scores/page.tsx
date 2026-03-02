@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Conservation Scores | Helix Insight Documentation',
-  description: 'PhyloP and GERP conservation metrics in Helix Insight -- evolutionary constraint scores displayed for clinical reference.',
+  title: 'Conservation Scores | Helena Documentation',
+  description: 'PhyloP and GERP conservation metrics in Helena -- evolutionary constraint scores displayed for clinical reference.',
 }
 
 export default function ConservationScoresPage() {
@@ -26,7 +26,7 @@ export default function ConservationScoresPage() {
           Genomic positions that remain unchanged across millions of years of evolution are under evolutionary constraint -- meaning changes at those positions are more likely to be functionally important. If a specific nucleotide is the same in humans, mice, chickens, and fish, it suggests that changes at that position are harmful enough to be removed by natural selection. Conservation scores quantify this constraint.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Two conservation metrics are displayed in Helix Insight: PhyloP (measuring conservation) and GERP (measuring constraint). They use different statistical approaches but address the same question: is this genomic position under evolutionary pressure to remain unchanged?
+          Two conservation metrics are displayed in Helena: PhyloP (measuring conservation) and GERP (measuring constraint). They use different statistical approaches but address the same question: is this genomic position under evolutionary pressure to remain unchanged?
         </p>
       </section>
 
@@ -100,7 +100,7 @@ export default function ConservationScoresPage() {
       </section>
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
-        <p className="text-base font-medium text-foreground">Role in Helix Insight</p>
+        <p className="text-base font-medium text-foreground">Role in Helena</p>
         <p className="text-md text-muted-foreground leading-relaxed">
           PhyloP and GERP scores are displayed in the variant detail view as additional clinical context. They do not contribute to PP3 or BP4 ACMG criteria. The formal classification uses BayesDel_noAF (which itself incorporates conservation signals internally) with ClinGen SVI calibrated thresholds. See <Link href="/docs/predictors/consensus-calculation" className="text-primary hover:underline">Consensus Calculation</Link> for details.
         </p>

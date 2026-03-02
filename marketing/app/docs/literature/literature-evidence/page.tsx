@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Literature Evidence | Helix Insight Documentation',
-  description: 'How Helix Insight searches, scores, and presents literature evidence for clinical variant interpretation.',
+  title: 'Literature Evidence | Helena Documentation',
+  description: 'How Helena searches, scores, and presents literature evidence for clinical variant interpretation.',
 }
 
 export default function LiteratureEvidencePage() {

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Clinical Interpretation | Helix Insight Documentation',
+  title: 'Clinical Interpretation | Helena Documentation',
   description: 'AI-generated clinical genomic interpretation reports with four adaptive levels, structured templates, and data grounding safeguards.',
 }
 
@@ -102,7 +102,7 @@ export default function ClinicalInterpretationPage() {
             <tbody>
               <tr className="border-b border-border">
                 <td className="px-4 py-2 text-md font-medium text-foreground">PDF</td>
-                <td className="px-4 py-2 text-md text-muted-foreground">Branded A4 layout with Helix Insight header, page numbers, "CONFIDENTIAL" watermark, print-friendly links, proper table formatting.</td>
+                <td className="px-4 py-2 text-md text-muted-foreground">Branded A4 layout with Helena header, page numbers, "CONFIDENTIAL" watermark, print-friendly links, proper table formatting.</td>
               </tr>
               <tr>
                 <td className="px-4 py-2 text-md font-medium text-foreground">DOCX</td>

@@ -5,9 +5,9 @@ import Image from 'next/image'
 import { ProtectedImage } from '@/components/ProtectedImage'
 
 export const metadata = {
-  title: 'About | Helix Insight',
-  description: 'Meet the team behind Helix Insight -- AI-powered genetic variant analysis.',
-  alternates: { canonical: 'https://helixinsight.bio/about' },
+  title: 'About | Helena',
+  description: 'Meet the team behind Helena -- AI-powered genetic variant analysis.',
+  alternates: { canonical: 'https://helena.bio/about' },
 }
 
 export default function AboutPage() {
@@ -19,12 +19,12 @@ export default function AboutPage() {
 
           {/* Mission */}
           <section className="text-center space-y-4 max-w-3xl mx-auto">
-            <h1 className="text-3xl font-semibold text-primary">About Helix Insight</h1>
+            <h1 className="text-3xl font-semibold text-primary">About Helena</h1>
             <p className="text-base text-muted-foreground leading-relaxed text-justify">
               Clinical genetics laboratories spend days manually interpreting genetic variants -- cross-referencing databases, reviewing literature, and applying classification guidelines. We are building the infrastructure to reduce that to minutes, without compromising clinical accuracy.
             </p>
             <p className="text-base text-muted-foreground leading-relaxed text-justify">
-              Helix Insight brings enterprise-grade engineering to clinical genomics. Built on dedicated EU infrastructure, following ACMG/AMP standards, and designed from the ground up for the rigorous demands of clinical genetics workflows.
+              Helena brings enterprise-grade engineering to clinical genomics. Built on dedicated EU infrastructure, following ACMG/AMP standards, and designed from the ground up for the rigorous demands of clinical genetics workflows.
             </p>
           </section>
 
@@ -52,7 +52,7 @@ export default function AboutPage() {
                       Founded Helena Bioinformatics to solve a problem that costs lives through delay: geneticists spending days on variant interpretation that technology should handle in minutes. Every hour a laboratory spends on manual classification is an hour a patient waits for answers.
                     </p>
                     <p className="text-base text-muted-foreground leading-relaxed">
-                      Helix Insight is built on that urgency -- engineering infrastructure where clinical accuracy and speed are not trade-offs, but requirements. The mission is straightforward: give every genetics laboratory, regardless of size, access to interpretation tools that were previously only available to the largest institutions.
+                      Helena is built on that urgency -- engineering infrastructure where clinical accuracy and speed are not trade-offs, but requirements. The mission is straightforward: give every genetics laboratory, regardless of size, access to interpretation tools that were previously only available to the largest institutions.
                     </p>
                   </div>
                 </div>
@@ -72,7 +72,7 @@ export default function AboutPage() {
                 Our infrastructure is hosted on dedicated servers in Helsinki, Finland, ensuring full GDPR compliance and EU data residency. We follow Clean Architecture principles with comprehensive audit trails, encryption at rest and in transit, and role-based access control -- the same standards expected in enterprise telecommunications and financial systems.
               </p>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Helix Insight integrates with established clinical databases including ClinVar, gnomAD, PubMed, HPO, OMIM, and dbNSFP, and follows ACMG/AMP classification guidelines. Every analysis produces a complete evidence trail that geneticists can review, validate, and use in clinical reports.
+                Helena integrates with established clinical databases including ClinVar, gnomAD, PubMed, HPO, OMIM, and dbNSFP, and follows ACMG/AMP classification guidelines. Every analysis produces a complete evidence trail that geneticists can review, validate, and use in clinical reports.
               </p>
             </div>
           </section>

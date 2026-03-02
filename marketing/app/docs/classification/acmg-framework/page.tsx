@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'ACMG Framework | Helix Insight Documentation',
-  description: 'The ACMG/AMP 2015 variant classification framework as implemented in Helix Insight with the Bayesian point-based system.',
+  title: 'ACMG Framework | Helena Documentation',
+  description: 'The ACMG/AMP 2015 variant classification framework as implemented in Helena with the Bayesian point-based system.',
 }
 
 export default function AcmgFrameworkPage() {
@@ -64,9 +64,9 @@ export default function AcmgFrameworkPage() {
       </section>
 
       <section className="space-y-3">
-        <p className="text-lg font-semibold text-foreground">Helix Insight Implementation</p>
+        <p className="text-lg font-semibold text-foreground">Helena Implementation</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight automates 19 of the 28 criteria. The remaining 9 require information not available from a single VCF file -- family segregation data, functional study results, de novo confirmation, or case-level clinical context. These must be evaluated manually by the reviewing geneticist.
+          Helena automates 19 of the 28 criteria. The remaining 9 require information not available from a single VCF file -- family segregation data, functional study results, de novo confirmation, or case-level clinical context. These must be evaluated manually by the reviewing geneticist.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
           Classification uses the Bayesian point-based system (Tavtigian et al. 2018, 2020), which is mathematically equivalent to the original 18 ACMG combining rules while properly classifying evidence combinations not explicitly covered by the 2015 guidelines. Computational predictor evidence (PP3/BP4) uses BayesDel_noAF with ClinGen SVI calibrated thresholds (Pejaver et al. 2022), providing evidence strength modulation from Supporting through Strong.
@@ -83,7 +83,7 @@ export default function AcmgFrameworkPage() {
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">Key Principle</p>
         <p className="text-md text-muted-foreground leading-relaxed">
-          The ACMG framework provides a structured, reproducible method for variant classification. Two geneticists using the same evidence should reach the same classification. Helix Insight ensures this reproducibility by applying identical rules to every variant, with full transparency on which criteria were triggered and why.
+          The ACMG framework provides a structured, reproducible method for variant classification. Two geneticists using the same evidence should reach the same classification. Helena ensures this reproducibility by applying identical rules to every variant, with full transparency on which criteria were triggered and why.
         </p>
       </section>
 

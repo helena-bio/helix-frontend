@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Confidence Scores | Helix Insight Documentation',
-  description: 'How Helix Insight calculates continuous confidence scores for variant classifications based on Bayesian point distance.',
+  title: 'Confidence Scores | Helena Documentation',
+  description: 'How Helena calculates continuous confidence scores for variant classifications based on Bayesian point distance.',
 }
 
 export default function ConfidenceScoresPage() {

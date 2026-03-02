@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Data Retention | Helix Insight Documentation',
-  description: 'What data Helix Insight retains, for how long, and how deletion works.',
+  title: 'Data Retention | Helena Documentation',
+  description: 'What data Helena retains, for how long, and how deletion works.',
 }
 
 export default function DataRetentionPage() {
@@ -18,7 +18,7 @@ export default function DataRetentionPage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">Data Retention</h1>
         <p className="text-base text-muted-foreground leading-relaxed mt-3">
-          Helix Insight follows the principle of data minimization: we process only what is necessary and retain data only for as long as required. This page describes what data is kept, for how long, and how deletion works.
+          Helena follows the principle of data minimization: we process only what is necessary and retain data only for as long as required. This page describes what data is kept, for how long, and how deletion works.
         </p>
       </div>
 

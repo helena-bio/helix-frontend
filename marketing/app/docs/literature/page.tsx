@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Literature Evidence | Helix Insight Documentation',
-  description: 'How Helix Insight provides literature evidence from a local PubMed database for variant interpretation.',
+  title: 'Literature Evidence | Helena Documentation',
+  description: 'How Helena provides literature evidence from a local PubMed database for variant interpretation.',
 }
 
 const subpages = [

@@ -4,8 +4,8 @@
 import { LoginForm } from '@/components/auth';
 
 export const metadata = {
-  title: 'Partner Login | Helix Insight',
-  description: 'Sign in to access your Helix Insight dashboard',
+  title: 'Partner Login | Helena',
+  description: 'Sign in to access your Helena dashboard',
 };
 
 export default function LoginPage() {

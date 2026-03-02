@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Interpreting Scores | Helix Insight Documentation',
+  title: 'Interpreting Scores | Helena Documentation',
   description: 'How to read phenotype match scores and what factors affect their accuracy.',
 }
 
@@ -48,7 +48,7 @@ export default function InterpretingScoresPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Individual Term Matches</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Beyond the overall score, Helix Insight reports which specific patient HPO terms matched and how well. For each patient term, the system identifies the best-matching gene HPO term and its similarity score. A match is considered significant when the individual similarity score exceeds 0.5 (on the 0-1 Lin similarity scale).
+          Beyond the overall score, Helena reports which specific patient HPO terms matched and how well. For each patient term, the system identifies the best-matching gene HPO term and its similarity score. A match is considered significant when the individual similarity score exceeds 0.5 (on the 0-1 Lin similarity scale).
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
           Reviewing individual matches helps the geneticist understand why a gene scored the way it did. A gene with 2 of 3 patient terms matched at high similarity is a stronger candidate than one with 3 of 3 matched at low similarity, even if the overall score is similar.

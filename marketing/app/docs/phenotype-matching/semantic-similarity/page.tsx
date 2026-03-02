@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Semantic Similarity | Helix Insight Documentation',
+  title: 'Semantic Similarity | Helena Documentation',
   description: 'Lin similarity algorithm for comparing patient HPO terms against gene phenotype profiles.',
 }
 
@@ -25,7 +25,7 @@ export default function SemanticSimilarityPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Lin Similarity</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight uses Lin similarity, a well-established measure from information theory that produces scores on a 0 to 1 scale:
+          Helena uses Lin similarity, a well-established measure from information theory that produces scores on a 0 to 1 scale:
         </p>
         <div className="bg-card border border-border rounded-lg p-4 space-y-3">
           <p className="text-base text-foreground text-center leading-relaxed">
@@ -55,7 +55,7 @@ export default function SemanticSimilarityPage() {
           Information Content (IC) measures how specific a term is based on its frequency in disease annotations. A term associated with many diseases (like "Abnormality of the nervous system") has low IC because it carries little diagnostic information. A term associated with few diseases (like "Agenesis of the corpus callosum") has high IC because observing it significantly narrows the differential diagnosis.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight derives IC values from OMIM disease annotations, ensuring that information content reflects clinical significance rather than annotation frequency in other databases.
+          Helena derives IC values from OMIM disease annotations, ensuring that information content reflects clinical significance rather than annotation frequency in other databases.
         </p>
       </section>
 

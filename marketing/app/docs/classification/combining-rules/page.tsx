@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Combining Rules | Helix Insight Documentation',
+  title: 'Combining Rules | Helena Documentation',
   description: 'How ACMG criteria are combined using the Bayesian point system to determine variant classification.',
 }
 
@@ -22,7 +22,7 @@ export default function CombiningRulesPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Bayesian Point System</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight uses the Bayesian point-based classification framework (Tavtigian et al. 2018, 2020). Each evidence criterion contributes points based on its strength level. The total point sum determines the final classification.
+          Helena uses the Bayesian point-based classification framework (Tavtigian et al. 2018, 2020). Each evidence criterion contributes points based on its strength level. The total point sum determines the final classification.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-card border border-border rounded-lg p-4 space-y-2">

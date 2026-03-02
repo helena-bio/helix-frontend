@@ -9,9 +9,9 @@ export function VideoHero() {
           className="w-full h-full object-cover"
           controls
           preload="metadata"
-          poster="/video/helixinsight_preview.jpg"
+          poster="/video/helena_preview.jpg"
         >
-          <source src="/video/helixinsight_preview.mp4" type="video/mp4" />
+          <source src="/video/helena_preview.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>

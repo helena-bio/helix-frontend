@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'No External Calls | Helix Insight Documentation',
-  description: 'How Helix Insight processes genomic data with zero outbound network calls.',
+  title: 'No External Calls | Helena Documentation',
+  description: 'How Helena processes genomic data with zero outbound network calls.',
 }
 
 export default function NoExternalCallsPage() {
@@ -18,7 +18,7 @@ export default function NoExternalCallsPage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">No External Calls</h1>
         <p className="text-base text-muted-foreground leading-relaxed mt-3">
-          During variant processing, Helix Insight makes zero outbound network calls. No patient data, genomic coordinates, variant identifiers, or query parameters are sent to any external service at any point in the analysis pipeline. This is a fundamental architectural decision, not a configuration option.
+          During variant processing, Helena makes zero outbound network calls. No patient data, genomic coordinates, variant identifiers, or query parameters are sent to any external service at any point in the analysis pipeline. This is a fundamental architectural decision, not a configuration option.
         </p>
       </div>
 

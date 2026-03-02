@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'PubMed Coverage | Helix Insight Documentation',
-  description: 'What is and is not covered in the Helix Insight literature database.',
+  title: 'PubMed Coverage | Helena Documentation',
+  description: 'What is and is not covered in the Helena literature database.',
 }
 
 export default function PubMedCoveragePage() {

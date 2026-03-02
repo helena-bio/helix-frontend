@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'HPO Term Selection Guide | Helix Insight Documentation',
+  title: 'HPO Term Selection Guide | Helena Documentation',
   description: 'Practical guidance for selecting HPO terms that maximize phenotype matching accuracy.',
 }
 

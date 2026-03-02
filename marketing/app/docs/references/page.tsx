@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'References | Helix Insight Documentation',
-  description: 'Scientific publications and standards cited in the Helix Insight documentation.',
+  title: 'References | Helena Documentation',
+  description: 'Scientific publications and standards cited in the Helena documentation.',
 }
 
 const references = [
@@ -66,7 +66,7 @@ export default function ReferencesPage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">References</h1>
         <p className="text-base text-muted-foreground leading-relaxed mt-3">
-          Scientific publications and standards cited throughout the Helix Insight documentation.
+          Scientific publications and standards cited throughout the Helena documentation.
         </p>
       </div>
 

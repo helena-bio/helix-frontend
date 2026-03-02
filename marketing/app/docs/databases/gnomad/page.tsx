@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'gnomAD | Helix Insight Documentation',
+  title: 'gnomAD | Helena Documentation',
   description: 'gnomAD v4.1 population frequency and gene constraint databases -- allele frequencies and gene-level tolerance metrics used for ACMG classification.',
 }
 
@@ -45,7 +45,7 @@ export default function GnomadPage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">gnomAD</h1>
         <p className="text-base text-muted-foreground leading-relaxed mt-3">
-          Helix Insight uses two separate gnomAD datasets: variant-level population frequencies for assessing how common a variant is in healthy individuals, and gene-level constraint metrics for assessing how tolerant a gene is to different types of mutations. Both are loaded locally and queried without external API calls.
+          Helena uses two separate gnomAD datasets: variant-level population frequencies for assessing how common a variant is in healthy individuals, and gene-level constraint metrics for assessing how tolerant a gene is to different types of mutations. Both are loaded locally and queried without external API calls.
         </p>
       </div>
 
@@ -236,7 +236,7 @@ export default function GnomadPage() {
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">pLI vs. LOEUF</p>
         <p className="text-md text-muted-foreground leading-relaxed">
-          Both pLI and LOEUF measure gene intolerance to loss-of-function variants, but they use different statistical approaches. pLI is a probability (0 to 1) from a discrete classification model. LOEUF is the upper confidence bound of the observed/expected ratio and provides a continuous measure of constraint. Recent literature favors LOEUF because it better captures the spectrum of constraint rather than forcing genes into discrete categories. Helix Insight accepts either metric for PVS1 (pLI {'>'} 0.9 OR LOEUF {'<'} 0.35) to maximize sensitivity.
+          Both pLI and LOEUF measure gene intolerance to loss-of-function variants, but they use different statistical approaches. pLI is a probability (0 to 1) from a discrete classification model. LOEUF is the upper confidence bound of the observed/expected ratio and provides a continuous measure of constraint. Recent literature favors LOEUF because it better captures the spectrum of constraint rather than forcing genes into discrete categories. Helena accepts either metric for PVS1 (pLI {'>'} 0.9 OR LOEUF {'<'} 0.35) to maximize sensitivity.
         </p>
       </section>
 

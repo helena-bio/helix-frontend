@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'AlphaMissense | Helix Insight Documentation',
-  description: 'AlphaMissense predictor in Helix Insight -- DeepMind protein structure-based pathogenicity prediction. Displayed for clinical reference.',
+  title: 'AlphaMissense | Helena Documentation',
+  description: 'AlphaMissense predictor in Helena -- DeepMind protein structure-based pathogenicity prediction. Displayed for clinical reference.',
 }
 
 export default function AlphaMissensePage() {
@@ -76,7 +76,7 @@ export default function AlphaMissensePage() {
       </section>
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
-        <p className="text-base font-medium text-foreground">Role in Helix Insight</p>
+        <p className="text-base font-medium text-foreground">Role in Helena</p>
         <p className="text-md text-muted-foreground leading-relaxed">
           AlphaMissense predictions are displayed in the variant detail view as additional clinical context. They do not contribute to PP3 or BP4 ACMG criteria. The formal classification uses BayesDel_noAF with ClinGen SVI calibrated thresholds. See <Link href="/docs/predictors/consensus-calculation" className="text-primary hover:underline">Consensus Calculation</Link> for details.
         </p>

@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'SIFT | Helix Insight Documentation',
-  description: 'SIFT predictor in Helix Insight -- amino acid substitution tolerance prediction based on sequence homology. Displayed for clinical reference.',
+  title: 'SIFT | Helena Documentation',
+  description: 'SIFT predictor in Helena -- amino acid substitution tolerance prediction based on sequence homology. Displayed for clinical reference.',
 }
 
 export default function SiftPage() {
@@ -68,7 +68,7 @@ export default function SiftPage() {
       </section>
 
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
-        <p className="text-base font-medium text-foreground">Role in Helix Insight</p>
+        <p className="text-base font-medium text-foreground">Role in Helena</p>
         <p className="text-md text-muted-foreground leading-relaxed">
           SIFT predictions are displayed in the variant detail view as additional clinical context. They do not contribute to PP3 or BP4 ACMG criteria. The formal classification uses BayesDel_noAF with ClinGen SVI calibrated thresholds. See <Link href="/docs/predictors/consensus-calculation" className="text-primary hover:underline">Consensus Calculation</Link> for details.
         </p>

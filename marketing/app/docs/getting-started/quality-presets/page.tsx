@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Quality Presets | Helix Insight Documentation',
-  description: 'Three quality filtering levels for variant analysis in Helix Insight -- Strict, Balanced, and Permissive -- with the ClinVar rescue mechanism.',
+  title: 'Quality Presets | Helena Documentation',
+  description: 'Three quality filtering levels for variant analysis in Helena -- Strict, Balanced, and Permissive -- with the ClinVar rescue mechanism.',
 }
 
 export default function QualityPresetsPage() {

@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Reference Databases | Helix Insight Documentation',
-  description: 'Reference databases used in Helix Insight -- gnomAD, ClinVar, dbNSFP, HPO, ClinGen, Ensembl VEP, and SpliceAI precomputed scores.',
+  title: 'Reference Databases | Helena Documentation',
+  description: 'Reference databases used in Helena -- gnomAD, ClinVar, dbNSFP, HPO, ClinGen, Ensembl VEP, and SpliceAI precomputed scores.',
 }
 
 const subpages = [
@@ -33,7 +33,7 @@ export default function DatabasesPage() {
       <section className="space-y-4">
         <h1 className="text-3xl font-semibold tracking-tight text-primary">Reference Databases</h1>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight uses eight reference databases for variant annotation and ACMG classification. All databases are stored locally on EU-based infrastructure in Helsinki, Finland. No variant data is sent to external APIs during processing.
+          Helena uses eight reference databases for variant annotation and ACMG classification. All databases are stored locally on EU-based infrastructure in Helsinki, Finland. No variant data is sent to external APIs during processing.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
           Database versions are fixed per deployment. Each version undergoes validation testing before production deployment to ensure consistency with expected classification outcomes. The current versions and their roles in ACMG classification are documented below.
@@ -44,7 +44,7 @@ export default function DatabasesPage() {
       <section className="bg-card border border-primary/20 rounded-lg p-4 space-y-2">
         <p className="text-base font-medium text-foreground">Zero External API Calls</p>
         <p className="text-md text-muted-foreground leading-relaxed">
-          During variant processing, Helix Insight makes zero external API calls. All reference databases are stored locally. Ensembl VEP runs with a local cache. No patient data leaves the server at any processing stage.
+          During variant processing, Helena makes zero external API calls. All reference databases are stored locally. Ensembl VEP runs with a local cache. No patient data leaves the server at any processing stage.
         </p>
       </section>
 

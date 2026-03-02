@@ -8,9 +8,9 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'How It Works | Helix Insight',
-  description: 'Transparent, auditable variant analysis pipeline. Learn how Helix Insight processes genomic data from VCF upload to clinical report.',
-  alternates: { canonical: 'https://helixinsight.bio/how-it-works' },
+  title: 'How It Works | Helena',
+  description: 'Transparent, auditable variant analysis pipeline. Learn how Helena processes genomic data from VCF upload to clinical report.',
+  alternates: { canonical: 'https://helena.bio/how-it-works' },
 }
 
 const pipelineOverview = [
@@ -122,7 +122,7 @@ const principles = [
   {
     icon: UserCheck,
     title: 'Geneticist Authority',
-    description: 'Helix Insight is a clinical decision support tool. It gathers evidence, applies guidelines, and presents findings. The geneticist reviews, validates, and makes the clinical decision.',
+    description: 'Helena is a clinical decision support tool. It gathers evidence, applies guidelines, and presents findings. The geneticist reviews, validates, and makes the clinical decision.',
   },
 ]
 
@@ -136,10 +136,10 @@ export default function HowItWorksPage() {
         <section className="pt-12 pb-8 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight text-primary">
-              How Helix Insight Works
+              How Helena Works
             </h1>
             <p className="text-base text-muted-foreground leading-relaxed">
-              Helix Insight follows a simple principle: variant classification must be rule-based and auditable. AI assists in evidence synthesis but never makes classification decisions. Every result is traceable to its source data, published criteria, and referenced literature.
+              Helena follows a simple principle: variant classification must be rule-based and auditable. AI assists in evidence synthesis but never makes classification decisions. Every result is traceable to its source data, published criteria, and referenced literature.
             </p>
 
             {/* Pipeline overview pills */}
@@ -252,7 +252,7 @@ export default function HowItWorksPage() {
                 Built for Clinical Trust
               </h2>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Every design decision in Helix Insight prioritizes transparency, auditability, and geneticist authority over black-box convenience.
+                Every design decision in Helena prioritizes transparency, auditability, and geneticist authority over black-box convenience.
               </p>
             </div>
 
@@ -291,7 +291,7 @@ export default function HowItWorksPage() {
               See the Pipeline in Action
             </h2>
             <p className="text-base text-muted-foreground">
-              Request a demo to see how Helix Insight processes a real genome -- from VCF upload to clinical report.
+              Request a demo to see how Helena processes a real genome -- from VCF upload to clinical report.
             </p>
             <div className="flex items-center justify-center gap-4">
                 <RequestDemoButton />

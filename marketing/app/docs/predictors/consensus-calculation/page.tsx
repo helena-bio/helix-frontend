@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Consensus Calculation | Helix Insight Documentation',
-  description: 'How Helix Insight computes PP3 and BP4 ACMG criteria using BayesDel_noAF with ClinGen SVI calibrated evidence strength thresholds.',
+  title: 'Consensus Calculation | Helena Documentation',
+  description: 'How Helena computes PP3 and BP4 ACMG criteria using BayesDel_noAF with ClinGen SVI calibrated evidence strength thresholds.',
 }
 
 export default function ConsensusCalculationPage() {
@@ -22,7 +22,7 @@ export default function ConsensusCalculationPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">BayesDel_noAF with ClinGen SVI Calibration</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight uses BayesDel_noAF as the single computational tool for determining PP3 (computational evidence supports a deleterious effect) and BP4 (computational evidence suggests no impact). BayesDel is a meta-predictor that integrates deleteriousness scores from multiple tools into a single calibrated score. The "_noAF" variant explicitly excludes allele frequency from its model, which is critical: since the ACMG framework already has frequency-based criteria (PM2, BA1, BS1), using a predictor that includes frequency would double-count the same evidence.
+          Helena uses BayesDel_noAF as the single computational tool for determining PP3 (computational evidence supports a deleterious effect) and BP4 (computational evidence suggests no impact). BayesDel is a meta-predictor that integrates deleteriousness scores from multiple tools into a single calibrated score. The "_noAF" variant explicitly excludes allele frequency from its model, which is critical: since the ACMG framework already has frequency-based criteria (PM2, BA1, BS1), using a predictor that includes frequency would double-count the same evidence.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
           The evidence strength thresholds were calibrated by the ClinGen Sequence Variant Interpretation (SVI) Working Group against clinical truth sets (Pejaver et al. 2022). These thresholds map BayesDel_noAF score ranges directly to ACMG evidence strength levels, enabling evidence strength modulation -- a feature not possible with simpler binary (damaging/benign) approaches.
@@ -212,7 +212,7 @@ export default function ConsensusCalculationPage() {
       <section className="bg-card border border-border rounded-lg p-5 space-y-2">
         <p className="text-base font-medium text-foreground">Why Not a Multi-Predictor Consensus</p>
         <p className="text-md text-muted-foreground leading-relaxed">
-          Some variant classification systems use a weighted consensus across multiple individual predictors (SIFT, PolyPhen, CADD, etc.) to determine PP3/BP4. Helix Insight uses BayesDel_noAF as a single calibrated tool instead, for three reasons: it has ClinGen SVI-calibrated thresholds directly mapping to ACMG evidence strength levels; it excludes allele frequency, avoiding circular reasoning with PM2/BA1/BS1; and it provides evidence strength modulation (Supporting, Moderate, Strong) which a binary consensus approach cannot. The individual predictors (SIFT, AlphaMissense, MetaSVM, DANN, PhyloP, GERP) remain displayed in the results for additional clinical context.
+          Some variant classification systems use a weighted consensus across multiple individual predictors (SIFT, PolyPhen, CADD, etc.) to determine PP3/BP4. Helena uses BayesDel_noAF as a single calibrated tool instead, for three reasons: it has ClinGen SVI-calibrated thresholds directly mapping to ACMG evidence strength levels; it excludes allele frequency, avoiding circular reasoning with PM2/BA1/BS1; and it provides evidence strength modulation (Supporting, Moderate, Strong) which a binary consensus approach cannot. The individual predictors (SIFT, AlphaMissense, MetaSVM, DANN, PhyloP, GERP) remain displayed in the results for additional clinical context.
         </p>
       </section>
 

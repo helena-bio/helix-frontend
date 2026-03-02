@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-title: 'ClinGen | Helix Insight Documentation',
+title: 'ClinGen | Helena Documentation',
 description: 'ClinGen dosage sensitivity database -- haploinsufficiency and triplosensitivity scores used for BS1 and BP2 ACMG criteria.',
 }
 
@@ -101,7 +101,7 @@ Haploinsufficiency assessment score. Values 0-3 indicate evidence level for hapl
 <span className="px-2 py-0.5 text-xs rounded bg-muted text-muted-foreground">INTEGER</span>
 </div>
 <p className="text-md text-muted-foreground leading-relaxed">
-Triplosensitivity assessment score. Same 0-3 scale as haploinsufficiency. Indicates sensitivity to gene duplication (three copies). Currently informational in Helix Insight and not directly used in ACMG criteria.
+Triplosensitivity assessment score. Same 0-3 scale as haploinsufficiency. Indicates sensitivity to gene duplication (three copies). Currently informational in Helena and not directly used in ACMG criteria.
 </p>
 </div>
 </div>

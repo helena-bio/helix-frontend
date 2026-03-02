@@ -55,7 +55,7 @@ export function Header() {
           />
           <Image
             src="/images/logos/logo_helix.svg"
-            alt="Helix Insight"
+            alt="Helena"
             width={160}
             height={48}
             className="h-10 w-auto"

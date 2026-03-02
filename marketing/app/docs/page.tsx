@@ -6,8 +6,8 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'Documentation | Helix Insight',
-  description: 'Complete documentation for Helix Insight clinical genetics platform. Getting started, classification methodology, reference databases, and clinical workflows.',
+  title: 'Documentation | Helena',
+  description: 'Complete documentation for Helena clinical genetics platform. Getting started, classification methodology, reference databases, and clinical workflows.',
 }
 
 const sections = [
@@ -100,7 +100,7 @@ export default function DocsPage() {
           Documentation
         </h1>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Complete documentation for the Helix Insight clinical genetics platform. Every threshold, database version, and classification rule used in production is documented here. This documentation is intended for clinical geneticists, laboratory directors, accreditation auditors, and bioinformaticians.
+          Complete documentation for the Helena clinical genetics platform. Every threshold, database version, and classification rule used in production is documented here. This documentation is intended for clinical geneticists, laboratory directors, accreditation auditors, and bioinformaticians.
         </p>
         <p className="text-base text-muted-foreground leading-relaxed">
           For the full classification methodology with all criteria thresholds and combining rules, see the dedicated <Link href="/methodology" className="text-primary hover:underline font-medium">Methodology</Link> page.
@@ -132,7 +132,7 @@ export default function DocsPage() {
       <section className="bg-card border border-border rounded-lg p-6 space-y-3">
         <p className="text-lg font-semibold text-foreground">Documentation Principles</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          This documentation provides full transparency on what Helix Insight does and how it makes classification decisions. Every database version is specified, every threshold is documented with its exact value, and every limitation is acknowledged. The platform is a clinical decision support tool -- the reviewing geneticist always has the final word.
+          This documentation provides full transparency on what Helena does and how it makes classification decisions. Every database version is specified, every threshold is documented with its exact value, and every limitation is acknowledged. The platform is a clinical decision support tool -- the reviewing geneticist always has the final word.
         </p>
       </section>
     </div>

@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Setting HPO Terms | Helix Insight Documentation',
-  description: 'How to provide patient phenotype information using HPO terms and why it improves variant analysis in Helix Insight.',
+  title: 'Setting HPO Terms | Helena Documentation',
+  description: 'How to provide patient phenotype information using HPO terms and why it improves variant analysis in Helena.',
 }
 
 export default function SettingHpoTermsPage() {

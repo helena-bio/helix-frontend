@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-title: 'Ensembl VEP | Helix Insight Documentation',
-description: 'Ensembl Variant Effect Predictor (VEP) -- consequence annotation, transcript selection, and variant effect prediction in Helix Insight.',
+title: 'Ensembl VEP | Helena Documentation',
+description: 'Ensembl Variant Effect Predictor (VEP) -- consequence annotation, transcript selection, and variant effect prediction in Helena.',
 }
 
 const fields = [
@@ -119,7 +119,7 @@ VEP runs entirely locally using a pre-downloaded offline cache. No variant data 
 <section className="space-y-3">
 <p className="text-lg font-semibold text-foreground">Fields Extracted (11)</p>
 <p className="text-md text-muted-foreground leading-relaxed">
-For each variant, VEP produces annotations across all overlapping transcripts. Helix Insight selects the most severe consequence transcript and extracts the following fields:
+For each variant, VEP produces annotations across all overlapping transcripts. Helena selects the most severe consequence transcript and extracts the following fields:
 </p>
 <div className="space-y-3">
 {fields.map((field) => (

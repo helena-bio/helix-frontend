@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-title: 'Database Update Policy | Helix Insight Documentation',
-description: 'How and when reference databases are updated, validated, and versioned in Helix Insight.',
+title: 'Database Update Policy | Helena Documentation',
+description: 'How and when reference databases are updated, validated, and versioned in Helena.',
 }
 
 const updateSchedule = [
@@ -29,7 +29,7 @@ return (
 </p>
 <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">Database Update Policy</h1>
 <p className="text-base text-muted-foreground leading-relaxed mt-3">
-Reference database updates affect variant classification. A variant classified as VUS today may be reclassified as Likely Pathogenic after a ClinVar update adds new clinical evidence. Helix Insight manages database updates through a controlled process that balances clinical currency with classification stability.
+Reference database updates affect variant classification. A variant classified as VUS today may be reclassified as Likely Pathogenic after a ClinVar update adds new clinical evidence. Helena manages database updates through a controlled process that balances clinical currency with classification stability.
 </p>
 </div>
 

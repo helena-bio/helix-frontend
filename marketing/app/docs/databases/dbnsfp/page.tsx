@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-title: 'dbNSFP | Helix Insight Documentation',
+title: 'dbNSFP | Helena Documentation',
 description: 'dbNSFP 4.9c functional prediction database -- SIFT, AlphaMissense, MetaSVM, DANN, BayesDel, PhyloP, and GERP scores for missense variant interpretation.',
 }
 
@@ -50,7 +50,7 @@ dbNSFP (database of Non-synonymous Functional Predictions) provides precomputed 
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
 <span className="text-sm font-medium text-foreground w-32">Total Fields</span>
-<span className="text-md text-muted-foreground">434 (9 loaded by Helix Insight)</span>
+<span className="text-md text-muted-foreground">434 (9 loaded by Helena)</span>
 </div>
 <div className="border-t border-border/50" />
 <div className="flex items-center gap-2">
@@ -74,7 +74,7 @@ dbNSFP (database of Non-synonymous Functional Predictions) provides precomputed 
 <section className="space-y-3">
 <p className="text-lg font-semibold text-foreground">Role in Classification and Screening</p>
 <p className="text-base text-muted-foreground leading-relaxed">
-dbNSFP data serves two distinct roles in Helix Insight:
+dbNSFP data serves two distinct roles in Helena:
 </p>
 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 <div className="bg-card border border-border rounded-lg p-4 space-y-2">
@@ -96,7 +96,7 @@ Individual predictor scores (SIFT, AlphaMissense, MetaSVM, DANN) and conservatio
 <section className="bg-card border border-primary/20 rounded-lg p-4 space-y-2">
 <p className="text-base font-medium text-foreground">Duplicate Variant Handling</p>
 <p className="text-md text-muted-foreground leading-relaxed">
-dbNSFP contains approximately 701,000 duplicate variant entries (0.87% of the dataset) due to multi-transcript annotation. Helix Insight resolves these by aggregating to the most pathogenic interpretation: MIN(sift_score) since lower SIFT is more pathogenic, MAX for all other scores, with predictions matched to their corresponding extreme scores.
+dbNSFP contains approximately 701,000 duplicate variant entries (0.87% of the dataset) due to multi-transcript annotation. Helena resolves these by aggregating to the most pathogenic interpretation: MIN(sift_score) since lower SIFT is more pathogenic, MAX for all other scores, with predictions matched to their corresponding extreme scores.
 </p>
 </section>
 
@@ -104,7 +104,7 @@ dbNSFP contains approximately 701,000 duplicate variant entries (0.87% of the da
 <section className="space-y-3">
 <p className="text-lg font-semibold text-foreground">Columns Loaded (9)</p>
 <p className="text-md text-muted-foreground leading-relaxed">
-Variants are matched by exact positional coordinates. From the 434 available fields, Helix Insight loads 9 columns covering 4 functional predictors and 2 conservation metrics:
+Variants are matched by exact positional coordinates. From the 434 available fields, Helena loads 9 columns covering 4 functional predictors and 2 conservation metrics:
 </p>
 <div className="space-y-3">
 {columns.map((col) => (

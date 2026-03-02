@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Age-Aware Prioritization | Helix Insight Documentation',
+  title: 'Age-Aware Prioritization | Helena Documentation',
   description: 'How patient age drives gene relevance scoring with curated gene lists for neonatal, pediatric, adult, and elderly screening.',
 }
 
@@ -21,7 +21,7 @@ export default function AgeAwarePrioritizationPage() {
 
       <section className="space-y-3">
         <p className="text-base text-muted-foreground leading-relaxed">
-          Not all genetic findings are equally relevant at every age. A BRCA1 variant is critical for an adult's cancer screening but irrelevant for a newborn's immediate care. A CFTR variant matters urgently in a neonate but is primarily a carrier finding in an adult. Helix Insight uses patient age to adjust which genes receive the highest relevance scores during screening.
+          Not all genetic findings are equally relevant at every age. A BRCA1 variant is critical for an adult's cancer screening but irrelevant for a newborn's immediate care. A CFTR variant matters urgently in a neonate but is primarily a carrier finding in an adult. Helena uses patient age to adjust which genes receive the highest relevance scores during screening.
         </p>
       </section>
 
@@ -190,7 +190,7 @@ export default function AgeAwarePrioritizationPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">ACMG Secondary Findings (v3.2)</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          The ACMG recommends reporting pathogenic and likely pathogenic variants in 81 genes regardless of the primary indication for testing. These genes represent conditions where early identification can lead to medical interventions that improve outcomes. Helix Insight includes all 81 ACMG SF v3.2 genes in the age relevance scoring, organized into three categories: Cancer Predisposition (25 genes), Cardiac (34 genes), and Metabolic (8 genes), plus additional genes across categories.
+          The ACMG recommends reporting pathogenic and likely pathogenic variants in 81 genes regardless of the primary indication for testing. These genes represent conditions where early identification can lead to medical interventions that improve outcomes. Helena includes all 81 ACMG SF v3.2 genes in the age relevance scoring, organized into three categories: Cancer Predisposition (25 genes), Cardiac (34 genes), and Metabolic (8 genes), plus additional genes across categories.
         </p>
       </section>
 

@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { ContactForm } from './ContactForm'
 
 export const metadata = {
-  title: 'Contact | Helix Insight',
+  title: 'Contact | Helena',
   description: 'Get in touch with Helena Bioinformatics -- partnerships, demos, and general inquiries.',
-  alternates: { canonical: 'https://helixinsight.bio/contact' },
+  alternates: { canonical: 'https://helena.bio/contact' },
 }
 
 export default function ContactPage() {
@@ -20,7 +20,7 @@ export default function ContactPage() {
           <section className="space-y-4 max-w-3xl mx-auto">
             <h1 className="text-3xl font-semibold text-primary text-center">Contact Us</h1>
             <p className="text-base text-muted-foreground leading-relaxed text-justify">
-              Whether you are a clinical genetics laboratory exploring automation, a research institution interested in collaboration, or have general questions about Helix Insight -- we would like to hear from you.
+              Whether you are a clinical genetics laboratory exploring automation, a research institution interested in collaboration, or have general questions about Helena -- we would like to hear from you.
             </p>
           </section>
 
@@ -31,7 +31,7 @@ export default function ContactPage() {
                 <Mail className="w-5 h-5 text-muted-foreground" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">General Inquiries</h3>
-              <p className="text-base text-muted-foreground">Questions about Helix Insight, pricing, or partnerships.</p>
+              <p className="text-base text-muted-foreground">Questions about Helena, pricing, or partnerships.</p>
               <a href="mailto:contact@helena.bio" className="text-base text-primary hover:underline block">contact@helena.bio</a>
             </div>
 

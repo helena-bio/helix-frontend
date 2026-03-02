@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Getting Started | Helix Insight Documentation',
-  description: 'Get started with Helix Insight -- upload a VCF file, set patient phenotype, and understand your variant analysis results.',
+  title: 'Getting Started | Helena Documentation',
+  description: 'Get started with Helena -- upload a VCF file, set patient phenotype, and understand your variant analysis results.',
 }
 
 const pipelineSteps = [
@@ -33,7 +33,7 @@ export default function GettingStartedPage() {
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-primary">Getting Started</h1>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight receives a VCF file, processes it through a six-stage pipeline, and produces fully classified variants with ACMG evidence, phenotype correlation, literature evidence, and a prioritized shortlist for clinical review.
+          Helena receives a VCF file, processes it through a six-stage pipeline, and produces fully classified variants with ACMG evidence, phenotype correlation, literature evidence, and a prioritized shortlist for clinical review.
         </p>
       </section>
 
@@ -67,7 +67,7 @@ export default function GettingStartedPage() {
       <section className="bg-card border border-border rounded-lg p-6 space-y-3">
         <p className="text-lg font-semibold text-foreground">What the Platform Does Not Do</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight does not diagnose. It does not replace the geneticist. It automates the evidence-gathering step of variant interpretation. The geneticist reviews the evidence, applies clinical judgment, considers family history and clinical context, and makes the final clinical decision.
+          Helena does not diagnose. It does not replace the geneticist. It automates the evidence-gathering step of variant interpretation. The geneticist reviews the evidence, applies clinical judgment, considers family history and clinical context, and makes the final clinical decision.
         </p>
       </section>
 

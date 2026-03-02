@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Criteria Reference | Helix Insight Documentation',
+  title: 'Criteria Reference | Helena Documentation',
   description: 'Complete reference for all 28 ACMG evidence criteria -- conditions, thresholds, databases, and limitations for each criterion.',
 }
 

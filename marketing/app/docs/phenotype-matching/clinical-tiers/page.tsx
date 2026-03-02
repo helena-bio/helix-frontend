@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Clinical Tiers | Helix Insight Documentation',
+  title: 'Clinical Tiers | Helena Documentation',
   description: 'Five-tier clinical prioritization system combining phenotype relevance with variant pathogenicity.',
 }
 

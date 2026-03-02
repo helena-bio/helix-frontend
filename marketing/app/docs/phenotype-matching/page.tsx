@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Phenotype Matching | Helix Insight Documentation',
-  description: 'How Helix Insight correlates patient clinical features with variant gene phenotypes using semantic similarity.',
+  title: 'Phenotype Matching | Helena Documentation',
+  description: 'How Helena correlates patient clinical features with variant gene phenotypes using semantic similarity.',
 }
 
 const subpages = [

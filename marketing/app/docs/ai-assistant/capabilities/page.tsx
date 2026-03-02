@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Capabilities | Helix Insight Documentation',
+  title: 'Capabilities | Helena Documentation',
   description: 'What Helix AI can do: conversational variant analysis, literature search, clinical interpretation, report generation, and intelligent visualization.',
 }
 
@@ -70,7 +70,7 @@ export default function CapabilitiesPage() {
       <section className="space-y-3">
         <p className="text-lg font-semibold text-foreground">Report Generation</p>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Clinical interpretations can be exported as branded PDF or DOCX reports. PDF reports use Helix Insight branding with proper page headers, footers, page numbers, and a "CONFIDENTIAL" watermark. DOCX reports provide editable Word documents for further customization before distribution.
+          Clinical interpretations can be exported as branded PDF or DOCX reports. PDF reports use Helena branding with proper page headers, footers, page numbers, and a "CONFIDENTIAL" watermark. DOCX reports provide editable Word documents for further customization before distribution.
         </p>
       </section>
 

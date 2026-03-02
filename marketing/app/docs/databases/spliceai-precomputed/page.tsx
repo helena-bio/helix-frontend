@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-title: 'SpliceAI Precomputed | Helix Insight Documentation',
+title: 'SpliceAI Precomputed | Helena Documentation',
 description: 'SpliceAI precomputed splice impact scores for all coding variants -- four delta scores predicting splice site gain and loss.',
 }
 
@@ -33,7 +33,7 @@ return (
 </p>
 <h1 className="text-3xl font-semibold tracking-tight text-primary mt-4">SpliceAI Precomputed</h1>
 <p className="text-base text-muted-foreground leading-relaxed mt-3">
-SpliceAI is a deep learning model developed by Illumina that predicts the impact of genetic variants on mRNA splicing. Helix Insight uses precomputed SpliceAI scores for all coding variants, eliminating the need for on-the-fly prediction and ensuring consistent, reproducible results.
+SpliceAI is a deep learning model developed by Illumina that predicts the impact of genetic variants on mRNA splicing. Helena uses precomputed SpliceAI scores for all coding variants, eliminating the need for on-the-fly prediction and ensuring consistent, reproducible results.
 </p>
 </div>
 

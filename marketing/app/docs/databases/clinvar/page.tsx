@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export const metadata = {
-title: 'ClinVar | Helix Insight Documentation',
+title: 'ClinVar | Helena Documentation',
 description: 'ClinVar clinical significance database -- variant assertions from submitting laboratories used for PS1, PP5, BP6, and ClinVar classification override.',
 }
 
@@ -75,7 +75,7 @@ ClinVar is a public archive of clinical significance assertions for genetic vari
 <section className="space-y-3">
 <p className="text-lg font-semibold text-foreground">Role in ACMG Classification</p>
 <p className="text-base text-muted-foreground leading-relaxed">
-ClinVar serves two distinct functions in Helix Insight. First, it provides evidence criteria (PS1, PP5, BP6) based on prior clinical assertions. Second, it provides a classification override mechanism for variants with established clinical significance and no conflicting computational evidence.
+ClinVar serves two distinct functions in Helena. First, it provides evidence criteria (PS1, PP5, BP6) based on prior clinical assertions. Second, it provides a classification override mechanism for variants with established clinical significance and no conflicting computational evidence.
 </p>
 <div className="space-y-3">
 {[
@@ -107,7 +107,7 @@ During quality filtering (Stage 2), variants that fail quality thresholds are no
 <section className="space-y-3">
 <p className="text-lg font-semibold text-foreground">Review Star System</p>
 <p className="text-md text-muted-foreground leading-relaxed">
-ClinVar assigns review stars based on the level of evidence review and submitter agreement. Helix Insight uses these stars to calibrate the strength of ClinVar-derived evidence:
+ClinVar assigns review stars based on the level of evidence review and submitter agreement. Helena uses these stars to calibrate the strength of ClinVar-derived evidence:
 </p>
 <div className="overflow-x-auto">
 <table className="w-full text-sm">

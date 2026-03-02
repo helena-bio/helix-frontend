@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Limitations | Helix Insight Documentation',
-  description: 'Known limitations of the Helix Insight platform -- variant types, analysis scope, AI boundaries, and database coverage.',
+  title: 'Limitations | Helena Documentation',
+  description: 'Known limitations of the Helena platform -- variant types, analysis scope, AI boundaries, and database coverage.',
 }
 
 export default function LimitationsPage() {
@@ -19,7 +19,7 @@ export default function LimitationsPage() {
 
       <section className="space-y-3">
         <p className="text-base text-muted-foreground leading-relaxed">
-          Helix Insight is designed for germline variant interpretation in Mendelian disease contexts. The following limitations should be considered when using the platform for clinical genomic analysis.
+          Helena is designed for germline variant interpretation in Mendelian disease contexts. The following limitations should be considered when using the platform for clinical genomic analysis.
         </p>
       </section>
 
@@ -130,7 +130,7 @@ export default function LimitationsPage() {
       <section className="bg-card border border-primary/20 rounded-lg p-4 space-y-2">
         <p className="text-base font-medium text-foreground">Intended Use</p>
         <p className="text-md text-muted-foreground leading-relaxed">
-          Helix Insight is a clinical decision support tool for germline variant interpretation. It is not a diagnostic device. All automated classifications, screening priorities, and AI-generated interpretations must be independently reviewed and validated by qualified clinical professionals before being used in patient care decisions.
+          Helena is a clinical decision support tool for germline variant interpretation. It is not a diagnostic device. All automated classifications, screening priorities, and AI-generated interpretations must be independently reviewed and validated by qualified clinical professionals before being used in patient care decisions.
         </p>
       </section>
     </div>
