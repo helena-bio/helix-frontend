@@ -47,7 +47,7 @@ import { cn } from '@helix/shared/lib/utils'
 import { toast } from 'sonner'
 import type { TeamMember, OrgInvitation } from '@/lib/api/admin'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.helixinsight.bio'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.helena.bio'
 
 type Tab = 'members' | 'invitations'
 

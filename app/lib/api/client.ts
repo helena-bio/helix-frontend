@@ -1,5 +1,5 @@
 /**
- * Base HTTP Client for Helix Insight API
+ * Base HTTP Client for Helena API
  *
  * Reads JWT from cookie (shared with marketing site).
  * On 401 response, attempts silent refresh before redirecting to /login.

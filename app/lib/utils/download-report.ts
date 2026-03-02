@@ -2,7 +2,7 @@
  * Download clinical interpretation report in various formats
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helena.bio'
 
 export type ReportFormat = 'md' | 'docx' | 'pdf'
 

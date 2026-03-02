@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
       {/* Header */}
       <header className="h-14 border-b border-border bg-card shrink-0">
         <div className="h-full flex items-center gap-6 overflow-hidden">
-          <Link href="https://helixinsight.bio" className="flex items-center gap-2 shrink-0 pl-6">
+          <Link href="https://helena.bio" className="flex items-center gap-2 shrink-0 pl-6">
             <Image
               src="/images/logos/logo_bulb.svg"
               alt=""
@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
             />
             <Image
               src="/images/logos/logo_helix.svg"
-              alt="Helix Insight"
+              alt="Helena"
               width={160}
               height={48}
               className="h-10 w-auto"
@@ -113,10 +113,10 @@ export default function ResetPasswordPage() {
           </Link>
 
           <nav className="hidden md:flex flex-1 items-center justify-end gap-8 mr-6">
-            <a href="https://helixinsight.bio/about" className="text-base text-foreground hover:text-primary transition-colors">
+            <a href="https://helena.bio/about" className="text-base text-foreground hover:text-primary transition-colors">
               About
             </a>
-            <a href="https://helixinsight.bio/contact" className="text-base text-foreground hover:text-primary transition-colors">
+            <a href="https://helena.bio/contact" className="text-base text-foreground hover:text-primary transition-colors">
               Contact
             </a>
           </nav>
@@ -273,16 +273,16 @@ export default function ResetPasswordPage() {
               &copy; 2026. All rights reserved.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-md">
-              <a href="https://helixinsight.bio/privacy" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/privacy" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 Privacy Policy
               </a>
-              <a href="https://helixinsight.bio/terms" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/terms" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 Terms of Service
               </a>
-              <a href="https://helixinsight.bio/dpa" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/dpa" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 DPA
               </a>
-              <a href="https://helixinsight.bio/dpia" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/dpia" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 DPIA
               </a>
             </div>

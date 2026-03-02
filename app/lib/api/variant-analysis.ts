@@ -1,6 +1,6 @@
 /**
  * Variant Analysis API Client
- * Production-ready API endpoints for Helix Insight backend
+ * Production-ready API endpoints for Helena backend
  */
 
 import { uploadFileWithProgress, get, post, patch, put, del } from './client'

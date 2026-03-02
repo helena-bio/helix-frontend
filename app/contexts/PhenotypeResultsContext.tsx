@@ -38,7 +38,7 @@ import {
 } from '@/lib/api/hpo'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helena.bio'
 
 const MAX_CACHED_SESSIONS = 10
 

@@ -15,7 +15,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, u
 import type { GeneAggregated, ImpactByAcmg } from '@/types/variant.types'
 import { getCached, setCache } from '@/lib/cache/session-disk-cache'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helena.bio'
 
 const MAX_CACHED_SESSIONS = 10
 

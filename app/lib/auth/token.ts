@@ -2,7 +2,7 @@
  * JWT Token Utilities
  *
  * Cookie-based token management shared with marketing site.
- * Uses same cookie domain (.helixinsight.bio) so login from
+ * Uses same cookie domain (.helena.bio) so login from
  * marketing site carries over to app seamlessly.
  *
  * Access token: short-lived (30 min), stored in cookie.
@@ -36,7 +36,7 @@ function getCookieOptions(expiryDate?: Date) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax' as const,
     domain: process.env.NODE_ENV === 'production'
-      ? '.helixinsight.bio'
+      ? '.helena.bio'
       : undefined,
   };
 }
@@ -44,7 +44,7 @@ function getCookieOptions(expiryDate?: Date) {
 function getRemoveOptions() {
   return {
     domain: process.env.NODE_ENV === 'production'
-      ? '.helixinsight.bio'
+      ? '.helena.bio'
       : undefined,
   };
 }

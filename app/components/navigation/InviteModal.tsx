@@ -20,7 +20,7 @@ interface InviteModalProps {
 type ModalState = 'form' | 'submitting' | 'success'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008'
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.helixinsight.bio'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.helena.bio'
 
 export function InviteModal({ isOpen, onClose }: InviteModalProps) {
   const { user } = useAuth()

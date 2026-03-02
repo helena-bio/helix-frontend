@@ -3,7 +3,7 @@
 /**
  * System Backup Panel
  *
- * Full backup management for the Helix Insight platform.
+ * Full backup management for the Helena platform.
  * Supports quick/full/complete backups with real-time progress polling.
  * Restore with double confirmation (type backup_id to confirm).
  * Displays backup history with size, duration, and delete actions.

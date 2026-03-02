@@ -60,7 +60,7 @@ import { useSession } from '@/contexts/SessionContext'
 import { getDashboardGreeting } from '@/lib/constants/dashboard-greetings'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helixinsight.bio'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.helena.bio'
 
 // ============================================================================
 // TYPES

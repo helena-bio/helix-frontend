@@ -205,7 +205,7 @@ export default function InvitePage() {
       {/* Header */}
       <header className="h-14 border-b border-border bg-card shrink-0">
         <div className="h-full flex items-center gap-6 overflow-hidden">
-          <Link href="https://helixinsight.bio" className="flex items-center gap-2 shrink-0 pl-6">
+          <Link href="https://helena.bio" className="flex items-center gap-2 shrink-0 pl-6">
             <Image
               src="/images/logos/logo_bulb.svg"
               alt=""
@@ -216,7 +216,7 @@ export default function InvitePage() {
             />
             <Image
               src="/images/logos/logo_helix.svg"
-              alt="Helix Insight"
+              alt="Helena"
               width={160}
               height={48}
               className="h-10 w-auto"
@@ -225,10 +225,10 @@ export default function InvitePage() {
           </Link>
 
           <nav className="hidden md:flex flex-1 items-center justify-end gap-8 mr-6">
-            <a href="https://helixinsight.bio/about" className="text-base text-foreground hover:text-primary transition-colors">
+            <a href="https://helena.bio/about" className="text-base text-foreground hover:text-primary transition-colors">
               About
             </a>
-            <a href="https://helixinsight.bio/contact" className="text-base text-foreground hover:text-primary transition-colors">
+            <a href="https://helena.bio/contact" className="text-base text-foreground hover:text-primary transition-colors">
               Contact
             </a>
           </nav>
@@ -290,7 +290,7 @@ export default function InvitePage() {
               <Check className="h-12 w-12 text-green-600 mx-auto" />
               <h1 className="text-2xl font-semibold text-foreground">Account Created</h1>
               <p className="text-base text-muted-foreground">
-                Welcome to Helix Insight. Redirecting to your dashboard...
+                Welcome to Helena. Redirecting to your dashboard...
               </p>
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto" />
             </div>
@@ -487,16 +487,16 @@ export default function InvitePage() {
               &copy; 2026. All rights reserved.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-md">
-              <a href="https://helixinsight.bio/privacy" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/privacy" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 Privacy Policy
               </a>
-              <a href="https://helixinsight.bio/terms" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/terms" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 Terms of Service
               </a>
-              <a href="https://helixinsight.bio/dpa" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/dpa" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 DPA
               </a>
-              <a href="https://helixinsight.bio/dpia" className="text-muted-foreground hover:text-foreground transition-colors py-2">
+              <a href="https://helena.bio/dpia" className="text-muted-foreground hover:text-foreground transition-colors py-2">
                 DPIA
               </a>
             </div>
