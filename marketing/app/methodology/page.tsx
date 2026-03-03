@@ -20,8 +20,8 @@ export const metadata = {
    Source of truth: git commit hash should be referenced in version history.
    --------------------------------------------------------------------------- */
 
-const CLASSIFIER_VERSION = '3.5'
-const LAST_UPDATED = 'February 2026'
+const CLASSIFIER_VERSION = '3.6'
+const LAST_UPDATED = 'March 2026'
 const ACMG_REFERENCE = 'Richards et al., Genetics in Medicine, 2015'
 const CLINGEN_SVI_REFERENCE = 'Walker et al., Am J Hum Genet. 2023;110(7):1046-1067. PMID: 37352859'
 const TAVTIGIAN_REFERENCE = 'Tavtigian et al., Hum Mutat. 2018;39(11):1485-1492. PMID: 30311386'
@@ -111,7 +111,7 @@ const referenceDatabases = [
     source: 'hpo.jax.org',
     sourceUrl: 'https://hpo.jax.org',
     provides: 'Gene-to-phenotype associations using Human Phenotype Ontology terms',
-    usedBy: 'PP4 (patient phenotype matching)',
+    usedBy: 'PP4 (patient phenotype matching), PVS1 (autosomal recessive gene identification via HP:0000007)',
     columns: 'hpo_ids, hpo_names, hpo_count, hpo_frequency_data, hpo_disease_ids',
   },
   {
@@ -145,19 +145,20 @@ const pathogenicCriteria = [
     conditions: [
       'Impact = HIGH',
       'Consequence: frameshift, stop_gained, splice_acceptor, or splice_donor variant',
-      'Gene constraint: pLI > 0.9 OR LOEUF < 0.35',
+      'Gene constraint: pLI > 0.9 OR LOEUF < 0.35 OR gene has autosomal recessive inheritance (HPO HP:0000007)',
     ],
     exclusions: [
       'NMD-rescued transcripts (consequence contains NMD_transcript)',
       'Stop-retained and stop-lost variants',
       'HLA gene family (HLA-A, HLA-B, HLA-C, HLA-DRA, HLA-DRB1, HLA-DRB5, HLA-DQA1, HLA-DQB1, HLA-DPA1, HLA-DPB1, HLA-E, HLA-F, HLA-G, HLA-DMA, HLA-DMB, HLA-DOA, HLA-DOB)',
     ],
-    databases: 'VEP (consequence, impact), gnomAD Constraint (pLI, LOEUF)',
+    databases: 'VEP (consequence, impact), gnomAD Constraint (pLI, LOEUF), HPO (inheritance mode)',
     limitations: [
       'Does not evaluate reading frame rescue via downstream in-frame reinitiation',
       'Does not assess alternative transcript usage or tissue-specific expression',
       'Last-exon truncation logic not implemented (all qualifying exons treated equally)',
       'VCEP gene-specific PVS1 applicability gate available for ~50-60 genes (e.g., PVS1 disabled for gain-of-function genes like MYOC). Generic thresholds used for all other genes.',
+      'Autosomal recessive gene bypass uses HPO inheritance annotation (HP:0000007). Genes with AR inheritance bypass pLI/LOEUF gate per ClinGen PVS1 Decision Tree (Abou Tayoun et al. 2018). Coverage depends on HPO annotation completeness for AR inheritance.',
     ],
   },
   {
@@ -195,13 +196,12 @@ const pathogenicCriteria = [
     name: 'Absent from controls or at extremely low frequency in population databases',
     strength: 'Moderate',
     conditions: [
-      'gnomAD global allele frequency < 0.0001 (0.01%)',
-      'Frequency data must be present (non-NULL) -- variants without gnomAD data do not qualify',
+      'gnomAD global allele frequency < 0.0001 (0.01%) OR variant absent from gnomAD (no frequency data)',
+      'Variants not observed in gnomAD (~800K individuals) satisfy PM2 as "absent from controls"',
     ],
     exclusions: [],
     databases: 'gnomAD v4.1 (global_af)',
     limitations: [
-      'Requires gnomAD frequency data to be available for the variant position',
       'Does not apply population-specific frequency adjustments',
       'ClinGen SVI PM2_Supporting downgrade not implemented (full Moderate strength used)',
       'When VCEP gene-specific specifications are enabled, PM2 threshold may differ from the generic 0.01% (e.g., 0% for RASopathy genes where any population frequency argues against pathogenicity)',
@@ -599,6 +599,18 @@ const qualityPresets = [
 /* Version history */
 const versionHistory = [
   {
+    version: 'v3.6',
+    date: 'March 2026',
+    changes: [
+      'PM2: NULL gnomAD allele frequency now correctly satisfies PM2 (absent from controls = never observed in ~800K individuals)',
+      'PM2: Previous behavior required frequency data to be present (non-NULL), incorrectly excluding truly absent variants',
+      'PVS1: Autosomal recessive genes bypass pLI/LOEUF constraint gate using HPO inheritance annotation (HP:0000007)',
+      'PVS1: 3,127 AR genes identified where heterozygous LoF is tolerated but biallelic LoF causes disease',
+      'PVS1: Aligned with ClinGen PVS1 Decision Tree (Abou Tayoun et al. 2018) which does not require population constraint for genes with established LoF disease mechanism in recessive inheritance',
+      'HPO database now used for PVS1 AR gene identification in addition to PP4 phenotype matching',
+    ],
+  },
+  {
     version: 'v3.5',
     date: 'February 2026',
     changes: [
@@ -664,7 +676,7 @@ const versionHistory = [
       'BA1 stand-alone override: allele frequency > 5% always classified Benign',
       'ClinVar override restricted to non-conflicting evidence only',
       'SQL-based classification engine (100x performance improvement)',
-      'PM2 fix: requires non-NULL frequency data',
+      'PM2: required non-NULL frequency data (corrected in v3.6)',
     ],
   },
 ]
@@ -745,6 +757,12 @@ const references = [
     title: 'ClinVar: improving access to variant interpretations and supporting evidence.',
     journal: 'Nucleic Acids Research. 2018;46(D1):D1062-D1067.',
     id: 'PMID: 29165669',
+  },
+  {
+    authors: 'Abou Tayoun AN, Pesaran T, DiStefano MT, et al.',
+    title: 'Recommendations for interpreting the loss of function PVS1 ACMG/AMP variant criterion.',
+    journal: 'Human Mutation. 2018;39(11):1517-1524.',
+    id: 'PMID: 30192042',
   },
 ]
 
