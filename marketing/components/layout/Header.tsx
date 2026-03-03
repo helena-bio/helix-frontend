@@ -46,15 +46,7 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0 pl-6">
           <Image
-            src="/images/logos/logo_bulb.svg"
-            alt=""
-            width={32}
-            height={40}
-            className="h-11 w-auto"
-            priority
-          />
-          <Image
-            src="/images/logos/logo_helix.svg"
+            src="/images/logos/logo_helena.svg"
             alt="Helena"
             width={160}
             height={48}
