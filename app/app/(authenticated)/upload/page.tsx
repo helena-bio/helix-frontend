@@ -41,7 +41,7 @@ export default function UploadPage() {
   // SessionContext may still hold the OLD sessionId for one render cycle
   // after URL changes. This caused ProcessingFlow to receive a completed
   // session's ID and immediately call nextStep().
-  const sessionId = searchParams.get('session') || currentSessionId
+  const sessionId = searchParams.get('session')
 
   // Processing configuration
   const [filteringPreset, setFilteringPreset] = useState<string>('strict')
