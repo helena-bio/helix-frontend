@@ -75,7 +75,7 @@ function StatusDot({ status }: { status: string }) {
     case 'completed':
       return <CheckCircle2 className="h-3 w-3 text-green-600 shrink-0" />
     case 'profiling':
-      return <Loader2 className="h-3 w-3 text-purple-500 animate-spin shrink-0" />
+      return <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
     case 'processed':
       return <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
     case 'processing':
@@ -463,7 +463,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                               </span>
                             )}
                             {session.status === 'profiling' && (
-                              <span className="text-sm text-purple-500 font-medium">
+                              <span className="text-sm text-primary font-medium">
                                 Analyzing...
                               </span>
                             )}
@@ -480,7 +480,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             )}
                             {session.status === 'profiling' && (
                               <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-purple-500 rounded-full animate-pulse" style={{ width: '100%' }} />
+                                <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '100%' }} />
                               </div>
                             )}
                             {session.status === 'created' && (
