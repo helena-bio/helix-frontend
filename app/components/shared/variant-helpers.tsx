@@ -14,11 +14,20 @@ import { Badge } from '@/components/ui/badge'
 export const getACMGColor = (acmg: string | null | undefined) => {
   if (!acmg) return 'bg-gray-100 text-gray-900 border-gray-300'
   const code = acmg.toUpperCase()
-  if (code === 'P') return 'bg-red-100 text-red-900 border-red-300'
+  // Short ACMG codes
+  if (code === 'P' || code === 'P/LP') return 'bg-red-100 text-red-900 border-red-300'
   if (code === 'LP') return 'bg-orange-100 text-orange-900 border-orange-300'
   if (code === 'VUS') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
   if (code === 'LB') return 'bg-blue-100 text-blue-900 border-blue-300'
   if (code === 'B') return 'bg-green-100 text-green-900 border-green-300'
+  // ClinVar full strings
+  const cl = acmg.toLowerCase()
+  if (cl.includes('pathogenic/likely') || cl.includes('pathogenic_likely')) return 'bg-red-100 text-red-900 border-red-300'
+  if (cl.includes('pathogenic')) return 'bg-red-100 text-red-900 border-red-300'
+  if (cl.includes('likely_pathogenic') || cl.includes('likely pathogenic')) return 'bg-orange-100 text-orange-900 border-orange-300'
+  if (cl.includes('uncertain')) return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+  if (cl.includes('likely_benign') || cl.includes('likely benign')) return 'bg-blue-100 text-blue-900 border-blue-300'
+  if (cl.includes('benign')) return 'bg-green-100 text-green-900 border-green-300'
   return 'bg-gray-100 text-gray-900 border-gray-300'
 }
 

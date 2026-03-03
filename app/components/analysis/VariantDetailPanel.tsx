@@ -60,7 +60,7 @@ interface VariantDetailPanelProps {
 const getACMGColor = (classification: string | null) => {
   if (!classification) return 'bg-muted text-muted-foreground border-border'
   const c = classification.toUpperCase()
-  if (c === 'P') return 'bg-red-100 text-red-900 border-red-300'
+  if (c === 'P' || c === 'P/LP') return 'bg-red-100 text-red-900 border-red-300'
   if (c === 'LP') return 'bg-orange-100 text-orange-900 border-orange-300'
   if (c === 'VUS') return 'bg-yellow-100 text-yellow-900 border-yellow-300'
   if (c === 'LB') return 'bg-blue-100 text-blue-900 border-blue-300'
