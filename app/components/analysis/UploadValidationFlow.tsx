@@ -295,7 +295,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   // Sync sessionId from context to parent (for URL update) - fire once per sessionId
   const syncedSessionRef = useRef<string | null>(null)
   useEffect(() => {
-    if (upload.sessionId && upload.sessionId !== syncedSessionRef.current) {
+    if (upload.isActive && upload.sessionId && upload.sessionId !== syncedSessionRef.current) {
       syncedSessionRef.current = upload.sessionId
       onComplete?.(upload.sessionId)
     }
