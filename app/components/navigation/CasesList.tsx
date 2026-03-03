@@ -230,6 +230,9 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
     router.push('/upload')
   }, [router])
 
+  // Statuses that get the highlighted card style (in-progress work)
+  const HIGHLIGHT_STATUSES = ['processing', 'uploaded', 'processed', 'created', 'profiling']
+
   return (
     <div className="py-1">
       {/* Section header */}
@@ -358,19 +361,20 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                 const isOwner = session.user_id === user?.id
                 const isEditing = editingId === session.id
                 const isDeleting = deletingId === session.id
+                const isHighlighted = HIGHLIGHT_STATUSES.includes(session.status)
 
                 return (
                   <div
                     key={session.id}
                       className={cn(
                         "group/case relative rounded-md px-2 transition-colors",
-                        ['processing', 'uploaded', 'processed'].includes(session.status)
+                        isHighlighted
                           ? "py-1.5 bg-primary/5 border border-primary/20 hover:bg-primary/10 cursor-pointer"
                           : cn(
                               "py-1",
                               isActive && "bg-secondary",
                               !isActive && "hover:bg-accent cursor-pointer",
-                              !isCompleted && !isActive && !['uploaded', 'processed', 'profiling'].includes(session.status) && "opacity-70 hover:opacity-100"
+                              !isCompleted && !isActive && "opacity-70 hover:opacity-100"
                             )
                       )}
                     onClick={() => handleCaseClick(session)}
@@ -428,7 +432,7 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             {getCaseDisplayName(session)}
                           </p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                              {!['processing', 'uploaded', 'processed'].includes(session.status) && (
+                              {!isHighlighted && (
                                 <span className="text-sm text-muted-foreground">
                                   {formatRelativeDate(session.created_at)}
                                 </span>
@@ -444,13 +448,13 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                               </span>
                             )}
                             {session.status === 'created' && (
-                              <span className="text-sm text-muted-foreground">
-                                &middot; Validating...
+                              <span className="text-sm text-primary font-normal">
+                                Validating...
                               </span>
                             )}
                             {session.status === 'processing' && (
                               <span className="text-sm text-primary font-medium">
-                                &middot; Processing...
+                                Processing...
                               </span>
                             )}
                             {session.status === 'processed' && (
@@ -459,8 +463,8 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                               </span>
                             )}
                             {session.status === 'profiling' && (
-                              <span className="text-sm text-purple-500">
-                                &middot; Analyzing...
+                              <span className="text-sm text-purple-500 font-medium">
+                                Analyzing...
                               </span>
                             )}
                             {session.status === 'failed' && (
@@ -472,6 +476,16 @@ export function CasesList({ isOpen, onToggle }: CasesListProps) {
                             {session.status === 'processing' && (
                               <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
                                 <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '100%' }} />
+                              </div>
+                            )}
+                            {session.status === 'profiling' && (
+                              <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-purple-500 rounded-full animate-pulse" style={{ width: '100%' }} />
+                              </div>
+                            )}
+                            {session.status === 'created' && (
+                              <div className="mt-1 h-1 w-full bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
                               </div>
                             )}
                         </div>
