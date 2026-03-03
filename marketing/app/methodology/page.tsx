@@ -20,7 +20,7 @@ export const metadata = {
    Source of truth: git commit hash should be referenced in version history.
    --------------------------------------------------------------------------- */
 
-const CLASSIFIER_VERSION = '3.6'
+const CLASSIFIER_VERSION = '3.6.4'
 const LAST_UPDATED = 'March 2026'
 const ACMG_REFERENCE = 'Richards et al., Genetics in Medicine, 2015'
 const CLINGEN_SVI_REFERENCE = 'Walker et al., Am J Hum Genet. 2023;110(7):1046-1067. PMID: 37352859'
@@ -49,7 +49,7 @@ const pipelineStages = [
   { stage: 2, name: 'Quality Filtering', duration: '~5s', description: 'Configurable quality, depth, and genotype quality thresholds. ClinVar-listed pathogenic variants are protected from filtering.' },
   { stage: 3, name: 'VEP Annotation', duration: '~3-4 min', description: 'Ensembl Variant Effect Predictor for consequence, impact, transcript, and protein annotations. Parallel processing across chromosomes.' },
   { stage: 4, name: 'Reference DB Annotation', duration: '~5-10s', description: 'Population frequencies, clinical significance, functional predictions, gene constraint, phenotype associations, and dosage sensitivity loaded from 7 reference databases.' },
-  { stage: 5, name: 'ACMG Classification', duration: '<1s', description: 'SQL-based ACMG/AMP 2015 classification using Bayesian point framework (Tavtigian et al. 2018). 19 automated criteria evaluated with calibrated evidence strength, point-based classification thresholds applied, continuous confidence scores assigned. Optional VCEP gene-specific overlay for ~50-60 genes.' },
+  { stage: 5, name: 'ACMG Classification', duration: '<1s', description: 'SQL-based ACMG/AMP 2015 classification using Bayesian point framework (Tavtigian et al. 2018). 19 automated criteria evaluated with calibrated evidence strength, point-based classification thresholds applied, continuous confidence scores assigned. Optional VCEP gene-specific overlay for ~50-60 genes. Homozygous reference genotypes (hom_ref) from multi-allelic sites excluded from classification.' },
   { stage: 6, name: 'Export', duration: '~5s', description: 'Gene-level summaries exported for streaming. Classified variants persisted to analytical database for downstream services.' },
 ]
 
@@ -111,7 +111,7 @@ const referenceDatabases = [
     source: 'hpo.jax.org',
     sourceUrl: 'https://hpo.jax.org',
     provides: 'Gene-to-phenotype associations using Human Phenotype Ontology terms',
-    usedBy: 'PP4 (patient phenotype matching), PVS1 (autosomal recessive gene identification via HP:0000007)',
+    usedBy: 'PP4 (patient phenotype matching)',
     columns: 'hpo_ids, hpo_names, hpo_count, hpo_frequency_data, hpo_disease_ids',
   },
   {
@@ -145,20 +145,21 @@ const pathogenicCriteria = [
     conditions: [
       'Impact = HIGH',
       'Consequence: frameshift, stop_gained, splice_acceptor, or splice_donor variant',
-      'Gene constraint: pLI > 0.9 OR LOEUF < 0.35 OR gene has autosomal recessive inheritance (HPO HP:0000007)',
+      'Gene constraint: pLI > 0.9 OR LOEUF < 0.35 OR gene is in the curated autosomal recessive LoF gene list (~150 genes with Definitive/Strong evidence for biallelic LoF disease mechanism)',
     ],
     exclusions: [
       'NMD-rescued transcripts (consequence contains NMD_transcript)',
       'Stop-retained and stop-lost variants',
       'HLA gene family (HLA-A, HLA-B, HLA-C, HLA-DRA, HLA-DRB1, HLA-DRB5, HLA-DQA1, HLA-DQB1, HLA-DPA1, HLA-DPB1, HLA-E, HLA-F, HLA-G, HLA-DMA, HLA-DMB, HLA-DOA, HLA-DOB)',
+      'Homozygous reference genotypes (hom_ref) from multi-allelic VCF sites',
     ],
-    databases: 'VEP (consequence, impact), gnomAD Constraint (pLI, LOEUF), HPO (inheritance mode)',
+    databases: 'VEP (consequence, impact), gnomAD Constraint (pLI, LOEUF), curated AR LoF gene list (ClinGen Gene-Disease Validity)',
     limitations: [
       'Does not evaluate reading frame rescue via downstream in-frame reinitiation',
       'Does not assess alternative transcript usage or tissue-specific expression',
       'Last-exon truncation logic not implemented (all qualifying exons treated equally)',
       'VCEP gene-specific PVS1 applicability gate available for ~50-60 genes (e.g., PVS1 disabled for gain-of-function genes like MYOC). Generic thresholds used for all other genes.',
-      'Autosomal recessive gene bypass uses HPO inheritance annotation (HP:0000007). Genes with AR inheritance bypass pLI/LOEUF gate per ClinGen PVS1 Decision Tree (Abou Tayoun et al. 2018). Coverage depends on HPO annotation completeness for AR inheritance.',
+      'Autosomal recessive gene bypass uses a curated list of ~150 genes with Definitive/Strong ClinGen validity or equivalent published evidence for biallelic LoF disease mechanism. VCEP AR genes (e.g., CDH23, GJB2, MYO7A, PAH, SLC26A4, USH2A) are handled via the VCEP pvs1_applicable gate and are not duplicated in the curated list. Categories covered: neurodegeneration, metabolic (amino acid, fatty acid oxidation, glycogen storage, lysosomal, peroxisomal), ciliopathies, sensory (hearing, vision), immune/hematologic, cardiac, neuromuscular, connective tissue, kidney, endocrine, liver, and respiratory.',
     ],
   },
   {
@@ -196,8 +197,8 @@ const pathogenicCriteria = [
     name: 'Absent from controls or at extremely low frequency in population databases',
     strength: 'Moderate',
     conditions: [
-      'gnomAD global allele frequency < 0.0001 (0.01%) OR variant absent from gnomAD (no frequency data)',
-      'Variants not observed in gnomAD (~800K individuals) satisfy PM2 as "absent from controls"',
+      'gnomAD global allele frequency < 0.0001 (0.01%) OR variant absent from gnomAD (NULL frequency = never observed in ~800K individuals)',
+      'NULL gnomAD allele frequency correctly treated as "absent from controls" per Richards et al. 2015 Table 3',
     ],
     exclusions: [],
     databases: 'gnomAD v4.1 (global_af)',
@@ -599,15 +600,43 @@ const qualityPresets = [
 /* Version history */
 const versionHistory = [
   {
-    version: 'v3.6',
+    version: 'v3.6.4',
+    date: 'March 2026',
+    changes: [
+      'PVS1: Comprehensive AR LoF gene list expansion from ~35 to ~150 genes',
+      'AR LoF gene list covers all major AR disease categories: neurodegeneration, metabolic (amino acid, fatty acid oxidation, glycogen storage, lysosomal, peroxisomal), ciliopathies, sensory (hearing, vision), immune/hematologic, cardiac, neuromuscular, connective tissue, kidney, endocrine, liver, and respiratory',
+      'Every gene in the curated list has ClinGen Definitive/Strong validity or equivalent published evidence for biallelic LoF disease mechanism',
+      'VCEP AR genes (CDH23, GJB2, MYO7A, PAH, SLC26A4, USH2A) handled via VCEP pvs1_applicable gate, not duplicated in curated list',
+    ],
+  },
+  {
+    version: 'v3.6.2',
+    date: 'March 2026',
+    changes: [
+      'Homozygous reference genotype guard: variants with genotype hom_ref (0/0) excluded from ACMG classification',
+      'hom_ref variants arise from multi-allelic VCF sites where the sample has 0 ALT reads for a specific allele but was included due to another ALT allele at the same position',
+      'Without this guard, hom_ref frameshift/stop variants in LoF-intolerant genes received PVS1+PM2 = Likely Pathogenic despite not being present in the patient',
+      '20 false Pathogenic/Likely Pathogenic classifications eliminated in validation (Case 19)',
+    ],
+  },
+  {
+    version: 'v3.6.1',
     date: 'March 2026',
     changes: [
       'PM2: NULL gnomAD allele frequency now correctly satisfies PM2 (absent from controls = never observed in ~800K individuals)',
       'PM2: Previous behavior required frequency data to be present (non-NULL), incorrectly excluding truly absent variants',
+      'PVS1: Curated AR LoF gene list (~35 genes) replaces broad HPO-based bypass (v3.6 used HP:0000007 with 3,127 AR genes -- too broad, caused 43 false Likely Pathogenic)',
+      'PVS1: Curated list includes only genes with Definitive/Strong evidence for biallelic LoF disease mechanism (ClinGen Gene-Disease Validity, literature)',
+    ],
+  },
+  {
+    version: 'v3.6',
+    date: 'March 2026',
+    changes: [
       'PVS1: Autosomal recessive genes bypass pLI/LOEUF constraint gate using HPO inheritance annotation (HP:0000007)',
-      'PVS1: 3,127 AR genes identified where heterozygous LoF is tolerated but biallelic LoF causes disease',
       'PVS1: Aligned with ClinGen PVS1 Decision Tree (Abou Tayoun et al. 2018) which does not require population constraint for genes with established LoF disease mechanism in recessive inheritance',
       'HPO database now used for PVS1 AR gene identification in addition to PP4 phenotype matching',
+      'Note: HPO-based bypass replaced by curated gene list in v3.6.1 due to excessive breadth',
     ],
   },
   {
@@ -676,7 +705,7 @@ const versionHistory = [
       'BA1 stand-alone override: allele frequency > 5% always classified Benign',
       'ClinVar override restricted to non-conflicting evidence only',
       'SQL-based classification engine (100x performance improvement)',
-      'PM2: required non-NULL frequency data (corrected in v3.6)',
+      'PM2: required non-NULL frequency data (corrected in v3.6.1)',
     ],
   },
 ]
@@ -693,6 +722,8 @@ const limitations = [
   'VCEP gene-specific specifications are implemented as a threshold overlay for BA1, BS1, PM2, and PVS1 applicability. The overlay does not implement VCEP-specific functional assay interpretation (PS3/BS3) or gene-specific segregation logic (PP1/BS4), which require manual curation. Coverage is limited to approximately 50-60 genes with published ClinGen CSpec specifications; all other genes use generic ACMG 2015 thresholds.',
   'PM5 (novel missense at known pathogenic amino acid position) is currently disabled pending standardized protein-level coordinate matching in the ClinVar preprocessing pipeline.',
   'Compound heterozygote detection is inferred from genotype data without long-read phasing or trio analysis. Formal phasing should be performed for clinical confirmation.',
+  'The curated autosomal recessive LoF gene list (~150 genes) for PVS1 bypass covers genes with Definitive/Strong evidence for biallelic LoF disease mechanism. AR genes outside this list that lack constraint (low pLI, high LOEUF) will not trigger PVS1 unless they have VCEP gene-specific specifications.',
+  'Homozygous reference genotypes (hom_ref) from multi-allelic VCF sites are excluded from classification. These represent alleles not present in the patient.',
   'Results should always be interpreted in the context of the patient\'s clinical presentation, family history, and other available clinical information.',
 ]
 
@@ -808,7 +839,7 @@ export default function MethodologyPage() {
               <p className="text-lg font-semibold text-foreground mb-4">Contents</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
                 {tocSections.map((section, i) => (
-                  <a
+                  
                     key={section.id}
                     href={`#${section.id}`}
                     className="flex items-center gap-2 text-base text-muted-foreground hover:text-primary transition-colors py-1"
