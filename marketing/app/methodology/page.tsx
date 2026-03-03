@@ -839,7 +839,7 @@ export default function MethodologyPage() {
               <p className="text-lg font-semibold text-foreground mb-4">Contents</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
                 {tocSections.map((section, i) => (
-                  
+                  <a
                     key={section.id}
                     href={`#${section.id}`}
                     className="flex items-center gap-2 text-base text-muted-foreground hover:text-primary transition-colors py-1"
