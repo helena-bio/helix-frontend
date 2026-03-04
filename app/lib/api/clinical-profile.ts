@@ -16,6 +16,7 @@ import type {
   ReproductiveContext,
   SampleInfo,
   ConsentPreferences,
+  CustomGeneEntry,
 } from '@/types/clinical-profile.types'
 
 /**
@@ -47,6 +48,8 @@ export interface ClinicalProfileRequest {
   sample_info?: SampleInfo
   consent?: ConsentPreferences
   phenotype?: PhenotypeData
+  panel_ids?: string[]
+  custom_genes?: CustomGeneEntry[]
 }
 
 /**
@@ -64,6 +67,8 @@ export interface ClinicalProfileResponse {
   sample_info?: SampleInfo
   consent?: ConsentPreferences
   phenotype?: PhenotypeData
+  panel_ids?: string[]
+  custom_genes?: CustomGeneEntry[]
 }
 
 /**
@@ -133,6 +138,10 @@ export async function getClinicalProfile(
             break
           case 'phenotype':
             result.phenotype = record.data
+            break
+          case 'gene_panels':
+            result.panel_ids = record.data?.panel_ids
+            result.custom_genes = record.data?.custom_genes
             break
         }
       } catch {

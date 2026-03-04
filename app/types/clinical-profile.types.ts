@@ -129,10 +129,10 @@ export interface ConsentPreferences {
 export interface GenePanel {
   id: string
   name: string
-  description?: string
+  description?: string | null
   panel_type: string
   is_builtin: boolean
-  organization_id?: string
+  organization_id?: string | null
   gene_count?: number
   is_active: boolean
   created_at?: string
