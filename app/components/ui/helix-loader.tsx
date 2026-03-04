@@ -16,7 +16,7 @@ const sizeMap = {
   lg: { width: 224, height: 326 }
 };
 
-const GIF_SRC = '/images/logos/loader_helena_white.gif';
+const GIF_SRC = '/images/logos/loader_helena.gif';
 const SVG_SRC = '/images/logos/logo_helena_woman.svg';
 
 // Preload GIF on module load so it is cached before first use
