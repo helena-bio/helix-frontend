@@ -490,8 +490,8 @@ export function ClinicalAnalysis({
                 <div className="flex items-center justify-center gap-3 pb-2 mb-3 border-b border-border">
                   <HelixLoader size="xs" animated={true} />
                   <div>
-                    <h1 className="text-3xl font-semibold tracking-tight">{getStageName()}</h1>
-                    <p className="text-base text-muted-foreground mt-1">Running clinical analysis pipeline</p>
+                    <h1 className="text-3xl font-semibold tracking-tight">Clinical Analysis</h1>
+                    <p className="text-base text-muted-foreground mt-1">{getStageName()}</p>
                   </div>
                 </div>
 
