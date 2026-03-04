@@ -10,7 +10,7 @@ interface HelixLoaderProps {
 }
 
 const sizeMap = {
-  xs: { width: 80, height: 116 },
+  xs: { width: 72, height: 105 },
   sm: { width: 112, height: 163 },
   md: { width: 160, height: 233 },
   lg: { width: 224, height: 326 }
