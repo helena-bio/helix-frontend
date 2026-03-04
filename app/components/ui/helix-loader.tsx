@@ -16,10 +16,10 @@ const sizeMap = {
   lg: { width: 224, height: 326 }
 };
 
-// Preload GIF on module load so it is cached before first use
 const GIF_SRC = '/images/logos/loader_helena_white.gif';
 const SVG_SRC = '/images/logos/logo_helena_woman.svg';
 
+// Preload GIF on module load so it is cached before first use
 if (typeof window !== 'undefined') {
   const img = new Image();
   img.src = GIF_SRC;
@@ -33,32 +33,24 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
 }) => {
   const { width, height } = sizeMap[size];
 
+  const imgStyle = (visible: boolean): React.CSSProperties => ({
+    width: `${width}px`,
+    height: `${height}px`,
+    objectFit: 'contain',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    opacity: visible ? 1 : 0,
+    pointerEvents: visible ? 'auto' : 'none',
+  });
+
   const content = (
     <div
       className={`relative inline-flex items-center justify-center ${className}`}
       style={{ width: `${width}px`, height: `${height}px` }}
     >
-      {/* Both images always rendered, toggle visibility to avoid reload flash */}
-      <img
-        src={GIF_SRC}
-        alt="Loading"
-        style={{
-          width: `${width}px`,
-          height: `${height}px`,
-          objectFit: 'contain',
-          display: animated ? 'block' : 'none',
-        }}
-      />
-      <img
-        src={SVG_SRC}
-        alt="Helena"
-        style={{
-          width: `${width}px`,
-          height: `${height}px`,
-          objectFit: 'contain',
-          display: animated ? 'none' : 'block',
-        }}
-      />
+      <img src={GIF_SRC} alt="Loading" style={imgStyle(animated)} />
+      <img src={SVG_SRC} alt="Helena" style={imgStyle(!animated)} />
     </div>
   );
 
