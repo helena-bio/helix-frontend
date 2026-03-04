@@ -397,7 +397,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
             <CardContent className="pt-6">
               <div className="space-y-6">
                 {/* Title inside card */}
-                <div>
+                <div className="text-center">
                   <h1 className="text-3xl font-semibold">Analyzing Variants</h1>
                   <p className="text-base text-muted-foreground mt-1">
                     Running ACMG classification pipeline
