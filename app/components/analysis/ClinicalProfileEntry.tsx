@@ -42,7 +42,7 @@ import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useSession as useSessionQuery } from '@/hooks/queries/use-variant-analysis-queries'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
-import { fetchGenePanels, fetchPanelGenes, type GenePanelGeneResponse } from '@/lib/api/screening'
+import { fetchGenePanels, fetchPanelGenes, searchGenes, type GenePanelGeneResponse, type GeneSearchResult } from '@/lib/api/screening'
 import type {
   Sex,
   Ethnicity,
@@ -193,6 +193,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [expandedPanelIds, setExpandedPanelIds] = useState<Set<string>>(new Set())
   const [panelGenesCache, setPanelGenesCache] = useState<Record<string, GenePanelGeneResponse[]>>({})
   const [panelGenesLoading, setPanelGenesLoading] = useState(false)
+  const [customGeneSearchResults, setCustomGeneSearchResults] = useState<GeneSearchResult[]>([])
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hasPrefilledRef = useRef(false)
@@ -298,6 +299,21 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         setPanelsLoading(false)
       })
   }, [enableScreening, availablePanels.length])
+
+  // Gene symbol autocomplete for custom genes
+  useEffect(() => {
+    const symbol = customGeneSymbol.trim()
+    if (symbol.length < 2) {
+      setCustomGeneSearchResults([])
+      return
+    }
+    const timer = setTimeout(() => {
+      searchGenes(symbol, 8)
+        .then(setCustomGeneSearchResults)
+        .catch(() => setCustomGeneSearchResults([]))
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [customGeneSymbol])
 
   // =========================================================================
   // COMPUTED
