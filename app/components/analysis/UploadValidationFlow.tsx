@@ -795,22 +795,38 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               aria-label="File input"
             />
 
-            {selectedFile ? (
-              /* -- File selected state -- */
-              <div className="space-y-5">
-                {/* File info row */}
-                <div className="flex items-center justify-between">
-                  <p className="text-lg font-semibold">File</p>
-                  <div className="flex items-center gap-2">
-                    <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <p className="text-base font-medium">{selectedFile.name}</p>
-                    {fileSize && (
-                      <>
-                        <span className="text-muted-foreground">-</span>
-                        <p className="text-md text-muted-foreground">{fileSize}</p>
-                      </>
-                    )}
-                    {!isProcessing && (
+              {isProcessing ? (
+                /* -- Processing state: clean progress only -- */
+                <div className="flex flex-col items-center gap-5 py-6">
+                  <p className="text-base text-muted-foreground">
+                    {upload.phase === 'compressing' && 'Auto-compressing...'}
+                    {upload.phase === 'uploading' && 'Uploading to server...'}
+                    {upload.phase === 'validating' && 'Validating file format...'}
+                  </p>
+                  <div className="w-full space-y-2">
+                    <Progress value={currentProgress} className="h-2" />
+                    <p className="text-sm text-muted-foreground text-center">{currentProgress}%</p>
+                  </div>
+                  <Button size="lg" disabled>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    <span className="text-base">{getButtonText()}</span>
+                  </Button>
+                </div>
+              ) : selectedFile ? (
+                /* -- File selected, not yet processing -- */
+                <div className="space-y-5">
+                  {/* File info row */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg font-semibold">File</p>
+                    <div className="flex items-center gap-2">
+                      <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      <p className="text-base font-medium">{selectedFile.name}</p>
+                      {fileSize && (
+                        <>
+                          <span className="text-muted-foreground">-</span>
+                          <p className="text-md text-muted-foreground">{fileSize}</p>
+                        </>
+                      )}
                       <button
                         onClick={handleRemoveFile}
                         className="p-1 hover:bg-destructive/10 rounded-full transition-colors ml-1"
@@ -818,12 +834,10 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                       >
                         <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                       </button>
-                    )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Case Name input */}
-                {!isProcessing && (
+                  {/* Case Name input */}
                   <div>
                     <label htmlFor="case-name" className="text-base font-semibold text-muted-foreground mb-1 block">
                       Case Name
@@ -838,10 +852,8 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                       maxLength={200}
                     />
                   </div>
-                )}
 
-                {/* Retain file checkbox */}
-                {!isProcessing && (
+                  {/* Retain file checkbox */}
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -851,67 +863,49 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                     />
                     <span className="text-sm text-muted-foreground">Retain original file</span>
                   </label>
-                )}
 
-                {/* Duplicate file warning */}
-                {duplicateSession && !isProcessing && (
-                  <Alert className="border-orange-300 bg-orange-50 text-orange-900">
-                    <AlertCircle className="h-4 w-4 text-orange-600" />
-                    <AlertDescription className="text-md">
-                      <p className="mb-2">
-                        This file was already uploaded in case: <strong>{duplicateSession.label}</strong>
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-sm border-orange-300 hover:bg-orange-100"
-                          onClick={handleOpenExisting}
-                        >
-                          Open Existing
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-sm text-orange-700"
-                          onClick={() => setDuplicateSession(null)}
-                        >
-                          Upload Anyway
-                        </Button>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
+                  {/* Duplicate file warning */}
+                  {duplicateSession && (
+                    <Alert className="border-orange-300 bg-orange-50 text-orange-900">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-md">
+                        <p className="mb-2">
+                          This file was already uploaded in case: <strong>{duplicateSession.label}</strong>
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-sm border-orange-300 hover:bg-orange-100"
+                            onClick={handleOpenExisting}
+                          >
+                            Open Existing
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-sm text-orange-700"
+                            onClick={() => setDuplicateSession(null)}
+                          >
+                            Upload Anyway
+                          </Button>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                {/* Progress bar - only during processing */}
-                {isProcessing && (
-                  <div className="space-y-2">
-                    <Progress value={currentProgress} className="h-2" />
-                    <p className="text-sm text-muted-foreground text-center">{currentProgress}%</p>
+                  {/* Action button */}
+                  <div className="flex justify-center">
+                    <Button
+                      size="lg"
+                      onClick={handleSubmit}
+                      disabled={!canSubmit}
+                    >
+                      <CheckCircle2 className="h-5 w-5 mr-2" />
+                      <span className="text-base">Upload & Analyze</span>
+                    </Button>
                   </div>
-                )}
-
-                {/* Action button */}
-                <div className="flex justify-center">
-                  <Button
-                    size="lg"
-                    onClick={handleSubmit}
-                    disabled={isProcessing || !canSubmit}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        <span className="text-base">{getButtonText()}</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="h-5 w-5 mr-2" />
-                        <span className="text-base">Upload & Analyze</span>
-                      </>
-                    )}
-                  </Button>
                 </div>
-              </div>
             ) : (
               /* -- Empty upload zone (drag & drop) -- */
               <div
