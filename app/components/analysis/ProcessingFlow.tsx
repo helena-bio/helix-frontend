@@ -119,7 +119,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
   // Fade-in Helena loader with delay
   useEffect(() => {
     if (phase === 'backend' && hasStarted) {
-      const timer = setTimeout(() => setLoaderVisible(true), 800)
+      const timer = setTimeout(() => setLoaderVisible(true), 300)
       return () => clearTimeout(timer)
     } else {
       setLoaderVisible(false)
@@ -461,7 +461,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
         <div
           className={`
             fixed bottom-8 left-80 z-40
-            transition-opacity duration-700 ease-in-out
+            transition-opacity duration-400 ease-in-out
             ${loaderVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}
           `}
         >
