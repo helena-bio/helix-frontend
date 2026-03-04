@@ -42,7 +42,7 @@ import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useSession as useSessionQuery } from '@/hooks/queries/use-variant-analysis-queries'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
-import { fetchGenePanels } from '@/lib/api/screening'
+import { fetchGenePanels, fetchPanelGenes, type GenePanelGeneResponse } from '@/lib/api/screening'
 import type {
   Sex,
   Ethnicity,
@@ -190,6 +190,9 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [availablePanels, setAvailablePanels] = useState<GenePanel[]>([])
   const [panelsLoading, setPanelsLoading] = useState(false)
   const [customGeneSymbol, setCustomGeneSymbol] = useState('')
+  const [expandedPanelId, setExpandedPanelId] = useState<string | null>(null)
+  const [panelGenesCache, setPanelGenesCache] = useState<Record<string, GenePanelGeneResponse[]>>({})
+  const [panelGenesLoading, setPanelGenesLoading] = useState(false)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hasPrefilledRef = useRef(false)
@@ -382,6 +385,26 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const handleRemoveCustomGene = useCallback((symbol: string) => {
     setCustomGenes(customGenes.filter(g => g.gene_symbol !== symbol))
   }, [customGenes, setCustomGenes])
+
+  const handleExpandPanel = useCallback((panelId: string) => {
+    if (expandedPanelId === panelId) {
+      setExpandedPanelId(null)
+      return
+    }
+    setExpandedPanelId(panelId)
+    if (panelGenesCache[panelId]) return
+    setPanelGenesLoading(true)
+    fetchPanelGenes(panelId)
+      .then((genes) => {
+        setPanelGenesCache(prev => ({ ...prev, [panelId]: genes }))
+      })
+      .catch((err) => {
+        console.error('Failed to fetch panel genes:', err)
+      })
+      .finally(() => {
+        setPanelGenesLoading(false)
+      })
+  }, [expandedPanelId, panelGenesCache])
 
   // =========================================================================
   // HANDLERS
@@ -870,33 +893,91 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         </div>
                       ) : availablePanels.length > 0 ? (
                         <div className="space-y-2">
-                          {availablePanels.map((panel) => (
-                            <label
-                              key={panel.id}
-                              className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedPanelIds.includes(panel.id)}
-                                onChange={() => handleTogglePanel(panel.id)}
-                                className="w-4 h-4 mt-0.5"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base font-medium">{panel.name}</span>
-                                  {panel.is_builtin && (
-                                    <Badge variant="outline" className="text-xs px-1.5 py-0">Built-in</Badge>
-                                  )}
-                                  {panel.gene_count !== undefined && (
-                                    <span className="text-xs text-muted-foreground">{panel.gene_count} genes</span>
-                                  )}
+                          {availablePanels.map((panel) => {
+                            const isExpanded = expandedPanelId === panel.id
+                            const cachedGenes = panelGenesCache[panel.id]
+
+                            return (
+                              <div
+                                key={panel.id}
+                                className="rounded-lg border transition-colors hover:bg-accent/50"
+                              >
+                                {/* Panel header row */}
+                                <div className="flex items-start gap-3 p-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedPanelIds.includes(panel.id)}
+                                    onChange={() => handleTogglePanel(panel.id)}
+                                    className="w-4 h-4 mt-0.5 cursor-pointer"
+                                  />
+                                  <div
+                                    className="flex-1 min-w-0 cursor-pointer"
+                                    onClick={() => handleExpandPanel(panel.id)}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-base font-medium">{panel.name}</span>
+                                      {panel.is_builtin && (
+                                        <Badge variant="outline" className="text-xs px-1.5 py-0">Built-in</Badge>
+                                      )}
+                                      {panel.gene_count !== undefined && (
+                                        <span className="text-xs text-muted-foreground">{panel.gene_count} genes</span>
+                                      )}
+                                    </div>
+                                    {panel.description && (
+                                      <p className="text-sm text-muted-foreground mt-0.5">{panel.description}</p>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => handleExpandPanel(panel.id)}
+                                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                                  >
+                                    <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                  </button>
                                 </div>
-                                {panel.description && (
-                                  <p className="text-sm text-muted-foreground mt-0.5">{panel.description}</p>
+
+                                {/* Expanded gene list */}
+                                {isExpanded && (
+                                  <div className="border-t px-3 pb-3 pt-2">
+                                    {panelGenesLoading && !cachedGenes ? (
+                                      <div className="flex items-center gap-2 py-2">
+                                        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                                        <span className="text-xs text-muted-foreground">Loading genes...</span>
+                                      </div>
+                                    ) : cachedGenes && cachedGenes.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1.5 pt-1">
+                                        {cachedGenes.map((gene) => (
+                                          <Tooltip key={gene.gene_symbol}>
+                                            <TooltipTrigger asChild>
+                                              <Badge
+                                                variant="outline"
+                                                className="text-xs px-2 py-0.5 cursor-help"
+                                              >
+                                                {gene.gene_symbol}
+                                              </Badge>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-xs">
+                                              <div className="space-y-1">
+                                                <p className="text-sm font-medium">{gene.gene_symbol}</p>
+                                                {gene.disease_name && (
+                                                  <p className="text-xs text-muted-foreground">{gene.disease_name}</p>
+                                                )}
+                                                <p className="text-xs">Priority: {gene.priority_score.toFixed(2)}</p>
+                                                {gene.age_group_relevance && (
+                                                  <p className="text-xs">Age group: {gene.age_group_relevance}</p>
+                                                )}
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-muted-foreground py-1">No genes in this panel.</p>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                            </label>
-                          ))}
+                            )
+                          })}
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground py-2">No gene panels available.</p>
