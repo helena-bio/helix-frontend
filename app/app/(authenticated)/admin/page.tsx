@@ -10,6 +10,7 @@
  * Sections:
  * - Organization: org details and settings
  * - Team Members: member management and invitations
+ * - Gene Panels: manage gene panels for screening
  */
 
 import { useState, useEffect } from 'react'
@@ -71,6 +72,7 @@ export default function AdminPage() {
           <div className="flex-1 min-w-0">
             {activeSection === 'organization' && <OrganizationContent />}
             {activeSection === 'team' && <TeamMembersContent />}
+            {activeSection === 'gene-panels' && <GenePanelsContent />}
           </div>
         </div>
       </div>
