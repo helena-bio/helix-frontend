@@ -564,7 +564,7 @@ export function ClinicalAnalysis({
         `}
       >
         <div className="flex items-center gap-3">
-          <HelixLoader size="sm" speed={2} animated={true} />
+          <HelixLoader size="xs" speed={2} animated={true} />
           <div>
             <p className="text-sm font-medium text-foreground">Analyzing</p>
             <p className="text-xs text-muted-foreground">{getStageName()}</p>
