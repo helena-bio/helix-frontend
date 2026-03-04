@@ -368,7 +368,6 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               </div>
 
               <div className="border-b border-border pb-4 mb-4">
-                <h3 className="text-lg font-semibold mb-2">File</h3>
                 <div className="flex items-center gap-2">
                   <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   <p className="text-base font-medium">{session.original_filename || '-'}</p>
