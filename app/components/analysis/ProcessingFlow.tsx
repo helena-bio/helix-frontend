@@ -382,19 +382,17 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
         <div className="w-full max-w-2xl space-y-4">
-          <div className="flex items-center justify-center gap-4">
-            <HelixLoader size="xs" speed={3} />
-            <div>
-              <h1 className="text-3xl font-semibold">Analyzing Variants</h1>
-              <p className="text-base text-muted-foreground">
-                Running ACMG classification pipeline
-              </p>
-            </div>
-          </div>
-
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
+                {/* Title inside card */}
+                <div>
+                  <h1 className="text-3xl font-semibold">Analyzing Variants</h1>
+                  <p className="text-base text-muted-foreground mt-1">
+                    Running ACMG classification pipeline
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Progress value={backendProgress} className="h-2" />
                   <div className="flex justify-between text-md text-muted-foreground">
@@ -442,12 +440,16 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
             </CardContent>
           </Card>
 
-          <Alert>
-            <AlertDescription className="text-md">
+          {/* Bottom: HelixLoader + quote */}
+          <div className="flex items-center gap-3">
+            <div className="animate-pulse">
+              <HelixLoader size="xs" speed={3} />
+            </div>
+            <p className="text-md text-muted-foreground">
               This process typically takes 10-15 minutes for a whole genome.
-               {processingQuote}
-            </AlertDescription>
-          </Alert>
+              {' '}{processingQuote}
+            </p>
+          </div>
         </div>
       </div>
     )
