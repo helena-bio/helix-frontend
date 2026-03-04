@@ -361,8 +361,13 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
             <CardContent className="p-6">
               {/* File Header */}
 
-              {/* Title inside card */}
+              {/* Title inside card with logo */}
               <div className="text-center pb-6 mb-6 border-b border-border">
+                <img
+                  src="/images/logos/logo_helena_woman.png"
+                  alt="Helena"
+                  className="h-16 w-auto mx-auto mb-3"
+                />
                 <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
                 <p className="text-base text-muted-foreground mt-1">Upload a genetic variant file</p>
               </div>
