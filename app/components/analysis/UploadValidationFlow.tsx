@@ -357,19 +357,16 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     return (
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-center gap-4">
-            <HelixLoader size="xs" speed={3} animated={false} />
-            <div className="text-center">
-              <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
-              <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
-            </div>
-          </div>
-
-          {/* File Info & QC Results Card */}
           <Card className="gap-0 py-0">
             <CardContent className="p-6">
               {/* File Header */}
+
+              {/* Title inside card */}
+              <div className="text-center mb-6">
+                <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
+                <p className="text-base text-muted-foreground mt-1">Upload a genetic variant file</p>
+              </div>
+
               <div className="border-b border-border pb-4 mb-4">
                 <h3 className="text-lg font-semibold mb-2">File</h3>
                 <div className="flex items-center gap-2">
