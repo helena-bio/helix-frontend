@@ -781,7 +781,7 @@ export default function DashboardPage() {
   }, [router, setCurrentSessionId, startReprocess])
 
   return (
-    <div className="flex flex-col min-h-full p-8">
+    <div className="flex flex-col min-h-full pt-6 px-8 pb-8">
       <div className="w-full max-w-4xl mx-auto space-y-4">
         {/* Header */}
         <div className="text-center mb-5">
