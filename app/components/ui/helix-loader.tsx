@@ -23,6 +23,8 @@ const SVG_SRC = '/images/logos/logo_helena_woman.svg';
 if (typeof window !== 'undefined') {
   const img = new Image();
   img.src = GIF_SRC;
+  const svg = new Image();
+  svg.src = SVG_SRC;
 }
 
 export const HelixLoader: React.FC<HelixLoaderProps> = ({
