@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Loader2, Plus, ChevronDown, Trash2, X, Dna,
+  Loader2, Plus, ChevronDown, Trash2, X, Dna, Search,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -119,6 +119,9 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
   const [panels, setPanels] = useState<GenePanelResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // Panel search
+  const [panelSearch, setPanelSearch] = useState('')
 
   // Expanded panels and cached genes
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
@@ -318,14 +321,36 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
   const editablePanels = isPlatform ? builtinPanels : orgPanels
   const readOnlyPanels = isPlatform ? [] : builtinPanels
 
+  // Filter by panel search
+  const q = panelSearch.toLowerCase()
+  const filteredEditable = q
+    ? editablePanels.filter(p => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q))
+    : editablePanels
+  const filteredReadOnly = q
+    ? readOnlyPanels.filter(p => p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q))
+    : readOnlyPanels
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
+      <div className="flex items-center gap-3">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search gene panels..."
+            value={panelSearch}
+            onChange={(e) => setPanelSearch(e.target.value)}
+            className="w-full h-10 pl-9 pr-3 text-base bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        {/* New Panel button */}
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
           variant={showCreateForm ? 'outline' : 'default'}
           size="sm"
-          className="text-base"
+          className="text-base shrink-0"
         >
           {showCreateForm ? 'Cancel' : (
             <>
@@ -387,12 +412,12 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
       )}
 
       {/* Editable panels */}
-      {editablePanels.length > 0 && (
+      {filteredEditable.length > 0 && (
         <div className="space-y-3">
           {!isPlatform && (
             <p className="text-base font-medium text-muted-foreground">Your organization panels</p>
           )}
-          {editablePanels.map((panel) => {
+          {filteredEditable.map((panel) => {
             const isExpanded = expandedIds.has(panel.id)
             const cachedGenes = genesCache[panel.id]
             const isLoadingGenes = genesLoading.has(panel.id)
@@ -547,13 +572,13 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
       )}
 
       {/* Read-only panels (builtin in admin mode) */}
-      {readOnlyPanels.length > 0 && (
+      {filteredReadOnly.length > 0 && (
         <div className="space-y-3">
           <p className="text-base font-medium text-muted-foreground">
             Built-in panels
             <span className="text-md ml-1">(read-only)</span>
           </p>
-          {readOnlyPanels.map((panel) => {
+          {filteredReadOnly.map((panel) => {
             const isExpanded = expandedIds.has(panel.id)
             const cachedGenes = genesCache[panel.id]
             const isLoadingGenes = genesLoading.has(panel.id)
