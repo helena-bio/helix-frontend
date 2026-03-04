@@ -491,7 +491,7 @@ export function ClinicalAnalysis({
                   <HelixLoader size="xs" animated={true} />
                   <div>
                     <h1 className="text-3xl font-semibold tracking-tight">Clinical Analysis</h1>
-                    <p className="text-base text-muted-foreground mt-1">Profiling your case</p>
+                    <p className="text-base text-muted-foreground mt-1">Running clinical analysis pipeline</p>
                   </div>
                 </div>
 
