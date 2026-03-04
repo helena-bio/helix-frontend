@@ -190,7 +190,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [availablePanels, setAvailablePanels] = useState<GenePanel[]>([])
   const [panelsLoading, setPanelsLoading] = useState(false)
   const [customGeneSymbol, setCustomGeneSymbol] = useState('')
-  const [expandedPanelId, setExpandedPanelId] = useState<string | null>(null)
+  const [expandedPanelIds, setExpandedPanelIds] = useState<Set<string>>(new Set())
   const [panelGenesCache, setPanelGenesCache] = useState<Record<string, GenePanelGeneResponse[]>>({})
   const [panelGenesLoading, setPanelGenesLoading] = useState(false)
 
@@ -387,11 +387,15 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   }, [customGenes, setCustomGenes])
 
   const handleExpandPanel = useCallback((panelId: string) => {
-    if (expandedPanelId === panelId) {
-      setExpandedPanelId(null)
-      return
-    }
-    setExpandedPanelId(panelId)
+    setExpandedPanelIds(prev => {
+      const next = new Set(prev)
+      if (next.has(panelId)) {
+        next.delete(panelId)
+      } else {
+        next.add(panelId)
+      }
+      return next
+    })
     if (panelGenesCache[panelId]) return
     setPanelGenesLoading(true)
     fetchPanelGenes(panelId)
@@ -404,7 +408,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       .finally(() => {
         setPanelGenesLoading(false)
       })
-  }, [expandedPanelId, panelGenesCache])
+  }, [panelGenesCache])
 
   // =========================================================================
   // HANDLERS
@@ -894,7 +898,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       ) : availablePanels.length > 0 ? (
                         <div className="space-y-2">
                           {availablePanels.map((panel) => {
-                            const isExpanded = expandedPanelId === panel.id
+                            const isExpanded = expandedPanelIds.has(panel.id)
                             const cachedGenes = panelGenesCache[panel.id]
 
                             return (
