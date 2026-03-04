@@ -1,6 +1,6 @@
 /**
  * Clinical Profile Types
- * 
+ *
  * Extended patient clinical information including demographics,
  * ethnicity, family history, and phenotype data.
  */
@@ -9,7 +9,7 @@ export type Sex = 'male' | 'female'
 
 export type AgeGroup = 'neonatal' | 'infant' | 'child' | 'adult' | 'elderly'
 
-export type Ethnicity = 
+export type Ethnicity =
   | 'european'
   | 'ashkenazi_jewish'
   | 'east_asian'
@@ -124,26 +124,67 @@ export interface ConsentPreferences {
 }
 
 /**
+ * Gene Panel from backend API
+ */
+export interface GenePanel {
+  id: string
+  name: string
+  description?: string
+  panel_type: string
+  is_builtin: boolean
+  organization_id?: string
+  gene_count?: number
+  is_active: boolean
+  created_at?: string
+}
+
+/**
+ * Gene entry within a panel
+ */
+export interface GenePanelEntry {
+  gene_symbol: string
+  priority_score: number
+  age_group_relevance?: string
+  disease_name?: string
+  notes?: string
+}
+
+/**
+ * Custom gene added ad-hoc by user for screening
+ */
+export interface CustomGeneEntry {
+  gene_symbol: string
+  priority_score: number
+  age_group_relevance?: string
+  disease_name?: string
+  notes?: string
+}
+
+/**
  * Complete Clinical Profile
  */
 export interface ClinicalProfile {
   id?: string
   session_id: string
-  
+
   // Required
   demographics: Demographics
-  
+
   // Recommended
   ethnicity?: EthnicityData
   clinical_context?: ClinicalContext
-  
+
   // Optional
   phenotype?: PhenotypeData
   reproductive?: ReproductiveContext
   sample_info?: SampleInfo
   previous_tests?: PreviousTest[]
   consent?: ConsentPreferences
-  
+
+  // Gene Panels (for screening)
+  panel_ids?: string[]
+  custom_genes?: CustomGeneEntry[]
+
   // Metadata
   created_at?: string
   updated_at?: string

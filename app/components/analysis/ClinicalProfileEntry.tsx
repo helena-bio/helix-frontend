@@ -42,6 +42,7 @@ import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useSession as useSessionQuery } from '@/hooks/queries/use-variant-analysis-queries'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
+import { fetchGenePanels } from '@/lib/api/screening'
 import type {
   Sex,
   Ethnicity,
@@ -54,6 +55,8 @@ import type {
   SampleInfo,
   ConsentPreferences,
   FamilyHistory,
+  GenePanel,
+  CustomGeneEntry,
 } from '@/types/clinical-profile.types'
 import { ETHNICITY_LABELS, INDICATION_LABELS, SAMPLE_TYPE_LABELS } from '@/types/clinical-profile.types'
 import { toast } from 'sonner'
@@ -137,6 +140,10 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     sampleInfo: loadedSampleInfo,
     consent: loadedConsent,
     isProfileLoaded,
+    selectedPanelIds,
+    customGenes,
+    setSelectedPanelIds,
+    setCustomGenes,
   } = useClinicalProfileContext()
 
   // Active section
@@ -178,6 +185,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   // LOCAL STATE - Clinical notes
   const [localClinicalNotes, setLocalClinicalNotes] = useState(clinicalNotes)
+
+  // LOCAL STATE - Gene Panels
+  const [availablePanels, setAvailablePanels] = useState<GenePanel[]>([])
+  const [panelsLoading, setPanelsLoading] = useState(false)
+  const [customGeneSymbol, setCustomGeneSymbol] = useState('')
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hasPrefilledRef = useRef(false)
@@ -266,6 +278,24 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     }
   }, [searchQuery, filteredSuggestions.length])
 
+  // Fetch available gene panels when screening is enabled
+  useEffect(() => {
+    if (!enableScreening) return
+    if (availablePanels.length > 0) return
+
+    setPanelsLoading(true)
+    fetchGenePanels()
+      .then((panels) => {
+        setAvailablePanels(panels)
+      })
+      .catch((err) => {
+        console.error('Failed to fetch gene panels:', err)
+      })
+      .finally(() => {
+        setPanelsLoading(false)
+      })
+  }, [enableScreening, availablePanels.length])
+
   // =========================================================================
   // COMPUTED
   // =========================================================================
@@ -325,6 +355,33 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       hasPanel: false,
     },
   ]
+
+  // =========================================================================
+  // GENE PANEL HANDLERS
+  // =========================================================================
+
+  const handleTogglePanel = useCallback((panelId: string) => {
+    setSelectedPanelIds(
+      selectedPanelIds.includes(panelId)
+        ? selectedPanelIds.filter(id => id !== panelId)
+        : [...selectedPanelIds, panelId]
+    )
+  }, [selectedPanelIds, setSelectedPanelIds])
+
+  const handleAddCustomGene = useCallback(() => {
+    const symbol = customGeneSymbol.trim().toUpperCase()
+    if (!symbol) return
+    if (customGenes.some(g => g.gene_symbol === symbol)) {
+      toast.info(symbol + ' is already added')
+      return
+    }
+    setCustomGenes([...customGenes, { gene_symbol: symbol, priority_score: 1.0 }])
+    setCustomGeneSymbol('')
+  }, [customGeneSymbol, customGenes, setCustomGenes])
+
+  const handleRemoveCustomGene = useCallback((symbol: string) => {
+    setCustomGenes(customGenes.filter(g => g.gene_symbol !== symbol))
+  }, [customGenes, setCustomGenes])
 
   // =========================================================================
   // HANDLERS
@@ -498,6 +555,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
           hpo_terms: hpoTerms,
           clinical_notes: localClinicalNotes || undefined,
         },
+        panel_ids: selectedPanelIds.length > 0 ? selectedPanelIds : undefined,
+        custom_genes: customGenes.length > 0 ? customGenes : undefined,
       })
 
       // Invalidate all session caches so sidebar reflects profiling status
@@ -521,6 +580,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     sampleType, hasParentalSamples, hasAffectedSibling,
     consentSecondaryFindings, consentCarrierResults, consentPharmacogenomics,
     hpoTerms, localClinicalNotes,
+    selectedPanelIds, customGenes,
     setDemographics, setEthnicity, setClinicalContext, setReproductive,
     setSampleInfo, setConsent, setClinicalNotes, saveProfile,
     queryClient,
@@ -781,6 +841,119 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       rows={2}
                     />
                   </div>
+
+                  {/* Gene Panels */}
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <button className="border-t mt-5 pt-4 w-full flex items-center justify-between group">
+                        <div className="flex items-center gap-2">
+                          <Label className="text-base font-medium cursor-pointer">Gene Panels</Label>
+                          {(selectedPanelIds.length > 0 || customGenes.length > 0) && (
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                              {selectedPanelIds.length + customGenes.length}
+                            </Badge>
+                          )}
+                        </div>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-3 space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Select gene panels to boost matching variants during screening. Genes in selected panels receive higher priority scores.
+                      </p>
+
+                      {/* Available Panels */}
+                      {panelsLoading ? (
+                        <div className="flex items-center gap-2 py-3">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Loading panels...</span>
+                        </div>
+                      ) : availablePanels.length > 0 ? (
+                        <div className="space-y-2">
+                          {availablePanels.map((panel) => (
+                            <label
+                              key={panel.id}
+                              className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-accent/50 transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedPanelIds.includes(panel.id)}
+                                onChange={() => handleTogglePanel(panel.id)}
+                                className="w-4 h-4 mt-0.5"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-base font-medium">{panel.name}</span>
+                                  {panel.is_builtin && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0">Built-in</Badge>
+                                  )}
+                                  {panel.gene_count !== undefined && (
+                                    <span className="text-xs text-muted-foreground">{panel.gene_count} genes</span>
+                                  )}
+                                </div>
+                                {panel.description && (
+                                  <p className="text-sm text-muted-foreground mt-0.5">{panel.description}</p>
+                                )}
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground py-2">No gene panels available.</p>
+                      )}
+
+                      {/* Custom Genes */}
+                      <div className="border-t pt-3 space-y-2">
+                        <Label className="text-sm font-medium">Custom Genes</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Add individual gene symbols to boost during screening.
+                        </p>
+                        <div className="flex gap-2">
+                          <Input
+                            value={customGeneSymbol}
+                            onChange={(e) => setCustomGeneSymbol(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                handleAddCustomGene()
+                              }
+                            }}
+                            placeholder="e.g. BRCA1"
+                            className="text-base flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleAddCustomGene}
+                            disabled={!customGeneSymbol.trim()}
+                            className="px-3"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {customGenes.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {customGenes.map((gene) => (
+                              <Badge
+                                key={gene.gene_symbol}
+                                variant="secondary"
+                                className="text-sm px-2.5 py-1 gap-1.5"
+                              >
+                                {gene.gene_symbol}
+                                <button
+                                  onClick={() => handleRemoveCustomGene(gene.gene_symbol)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
 
                   {/* Family History */}
                   <Collapsible>

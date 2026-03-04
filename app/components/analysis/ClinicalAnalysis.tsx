@@ -229,6 +229,8 @@ export function ClinicalAnalysis({
               is_pregnant: profile.reproductive?.is_pregnant || false,
               has_parental_samples: profile.sample_info?.has_parental_samples || false,
               has_affected_sibling: profile.sample_info?.has_affected_sibling || false,
+              panel_ids: profile.panel_ids || [],
+              custom_genes: profile.custom_genes || [],
             }
 
             console.log('='.repeat(80))

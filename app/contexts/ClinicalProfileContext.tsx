@@ -30,6 +30,7 @@ import type {
   ReproductiveContext,
   SampleInfo,
   ConsentPreferences,
+  CustomGeneEntry,
 } from '@/types/clinical-profile.types'
 
 interface HPOTerm {
@@ -63,6 +64,10 @@ interface ClinicalProfileContextValue {
   hpoTerms: HPOTerm[]
   clinicalNotes: string
 
+  // Gene Panels
+  selectedPanelIds: string[]
+  customGenes: CustomGeneEntry[]
+
   // Actions - state updates
   setDemographics: (data: Demographics) => void
   setEthnicity: (data: EthnicityData | undefined) => void
@@ -75,6 +80,10 @@ interface ClinicalProfileContextValue {
   addHPOTerm: (term: HPOTerm) => Promise<void>
   removeHPOTerm: (hpoId: string) => Promise<void>
   setClinicalNotes: (notes: string) => void
+
+  // Actions - Gene Panels
+  setSelectedPanelIds: (ids: string[]) => void
+  setCustomGenes: (genes: CustomGeneEntry[]) => void
 
   // Actions - disk persistence
   saveProfile: (overrideData?: any) => Promise<void>
@@ -121,6 +130,10 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   const [localHPOTerms, setLocalHPOTerms] = useState<HPOTerm[]>([])
   const [localClinicalNotes, setLocalClinicalNotes] = useState<string>('')
 
+  // Gene Panels
+  const [selectedPanelIds, setSelectedPanelIds] = useState<string[]>([])
+  const [customGenes, setCustomGenes] = useState<CustomGeneEntry[]>([])
+
   // Load from disk
   const { data: savedProfile, isLoading: isLoadingProfile } = useClinicalProfile(sessionId)
   const [isProfileLoaded, setIsProfileLoaded] = useState(false)
@@ -159,6 +172,10 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       setLocalClinicalNotes(savedProfile.phenotype.clinical_notes || '')
     }
 
+    // Restore gene panels from saved profile
+    if (savedProfile.panel_ids) setSelectedPanelIds(savedProfile.panel_ids)
+    if (savedProfile.custom_genes) setCustomGenes(savedProfile.custom_genes)
+
     initializedForSessionRef.current = sessionId
     setIsProfileLoaded(true)
   }, [savedProfile, sessionId])
@@ -178,6 +195,8 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       setEnableScreening(false)
       setEnablePhenotypeMatching(false)
       setEnableClinicalReport(true)
+      setSelectedPanelIds([])
+      setCustomGenes([])
     }
   }, [sessionId])
 
@@ -226,6 +245,8 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
         hpo_terms: localHPOTerms,
         clinical_notes: localClinicalNotes || undefined,
       },
+      panel_ids: selectedPanelIds.length > 0 ? selectedPanelIds : undefined,
+      custom_genes: customGenes.length > 0 ? customGenes : undefined,
     }
 
     await saveMutation.mutateAsync({ sessionId, data })
@@ -234,6 +255,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     demographics, enableScreening, enablePhenotypeMatching, enableClinicalReport,
     ethnicity, clinicalContext, reproductive, sampleInfo, consent,
     localHPOTerms, localClinicalNotes,
+    selectedPanelIds, customGenes,
   ])
 
   // Computed values
@@ -263,10 +285,13 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       reproductive,
       sample_info: sampleInfo,
       consent,
+      panel_ids: selectedPanelIds.length > 0 ? selectedPanelIds : undefined,
+      custom_genes: customGenes.length > 0 ? customGenes : undefined,
     }
   }, [
     sessionId, demographics, ethnicity, clinicalContext,
     localHPOTerms, localClinicalNotes, reproductive, sampleInfo, consent,
+    selectedPanelIds, customGenes,
   ])
 
   const value: ClinicalProfileContextValue = {
@@ -286,6 +311,8 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     consent,
     hpoTerms: localHPOTerms,
     clinicalNotes: localClinicalNotes,
+    selectedPanelIds,
+    customGenes,
     setDemographics,
     setEthnicity,
     setClinicalContext,
@@ -295,6 +322,8 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
     addHPOTerm,
     removeHPOTerm,
     setClinicalNotes: setClinicalNotesLocal,
+    setSelectedPanelIds,
+    setCustomGenes,
     saveProfile,
     hpoTermIds,
     termCount,

@@ -1,25 +1,38 @@
 /**
  * Screening Service API Client
- * 
+ *
  * Communicates with screening-service for age-aware variant prioritization
+ * and gene panel management.
  */
 
 const SCREENING_API_URL = process.env.NEXT_PUBLIC_SCREENING_API_URL || 'http://localhost:9002'
 
+// ============================================================================
+// Screening Request/Response Types
+// ============================================================================
+
+export interface CustomGeneInput {
+  gene_symbol: string
+  priority_score?: number
+  age_group_relevance?: string
+  disease_name?: string
+  notes?: string
+}
+
 export interface ScreeningRequest {
   session_id: string
-  
+
   // Demographics (required)
   age_years?: number
   age_days?: number
   sex: 'male' | 'female'
-  
+
   // Recommended
   ethnicity?: string
   has_family_history?: boolean
   indication?: string
   consanguinity?: boolean
-  
+
   // Optional
   screening_mode?: string
   patient_hpo_terms?: string[]
@@ -27,7 +40,11 @@ export interface ScreeningRequest {
   is_pregnant?: boolean
   has_parental_samples?: boolean
   has_affected_sibling?: boolean
-  
+
+  // Gene Panels
+  panel_ids?: string[]
+  custom_genes?: CustomGeneInput[]
+
   // Filtering
   max_tier1_results?: number
   min_total_score?: number
@@ -40,7 +57,7 @@ export interface VariantResult {
   hgvs_protein: string | null
   consequence: string
   acmg_class: 'Pathogenic' | 'Likely Pathogenic' | 'VUS'
-  
+
   // Scores
   total_score: number
   constraint_score: number
@@ -50,13 +67,13 @@ export interface VariantResult {
   consequence_score: number
   compound_het_score: number
   age_relevance_score: number
-  
+
   // Boosts
   acmg_boost: number
   ethnicity_boost: number
   family_history_boost: number
   de_novo_boost: number
-  
+
   // Classification
   tier: 'TIER_1' | 'TIER_2' | 'TIER_3' | 'TIER_4'
   age_group: string
@@ -76,7 +93,7 @@ export interface ScreeningSummary {
   tier3_count: number
   tier4_count: number
   processing_time_seconds: number
-  
+
   // Patient context
   age_group: string
   sex: string
@@ -97,6 +114,35 @@ export interface ScreeningResponse {
   started_at: string
   completed_at: string
 }
+
+// ============================================================================
+// Gene Panel Types
+// ============================================================================
+
+export interface GenePanelResponse {
+  id: string
+  name: string
+  description: string | null
+  panel_type: string
+  is_builtin: boolean
+  organization_id: string | null
+  gene_count: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface GenePanelGeneResponse {
+  gene_symbol: string
+  priority_score: number
+  age_group_relevance: string | null
+  disease_name: string | null
+  notes: string | null
+}
+
+// ============================================================================
+// Screening API Functions
+// ============================================================================
 
 /**
  * Run screening analysis on variants
@@ -123,11 +169,11 @@ export async function runScreening(request: ScreeningRequest): Promise<Screening
  */
 export async function getEthnicities(): Promise<Record<string, string>> {
   const response = await fetch(`${SCREENING_API_URL}/api/v1/screening/ethnicities`)
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch ethnicities')
   }
-  
+
   return response.json()
 }
 
@@ -136,11 +182,11 @@ export async function getEthnicities(): Promise<Record<string, string>> {
  */
 export async function getScreeningModes(): Promise<Record<string, string>> {
   const response = await fetch(`${SCREENING_API_URL}/api/v1/screening/modes`)
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch screening modes')
   }
-  
+
   return response.json()
 }
 
@@ -149,11 +195,11 @@ export async function getScreeningModes(): Promise<Record<string, string>> {
  */
 export async function getAgeGroups(): Promise<Record<string, string>> {
   const response = await fetch(`${SCREENING_API_URL}/api/v1/screening/age-groups`)
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch age groups')
   }
-  
+
   return response.json()
 }
 
@@ -162,10 +208,61 @@ export async function getAgeGroups(): Promise<Record<string, string>> {
  */
 export async function getSampleTypes(): Promise<Record<string, string>> {
   const response = await fetch(`${SCREENING_API_URL}/api/v1/screening/sample-types`)
-  
+
   if (!response.ok) {
     throw new Error('Failed to fetch sample types')
   }
-  
+
+  return response.json()
+}
+
+// ============================================================================
+// Gene Panel API Functions
+// ============================================================================
+
+/**
+ * Fetch available gene panels for the current user.
+ * Requires JWT token for organization-scoped visibility.
+ */
+export async function fetchGenePanels(token?: string): Promise<GenePanelResponse[]> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${SCREENING_API_URL}/api/v1/gene-panels/`, { headers })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch gene panels')
+  }
+
+  return response.json()
+}
+
+/**
+ * Fetch genes within a specific panel
+ */
+export async function fetchPanelGenes(
+  panelId: string,
+  token?: string,
+): Promise<GenePanelGeneResponse[]> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await fetch(
+    `${SCREENING_API_URL}/api/v1/gene-panels/${panelId}/genes`,
+    { headers },
+  )
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch panel genes')
+  }
+
   return response.json()
 }
