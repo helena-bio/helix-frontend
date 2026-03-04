@@ -358,7 +358,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
     return (
       <div className="flex items-center justify-center min-h-[600px] p-8">
         <Card className="w-full max-w-md border-destructive">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 px-6 pb-6">
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
                 <AlertCircle className="h-8 w-8 text-destructive" />
@@ -394,7 +394,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
       <div className="flex items-center justify-center min-h-[600px] p-8">
         <div className="w-full max-w-2xl space-y-4">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 px-6 pb-6">
               <div className="space-y-6">
                   {/* Header with animated loader */}
                   <div className="flex items-center justify-center gap-3 pb-2 mb-3 border-b border-border">
