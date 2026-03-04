@@ -371,7 +371,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           <Card className="gap-0 py-0">
-            <CardContent className="p-6">
+            <CardContent className="pt-4 px-6 pb-6">
               {/* Shared Card Header - static loader */}
               <CardHeader animated={false} />
 
@@ -587,7 +587,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           <Card className="gap-0 py-0">
-            <CardContent className="p-6">
+            <CardContent className="pt-4 px-6 pb-6">
               {/* Shared Card Header - animated loader */}
               <CardHeader animated={true} />
 
@@ -629,7 +629,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           <Card className="gap-0 py-0 border-destructive">
-            <CardContent className="p-6">
+            <CardContent className="pt-4 px-6 pb-6">
               {/* Shared Card Header - static loader */}
               <CardHeader animated={false} />
 
@@ -675,7 +675,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           <Card className="gap-0 py-0 border-destructive">
-            <CardContent className="p-6">
+            <CardContent className="pt-4 px-6 pb-6">
               {/* Shared Card Header - static loader */}
               <CardHeader animated={false} />
 
@@ -706,7 +706,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           <Card className="gap-0 py-0 border-destructive">
-            <CardContent className="p-6">
+            <CardContent className="pt-4 px-6 pb-6">
               {/* Shared Card Header - static loader */}
               <CardHeader animated={false} />
 
@@ -744,7 +744,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
           <Card className="gap-0 py-0">
-            <CardContent className="p-6">
+            <CardContent className="pt-4 px-6 pb-6">
               {/* Shared Card Header - animated loader */}
               <CardHeader animated={true} />
 
@@ -781,7 +781,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     <div className="flex flex-col min-h-[600px] p-8">
       <div className="w-full max-w-2xl mx-auto space-y-6">
         <Card className="gap-0 py-0">
-          <CardContent className="p-6">
+          <CardContent className="pt-4 px-6 pb-6">
             {/* Shared Card Header - animated only during processing */}
             <CardHeader animated={isProcessing} />
 
