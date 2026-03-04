@@ -558,7 +558,7 @@ export function ClinicalAnalysis({
       {/* Helena loader -- fixed bottom-left, fade-in when running, fade-out when done */}
       <div
         className={`
-          fixed bottom-8 left-72 z-40
+          fixed bottom-8 left-80 z-40
           transition-opacity duration-700 ease-in-out
           ${currentStage ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
