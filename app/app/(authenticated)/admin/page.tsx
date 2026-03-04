@@ -18,12 +18,14 @@ import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@helix/shared/lib/utils'
 import { OrganizationContent } from '@/components/admin/OrganizationView'
 import { TeamMembersContent } from '@/components/admin/TeamMembersView'
+import { GenePanelsContent } from '@/components/admin/GenePanelsView'
 
-type Section = 'organization' | 'team'
+type Section = 'organization' | 'team' | 'gene-panels'
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'organization', label: 'Organization' },
   { id: 'team', label: 'Team Members' },
+  { id: 'gene-panels', label: 'Gene Panels' },
 ]
 
 export default function AdminPage() {

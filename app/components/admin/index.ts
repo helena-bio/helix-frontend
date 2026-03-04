@@ -3,3 +3,4 @@
  */
 
 export * from './TeamMembersView'
+export * from './GenePanelsView'
