@@ -375,9 +375,11 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               </div>
 
               <div className="pb-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <p className="text-base font-medium">{session.original_filename || '-'}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-lg font-semibold">File</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-base font-medium">{session.original_filename || '-'}</p>
+                      <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   {fileSize && (
                     <>
                       <span className="text-muted-foreground">-</span>
@@ -396,6 +398,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                       </Tooltip>
                     </TooltipProvider>
                   )}
+                    </div>
                 </div>
               </div>
 
