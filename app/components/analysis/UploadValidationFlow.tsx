@@ -362,12 +362,12 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               {/* File Header */}
 
               {/* Title inside card */}
-              <div className="text-center mb-6">
+              <div className="text-center pb-6 mb-6 border-b border-border">
                 <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
                 <p className="text-base text-muted-foreground mt-1">Upload a genetic variant file</p>
               </div>
 
-              <div className="border-b border-border pb-4 mb-4">
+              <div className="pb-4 mb-4">
                 <div className="flex items-center gap-2">
                   <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   <p className="text-base font-medium">{session.original_filename || '-'}</p>
