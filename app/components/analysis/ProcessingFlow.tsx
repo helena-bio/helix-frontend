@@ -396,13 +396,14 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
-                {/* Title inside card */}
-                <div className="text-center">
-                  <h1 className="text-3xl font-semibold">Analyzing Variants</h1>
-                  <p className="text-base text-muted-foreground mt-1">
-                    Running ACMG classification pipeline
-                  </p>
-                </div>
+                  {/* Header with animated loader */}
+                  <div className="flex items-center justify-center gap-5 pb-4 mb-4 border-b border-border">
+                    <HelixLoader size="xs" animated={true} />
+                    <div>
+                      <h1 className="text-3xl font-semibold tracking-tight">Analyzing Variants</h1>
+                      <p className="text-base text-muted-foreground mt-1">Running ACMG classification pipeline</p>
+                    </div>
+                  </div>
 
                 <div className="space-y-2">
                   <Progress value={backendProgress} className="h-2" />
@@ -457,16 +458,6 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
           </p>
         </div>
 
-        {/* Helena loader -- fixed bottom-left, fade-in when running */}
-        <div
-          className={`
-            fixed bottom-8 left-80 z-40
-            transition-opacity duration-400 ease-in-out
-            ${loaderVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-          `}
-        >
-          <HelixLoader size="xs" speed={3} animated={true} />
-        </div>
       </div>
     )
   }
