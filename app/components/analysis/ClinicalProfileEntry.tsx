@@ -36,7 +36,6 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HPOTermCard } from './HPOTermCard'
-import { HelixLoader } from '@/components/ui/helix-loader'
 import { ClinicalAnalysis } from './ClinicalAnalysis'
 import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
@@ -642,19 +641,9 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // =========================================================================
 
   return (
-    <div className="flex items-start justify-center min-h-[600px] p-8">
-      <div className="w-full max-w-4xl space-y-10">
+    <div className="flex items-start justify-center min-h-[600px] px-8 pt-4 pb-8">
+      <div className="w-full max-w-4xl">
 
-        {/* Header -- restored above layout */}
-        <div className="flex items-center justify-center gap-4">
-          <HelixLoader size="xs" speed={3} animated={isSaving} />
-          <div className="text-center">
-            <h1 className="text-3xl font-semibold tracking-tight">Clinical Profile</h1>
-            <p className="text-base text-muted-foreground">
-              Clinical data for variant analysis
-            </p>
-          </div>
-        </div>
 
         {/* Two-column layout */}
         <div className="flex gap-8">

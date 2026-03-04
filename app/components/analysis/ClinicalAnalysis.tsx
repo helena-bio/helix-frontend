@@ -421,7 +421,7 @@ export function ClinicalAnalysis({
 
   if (errorMessage) {
     return (
-      <div className="flex justify-center pt-12 p-8">
+      <div className="flex justify-center pt-8 p-8">
         <Card className="w-full max-w-md border-destructive">
           <CardContent className="pt-6">
             <div className="text-center space-y-6">
@@ -444,7 +444,7 @@ export function ClinicalAnalysis({
 
   if (progress === 100 && !currentStage) {
     return (
-      <div className="flex justify-center pt-12 p-8">
+      <div className="flex justify-center pt-8 p-8">
         <Card className="w-full max-w-md border-green-500">
           <CardContent className="pt-6">
             <div className="text-center space-y-6">
@@ -469,17 +469,8 @@ export function ClinicalAnalysis({
   }
 
   return (
-    <div className="flex justify-center pt-12 p-8">
+    <div className="flex justify-center pt-8 p-8">
       <div className="w-full max-w-2xl space-y-4">
-        <div className="flex items-center justify-center gap-4">
-          <HelixLoader size="xs" speed={3} />
-          <div>
-            <h1 className="text-3xl font-semibold">Clinical Analysis</h1>
-            <p className="text-base text-muted-foreground">
-              Running selected analysis modules
-            </p>
-          </div>
-        </div>
 
         <Card>
           <CardContent className="pt-6">
@@ -562,6 +553,23 @@ export function ClinicalAnalysis({
             </AlertDescription>
           </Alert>
         )}
+      </div>
+
+      {/* Helena loader -- fixed bottom-left, fade-in when running, fade-out when done */}
+      <div
+        className={`
+          fixed bottom-8 left-72 z-40
+          transition-opacity duration-700 ease-in-out
+          ${currentStage ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+        `}
+      >
+        <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl px-4 py-3 shadow-lg">
+          <HelixLoader size="sm" speed={2} animated={true} />
+          <div>
+            <p className="text-sm font-medium text-foreground">Analyzing</p>
+            <p className="text-xs text-muted-foreground">{getStageName()}</p>
+          </div>
+        </div>
       </div>
     </div>
   )
