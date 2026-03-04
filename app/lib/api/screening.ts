@@ -6,6 +6,7 @@
  */
 
 const SCREENING_API_URL = process.env.NEXT_PUBLIC_SCREENING_API_URL || 'http://localhost:9002'
+import { tokenUtils } from '@/lib/auth/token'
 
 // ============================================================================
 // Screening Request/Response Types
@@ -224,12 +225,13 @@ export async function getSampleTypes(): Promise<Record<string, string>> {
  * Fetch available gene panels for the current user.
  * Requires JWT token for organization-scoped visibility.
  */
-export async function fetchGenePanels(token?: string): Promise<GenePanelResponse[]> {
+export async function fetchGenePanels(token?: string | null): Promise<GenePanelResponse[]> {
+  const resolvedToken = token ?? tokenUtils.get()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+  if (resolvedToken) {
+    headers['Authorization'] = `Bearer ${resolvedToken}`
   }
 
   const response = await fetch(`${SCREENING_API_URL}/api/v1/gene-panels/`, { headers })
@@ -246,13 +248,14 @@ export async function fetchGenePanels(token?: string): Promise<GenePanelResponse
  */
 export async function fetchPanelGenes(
   panelId: string,
-  token?: string,
+  token?: string | null,
 ): Promise<GenePanelGeneResponse[]> {
+  const resolvedToken = token ?? tokenUtils.get()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+  if (resolvedToken) {
+    headers['Authorization'] = `Bearer ${resolvedToken}`
   }
 
   const response = await fetch(
