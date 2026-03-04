@@ -362,7 +362,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               {/* File Header */}
 
               {/* Title inside card with logo */}
-              <div className="flex items-center justify-center gap-5 pb-6 mb-6 border-b border-border">
+              <div className="flex items-center justify-center gap-5 pb-4 mb-4 border-b border-border">
                 <img
                   src="/images/logos/logo_helena_woman.svg"
                   alt="Helena"
