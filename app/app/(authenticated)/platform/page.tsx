@@ -58,7 +58,6 @@ import { GenePanelsContent } from '@/components/admin/GenePanelsView'
 type Section = 'overview' | 'organizations' | 'users' | 'activity' | 'reference-data' | 'gene-panels' | 'backup'
 
 const SECTIONS: { id: Section; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
   { id: 'organizations', label: 'Organizations' },
   { id: 'users', label: 'Users' },
   { id: 'activity', label: 'Activity' },
@@ -899,7 +898,7 @@ function ActivityContent() {
 export default function PlatformPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const [activeSection, setActiveSection] = useState<Section>('overview')
+  const [activeSection, setActiveSection] = useState<Section>('organizations')
 
   if (!user?.is_platform_admin) {
     return (
@@ -940,7 +939,7 @@ export default function PlatformPage() {
             {activeSection === 'users' && <UsersContent />}
             {activeSection === 'activity' && <ActivityContent />}
             {activeSection === 'reference-data' && <ReferenceDatabasesContent />}
-              {activeSection === 'gene-panels' && <GenePanelsContent mode="platform" />}
+            {activeSection === 'gene-panels' && <GenePanelsContent mode="platform" />}
             {activeSection === 'backup' && <BackupContent />}
           </div>
         </div>
