@@ -112,8 +112,19 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
   const [taskId, setTaskId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+  const [loaderVisible, setLoaderVisible] = useState(false)
   const startedRef = useRef(false)
   const frontendStartedRef = useRef(false)
+
+  // Fade-in Helena loader with delay
+  useEffect(() => {
+    if (phase === 'backend' && hasStarted) {
+      const timer = setTimeout(() => setLoaderVisible(true), 800)
+      return () => clearTimeout(timer)
+    } else {
+      setLoaderVisible(false)
+    }
+  }, [phase, hasStarted])
 
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -440,16 +451,21 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
             </CardContent>
           </Card>
 
-          {/* Bottom: HelixLoader + quote */}
-          <div className="flex items-center gap-3">
-            <div className="animate-pulse">
-              <HelixLoader size="xs" speed={3} />
-            </div>
-            <p className="text-md text-muted-foreground">
-              This process typically takes 10-15 minutes for a whole genome.
-              {' '}{processingQuote}
-            </p>
-          </div>
+          <p className="text-md text-muted-foreground">
+            This process typically takes 10-15 minutes for a whole genome.
+            {' '}{processingQuote}
+          </p>
+        </div>
+
+        {/* Helena loader -- fixed bottom-left, fade-in when running */}
+        <div
+          className={`
+            fixed bottom-8 left-80 z-40
+            transition-opacity duration-700 ease-in-out
+            ${loaderVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+          `}
+        >
+          <HelixLoader size="xs" speed={3} animated={true} />
         </div>
       </div>
     )
