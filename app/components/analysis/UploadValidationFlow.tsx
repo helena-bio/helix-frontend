@@ -362,14 +362,16 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               {/* File Header */}
 
               {/* Title inside card with logo */}
-              <div className="text-center pb-6 mb-6 border-b border-border">
+              <div className="flex items-center justify-center gap-5 pb-6 mb-6 border-b border-border">
                 <img
                   src="/images/logos/logo_helena_woman.svg"
                   alt="Helena"
-                  className="h-16 w-auto mx-auto mb-3"
+                  className="h-24 w-auto flex-shrink-0"
                 />
-                <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
-                <p className="text-base text-muted-foreground mt-1">Upload a genetic variant file</p>
+                <div>
+                  <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
+                  <p className="text-base text-muted-foreground mt-1">Upload a genetic variant file</p>
+                </div>
               </div>
 
               <div className="pb-4 mb-4">
@@ -797,9 +799,13 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     <div className="flex flex-col min-h-[600px] p-8">
       <div className="w-full max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-center gap-4">
-          <HelixLoader size="xs" speed={3} animated={isProcessing} />
-          <div className="text-center">
+        <div className="flex items-center justify-center gap-5">
+          <img
+            src="/images/logos/logo_helena_woman.svg"
+            alt="Helena"
+            className="h-24 w-auto flex-shrink-0"
+          />
+          <div>
             <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>
             <p className="text-base text-muted-foreground">Upload a genetic variant file</p>
           </div>
