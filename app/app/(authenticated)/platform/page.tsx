@@ -52,9 +52,10 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@helix/shared/lib/utils'
 import { ReferenceDatabasesContent } from '@/components/platform/ReferenceDatabasesView'
 import { BackupContent } from '@/components/platform/BackupPanel'
+import { GenePanelsContent } from '@/components/admin/GenePanelsView'
 
 
-type Section = 'overview' | 'organizations' | 'users' | 'activity' | 'reference-data' | 'backup'
+type Section = 'overview' | 'organizations' | 'users' | 'activity' | 'reference-data' | 'gene-panels' | 'backup'
 
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -62,6 +63,7 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: 'users', label: 'Users' },
   { id: 'activity', label: 'Activity' },
   { id: 'reference-data', label: 'Reference Data' },
+  { id: 'gene-panels', label: 'Gene Panels' },
   { id: 'backup', label: 'Backup' },
 ]
 

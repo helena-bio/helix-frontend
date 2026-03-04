@@ -40,6 +40,7 @@ async function createPanel(data: {
   name: string
   description?: string
   panel_type: string
+  is_builtin?: boolean
 }): Promise<GenePanelResponse> {
   const token = tokenUtils.get()
   const response = await fetch(`${SCREENING_API_URL}/api/v1/gene-panels/`, {
@@ -109,7 +110,12 @@ async function removeGeneFromPanel(panelId: string, geneSymbol: string): Promise
 // COMPONENT
 // =========================================================================
 
-export function GenePanelsContent() {
+interface GenePanelsContentProps {
+  mode?: 'admin' | 'platform'
+}
+
+export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
+  const isPlatform = mode === 'platform'
   const [panels, setPanels] = useState<GenePanelResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -211,6 +217,7 @@ export function GenePanelsContent() {
         name: newPanelName.trim(),
         description: newPanelDescription.trim() || undefined,
         panel_type: newPanelType,
+        is_builtin: isPlatform,
       })
       setPanels(prev => [...prev, created])
       setNewPanelName('')
@@ -306,13 +313,22 @@ export function GenePanelsContent() {
   const builtinPanels = panels.filter(p => p.is_builtin)
   const orgPanels = panels.filter(p => !p.is_builtin)
 
+  // In platform mode: builtin panels are the "editable" ones, org panels hidden
+  // In admin mode: org panels are editable, builtin are read-only
+  const editablePanels = isPlatform ? builtinPanels : orgPanels
+  const readOnlyPanels = isPlatform ? [] : builtinPanels
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Gene Panels</h3>
+          <h3 className="text-lg font-semibold text-foreground">
+            {isPlatform ? 'Built-in Gene Panels' : 'Gene Panels'}
+          </h3>
           <p className="text-md text-muted-foreground mt-1">
-            Manage gene panels for clinical screening prioritization
+            {isPlatform
+              ? 'Manage system-wide built-in panels available to all organizations'
+              : 'Manage gene panels for clinical screening prioritization'}
           </p>
         </div>
         <Button
@@ -380,11 +396,13 @@ export function GenePanelsContent() {
         </Card>
       )}
 
-      {/* Organization panels */}
-      {orgPanels.length > 0 && (
+      {/* Editable panels */}
+      {editablePanels.length > 0 && (
         <div className="space-y-3">
-          <p className="text-base font-medium text-muted-foreground">Your organization panels</p>
-          {orgPanels.map((panel) => {
+          {!isPlatform && (
+            <p className="text-base font-medium text-muted-foreground">Your organization panels</p>
+          )}
+          {editablePanels.map((panel) => {
             const isExpanded = expandedIds.has(panel.id)
             const cachedGenes = genesCache[panel.id]
             const isLoadingGenes = genesLoading.has(panel.id)
@@ -538,14 +556,14 @@ export function GenePanelsContent() {
         </div>
       )}
 
-      {/* Builtin panels (read-only) */}
-      {builtinPanels.length > 0 && (
+      {/* Read-only panels (builtin in admin mode) */}
+      {readOnlyPanels.length > 0 && (
         <div className="space-y-3">
           <p className="text-base font-medium text-muted-foreground">
             Built-in panels
             <span className="text-md ml-1">(read-only)</span>
           </p>
-          {builtinPanels.map((panel) => {
+          {readOnlyPanels.map((panel) => {
             const isExpanded = expandedIds.has(panel.id)
             const cachedGenes = genesCache[panel.id]
             const isLoadingGenes = genesLoading.has(panel.id)
