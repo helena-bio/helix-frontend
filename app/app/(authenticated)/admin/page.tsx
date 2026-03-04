@@ -47,7 +47,7 @@ export default function AdminPage() {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="w-full max-w-5xl mx-auto px-6 py-6">
-        <h2 className="text-3xl font-semibold text-foreground mb-8">Admin</h2>
+        <h2 className="text-3xl font-semibold text-foreground mb-6">Admin</h2>
 
         <div className="flex gap-8">
           {/* Left navigation */}
