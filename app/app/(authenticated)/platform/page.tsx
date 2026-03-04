@@ -448,7 +448,6 @@ function OverviewContent() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">Overview</h3>
       <div className="border border-border rounded-lg bg-card divide-y divide-border">
         {cards.map((card) => {
           const Icon = card.icon
@@ -648,28 +647,25 @@ function OrganizationsContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Organizations</h3>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          New Organization
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search organizations..."
-          className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-10"
-        />
-      </div>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search organizations..."
+              className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary h-10"
+            />
+          </div>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-base font-medium hover:bg-primary/90 transition-colors shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            New Organization
+          </button>
+        </div>
 
       {switchError && (
         <p className="text-base text-destructive">{switchError}</p>
@@ -833,8 +829,6 @@ function UsersContent() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">All Users</h3>
-
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -881,7 +875,6 @@ function UsersContent() {
 function ActivityContent() {
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-foreground">Activity Log</h3>
       <div className="border border-border rounded-lg p-8 text-center">
         <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
         <p className="text-base text-muted-foreground">Cross-organization audit log coming soon.</p>
