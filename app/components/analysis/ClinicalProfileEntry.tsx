@@ -1009,30 +1009,61 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         <p className="text-md text-muted-foreground">
                           Add individual gene symbols to boost during screening.
                         </p>
-                        <div className="flex gap-2">
-                          <Input
-                            value={customGeneSymbol}
-                            onChange={(e) => setCustomGeneSymbol(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault()
-                                handleAddCustomGene()
-                              }
-                            }}
-                            placeholder="e.g. BRCA1"
-                            className="text-base flex-1"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleAddCustomGene}
-                            disabled={!customGeneSymbol.trim()}
-                            className="px-3"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
+                          <div className="relative">
+                            <div className="flex gap-2">
+                              <Input
+                                value={customGeneSymbol}
+                                onChange={(e) => setCustomGeneSymbol(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    handleAddCustomGene()
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setCustomGeneSearchResults([])
+                                  }
+                                }}
+                                placeholder="Search gene symbol..."
+                                className="text-base flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleAddCustomGene}
+                                disabled={!customGeneSymbol.trim()}
+                                className="px-3"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            {customGeneSearchResults.length > 0 && (
+                              <div className="absolute z-10 left-0 right-12 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                {customGeneSearchResults.map((result) => (
+                                  <button
+                                    key={result.approved_symbol}
+                                    onClick={() => {
+                                      const symbol = result.approved_symbol
+                                      setCustomGeneSearchResults([])
+                                      setCustomGeneSymbol('')
+                                      if (customGenes.some(g => g.gene_symbol === symbol)) {
+                                        toast.info(symbol + ' is already added')
+                                        return
+                                      }
+                                      setCustomGenes([...customGenes, { gene_symbol: symbol, priority_score: 1.0 }])
+                                      toast.success('Added ' + symbol)
+                                    }}
+                                    className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center justify-between"
+                                  >
+                                    <span className="text-base font-medium">{result.approved_symbol}</span>
+                                    {result.is_alias && (
+                                      <span className="text-xs text-muted-foreground">alias: {result.symbol}</span>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         {customGenes.length > 0 && (
                           <div className="flex flex-wrap gap-2 pt-1">
                             {customGenes.map((gene) => (
