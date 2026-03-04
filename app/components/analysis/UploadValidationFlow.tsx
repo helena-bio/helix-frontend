@@ -364,7 +364,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               {/* Title inside card with logo */}
               <div className="text-center pb-6 mb-6 border-b border-border">
                 <img
-                  src="/images/logos/logo_helena_woman.png"
+                  src="/images/logos/logo_helena_woman.svg"
                   alt="Helena"
                   className="h-16 w-auto mx-auto mb-3"
                 />
