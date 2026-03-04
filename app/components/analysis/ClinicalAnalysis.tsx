@@ -94,8 +94,19 @@ export function ClinicalAnalysis({
     literature: 'pending',
   })
   const [currentStage, setCurrentStage] = useState<string | null>(null)
+  const [loaderVisible, setLoaderVisible] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const startedRef = useRef(false)
+
+  // Fade-in/out Helena loader with delay
+  useEffect(() => {
+    if (currentStage) {
+      const timer = setTimeout(() => setLoaderVisible(true), 800)
+      return () => clearTimeout(timer)
+    } else {
+      setLoaderVisible(false)
+    }
+  }, [currentStage])
 
   const queryClient = useQueryClient()
   const { nextStep } = useJourney()
@@ -560,7 +571,7 @@ export function ClinicalAnalysis({
         className={`
           fixed bottom-8 left-80 z-40
           transition-opacity duration-700 ease-in-out
-          ${currentStage ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+          ${loaderVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
       >
         <HelixLoader size="xs" speed={2} animated={true} />
