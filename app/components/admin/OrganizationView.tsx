@@ -103,11 +103,6 @@ export function OrganizationContent() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold text-foreground">Organization</h3>
-        <p className="text-md text-muted-foreground mt-1">Manage your organization settings</p>
-      </div>
-
       <Card>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">

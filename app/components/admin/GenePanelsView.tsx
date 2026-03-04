@@ -320,17 +320,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">
-            {isPlatform ? 'Built-in Gene Panels' : 'Gene Panels'}
-          </h3>
-          <p className="text-md text-muted-foreground mt-1">
-            {isPlatform
-              ? 'Manage system-wide built-in panels available to all organizations'
-              : 'Manage gene panels for clinical screening prioritization'}
-          </p>
-        </div>
+      <div className="flex items-center justify-end">
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
           variant={showCreateForm ? 'outline' : 'default'}

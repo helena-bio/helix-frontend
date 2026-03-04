@@ -529,14 +529,6 @@ export function TeamMembersContent() {
   return (
     <>
       <div className="space-y-4">
-        {/* Header */}
-        <div>
-          <h3 className="text-lg font-semibold text-foreground">Team Members</h3>
-          <p className="text-md text-muted-foreground mt-1">
-            Manage your organization&apos;s team
-          </p>
-        </div>
-
         {/* Tabs + Search + Invite */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-muted/50 rounded-md p-0.5 shrink-0">
