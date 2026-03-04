@@ -26,7 +26,7 @@ export const HelixLoader: React.FC<HelixLoaderProps> = ({
 
   // Static PNG when not loading, animated GIF when loading
   const imageSrc = animated
-    ? '/images/logos/loader_helena.gif'
+    ? '/images/logos/loader_helena_white.gif'
     : '/images/logos/logo_helena_woman.png';
 
   const content = (
