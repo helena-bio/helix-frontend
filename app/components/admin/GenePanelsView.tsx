@@ -349,7 +349,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
           variant={showCreateForm ? 'outline' : 'default'}
-          className="text-base shrink-0 px-4 py-2"
+          className="text-base shrink-0 px-4 h-10"
         >
           {showCreateForm ? 'Cancel' : (
             <>
