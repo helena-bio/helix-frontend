@@ -563,7 +563,7 @@ export function ClinicalAnalysis({
           ${currentStage ? 'opacity-100' : 'opacity-0 pointer-events-none'}
         `}
       >
-        <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl px-4 py-3 shadow-lg">
+        <div className="flex items-center gap-3">
           <HelixLoader size="sm" speed={2} animated={true} />
           <div>
             <p className="text-sm font-medium text-foreground">Analyzing</p>
