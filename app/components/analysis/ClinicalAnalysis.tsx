@@ -434,7 +434,7 @@ export function ClinicalAnalysis({
     return (
       <div className="flex justify-center pt-8 p-8">
         <Card className="w-full max-w-md border-destructive">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 px-6 pb-6">
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center p-4 rounded-full bg-destructive/10">
                 <AlertCircle className="h-8 w-8 text-destructive" />
@@ -457,7 +457,7 @@ export function ClinicalAnalysis({
     return (
       <div className="flex justify-center pt-8 p-8">
         <Card className="w-full max-w-md border-green-500">
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 px-6 pb-6">
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center p-4 rounded-full bg-green-100 dark:bg-green-950">
                 <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -484,11 +484,16 @@ export function ClinicalAnalysis({
       <div className="w-full max-w-2xl space-y-4">
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 px-6 pb-6">
             <div className="space-y-6">
-              <div className="text-center">
-                <p className="text-lg font-medium capitalize">{getStageName()}</p>
-              </div>
+                {/* Header with animated loader */}
+                <div className="flex items-center justify-center gap-3 pb-2 mb-3 border-b border-border">
+                  <HelixLoader size="xs" animated={true} />
+                  <div>
+                    <h1 className="text-3xl font-semibold tracking-tight">{getStageName()}</h1>
+                    <p className="text-base text-muted-foreground mt-1">Running clinical analysis pipeline</p>
+                  </div>
+                </div>
 
               <div className="space-y-2">
                 <Progress value={progress} className="h-2" />
@@ -566,16 +571,6 @@ export function ClinicalAnalysis({
         )}
       </div>
 
-      {/* Helena loader -- fixed bottom-left, fade-in when running, fade-out when done */}
-      <div
-        className={`
-          fixed bottom-8 left-80 z-40
-          transition-opacity duration-700 ease-in-out
-          ${loaderVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-        `}
-      >
-        <HelixLoader size="xs" speed={2} animated={true} />
-      </div>
     </div>
   )
 }
