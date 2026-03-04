@@ -527,14 +527,7 @@ export function GenePanelsContent() {
                             ))}
                           </div>
                         )}
-                        {addGenePanel === panel.id && geneSearching && (
-                          <div className="absolute z-10 left-0 right-12 mt-1 bg-background border rounded-md shadow-lg px-3 py-2">
-                            <span className="text-xs text-muted-foreground flex items-center gap-2">
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Searching HGNC...
-                            </span>
-                          </div>
-                        )}
+
                       </div>
                     </div>
                   )}
