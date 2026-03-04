@@ -885,7 +885,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       </button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pt-3 space-y-4">
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-md text-muted-foreground">
                         Select gene panels to boost matching variants during screening. Genes in selected panels receive higher priority scores.
                       </p>
 
@@ -893,7 +893,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                       {panelsLoading ? (
                         <div className="flex items-center gap-2 py-3">
                           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">Loading panels...</span>
+                          <span className="text-md text-muted-foreground">Loading panels...</span>
                         </div>
                       ) : availablePanels.length > 0 ? (
                         <div className="space-y-2">
@@ -928,7 +928,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                                       )}
                                     </div>
                                     {panel.description && (
-                                      <p className="text-sm text-muted-foreground mt-0.5">{panel.description}</p>
+                                      <p className="text-md text-muted-foreground mt-0.5">{panel.description}</p>
                                     )}
                                   </div>
                                   <button
@@ -984,13 +984,13 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                           })}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground py-2">No gene panels available.</p>
+                        <p className="text-md text-muted-foreground py-2">No gene panels available.</p>
                       )}
 
                       {/* Custom Genes */}
                       <div className="border-t pt-3 space-y-2">
-                        <Label className="text-sm font-medium">Custom Genes</Label>
-                        <p className="text-sm text-muted-foreground">
+                        <Label className="text-md font-medium">Custom Genes</Label>
+                        <p className="text-md text-muted-foreground">
                           Add individual gene symbols to boost during screening.
                         </p>
                         <div className="flex gap-2">
