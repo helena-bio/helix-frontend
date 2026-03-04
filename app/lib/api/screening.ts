@@ -269,3 +269,72 @@ export async function fetchPanelGenes(
 
   return response.json()
 }
+
+
+// ============================================================================
+// Gene Validation & Search
+// ============================================================================
+
+export interface GeneSearchResult {
+  symbol: string
+  is_alias: boolean
+  approved_symbol: string
+  message: string | null
+}
+
+export interface GeneValidationResult {
+  valid: boolean
+  symbol: string
+  approved_symbol: string | null
+  message: string | null
+}
+
+/**
+ * Search gene symbols by prefix (autocomplete).
+ * Returns matching HGNC-approved symbols.
+ */
+export async function searchGenes(
+  query: string,
+  limit: number = 10,
+  token?: string | null,
+): Promise<GeneSearchResult[]> {
+  if (!query || query.length < 2) return []
+
+  const resolvedToken = token ?? tokenUtils.get()
+  const headers: Record<string, string> = {}
+  if (resolvedToken) {
+    headers['Authorization'] = `Bearer ${resolvedToken}`
+  }
+
+  const response = await fetch(
+    `${SCREENING_API_URL}/api/v1/gene-panels/search-genes?q=${encodeURIComponent(query)}&limit=${limit}`,
+    { headers },
+  )
+
+  if (!response.ok) return []
+  return response.json()
+}
+
+/**
+ * Validate a gene symbol against HGNC.
+ */
+export async function validateGene(
+  symbol: string,
+  token?: string | null,
+): Promise<GeneValidationResult> {
+  const resolvedToken = token ?? tokenUtils.get()
+  const headers: Record<string, string> = {}
+  if (resolvedToken) {
+    headers['Authorization'] = `Bearer ${resolvedToken}`
+  }
+
+  const response = await fetch(
+    `${SCREENING_API_URL}/api/v1/gene-panels/validate-gene/${encodeURIComponent(symbol)}`,
+    { headers },
+  )
+
+  if (!response.ok) {
+    return { valid: false, symbol, approved_symbol: null, message: 'Validation failed' }
+  }
+  return response.json()
+}

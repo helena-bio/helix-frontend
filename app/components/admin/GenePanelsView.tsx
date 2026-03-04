@@ -23,8 +23,10 @@ import { toast } from 'sonner'
 import {
   fetchGenePanels,
   fetchPanelGenes,
+  searchGenes,
   type GenePanelResponse,
   type GenePanelGeneResponse,
+  type GeneSearchResult,
 } from '@/lib/api/screening'
 import { tokenUtils } from '@/lib/auth/token'
 
@@ -129,6 +131,8 @@ export function GenePanelsContent() {
   const [newGeneSymbol, setNewGeneSymbol] = useState('')
   const [newGenePriority, setNewGenePriority] = useState('0.8')
   const [addingGene, setAddingGene] = useState(false)
+  const [geneSearchResults, setGeneSearchResults] = useState<GeneSearchResult[]>([])
+  const [geneSearching, setGeneSearching] = useState(false)
 
   // Load panels
   useEffect(() => {
@@ -147,6 +151,24 @@ export function GenePanelsContent() {
       setLoading(false)
     }
   }
+
+  // Gene symbol search with debounce
+  useEffect(() => {
+    if (!addGenePanel) return
+    const symbol = newGeneSymbol.trim()
+    if (symbol.length < 2) {
+      setGeneSearchResults([])
+      return
+    }
+    const timer = setTimeout(() => {
+      setGeneSearching(true)
+      searchGenes(symbol, 8)
+        .then(setGeneSearchResults)
+        .catch(() => setGeneSearchResults([]))
+        .finally(() => setGeneSearching(false))
+    }, 150)
+    return () => clearTimeout(timer)
+  }, [newGeneSymbol, addGenePanel])
 
   // Toggle expand
   const handleToggleExpand = useCallback((panelId: string) => {
@@ -449,37 +471,70 @@ export function GenePanelsContent() {
                         <p className="text-md text-muted-foreground">No genes added yet.</p>
                       )}
 
-                      {/* Add gene input */}
-                      <div className="flex gap-2 pt-1">
-                        <Input
-                          value={addGenePanel === panel.id ? newGeneSymbol : ''}
-                          onChange={(e) => {
-                            setAddGenePanel(panel.id)
-                            setNewGeneSymbol(e.target.value)
-                          }}
-                          onFocus={() => setAddGenePanel(panel.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              handleAddGene(panel.id)
-                            }
-                          }}
-                          placeholder="Add gene symbol..."
-                          className="text-base flex-1"
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleAddGene(panel.id)}
-                          disabled={addingGene || !(addGenePanel === panel.id && newGeneSymbol.trim())}
-                          className="px-3"
-                        >
-                          {addingGene && addGenePanel === panel.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Plus className="h-4 w-4" />
-                          )}
-                        </Button>
+                      {/* Add gene input with autocomplete */}
+                      <div className="relative pt-1">
+                        <div className="flex gap-2">
+                          <Input
+                            value={addGenePanel === panel.id ? newGeneSymbol : ''}
+                            onChange={(e) => {
+                              setAddGenePanel(panel.id)
+                              setNewGeneSymbol(e.target.value)
+                            }}
+                            onFocus={() => setAddGenePanel(panel.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                handleAddGene(panel.id)
+                              }
+                              if (e.key === 'Escape') {
+                                setGeneSearchResults([])
+                              }
+                            }}
+                            placeholder="Search gene symbol..."
+                            className="text-base flex-1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAddGene(panel.id)}
+                            disabled={addingGene || !(addGenePanel === panel.id && newGeneSymbol.trim())}
+                            className="px-3"
+                          >
+                            {addingGene && addGenePanel === panel.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        {addGenePanel === panel.id && geneSearchResults.length > 0 && (
+                          <div className="absolute z-10 left-0 right-12 mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {geneSearchResults.map((result) => (
+                              <button
+                                key={result.approved_symbol}
+                                onClick={() => {
+                                  setNewGeneSymbol(result.approved_symbol)
+                                  setGeneSearchResults([])
+                                  handleAddGene(panel.id)
+                                }}
+                                className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center justify-between"
+                              >
+                                <span className="text-base font-medium">{result.approved_symbol}</span>
+                                {result.is_alias && (
+                                  <span className="text-xs text-muted-foreground">alias: {result.symbol}</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {addGenePanel === panel.id && geneSearching && (
+                          <div className="absolute z-10 left-0 right-12 mt-1 bg-background border rounded-md shadow-lg px-3 py-2">
+                            <span className="text-xs text-muted-foreground flex items-center gap-2">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Searching HGNC...
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
