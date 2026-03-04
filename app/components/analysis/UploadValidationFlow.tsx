@@ -350,7 +350,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   // Shared Card Header - consistent across all views
   // ==========================================================================
   const CardHeader = ({ animated }: { animated: boolean }) => (
-    <div className="flex items-center justify-center gap-5 pb-2 mb-2 border-b border-border">
+    <div className="flex items-center justify-center gap-5 pb-2 mb-3 border-b border-border">
       <HelixLoader size="xs" animated={animated} />
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Upload VCF File</h1>

@@ -397,7 +397,7 @@ export function ProcessingFlow({ sessionId, filteringPreset = 'strict', onComple
             <CardContent className="pt-6">
               <div className="space-y-6">
                   {/* Header with animated loader */}
-                  <div className="flex items-center justify-center gap-5 pb-2 mb-2 border-b border-border">
+                  <div className="flex items-center justify-center gap-5 pb-2 mb-3 border-b border-border">
                     <HelixLoader size="xs" animated={true} />
                     <div>
                       <h1 className="text-3xl font-semibold tracking-tight">Analyzing Variants</h1>
