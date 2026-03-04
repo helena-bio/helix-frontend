@@ -940,6 +940,7 @@ export default function PlatformPage() {
             {activeSection === 'users' && <UsersContent />}
             {activeSection === 'activity' && <ActivityContent />}
             {activeSection === 'reference-data' && <ReferenceDatabasesContent />}
+              {activeSection === 'gene-panels' && <GenePanelsContent mode="platform" />}
             {activeSection === 'backup' && <BackupContent />}
           </div>
         </div>
