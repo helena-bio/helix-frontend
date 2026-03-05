@@ -431,91 +431,27 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
   return (
     <div className="h-full flex flex-col bg-background">
 
-      {/* === HEADER (fixed) === */}
-      <div className="flex-shrink-0 border-b">
-        <div className="px-4 pt-3 pb-2">
-          <Button variant="ghost" size="sm" onClick={onBack} className="-ml-2">
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            <span className="text-base">Back to Analysis</span>
+
+        {/* === COMPACT HEADER (single row) === */}
+        <div className="flex-shrink-0 border-b px-4 py-2.5 flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={onBack} className="h-7 w-7 shrink-0">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-        </div>
-
-        {/* Identity */}
-        <div className="px-4 pb-3">
-          <div className="flex items-end gap-2.5 flex-wrap">
-            <StarButton variantIdx={variantIdx} size="md" />
-            <h2 className="text-2xl font-bold tracking-tight">{variant.gene_symbol || 'Unknown'}</h2>
-            <span className="text-base text-muted-foreground truncate max-w-xs" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
-              {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;{truncateSequence(variant.reference_allele, 12)}&nbsp;&rarr;&nbsp;{truncateSequence(variant.alternate_allele, 12)}
-            </span>
-            {variant.variant_type && variant.variant_type !== 'SNV' && (
-              <Badge variant="outline" className="text-tiny font-medium">{variant.variant_type}</Badge>
-            )}
-          </div>
-          <div className="flex items-center justify-between mt-0.5">
-            {variant.hgvs_protein ? (
-              <p className="text-base text-muted-foreground truncate max-w-lg" title={variant.hgvs_protein}>
-                {truncateSequence(variant.hgvs_protein, 70)}
-              </p>
-            ) : <span />}
-            {variant.acmg_class && (
-              <Badge variant="outline" className={`text-md font-medium px-3 py-1 flex-shrink-0 ${getACMGColor(variant.acmg_class)}`}>
-                {variant.acmg_class}
-              </Badge>
+          <StarButton variantIdx={variantIdx} size="md" />
+          <h2 className="text-lg font-bold tracking-tight shrink-0">{variant.gene_symbol || 'Unknown'}</h2>
+          <span className="text-md text-muted-foreground truncate" title={`${variant.chromosome}:${variant.position} ${variant.reference_allele}>${variant.alternate_allele}`}>
+            {variant.chromosome}:{variant.position.toLocaleString()}&nbsp;{truncateSequence(variant.reference_allele, 12)}&nbsp;&rarr;&nbsp;{truncateSequence(variant.alternate_allele, 12)}
+          </span>
+          {variant.variant_type && variant.variant_type !== 'SNV' && (
+            <Badge variant="outline" className="text-tiny font-medium shrink-0">{variant.variant_type}</Badge>
           )}
-          </div>
+          <div className="flex-1" />
+          {variant.acmg_class && (
+            <Badge variant="outline" className={`text-md font-semibold px-3 py-1 shrink-0 ${getACMGColor(variant.acmg_class)}`}>
+              {variant.acmg_class}
+            </Badge>
+          )}
         </div>
-
-        {/* Stat strip */}
-        <div className="border-t grid grid-cols-5 divide-x">
-          <div className="px-3 py-2 flex flex-col">
-            <p className="text-base text-muted-foreground leading-none mb-1">ClinVar</p>
-            <div className="mt-auto">
-              {variant.clinical_significance ? (
-                <Badge variant="outline" className={`text-tiny font-medium ${getACMGColor(variant.clinical_significance)}`}>
-                  {formatClinVarShort(variant.clinical_significance)}
-                </Badge>
-              ) : <span className="text-base">-</span>}
-            </div>
-          </div>
-          <div className="px-3 py-2 flex flex-col">
-            <p className="text-base text-muted-foreground leading-none mb-1">gnomAD AF</p>
-            <div className="mt-auto">
-              {getRarityLabel(variant.global_af) ? (
-                <Badge variant="outline" className={`text-tiny font-medium ${getRarityLabel(variant.global_af)!.color}`}>
-                  {getRarityLabel(variant.global_af)!.label}
-                </Badge>
-              ) : <span className="text-base">{variant.global_af === 0 ? 'Absent' : '-'}</span>}
-            </div>
-          </div>
-          <div className="px-3 py-2 flex flex-col">
-            <p className="text-base text-muted-foreground leading-none mb-1">Impact</p>
-            <div className="mt-auto">
-              {variant.impact ? (
-                <Badge variant="outline" className={`text-tiny font-medium ${getImpactColor(variant.impact)}`}>
-                  {formatImpactDisplay(variant.impact)}
-                </Badge>
-              ) : <span className="text-base">-</span>}
-            </div>
-          </div>
-          <div className="px-3 py-2 flex flex-col">
-            <p className="text-base text-muted-foreground leading-none mb-1">Zygosity</p>
-            <div className="mt-auto">
-              {zygosity && zygosity.label !== '-' ? (
-                <Badge variant="outline" className={`text-tiny font-medium ${zygosity.color}`}>
-                  {zygosity.label}
-                </Badge>
-              ) : <span className="text-base">{variant.genotype || '-'}</span>}
-            </div>
-          </div>
-          <div className="px-3 py-2 flex flex-col">
-            <p className="text-base text-muted-foreground leading-none mb-1">Confidence</p>
-            <span className="text-base font-medium mt-auto">
-              {variant.confidence_score !== null ? variant.confidence_score?.toFixed(2) : '-'}
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* === SCROLLABLE CONTENT === */}
       <div className="flex-1 overflow-y-auto">
