@@ -37,6 +37,7 @@ interface User {
   organization_id: string;
   role: string;
   is_platform_admin: boolean;
+  preferred_language: string;
 }
 
 interface ImpersonationState {
@@ -67,7 +68,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 /**
  * Build User object from JWT payload.
  */
-function userFromPayload(payload: JWTPayload): User {
+function userFromPayload(payload: JWTPayload, preferredLanguage: string = 'en'): User {
   return {
     id: payload.sub,
     email: payload.email || '',
@@ -76,6 +77,7 @@ function userFromPayload(payload: JWTPayload): User {
     organization_id: payload.org_id,
     role: payload.role || '',
     is_platform_admin: payload.is_platform_admin || false,
+    preferred_language: preferredLanguage,
   };
 }
 
@@ -141,12 +143,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.refresh_token) {
         tokenUtils.saveRefreshToken(data.refresh_token);
       }
+      if (data.user?.preferred_language) {
+        tokenUtils.savePreferredLanguage(data.user.preferred_language);
+      }
 
       // Update auth state with potentially refreshed user data
       const payload = tokenUtils.decode();
       if (payload) {
         setAuthState({
-          user: userFromPayload(payload),
+          user: userFromPayload(payload, tokenUtils.getPreferredLanguage()),
           isAuthenticated: true,
           isLoading: false,
         });
@@ -187,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (tokenUtils.isValid()) {
         const payload = tokenUtils.decode();
         setAuthState({
-          user: payload ? userFromPayload(payload) : null,
+          user: payload ? userFromPayload(payload, tokenUtils.getPreferredLanguage()) : null,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -250,7 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (tokenUtils.isValid()) {
       const payload = tokenUtils.decode();
       setAuthState({
-        user: payload ? userFromPayload(payload) : null,
+        user: payload ? userFromPayload(payload, tokenUtils.getPreferredLanguage()) : null,
         isAuthenticated: true,
         isLoading: false,
       });

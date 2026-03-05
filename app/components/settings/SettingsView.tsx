@@ -148,6 +148,7 @@ export function SettingsView() {
       }
 
       updateUser({ preferred_language: preferredLanguage } as any)
+      tokenUtils.savePreferredLanguage(preferredLanguage)
       setPrefSuccess(true)
       setTimeout(() => setPrefSuccess(false), 3000)
     } catch (err) {

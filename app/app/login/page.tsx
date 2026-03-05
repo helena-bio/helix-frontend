@@ -79,6 +79,9 @@ export default function LoginPage() {
       // Save refresh token to cookie (7-day lifetime)
       tokenUtils.saveRefreshToken(data.refresh_token);
 
+      // Save preferred language to cookie
+      tokenUtils.savePreferredLanguage(data.user.preferred_language || 'en');
+
       // Update AuthContext with new token data
       refreshAuth();
 

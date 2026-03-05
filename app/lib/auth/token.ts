@@ -15,6 +15,7 @@ import Cookies from 'js-cookie';
 const TOKEN_KEY = 'helix_access_token';
 const TOKEN_EXPIRY_KEY = 'helix_token_expiry';
 const REFRESH_TOKEN_KEY = 'helix_refresh_token';
+const PREFERRED_LANGUAGE_KEY = 'helix_preferred_language';
 
 export interface JWTPayload {
   sub: string;
@@ -102,6 +103,7 @@ export const tokenUtils = {
     Cookies.remove(TOKEN_KEY, opts);
     Cookies.remove(TOKEN_EXPIRY_KEY, opts);
     Cookies.remove(REFRESH_TOKEN_KEY, opts);
+    Cookies.remove(PREFERRED_LANGUAGE_KEY, opts);
 
     // Clean up legacy localStorage token
     if (typeof window !== 'undefined') {
@@ -148,6 +150,20 @@ export const tokenUtils = {
       console.error('Failed to decode token:', error);
       return null;
     }
+  },
+
+  /**
+   * Save preferred language to cookie.
+   */
+  savePreferredLanguage(language: string): void {
+    Cookies.set(PREFERRED_LANGUAGE_KEY, language, getCookieOptions());
+  },
+
+  /**
+   * Get preferred language from cookie.
+   */
+  getPreferredLanguage(): string {
+    return Cookies.get(PREFERRED_LANGUAGE_KEY) || 'en';
   },
 
   /**
