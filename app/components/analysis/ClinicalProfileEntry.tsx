@@ -961,7 +961,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                                 onClick={() => {
                                   const autoIds = panelSuggestions.filter(s => s.auto_select).map(s => s.panel_id)
                                   if (autoIds.length > 0) {
-                                    setSelectedPanelIds(prev => {
+                                    setSelectedPanelIds((prev: string[]) => {
                                       const combined = new Set([...prev, ...autoIds])
                                       return Array.from(combined)
                                     })
