@@ -61,9 +61,9 @@ export function useGenerateScreeningReport() {
 
 /**
  * Fetch saved screening report content from disk.
- * Returns null if no report exists yet.
+ * Returns null if no report exists yet (404).
  */
-export async function fetchScreeningReport(sessionId: string): Promise<ScreeningReportContent | null> {
+async function fetchScreeningReport(sessionId: string): Promise<ScreeningReportContent | null> {
   const response = await fetch(`${AI_API_URL}/api/v1/analysis/screening-report/${sessionId}`)
 
   if (response.status === 404) {
@@ -79,34 +79,22 @@ export async function fetchScreeningReport(sessionId: string): Promise<Screening
 
 /**
  * Query hook for fetching existing screening report.
- * Enabled only when sessionId is provided.
+ * Polls every 3s while report does not exist yet.
+ * Stops polling automatically once report is found.
  */
 export function useScreeningReport(sessionId: string | null) {
-  const query = useQuery({
+  return useQuery({
     queryKey: ['screening-report', sessionId],
     queryFn: () => fetchScreeningReport(sessionId!),
     enabled: !!sessionId,
     staleTime: 5 * 60 * 1000,
     retry: false,
-  })
-
-  // Poll every 3s while report is not yet generated (null response from 404)
-  // Stops polling once report is found (data is not null)
-  const needsPolling = !!sessionId && query.isSuccess && query.data === null
-
-  useQuery({
-    queryKey: ['screening-report-poll', sessionId],
-    queryFn: async () => {
-      const result = await fetchScreeningReport(sessionId!)
-      if (result) {
-        query.refetch()
+    refetchOnWindowFocus: false,
+    refetchInterval: (query) => {
+      if (query.state.data !== null && query.state.data !== undefined) {
+        return false
       }
-      return result
+      return 3000
     },
-    enabled: needsPolling,
-    refetchInterval: needsPolling ? 3000 : false,
-    staleTime: 0,
   })
-
-  return query
 }
