@@ -10,6 +10,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useSession } from '@/contexts/SessionContext'
+import { useAuth } from '@/contexts/AuthContext'
 
 const AI_API_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
 
@@ -35,6 +36,7 @@ export interface ScreeningReportContent {
  */
 export function useGenerateScreeningReport() {
   const { currentSessionId } = useSession()
+  const { user } = useAuth()
 
   return useMutation({
     mutationFn: async (sessionId?: string): Promise<ScreeningReportMetadata> => {
@@ -46,7 +48,7 @@ export function useGenerateScreeningReport() {
       const response = await fetch(`${AI_API_URL}/api/v1/analysis/screening-report/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: id }),
+        body: JSON.stringify({ session_id: id, language: (user as any)?.preferred_language || 'en' }),
       })
 
       if (!response.ok) {
