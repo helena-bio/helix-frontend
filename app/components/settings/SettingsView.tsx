@@ -462,34 +462,34 @@ export function SettingsView() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-md font-medium text-muted-foreground mb-1">
-                        Report Language
-                      </label>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Clinical reports will be generated in the selected language.
-                      </p>
-                      <div className="inline-flex rounded-md border border-border overflow-hidden">
-                        <button
-                          onClick={() => setPreferredLanguage('en')}
-                          className={`px-5 py-2 text-base font-medium transition-colors ${
-                            preferredLanguage === 'en'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
-                          }`}
-                        >
-                          English
-                        </button>
-                        <div className="w-px bg-border" />
-                        <button
-                          onClick={() => setPreferredLanguage('bg')}
-                          className={`px-5 py-2 text-base font-medium transition-colors ${
-                            preferredLanguage === 'bg'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
-                          }`}
-                        >
-                          Bulgarian
-                        </button>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-md font-medium text-foreground">Report Language</p>
+                          <p className="text-sm text-muted-foreground">Clinical reports will be generated in the selected language.</p>
+                        </div>
+                        <div className="inline-flex rounded-md border border-border overflow-hidden shrink-0">
+                          <button
+                            onClick={() => setPreferredLanguage('en')}
+                            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                              preferredLanguage === 'en'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
+                            }`}
+                          >
+                            English
+                          </button>
+                          <div className="w-px bg-border" />
+                          <button
+                            onClick={() => setPreferredLanguage('bg')}
+                            className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                              preferredLanguage === 'bg'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
+                            }`}
+                          >
+                            Bulgarian
+                          </button>
+                        </div>
                       </div>
                     </div>
 
