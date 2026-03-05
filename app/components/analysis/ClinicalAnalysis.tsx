@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useState, useRef } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useQueryClient } from '@tanstack/react-query'
 import { useJourney } from '@/contexts/JourneyContext'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
@@ -109,6 +110,7 @@ export function ClinicalAnalysis({
   }, [currentStage])
 
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   const { nextStep } = useJourney()
   const {
     enableScreening,
@@ -263,7 +265,7 @@ export function ClinicalAnalysis({
             const reportRes = await fetch(`${AI_URL}/api/v1/analysis/screening-report/generate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ session_id: sessionId }),
+              body: JSON.stringify({ session_id: sessionId, language: user?.preferred_language || 'en' }),
             })
             if (reportRes.ok) console.log('Screening report generated')
             else console.warn('Screening report generation failed:', reportRes.status)
