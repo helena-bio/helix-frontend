@@ -22,7 +22,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
   ArrowRight, Loader2, User, Microscope, ScanSearch, FileText, Info,
-  Check,
+  Check, UserRound,
 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -694,7 +694,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     <div className="flex items-start justify-center min-h-[600px] px-8 pt-8 pb-8">
       <div className="w-full max-w-4xl">
           {/* Page title */}
-          <h1 className="text-3xl font-semibold tracking-tight mb-6">Clinical Profile</h1>
+          <div className="flex items-center gap-4 mb-5"><div className="p-2.5 rounded-lg bg-primary/10"><UserRound className="h-5 w-5 text-primary" /></div><h1 className="text-2xl font-semibold">Clinical Profile</h1></div>
 
           {/* Two-column layout */}
         <div className="flex gap-8">
