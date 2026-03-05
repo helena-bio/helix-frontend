@@ -22,7 +22,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Search, Plus, Sparkles, ChevronDown, ChevronUp, X, Dna,
   ArrowRight, Loader2, User, Microscope, ScanSearch, FileText, Info,
-  Check, UserRound,
+  Check,
 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -198,6 +198,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [panelSuggestions, setPanelSuggestions] = useState<PanelSuggestion[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const [lastSuggestedAgeGroup, setLastSuggestedAgeGroup] = useState<AgeGroup | null>(null)
+  const [panelSearchQuery, setPanelSearchQuery] = useState('')
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hasPrefilledRef = useRef(false)
@@ -319,8 +320,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     return () => clearTimeout(timer)
   }, [customGeneSymbol])
 
-
-
   // FE-B: Fetch panel suggestions when age changes (debounced)
   useEffect(() => {
     if (!enableScreening) return
@@ -344,14 +343,6 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         .then((suggestions) => {
           setPanelSuggestions(suggestions)
           setLastSuggestedAgeGroup(ageGroup)
-
-          // Auto-select panels marked as auto_select (only on first fetch or age group change)
-          const autoIds = suggestions
-            .filter(s => s.auto_select)
-            .map(s => s.panel_id)
-          if (autoIds.length > 0) {
-            setSelectedPanelIds([...new Set([...selectedPanelIds, ...autoIds])])
-          }
         })
         .catch((err) => {
           console.error('Failed to fetch panel suggestions:', err)
@@ -435,6 +426,15 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         : [...selectedPanelIds, panelId]
     )
   }, [selectedPanelIds, setSelectedPanelIds])
+
+  const handleApplyRecommendations = useCallback(() => {
+    const autoIds = panelSuggestions.filter(s => s.auto_select).map(s => s.panel_id)
+    if (autoIds.length > 0) {
+      const combined = Array.from(new Set([...selectedPanelIds, ...autoIds]))
+      setSelectedPanelIds(combined)
+      toast.success('Applied ' + autoIds.length + ' recommended panel' + (autoIds.length > 1 ? 's' : ''))
+    }
+  }, [panelSuggestions, selectedPanelIds, setSelectedPanelIds])
 
   const handleAddCustomGene = useCallback(() => {
     const symbol = customGeneSymbol.trim().toUpperCase()
@@ -694,7 +694,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     <div className="flex items-start justify-center min-h-[600px] px-8 pt-8 pb-8">
       <div className="w-full max-w-4xl">
           {/* Page title */}
-          <div className="flex items-center gap-4 mb-5"><div className="p-2.5 rounded-lg bg-primary/10"><UserRound className="h-5 w-5 text-primary" /></div><h1 className="text-2xl font-semibold">Clinical Profile</h1></div>
+          <h1 className="text-3xl font-semibold tracking-tight mb-6">Clinical Profile</h1>
 
           {/* Two-column layout */}
         <div className="flex gap-8">
@@ -945,73 +945,36 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         Select gene panels to boost matching variants during screening. Genes in selected panels receive higher priority scores.
                       </p>
 
+                      {/* Search + Recommend toolbar */}
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            value={panelSearchQuery}
+                            onChange={(e) => setPanelSearchQuery(e.target.value)}
+                            placeholder="Filter panels..."
+                            className="pl-8 text-sm h-8"
+                          />
+                        </div>
+                        {panelSuggestions.length > 0 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-sm shrink-0"
+                            disabled={suggestionsLoading}
+                            onClick={handleApplyRecommendations}
+                          >
+                            {suggestionsLoading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <>Recommend</>
+                            )}
+                          </Button>
+                        )}
+                      </div>
 
-                        {/* FE-B: Age-Aware Panel Suggestions */}
-                        {suggestionsLoading && (
-                          <div className="flex items-center gap-2 py-3">
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            <span className="text-md text-muted-foreground">Loading recommendations...</span>
-                          </div>
-                        )}
-                        {!suggestionsLoading && panelSuggestions.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-md font-medium">Recommended for {lastSuggestedAgeGroup} patients</p>
-                              <button
-                                onClick={() => {
-                                  const autoIds = panelSuggestions.filter(s => s.auto_select).map(s => s.panel_id)
-                                  if (autoIds.length > 0) {
-                                    const combined = Array.from(new Set([...selectedPanelIds, ...autoIds]))
-                                    setSelectedPanelIds(combined)
-                                  }
-                                }}
-                                className="text-sm text-primary hover:underline font-medium"
-                              >
-                                Apply Recommendations
-                              </button>
-                            </div>
-                            {panelSuggestions.map((suggestion) => {
-                              const relevanceColor = suggestion.relevance === 'high'
-                                ? 'bg-green-100 text-green-900 border-green-300'
-                                : suggestion.relevance === 'medium'
-                                  ? 'bg-yellow-100 text-yellow-900 border-yellow-300'
-                                  : 'bg-gray-100 text-gray-700 border-gray-300'
-
-                              return (
-                                <div
-                                  key={suggestion.panel_id}
-                                  className="rounded-lg border p-3 transition-colors hover:bg-accent/50"
-                                >
-                                  <div className="flex items-start gap-3">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedPanelIds.includes(suggestion.panel_id)}
-                                      onChange={() => handleTogglePanel(suggestion.panel_id)}
-                                      className="w-4 h-4 mt-0.5 cursor-pointer"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-base font-semibold">{suggestion.name}</span>
-                                        <Badge variant="secondary" className="text-xs">{suggestion.gene_count} genes</Badge>
-                                        <Badge variant="outline" className={`text-xs ${relevanceColor}`}>
-                                          {suggestion.relevance}
-                                        </Badge>
-                                      </div>
-                                      <p className="text-md text-muted-foreground mt-1">{suggestion.reason}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                        {!suggestionsLoading && panelSuggestions.length === 0 && (ageYears || ageDays) && enableScreening && (
-                          <p className="text-md text-muted-foreground py-2">No panel recommendations for this age group.</p>
-                        )}
-                        {!ageYears && !ageDays && (
-                          <p className="text-md text-muted-foreground py-2">Enter patient age to see recommended panels.</p>
-                        )}
-                      {/* Available Panels */}
+                      {/* Panel list */}
                       {panelsLoading ? (
                         <div className="flex items-center gap-2 py-3">
                           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -1019,9 +982,19 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         </div>
                       ) : availablePanels.length > 0 ? (
                         <div className="space-y-2">
-                          {availablePanels.map((panel) => {
+                          {availablePanels
+                            .filter(p => !panelSearchQuery || p.name.toLowerCase().includes(panelSearchQuery.toLowerCase()))
+                            .map((panel) => {
                             const isExpanded = expandedPanelIds.has(panel.id)
                             const cachedGenes = panelGenesCache[panel.id]
+                            const suggestion = panelSuggestions.find(s => s.panel_id === panel.id)
+                            const relevanceColor = suggestion
+                              ? suggestion.relevance === 'high'
+                                ? 'bg-green-100 text-green-900 border-green-300'
+                                : suggestion.relevance === 'medium'
+                                  ? 'bg-yellow-100 text-yellow-900 border-yellow-300'
+                                  : 'bg-gray-100 text-gray-700 border-gray-300'
+                              : null
 
                             return (
                               <div
@@ -1040,7 +1013,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                                     className="flex-1 min-w-0 cursor-pointer"
                                     onClick={() => handleExpandPanel(panel.id)}
                                   >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                       <span className="text-base font-medium">{panel.name}</span>
                                       {panel.is_builtin && (
                                         <Badge variant="outline" className="text-xs px-1.5 py-0">Built-in</Badge>
@@ -1048,9 +1021,17 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                                       {panel.gene_count !== undefined && (
                                         <span className="text-xs text-muted-foreground">{panel.gene_count} genes</span>
                                       )}
+                                      {relevanceColor && (
+                                        <Badge variant="outline" className={`text-xs ${relevanceColor}`}>
+                                          {suggestion!.relevance}
+                                        </Badge>
+                                      )}
                                     </div>
                                     {panel.description && (
                                       <p className="text-md text-muted-foreground mt-0.5">{panel.description}</p>
+                                    )}
+                                    {suggestion?.reason && (
+                                      <p className="text-xs text-muted-foreground mt-0.5 italic">{suggestion.reason}</p>
                                     )}
                                   </div>
                                   <button
