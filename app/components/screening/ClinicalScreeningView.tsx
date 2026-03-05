@@ -18,6 +18,7 @@ import {
   Info,
   AlertCircle,
   TrendingUp,
+  Pill,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -63,6 +64,23 @@ const getActionabilityColor = (actionability: string | null | undefined) => {
 const formatActionability = (actionability: string | null | undefined): string => {
   if (!actionability) return 'Unknown'
   return actionability.charAt(0).toUpperCase() + actionability.slice(1)
+}
+
+// ============================================================================
+// CLINGEN STATUS BADGE HELPER
+// ============================================================================
+
+const getClingenBadgeColor = (status: string | null | undefined): string => {
+  if (!status) return 'bg-gray-100 text-gray-700 border-gray-300'
+  switch (status.toLowerCase()) {
+    case 'definitive': return 'bg-green-100 text-green-900 border-green-300'
+    case 'strong': return 'bg-green-50 text-green-800 border-green-200'
+    case 'moderate': return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+    case 'limited': return 'bg-orange-100 text-orange-900 border-orange-300'
+    case 'disputed': return 'bg-red-100 text-red-900 border-red-300'
+    case 'refuted': return 'bg-red-200 text-red-900 border-red-400'
+    default: return 'bg-gray-100 text-gray-700 border-gray-300'
+  }
 }
 
 /** Map ScreeningVariantResult to SharedVariantData */
@@ -187,6 +205,28 @@ function VariantCard({ variant, onViewDetails }: VariantCardProps) {
 }
 
 // ============================================================================
+// THERAPY NOTE BANNER (reusable)
+// ============================================================================
+
+function TherapyNoteBanner({ note }: { note: string }) {
+  const isHighConfidence = /exceptional|first-line/i.test(note)
+  const bgClass = isHighConfidence
+    ? 'bg-green-50 border-l-4 border-green-400'
+    : 'bg-blue-50 border-l-4 border-blue-400'
+  const iconClass = isHighConfidence ? 'text-green-600' : 'text-blue-600'
+
+  return (
+    <div className={`flex items-start gap-2.5 px-4 py-2.5 rounded-r ${bgClass}`}>
+      <Pill className={`h-4 w-4 mt-0.5 flex-shrink-0 ${iconClass}`} />
+      <div>
+        <p className="text-md text-muted-foreground">Therapy</p>
+        <p className="text-base font-medium">{note}</p>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
 // GENE SECTION (aligned with PhenotypeMatchingView GeneSection)
 // ============================================================================
 
@@ -249,10 +289,19 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, tierFilter }
         onClick={handleExpand}
       >
         <div className="flex items-center justify-between">
-          {/* Left: Rank + Gene + Tier + Variants + ACMG */}
+          {/* Left: Rank + Gene + Panel Badges + Tier + Variants + ACMG */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-muted-foreground w-8">#{rank}</span>
             <span className="text-base font-medium w-16">{gene.gene_symbol}</span>
+            {/* Panel metadata badges - conditional */}
+            {gene.mody_type && (
+              <Badge variant="outline" className="text-xs">{gene.mody_type}</Badge>
+            )}
+            {gene.clingen_status && (
+              <Badge variant="outline" className={`text-xs ${getClingenBadgeColor(gene.clingen_status)}`}>
+                {gene.clingen_status}
+              </Badge>
+            )}
             <Badge variant="outline" className={`text-sm w-10 justify-center ${getTierColor(gene.best_tier)}`}>
               {formatTierDisplay(gene.best_tier)}
             </Badge>
@@ -280,6 +329,19 @@ function GeneSection({ gene, rank, sessionId, onViewVariantDetails, tierFilter }
 
       {isExpanded && (
         <CardContent className="space-y-3">
+          {/* Therapy Note Banner - highest clinical priority */}
+          {gene.therapy_note && (
+            <TherapyNoteBanner note={gene.therapy_note} />
+          )}
+
+          {/* Panel Disease Name - shown as info row when present */}
+          {gene.disease_name_panel && (
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-md text-muted-foreground">Panel Disease</span>
+              <span className="text-base font-medium">{gene.disease_name_panel}</span>
+            </div>
+          )}
+
           {/* Loading state */}
           {isLoadingVariants && (
             <div className="flex items-center justify-center py-8">
@@ -388,6 +450,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const [isContextOpen, setIsContextOpen] = useState(false)
 
   // Intersection Observer for lazy loading
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -458,6 +521,9 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
     )
   }
 
+  // Count context items for badge
+  const contextItemCount = [ageGroup, screeningMode].filter(Boolean).length + hpoTerms.length
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -522,62 +588,73 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
         </div>
       )}
 
-      {/* Patient Clinical Context */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            Patient Phenotypes
-          </CardTitle>
+      {/* Patient Clinical Context - Collapsible (aligned with PhenotypeMatchingView) */}
+      <Card className="gap-0">
+        <CardHeader
+          className="cursor-pointer hover:bg-accent/50 transition-colors py-3"
+          onClick={() => setIsContextOpen(!isContextOpen)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-base font-medium">Screening Context</span>
+              <Badge variant="secondary" className="text-sm">
+                {contextItemCount} item{contextItemCount !== 1 ? 's' : ''}
+              </Badge>
+            </div>
+            {isContextOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Demographics inline */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Age Group</p>
-              <p className="text-base font-semibold">{ageGroup || 'Unknown'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Screening Mode</p>
-              <p className="text-base font-semibold">{screeningMode?.replace(/_/g, ' ') || 'Unknown'}</p>
-            </div>
-            {hasResults && (
+        {isContextOpen && (
+          <CardContent className="space-y-4">
+            {/* Demographics inline */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Genes with Variants</p>
-                <p className="text-base font-semibold">{geneResults.length.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Age Group</p>
+                <p className="text-base font-semibold">{ageGroup || 'Unknown'}</p>
               </div>
-            )}
-          </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Screening Mode</p>
+                <p className="text-base font-semibold">{screeningMode?.replace(/_/g, ' ') || 'Unknown'}</p>
+              </div>
+              {hasResults && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Genes with Variants</p>
+                  <p className="text-base font-semibold">{geneResults.length.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
 
-          {/* HPO Terms */}
-          <div className="space-y-2">
-            {hpoTerms.length === 0 ? (
-              <p className="text-base text-muted-foreground py-4 text-center">
-                No phenotypes defined for this case.
+            {/* HPO Terms */}
+            <div className="space-y-2">
+              {hpoTerms.length === 0 ? (
+                <p className="text-base text-muted-foreground py-4 text-center">
+                  No phenotypes defined for this case.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {hpoTerms.map((term) => (
+                    <Badge
+                      key={term.hpo_id}
+                      variant="secondary"
+                      className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
+                    >
+                      {term.name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                Screening prioritizes variants based on age-specific disease onset, phenotype relevance,
+                ethnicity-specific prevalence, and clinical actionability. Click a gene to see individual variants.
               </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {hpoTerms.map((term) => (
-                  <Badge
-                    key={term.hpo_id}
-                    variant="secondary"
-                    className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
-                  >
-                    {term.name}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground">
-              Screening prioritizes variants based on age-specific disease onset, phenotype relevance,
-              ethnicity-specific prevalence, and clinical actionability. Click a gene to see individual variants.
-            </p>
-          </div>
-        </CardContent>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Loading State */}

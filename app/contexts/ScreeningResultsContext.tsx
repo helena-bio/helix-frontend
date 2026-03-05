@@ -47,6 +47,11 @@ export interface ScreeningGeneResult {
   tier_2_count: number
   tier_3_count: number
   tier_4_count: number
+  // Panel metadata (Task A - nullable, gene-level)
+  therapy_note: string | null
+  disease_name_panel: string | null
+  mody_type: string | null
+  clingen_status: string | null
   // Lazy-loaded on expand
   variants?: ScreeningVariantResult[]
 }
@@ -82,6 +87,11 @@ export interface ScreeningVariantResult {
   age_group: string
   screening_mode: string
   justification: string
+  // Panel metadata (Task A - nullable, per-variant)
+  therapy_note: string | null
+  disease_name_panel: string | null
+  mody_type: string | null
+  clingen_status: string | null
   // Variant annotation fields (enriched from DuckDB JOIN)
   acmg_criteria?: string
   clinvar_significance?: string
