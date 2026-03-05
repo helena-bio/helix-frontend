@@ -4,7 +4,7 @@
  * Platform Admin Page
  *
  * Full platform visibility and control panel.
- * Layout matches Settings: centered max-w-4xl, left text nav, right content.
+ * Layout matches Settings: centered max-w-3xl, left text nav, right content.
  * Only accessible by users with is_platform_admin flag.
  *
  * Sections:
@@ -904,7 +904,7 @@ export default function PlatformPage() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="w-full max-w-4xl mx-auto px-6 py-5">
+      <div className="w-full max-w-3xl mx-auto px-6 py-5">
         <div className="flex items-center gap-4 mb-5"><div className="p-2.5 rounded-lg bg-primary/10"><Cog className="h-5 w-5 text-primary" /></div><h2 className="text-2xl font-semibold text-foreground">Platform</h2></div>
 
         <div className="flex gap-8">

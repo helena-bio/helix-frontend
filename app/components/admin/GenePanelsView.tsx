@@ -667,7 +667,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
 export function GenePanelsView() {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="w-full max-w-4xl mx-auto px-6 py-8">
+      <div className="w-full max-w-3xl mx-auto px-6 py-8">
         <GenePanelsContent />
       </div>
     </div>

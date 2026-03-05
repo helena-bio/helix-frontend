@@ -59,7 +59,7 @@ export function RightPanel({ children, centered }: RightPanelProps) {
   // Default: Show module content (ModuleRouter)
   return (
     <div className="h-full min-w-0 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] bg-background">
-        {centered ? <div className="max-w-4xl mx-auto">{children}</div> : children}
+        {centered ? <div className="max-w-3xl mx-auto">{children}</div> : children}
     </div>
   )
 }
