@@ -692,7 +692,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   return (
     <div className="flex items-start justify-center min-h-[600px] px-8 pt-8 pb-8">
-      <div className="w-full max-w-3xl">
+      <div className="w-full max-w-4xl">
           {/* Page title */}
           <h1 className="text-3xl font-semibold tracking-tight mb-6">Clinical Profile</h1>
 

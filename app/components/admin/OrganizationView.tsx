@@ -199,7 +199,7 @@ export function OrganizationContent() {
 export function OrganizationView() {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="w-full max-w-3xl mx-auto px-6 py-8">
+      <div className="w-full max-w-4xl mx-auto px-6 py-8">
         <OrganizationContent />
       </div>
     </div>

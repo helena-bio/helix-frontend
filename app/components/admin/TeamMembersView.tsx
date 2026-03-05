@@ -685,7 +685,7 @@ export function TeamMembersContent() {
 export function TeamMembersView() {
   return (
     <div className="flex flex-col min-h-full p-8">
-      <div className="w-full max-w-3xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto">
         <TeamMembersContent />
       </div>
     </div>
