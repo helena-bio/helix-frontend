@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@helix/shared/components/ui/dropdown-menu'
 import { useJourney, JOURNEY_STEPS, type StepStatus } from '@/contexts/JourneyContext'
+import { useSessionDetail } from '@/hooks/queries/use-session-detail'
 import { useSession } from '@/contexts/SessionContext'
 import { useClinicalInterpretation } from '@/contexts/ClinicalInterpretationContext'
 import { usePhenotypeResults } from '@/contexts/PhenotypeResultsContext'
@@ -68,6 +69,7 @@ export function Header() {
   const pathname = usePathname()
   const { getStepStatus, getStepLabel, canNavigateTo, goToStep, currentStep } = useJourney()
   const { currentSessionId, isChatVisible, showChat, hideChat } = useSession()
+  const { data: sessionDetail } = useSessionDetail(currentSessionId)
   const { content: interpretation, hasInterpretation, status: interpretationStatus } = useClinicalInterpretation()
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { user, logout } = useAuth()
@@ -212,7 +214,13 @@ export function Header() {
             })}
           </div>
         ) : (
-          <div className="flex-1" />
+          <div className="flex-1 flex items-center justify-center">
+            {currentSessionId && sessionDetail && (
+              <span className="text-md text-muted-foreground truncate max-w-xs">
+                {sessionDetail.case_label || sessionDetail.original_filename?.replace(/\.vcf(\.gz)?$/i, '') || currentSessionId.slice(0, 8)}
+              </span>
+            )}
+          </div>
         )}
 
         {/* Right side buttons */}
