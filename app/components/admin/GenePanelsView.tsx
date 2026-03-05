@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Loader2, Plus, ChevronDown, Trash2, X, Dna, Search,
+  Loader2, Plus, ChevronDown, Trash2, X, ListTree, Search,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -431,7 +431,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
                       onClick={() => handleToggleExpand(panel.id)}
                     >
                       <div className="flex items-center gap-2">
-                        <Dna className="h-4 w-4 text-muted-foreground" />
+                        <ListTree className="h-4 w-4 text-muted-foreground" />
                         <span className="text-base font-medium text-foreground">{panel.name}</span>
                         <Badge variant="secondary" className="text-xs px-1.5 py-0">
                           {panel.gene_count || 0} genes
@@ -591,7 +591,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <Dna className="h-4 w-4 text-muted-foreground" />
+                        <ListTree className="h-4 w-4 text-muted-foreground" />
                         <span className="text-base font-medium text-foreground">{panel.name}</span>
                         <Badge variant="outline" className="text-xs px-1.5 py-0">Built-in</Badge>
                         <Badge variant="secondary" className="text-xs px-1.5 py-0">
@@ -654,7 +654,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
       {panels.length === 0 && (
         <Card>
           <CardContent className="py-8 text-center">
-            <Dna className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+            <ListTree className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-base text-muted-foreground">No gene panels available.</p>
             <p className="text-md text-muted-foreground mt-1">Create your first panel to get started.</p>
           </CardContent>
