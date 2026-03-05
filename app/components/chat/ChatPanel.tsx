@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react'
-import { Send, Square, Sparkles, Database, BookOpen, ExternalLink } from 'lucide-react'
+import { Send, Square, Sparkles, Database, BookOpen, ExternalLink, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -210,6 +210,7 @@ export function ChatPanel() {
     currentSessionId,
     setSelectedPublicationId,
     openDetails,
+    hideChat,
   } = useSession()
 
   const { user } = useAuth()
@@ -478,7 +479,8 @@ export function ChatPanel() {
   const chatPrompt = useMemo(() => getChatPrompt(user?.full_name), [user?.full_name])
 
   return (
-    <div className="h-full flex flex-col bg-background border-r border-border">
+    <div className="h-full flex flex-col bg-background border-r border-border relative">
+        <button onClick={hideChat} className="absolute top-3 right-3 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors z-10"><X className="h-4 w-4" /></button>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4" ref={messagesContainerRef}>
         <div className="space-y-6 max-w-4xl min-h-full flex flex-col">
