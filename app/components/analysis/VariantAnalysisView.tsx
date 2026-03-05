@@ -529,7 +529,7 @@ export function VariantAnalysisView({ sessionId }: VariantAnalysisViewProps) {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-center gap-4">
         <div className="p-2.5 rounded-lg bg-primary/10">
           <Microscope className="h-5 w-5 text-primary" />
         </div>
