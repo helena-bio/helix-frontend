@@ -117,6 +117,18 @@ export function ScoreBar({ value, colorClass = 'bg-foreground' }: { value: numbe
 }
 
 // =============================================================================
+// CLINVAR DISPLAY HELPERS
+// =============================================================================
+
+/** Format ClinVar significance to readable full text */
+function formatClinVarFullText(sig: string): string {
+  return sig
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+
+// =============================================================================
 // SHARED VARIANT CARD
 // =============================================================================
 
@@ -200,9 +212,9 @@ export function SharedVariantCard({ variant, onViewDetails, collapsedRight, expa
               <div className="flex justify-between items-center py-1.5 border-b border-border/50">
                 <span className="text-md text-muted-foreground">ClinVar</span>
                 {variant.clinvarSignificance ? (
-                  <Badge variant="outline" className={`text-tiny font-semibold ${getACMGColor(variant.clinvarSignificance)}`}>
-                    {formatClinVarDisplay(variant.clinvarSignificance)}
-                  </Badge>
+                  <span className={`text-md text-foreground`}>
+                    {formatClinVarFullText(variant.clinvarSignificance)}
+                  </span>
                 ) : (
                   <span className="text-md text-muted-foreground">---</span>
                 )}
