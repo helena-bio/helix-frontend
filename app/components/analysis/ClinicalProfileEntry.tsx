@@ -362,7 +362,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     }, 400)
 
     return () => clearTimeout(timer)
-  }, [ageYears, ageDays, enableScreening, lastSuggestedAgeGroup, setSelectedPanelIds])
+  }, [ageYears, ageDays, enableScreening, lastSuggestedAgeGroup])
 
   // =========================================================================
   // COMPUTED
@@ -955,7 +955,23 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         )}
                         {!suggestionsLoading && panelSuggestions.length > 0 && (
                           <div className="space-y-2">
-                            <p className="text-md font-medium">Recommended for {lastSuggestedAgeGroup} patients</p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-md font-medium">Recommended for {lastSuggestedAgeGroup} patients</p>
+                              <button
+                                onClick={() => {
+                                  const autoIds = panelSuggestions.filter(s => s.auto_select).map(s => s.panel_id)
+                                  if (autoIds.length > 0) {
+                                    setSelectedPanelIds(prev => {
+                                      const combined = new Set([...prev, ...autoIds])
+                                      return Array.from(combined)
+                                    })
+                                  }
+                                }}
+                                className="text-sm text-primary hover:underline font-medium"
+                              >
+                                Apply Recommendations
+                              </button>
+                            </div>
                             {panelSuggestions.map((suggestion) => {
                               const relevanceColor = suggestion.relevance === 'high'
                                 ? 'bg-green-100 text-green-900 border-green-300'
