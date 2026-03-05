@@ -460,9 +460,13 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
 
   // Screening Report
   const generateReport = useGenerateScreeningReport()
-  const { data: existingReport, refetch: refetchReport } = useScreeningReport(sessionId)
-  const [showFullReport, setShowFullReport] = useState(false)
+  const { data: existingReport } = useScreeningReport(sessionId)
   const { setSelectedModule } = useSession()
+
+  const handleDownloadReport = useCallback(async (format: 'md' | 'docx' | 'pdf') => {
+    if (!existingReport) return
+    await downloadClinicalReport(existingReport.content, format, `screening-report-${sessionId.slice(0, 8)}`)
+  }, [existingReport, sessionId])
 
   // Intersection Observer for lazy loading
   const observerRef = useRef<IntersectionObserver | null>(null)
