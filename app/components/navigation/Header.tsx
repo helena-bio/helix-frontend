@@ -221,7 +221,7 @@ export function Header() {
         <div className="flex items-center gap-3 shrink-0 mr-6">
             {currentSessionId && sessionDetail && (
               <>
-                <span className="text-md text-muted-foreground truncate max-w-[200px]">
+                <span className="text-md text-muted-foreground font-medium truncate max-w-[200px]">
                   {sessionDetail.case_label || sessionDetail.original_filename?.replace(/\.vcf(\.gz)?$/i, '') || currentSessionId.slice(0, 8)}
                 </span>
                 <div className="h-4 w-px bg-border" />
@@ -245,7 +245,7 @@ export function Header() {
             href="https://helena.bio/docs"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-md text-muted-foreground hover:text-foreground transition-colors"
+            className="text-md text-muted-foreground font-medium hover:text-foreground transition-colors"
           >
             Docs
           </a>
