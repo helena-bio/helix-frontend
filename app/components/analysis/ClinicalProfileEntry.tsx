@@ -429,12 +429,9 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
   const handleApplyRecommendations = useCallback(() => {
     const autoIds = panelSuggestions.filter(s => s.auto_select).map(s => s.panel_id)
-    if (autoIds.length > 0) {
-      const combined = Array.from(new Set([...selectedPanelIds, ...autoIds]))
-      setSelectedPanelIds(combined)
-      toast.success('Applied ' + autoIds.length + ' recommended panel' + (autoIds.length > 1 ? 's' : ''))
-    }
-  }, [panelSuggestions, selectedPanelIds, setSelectedPanelIds])
+    setSelectedPanelIds(autoIds)
+    toast.success('Applied ' + autoIds.length + ' recommended panel' + (autoIds.length > 1 ? 's' : ''))
+  }, [panelSuggestions, setSelectedPanelIds])
 
   const handleAddCustomGene = useCallback(() => {
     const symbol = customGeneSymbol.trim().toUpperCase()
@@ -984,6 +981,12 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         <div className="space-y-2">
                           {availablePanels
                             .filter(p => !panelSearchQuery || p.name.toLowerCase().includes(panelSearchQuery.toLowerCase()))
+                            .sort((a, b) => {
+                              const aSelected = selectedPanelIds.includes(a.id) ? 0 : 1
+                              const bSelected = selectedPanelIds.includes(b.id) ? 0 : 1
+                              if (aSelected !== bSelected) return aSelected - bSelected
+                              return a.name.localeCompare(b.name)
+                            })
                             .map((panel) => {
                             const isExpanded = expandedPanelIds.has(panel.id)
                             const cachedGenes = panelGenesCache[panel.id]
@@ -1057,7 +1060,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                                             <TooltipTrigger asChild>
                                               <Badge
                                                 variant="outline"
-                                                className="text-sm px-2 py-0.5 cursor-help"
+                                                className="text-tiny px-2 py-0.5 cursor-help"
                                               >
                                                 {gene.gene_symbol}
                                               </Badge>
