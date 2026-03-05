@@ -163,6 +163,22 @@ function formatConsequence(consequence: string | null): string {
     .replace(/\b\w/g, c => c.toUpperCase())
 }
 
+/** Format HGVS cDNA: strip transcript prefix, truncate long insertions */
+function formatHgvsCdna(raw: string | null): string {
+  if (!raw) return '-'
+  const stripped = raw.replace(/^ENST[^:]+:/, '')
+  if (stripped.length > 40) return stripped.slice(0, 37) + '...'
+  return stripped
+}
+
+/** Format HGVS protein: strip transcript prefix, truncate long values */
+function formatHgvsProtein(raw: string | null): string | null {
+  if (!raw) return null
+  const stripped = raw.replace(/^ENSP[^:]+:/, '')
+  if (stripped.length > 20) return stripped.slice(0, 17) + '...'
+  return stripped
+}
+
 const statusConfig: Record<string, { color: string; icon: typeof CheckCircle2 }> = {
   completed: { color: 'bg-green-100 text-green-900 border-green-300', icon: CheckCircle2 },
   processing: { color: 'bg-orange-100 text-orange-900 border-orange-300', icon: Loader2 },
@@ -413,26 +429,24 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate, onNavigateToVar
                   </div>
                   {findings && findings.length > 0 && (
                     <div className="border rounded-md overflow-hidden">
-                      <table className="w-full text-base">
+                      <table className="w-full text-base table-fixed">
                         <thead>
                           <tr className="border-b bg-muted/30">
-                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Gene</th>
+                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2 w-[120px]">Gene</th>
                             <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Variant</th>
-                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Class</th>
-                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2">Consequence</th>
+                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2 w-[80px]">Class</th>
+                            <th className="text-left text-md text-muted-foreground font-medium px-3 py-2 w-[160px]">Consequence</th>
                           </tr>
                         </thead>
                         <tbody>
                           {findings.map((f, i) => (
                             <tr key={i} className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-accent/50 transition-colors" onClick={(e) => { e.stopPropagation(); onNavigateToVariant(session, f.variant_idx) }}>
                               <td className="px-3 py-1.5 font-medium">{f.gene_symbol || '-'}</td>
-                              <td className="px-3 py-1.5 text-md">
-                                {f.hgvs_cdna ? f.hgvs_cdna.replace(/^ENST[^:]+:/, '') : '-'}
-                                {f.hgvs_protein && (
-                                  <span className="text-muted-foreground ml-1">
-                                    {(() => { const p = f.hgvs_protein.replace(/^ENSP[^:]+:/, ""); return `(${p.length > 20 ? p.slice(0, 20) + "..." : p})`; })()}
-                                  </span>
-                                )}
+                              <td className="px-3 py-1.5 text-md truncate">
+                                <span className="truncate block">
+                                  {formatHgvsCdna(f.hgvs_cdna)}
+                                  {(() => { const p = formatHgvsProtein(f.hgvs_protein); return p ? <span className="text-muted-foreground ml-1">({p})</span> : null; })()}
+                                </span>
                               </td>
                               <td className="px-3 py-1.5">
                                 <Badge
@@ -442,7 +456,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate, onNavigateToVar
                                   {formatACMGDisplay(f.acmg_class)}
                                 </Badge>
                               </td>
-                              <td className="px-3 py-1.5 text-md text-muted-foreground">
+                              <td className="px-3 py-1.5 text-md text-muted-foreground truncate">
                                 {formatConsequence(f.consequence)}
                               </td>
                             </tr>
@@ -609,7 +623,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate, onNavigateToVar
                       variant="outline"
                       size="sm"
                       className="text-sm"
-                      
+
                       onClick={handleReprocess}
                     >
                       <RefreshCw className="h-3 w-3 mr-1" />
@@ -681,7 +695,7 @@ function CaseCard({ session, showOwner, memoryCache, onNavigate, onNavigateToVar
                       variant="outline"
                       size="sm"
                       className="text-sm"
-                      
+
                       onClick={handleReprocess}
                     >
                       <RefreshCw className="h-3 w-3 mr-1" />
