@@ -26,7 +26,6 @@ import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import type { ScreeningGeneResult, ScreeningVariantResult } from '@/contexts/ScreeningResultsContext'
-import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
 import {
   getTierColor,
@@ -445,7 +444,6 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
     ageGroup,
     screeningMode,
   } = useScreeningResults()
-  const { hpoTerms } = useClinicalProfileContext()
   const [geneFilter, setGeneFilter] = useState('')
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
@@ -522,7 +520,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
   }
 
   // Count context items for badge
-  const contextItemCount = [ageGroup, screeningMode].filter(Boolean).length + hpoTerms.length
+  const contextItemCount = [ageGroup, screeningMode].filter(Boolean).length
 
   return (
     <div className="p-6 space-y-6">
@@ -625,26 +623,6 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
               )}
             </div>
 
-            {/* HPO Terms */}
-            <div className="space-y-2">
-              {hpoTerms.length === 0 ? (
-                <p className="text-base text-muted-foreground py-4 text-center">
-                  No phenotypes defined for this case.
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {hpoTerms.map((term) => (
-                    <Badge
-                      key={term.hpo_id}
-                      variant="secondary"
-                      className="px-3 py-1.5 bg-primary/10 text-primary text-sm"
-                    >
-                      {term.name}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
 
             <div className="flex gap-3 pt-2">
               <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
