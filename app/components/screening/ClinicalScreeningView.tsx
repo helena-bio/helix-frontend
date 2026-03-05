@@ -21,7 +21,10 @@ import {
   Pill,
   FileText,
   ExternalLink,
+  Download,
 } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@helix/shared/components/ui/dropdown-menu'
+import { downloadClinicalReport } from '@/lib/utils/download-report'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -618,7 +621,18 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
                 {contextItemCount} item{contextItemCount !== 1 ? 's' : ''}
               </Badge>
             </div>
-            {isContextOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              {existingReport && !isContextOpen && (
+                <button
+                  onClick={() => setSelectedModule('screening-report')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  View Full Report
+                </button>
+              )}
+              {isContextOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
           </div>
         </CardHeader>
         {isContextOpen && (
@@ -652,78 +666,52 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
 
             {/* Screening Report Section */}
             <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <span className="text-base font-medium">Screening Findings Report</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!existingReport && !generateReport.isPending && (
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        await generateReport.mutateAsync(sessionId)
-                        refetchReport()
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Generate Report
-                    </button>
-                  )}
-                  {generateReport.isPending && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Generating...
-                    </div>
-                  )}
                   {existingReport && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedModule('screening-report')
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent transition-colors"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      View Full Report
-                    </button>
+                    <>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent transition-colors">
+                            <Download className="h-3.5 w-3.5" />
+                            Download
+                            <ChevronDown className="h-3 w-3 ml-0.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-36">
+                          <DropdownMenuItem onClick={() => handleDownloadReport('pdf')} className="cursor-pointer text-sm">
+                            <Download className="h-3 w-3 mr-2" />PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadReport('docx')} className="cursor-pointer text-sm">
+                            <Download className="h-3 w-3 mr-2" />DOCX
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownloadReport('md')} className="cursor-pointer text-sm">
+                            <Download className="h-3 w-3 mr-2" />Markdown
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedModule('screening-report')
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent transition-colors"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        View Full Report
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
 
-              {/* Report Summary Preview */}
-              {existingReport && existingReport.content && (
-                <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
-                  {existingReport.content
-                    .split("\n")
-                    .filter((line: string) => line.startsWith("### ") || line.startsWith("**Therapy"))
-                    .slice(0, 6)
-                    .map((line: string, i: number) => {
-                      if (line.startsWith("### ")) {
-                        return (
-                          <p key={i} className="font-semibold text-base">
-                            {line.replace("### ", "")}
-                          </p>
-                        )
-                      }
-                      return (
-                        <p key={i} className="text-muted-foreground">
-                          {line.replace(/\*\*/g, "")}
-                        </p>
-                      )
-                    })}
-                  {existingReport.content_length > 500 && (
-                    <p className="text-xs text-muted-foreground pt-1">
-                      Showing key findings only.
-                    </p>
-                  )}
-                </div>
-              )}
-
               {/* Error state */}
               {generateReport.isError && (
-                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-md p-3">
+                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-md p-3 mt-3">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span>{generateReport.error?.message || "Report generation failed"}</span>
                 </div>
