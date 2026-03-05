@@ -523,7 +523,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
   const contextItemCount = [ageGroup, screeningMode].filter(Boolean).length
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-5 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="p-2.5 rounded-lg bg-primary/10">
