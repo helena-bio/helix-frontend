@@ -473,7 +473,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
                               <TooltipTrigger asChild>
                                 <Badge
                                   variant="outline"
-                                  className="text-xs px-2 py-0.5 gap-1 cursor-help"
+                                  className="text-sm px-2 py-0.5 gap-1 cursor-help"
                                 >
                                   {gene.gene_symbol}
                                   <button
@@ -619,7 +619,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
                               <TooltipTrigger asChild>
                                 <Badge
                                   variant="outline"
-                                  className="text-xs px-2 py-0.5 cursor-help"
+                                  className="text-sm px-2 py-0.5 cursor-help"
                                 >
                                   {gene.gene_symbol}
                                 </Badge>
