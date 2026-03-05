@@ -258,18 +258,15 @@ export function ClinicalAnalysis({
             // Step 2: Stream results from backend (instant if Redis cache hit!)
             await loadAllScreeningResults(sessionId)
 
-              // Generate screening findings report in background (fire-and-forget)
-              const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
-              fetch(`${AI_URL}/api/v1/analysis/screening-report/generate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ session_id: sessionId }),
-              })
-                .then(res => {
-                  if (res.ok) console.log('Screening report generated (background)')
-                  else console.warn('Screening report generation failed:', res.status)
-                })
-                .catch(err => console.warn('Screening report generation error:', err))
+            // Generate screening findings report - await before navigation
+            const AI_URL = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://localhost:9007'
+            const reportRes = await fetch(`${AI_URL}/api/v1/analysis/screening-report/generate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ session_id: sessionId }),
+            })
+            if (reportRes.ok) console.log('Screening report generated')
+            else console.warn('Screening report generation failed:', reportRes.status)
 
             updateStageStatus('screening', 'completed')
             toast.success('Clinical screening complete')
