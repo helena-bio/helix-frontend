@@ -531,7 +531,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         <p className="text-base text-muted-foreground mb-1.5">Review Status</p>
                         <div className="flex flex-wrap gap-1">
                           {formatReviewStatus(variant.review_status).map((s: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="text-tiny font-medium">{s}</Badge>
+                            <Badge key={idx} variant="secondary" className="text-sm font-medium">{s}</Badge>
                           ))}
                         </div>
                       </div>
@@ -541,7 +541,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
                         <p className="text-base text-muted-foreground mb-1.5">Disease</p>
                         <div className="flex flex-wrap gap-1">
                           {formatDiseaseName(variant.disease_name).map((d: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-tiny font-medium">{d}</Badge>
+                            <Badge key={idx} variant="outline" className="text-sm font-medium">{d}</Badge>
                           ))}
                         </div>
                       </div>
