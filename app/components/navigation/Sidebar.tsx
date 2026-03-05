@@ -393,7 +393,7 @@ export function Sidebar() {
 
               <Button
                 variant="ghost"
-                className="w-full justify-start hover:bg-accent rounded-none px-4 py-3 h-auto"
+                className="w-full justify-start hover:bg-accent rounded-none px-4 py-2 h-auto"
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               >
                 <UserAvatar fullName={userName} userId={user?.id} size="md" version={avatarVersion} />
