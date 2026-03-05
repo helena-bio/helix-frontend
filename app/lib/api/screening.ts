@@ -338,3 +338,58 @@ export async function validateGene(
   }
   return response.json()
 }
+
+// ============================================================================
+// Panel Suggestion API (Task C - Age-Aware)
+// ============================================================================
+
+export type AgeGroup = 'neonatal' | 'infant' | 'child' | 'adolescent' | 'adult' | 'elderly'
+
+export interface PanelSuggestion {
+  panel_id: string
+  name: string
+  description: string | null
+  panel_type: string
+  gene_count: number
+  relevance: 'high' | 'medium' | 'low'
+  reason: string
+  auto_select: boolean
+}
+
+export interface PanelSuggestResponse {
+  suggestions: PanelSuggestion[]
+}
+
+/**
+ * Derive age_group from patient age input.
+ * Matches backend age group definitions.
+ */
+export function deriveAgeGroup(ageYears?: number, ageDays?: number): AgeGroup | null {
+  if (ageDays !== undefined && ageDays > 0) {
+    if (ageDays <= 28) return 'neonatal'
+    if (ageDays <= 365) return 'infant'
+  }
+  if (ageYears === undefined || ageYears < 0) return null
+  if (ageYears < 1) return 'infant'
+  if (ageYears <= 11) return 'child'
+  if (ageYears <= 17) return 'adolescent'
+  if (ageYears <= 64) return 'adult'
+  return 'elderly'
+}
+
+/**
+ * Fetch age-aware panel suggestions.
+ * No authentication required.
+ */
+export async function suggestPanels(ageGroup: AgeGroup): Promise<PanelSuggestion[]> {
+  const response = await fetch(
+    `${SCREENING_API_URL}/api/v1/gene-panels/suggest?age_group=${ageGroup}`
+  )
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch panel suggestions')
+  }
+
+  const data: PanelSuggestResponse = await response.json()
+  return data.suggestions
+}

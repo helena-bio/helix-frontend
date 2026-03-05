@@ -41,7 +41,7 @@ import { invalidateSessionCaches } from '@/lib/cache/invalidate-session-caches'
 import { useClinicalProfileContext } from '@/contexts/ClinicalProfileContext'
 import { useSession as useSessionQuery } from '@/hooks/queries/use-variant-analysis-queries'
 import { useHPOSearch, useDebounce, useHPOExtract } from '@/hooks'
-import { fetchGenePanels, fetchPanelGenes, searchGenes, type GenePanelGeneResponse, type GeneSearchResult } from '@/lib/api/screening'
+import { fetchGenePanels, fetchPanelGenes, searchGenes, suggestPanels, deriveAgeGroup, type GenePanelGeneResponse, type GeneSearchResult, type PanelSuggestion, type AgeGroup } from '@/lib/api/screening'
 import type {
   Sex,
   Ethnicity,
@@ -194,6 +194,11 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   const [panelGenesLoading, setPanelGenesLoading] = useState(false)
   const [customGeneSearchResults, setCustomGeneSearchResults] = useState<GeneSearchResult[]>([])
 
+  // Panel suggestions (FE-B: age-aware)
+  const [panelSuggestions, setPanelSuggestions] = useState<PanelSuggestion[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const [lastSuggestedAgeGroup, setLastSuggestedAgeGroup] = useState<AgeGroup | null>(null)
+
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hasPrefilledRef = useRef(false)
   const debouncedQuery = useDebounce(searchQuery, 150)
@@ -313,6 +318,51 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     }, 150)
     return () => clearTimeout(timer)
   }, [customGeneSymbol])
+
+
+
+  // FE-B: Fetch panel suggestions when age changes (debounced)
+  useEffect(() => {
+    if (!enableScreening) return
+
+    const ageY = ageYears ? parseInt(ageYears, 10) : undefined
+    const ageD = ageDays ? parseInt(ageDays, 10) : undefined
+    const ageGroup = deriveAgeGroup(ageY, ageD)
+
+    if (!ageGroup) {
+      setPanelSuggestions([])
+      setLastSuggestedAgeGroup(null)
+      return
+    }
+
+    // Skip if same age group already fetched
+    if (ageGroup === lastSuggestedAgeGroup) return
+
+    const timer = setTimeout(() => {
+      setSuggestionsLoading(true)
+      suggestPanels(ageGroup)
+        .then((suggestions) => {
+          setPanelSuggestions(suggestions)
+          setLastSuggestedAgeGroup(ageGroup)
+
+          // Auto-select panels marked as auto_select (only on first fetch or age group change)
+          const autoIds = suggestions
+            .filter(s => s.auto_select)
+            .map(s => s.panel_id)
+          if (autoIds.length > 0) {
+            setSelectedPanelIds([...new Set([...selectedPanelIds, ...autoIds])])
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch panel suggestions:', err)
+        })
+        .finally(() => {
+          setSuggestionsLoading(false)
+        })
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [ageYears, ageDays, enableScreening, lastSuggestedAgeGroup, setSelectedPanelIds])
 
   // =========================================================================
   // COMPUTED
@@ -895,6 +945,58 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
                         Select gene panels to boost matching variants during screening. Genes in selected panels receive higher priority scores.
                       </p>
 
+
+                        {/* FE-B: Age-Aware Panel Suggestions */}
+                        {suggestionsLoading && (
+                          <div className="flex items-center gap-2 py-3">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            <span className="text-md text-muted-foreground">Loading recommendations...</span>
+                          </div>
+                        )}
+                        {!suggestionsLoading && panelSuggestions.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-md font-medium">Recommended for {lastSuggestedAgeGroup} patients</p>
+                            {panelSuggestions.map((suggestion) => {
+                              const relevanceColor = suggestion.relevance === 'high'
+                                ? 'bg-green-100 text-green-900 border-green-300'
+                                : suggestion.relevance === 'medium'
+                                  ? 'bg-yellow-100 text-yellow-900 border-yellow-300'
+                                  : 'bg-gray-100 text-gray-700 border-gray-300'
+
+                              return (
+                                <div
+                                  key={suggestion.panel_id}
+                                  className="rounded-lg border p-3 transition-colors hover:bg-accent/50"
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedPanelIds.includes(suggestion.panel_id)}
+                                      onChange={() => handleTogglePanel(suggestion.panel_id)}
+                                      className="w-4 h-4 mt-0.5 cursor-pointer"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-base font-semibold">{suggestion.name}</span>
+                                        <Badge variant="secondary" className="text-xs">{suggestion.gene_count} genes</Badge>
+                                        <Badge variant="outline" className={`text-xs ${relevanceColor}`}>
+                                          {suggestion.relevance}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-md text-muted-foreground mt-1">{suggestion.reason}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                        {!suggestionsLoading && panelSuggestions.length === 0 && (ageYears || ageDays) && enableScreening && (
+                          <p className="text-md text-muted-foreground py-2">No panel recommendations for this age group.</p>
+                        )}
+                        {!ageYears && !ageDays && (
+                          <p className="text-md text-muted-foreground py-2">Enter patient age to see recommended panels.</p>
+                        )}
                       {/* Available Panels */}
                       {panelsLoading ? (
                         <div className="flex items-center gap-2 py-3">
