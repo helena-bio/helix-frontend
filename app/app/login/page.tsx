@@ -30,6 +30,7 @@ interface LoginResponse {
     organization_id: string;
     role: string;
     is_platform_admin: boolean;
+    preferred_language: string;
   };
 }
 
