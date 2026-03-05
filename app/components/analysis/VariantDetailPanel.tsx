@@ -37,6 +37,7 @@ import {
   CheckCircle2,
   XCircle,
   Globe,
+  Pill,
 } from 'lucide-react'
 import { useVariant } from '@/hooks/queries'
 import {
@@ -48,10 +49,18 @@ import {
   getZygosityBadge,
 } from '@/components/shared'
 
+export interface PanelMetadata {
+  therapy_note: string | null
+  disease_name_panel: string | null
+  mody_type: string | null
+  clingen_status: string | null
+}
+
 interface VariantDetailPanelProps {
   sessionId: string
   variantIdx: number
   onBack: () => void
+  panelMetadata?: PanelMetadata
 }
 
 // ---------------------------------------------------------------------------
@@ -248,6 +257,23 @@ const getProgressWidth = (af: number | null): number => {
   return Math.max(2, Math.min(100, normalized))
 }
 
+
+// ---------------------------------------------------------------------------
+// ClinGen Badge Color (Panel metadata)
+// ---------------------------------------------------------------------------
+const getClingenBadgeColor = (status: string | null | undefined): string => {
+  if (!status) return 'bg-gray-100 text-gray-700 border-gray-300'
+  switch (status.toLowerCase()) {
+    case 'definitive': return 'bg-green-100 text-green-900 border-green-300'
+    case 'strong': return 'bg-green-50 text-green-800 border-green-200'
+    case 'moderate': return 'bg-yellow-100 text-yellow-900 border-yellow-300'
+    case 'limited': return 'bg-orange-100 text-orange-900 border-orange-300'
+    case 'disputed': return 'bg-red-100 text-red-900 border-red-300'
+    case 'refuted': return 'bg-red-200 text-red-900 border-red-400'
+    default: return 'bg-gray-100 text-gray-700 border-gray-300'
+  }
+}
+
 // ---------------------------------------------------------------------------
 // SectionHeader
 // ---------------------------------------------------------------------------
@@ -361,7 +387,7 @@ const CopyableValue = ({ label, value }: { label: string; value: string | null }
 // ===========================================================================
 // MAIN COMPONENT
 // ===========================================================================
-export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDetailPanelProps) {
+export function VariantDetailPanel({ sessionId, variantIdx, onBack, panelMetadata }: VariantDetailPanelProps) {
   const { data, isLoading, error } = useVariant(sessionId, variantIdx)
 
   const variant = data?.variant
@@ -379,6 +405,7 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
   const hasSpliceAI = variant && variant.spliceai_max_score !== null
   const hasConstraints = variant && (variant.pli !== null || variant.oe_lof_upper !== null || variant.oe_lof !== null || variant.mis_z !== null)
   const hasDosage = variant && (variant.haploinsufficiency_score !== null || variant.triplosensitivity_score !== null)
+  const hasPanelMetadata = panelMetadata && (panelMetadata.therapy_note || panelMetadata.disease_name_panel || panelMetadata.mody_type || panelMetadata.clingen_status)
   const hasGnomAD = variant && (variant.global_af !== null || variant.global_ac !== null)
   const hasClinVar = variant && (variant.clinical_significance || variant.clinvar_variation_id)
   const hasFilters = variant && (variant.pass_quality_filter !== null || variant.pass_frequency_filter !== null || variant.pass_impact_filter !== null)
@@ -476,6 +503,19 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
           </div>
         )}
 
+
+          {/* Panel Therapy Note Banner */}
+          {panelMetadata?.therapy_note && (
+            <div className="border-b">
+              <div className={`flex items-start gap-2.5 px-4 py-2.5 ${/exceptional|first-line/i.test(panelMetadata.therapy_note) ? 'bg-green-50 border-l-4 border-green-400' : 'bg-blue-50 border-l-4 border-blue-400'}`}>
+                <Pill className={`h-4 w-4 mt-0.5 flex-shrink-0 ${/exceptional|first-line/i.test(panelMetadata.therapy_note) ? 'text-green-600' : 'text-blue-600'}`} />
+                <div>
+                  <p className="text-md text-muted-foreground">Therapy</p>
+                  <p className="text-base font-medium">{panelMetadata.therapy_note}</p>
+                </div>
+              </div>
+            </div>
+          )}
         <div className="p-4 space-y-4">
 
           {/* ============================================================
@@ -558,6 +598,28 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack }: VariantDet
               </div>
             </div>
 
+
+              {/* --- Panel Information (from Screening Service) --- */}
+              {hasPanelMetadata && (
+                <div className="border-t p-4">
+                  <SectionHeader icon={<Shield className="h-4 w-4" />} title="Panel Information" />
+                  {panelMetadata?.disease_name_panel && (
+                    <Row label="Panel Disease"><span className="text-base font-medium">{panelMetadata.disease_name_panel}</span></Row>
+                  )}
+                  {panelMetadata?.mody_type && (
+                    <Row label="MODY Type">
+                      <Badge variant="outline" className="text-xs">{panelMetadata.mody_type}</Badge>
+                    </Row>
+                  )}
+                  {panelMetadata?.clingen_status && (
+                    <Row label="ClinGen Status">
+                      <Badge variant="outline" className={`text-xs ${getClingenBadgeColor(panelMetadata.clingen_status)}`}>
+                        {panelMetadata.clingen_status}
+                      </Badge>
+                    </Row>
+                  )}
+                </div>
+              )}
             {/* --- In Silico Predictions --- */}
             {hasPredictions && (
               <div className="border-t p-4">

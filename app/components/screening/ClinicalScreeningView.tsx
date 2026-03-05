@@ -448,6 +448,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
   const [tierFilter, setTierFilter] = useState<TierFilter>('all')
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD)
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const [selectedGene, setSelectedGene] = useState<ScreeningGeneResult | null>(null)
   const [isContextOpen, setIsContextOpen] = useState(false)
 
   // Intersection Observer for lazy loading
@@ -514,8 +515,15 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
       <VariantDetailPanel
         sessionId={sessionId}
         variantIdx={parseInt(selectedVariantId)}
-        onBack={() => setSelectedVariantId(null)}
+        onBack={() => { setSelectedVariantId(null); setSelectedGene(null) }}
+        panelMetadata={selectedGene ? {
+          therapy_note: selectedGene.therapy_note,
+          disease_name_panel: selectedGene.disease_name_panel,
+          mody_type: selectedGene.mody_type,
+          clingen_status: selectedGene.clingen_status,
+        } : undefined}
       />
+
     )
   }
 
@@ -689,7 +697,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
               gene={gene}
               rank={idx + 1}
               sessionId={sessionId}
-              onViewVariantDetails={(variantId) => setSelectedVariantId(variantId)}
+              onViewVariantDetails={(variantId) => { setSelectedVariantId(variantId); setSelectedGene(gene) }}
               tierFilter={tierFilter}
             />
           ))}
