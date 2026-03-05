@@ -617,11 +617,11 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Age Group</p>
-                <p className="text-base font-semibold">{ageGroup || 'Unknown'}</p>
+                <p className="text-base font-semibold capitalize">{ageGroup || 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Screening Mode</p>
-                <p className="text-base font-semibold">{screeningMode?.replace(/_/g, ' ') || 'Unknown'}</p>
+                <p className="text-base font-semibold capitalize">{screeningMode?.replace(/_/g, ' ') || 'Unknown'}</p>
               </div>
               {hasResults && (
                 <div>
