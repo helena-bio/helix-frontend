@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react'
 import { Send, Square, Sparkles, Database, BookOpen, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useAIChatStream } from '@/hooks/mutations/use-ai-chat'
 import { QueryVisualization } from './QueryVisualization'
 import { MarkdownMessage } from './MarkdownMessage'
@@ -211,6 +212,7 @@ export function ChatPanel() {
     openDetails,
   } = useSession()
 
+  const { user } = useAuth()
   const { streamMessage } = useAIChatStream()
 
   // ============================================================================
@@ -473,7 +475,7 @@ export function ChatPanel() {
     (!lastMessage || lastMessage.role === 'user')
 
   const isEmpty = displayMessages.length === 0 && !shouldShowThinking
-  const chatPrompt = useMemo(() => getChatPrompt(), [])
+  const chatPrompt = useMemo(() => getChatPrompt(user?.full_name), [user?.full_name])
 
   return (
     <div className="h-full flex flex-col bg-background border-r border-border">
@@ -484,7 +486,10 @@ export function ChatPanel() {
           {isEmpty && (
             <div className="flex flex-col items-center justify-center flex-1 gap-8 select-none px-2">
               <div className="flex flex-col items-center gap-2">
-                <h2 className="text-2xl font-bold tracking-tight text-foreground/70">
+                {chatPrompt.greeting && (
+                    <p className="text-2xl font-medium tracking-tight text-foreground/70">{chatPrompt.greeting}</p>
+                  )}
+                  <h2 className="text-2xl font-medium tracking-tight text-foreground/70">
                   {chatPrompt.title}
                 </h2>
               </div>
