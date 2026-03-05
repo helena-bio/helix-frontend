@@ -9,14 +9,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Check, Loader2, Camera, Trash2 } from 'lucide-react'
+import { Check, Loader2, Camera, Trash2, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { tokenUtils } from '@/lib/auth/token'
 import { UserAvatar } from '@/components/ui/UserAvatar'
 import { AvatarCropModal } from '@/components/ui/AvatarCropModal'
 import { Card, CardContent } from '@/components/ui/card'
 
-type SettingsSection = 'general' | 'account'
+type SettingsSection = 'general' | 'preferences' | 'account'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9008'
 
@@ -27,6 +27,12 @@ export function SettingsView() {
 
   const initialSection = (searchParams.get('section') as SettingsSection) || 'general'
   const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection)
+
+  // Preferences
+  const [preferredLanguage, setPreferredLanguage] = useState('en')
+  const [prefSaving, setPrefSaving] = useState(false)
+  const [prefSuccess, setPrefSuccess] = useState(false)
+  const [prefError, setPrefError] = useState('')
 
   // Profile form
   const [firstName, setFirstName] = useState('')
@@ -55,11 +61,13 @@ export function SettingsView() {
       const parts = (user.full_name || '').split(' ')
       setFirstName(parts[0] || '')
       setLastName(parts.slice(1).join(' ') || '')
+      setPreferredLanguage((user as any).preferred_language || 'en')
     }
   }, [user])
 
   const sections: { id: SettingsSection; label: string }[] = [
     { id: 'general', label: 'General' },
+    { id: 'preferences', label: 'Preferences' },
     { id: 'account', label: 'Account' },
   ]
 
@@ -110,6 +118,42 @@ export function SettingsView() {
       // Silent failure for delete
     } finally {
       setDeletingAvatar(false)
+    }
+  }
+
+  const handlePreferencesSave = async () => {
+    setPrefSaving(true)
+    setPrefError('')
+    setPrefSuccess(false)
+
+    try {
+      const token = tokenUtils.get()
+      const nameParts = (user?.full_name || 'User Name').split(' ')
+      const response = await fetch(`${API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: nameParts[0] || 'User',
+          last_name: nameParts.slice(1).join(' ') || 'Name',
+          preferred_language: preferredLanguage,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.detail || 'Failed to save preferences')
+      }
+
+      updateUser({ preferred_language: preferredLanguage } as any)
+      setPrefSuccess(true)
+      setTimeout(() => setPrefSuccess(false), 3000)
+    } catch (err) {
+      setPrefError(err instanceof Error ? err.message : 'Failed to save preferences')
+    } finally {
+      setPrefSaving(false)
     }
   }
 
@@ -218,8 +262,8 @@ export function SettingsView() {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="w-full max-w-4xl mx-auto px-6 py-8">
-        <h2 className="text-3xl font-semibold text-foreground mb-8">Settings</h2>
+      <div className="w-full max-w-5xl mx-auto px-6 py-5">
+        <div className="flex items-center gap-4 mb-5"><div className="p-2.5 rounded-lg bg-primary/10"><Settings className="h-5 w-5 text-primary" /></div><h2 className="text-2xl font-semibold text-foreground">Settings</h2></div>
         <div className="flex gap-8">
           {/* Left navigation */}
           <nav className="w-44 shrink-0 space-y-1">
@@ -411,6 +455,64 @@ export function SettingsView() {
                 )}
               </div>
             )}
+
+            {activeSection === 'preferences' && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-foreground">Preferences</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-md font-medium text-muted-foreground mb-1">
+                        Report Language
+                      </label>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Clinical reports will be generated in the selected language.
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setPreferredLanguage('en')}
+                          className={`px-4 py-2 rounded-md border text-base font-medium transition-colors ${
+                            preferredLanguage === 'en'
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-border text-foreground hover:bg-accent'
+                          }`}
+                        >
+                          English
+                        </button>
+                        <button
+                          onClick={() => setPreferredLanguage('bg')}
+                          className={`px-4 py-2 rounded-md border text-base font-medium transition-colors ${
+                            preferredLanguage === 'bg'
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-border text-foreground hover:bg-accent'
+                          }`}
+                        >
+                          Bulgarian
+                        </button>
+                      </div>
+                    </div>
+
+                    {prefError && (
+                      <p className="text-base text-destructive">{prefError}</p>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handlePreferencesSave}
+                        disabled={prefSaving}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      >
+                        {prefSaving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : prefSuccess ? (
+                          <Check className="h-4 w-4" />
+                        ) : null}
+                        {prefSuccess ? 'Saved' : 'Save preferences'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             {activeSection === 'account' && (
               <div className="space-y-6">
