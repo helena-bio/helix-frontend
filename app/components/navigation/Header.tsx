@@ -9,7 +9,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText } from 'lucide-react'
+import { CheckCircle2, Clock, Lock, Download, ChevronDown, LogOut, FileText, MessageSquareText } from 'lucide-react'
 import { Button } from '@helix/shared/components/ui/button'
 import {
   Tooltip,
@@ -67,7 +67,7 @@ export function Header() {
   const router = useRouter()
   const pathname = usePathname()
   const { getStepStatus, getStepLabel, canNavigateTo, goToStep, currentStep } = useJourney()
-  const { currentSessionId } = useSession()
+  const { currentSessionId, isChatVisible, showChat, hideChat } = useSession()
   const { content: interpretation, hasInterpretation, status: interpretationStatus } = useClinicalInterpretation()
   const { status: phenotypeStatus, aggregatedResults } = usePhenotypeResults()
   const { user, logout } = useAuth()
@@ -217,6 +217,20 @@ export function Header() {
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
+            {isAnalysisComplete && (
+              <>
+                <Button
+                  variant={isChatVisible ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={isChatVisible ? hideChat : showChat}
+                  className="h-8 text-md font-medium gap-1.5"
+                >
+                  <MessageSquareText className="h-4 w-4" />
+                  AI Assistant
+                </Button>
+                <div className="h-4 w-px bg-border" />
+              </>
+            )}
            <a
             href="https://helena.bio/docs"
             target="_blank"

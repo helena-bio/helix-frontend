@@ -17,9 +17,10 @@ import { PublicationDetailPanel } from '@/components/chat'
 
 interface RightPanelProps {
   children: ReactNode
+  centered?: boolean
 }
 
-export function RightPanel({ children }: RightPanelProps) {
+export function RightPanel({ children, centered }: RightPanelProps) {
   const {
     currentSessionId,
     selectedVariantId,
@@ -58,7 +59,7 @@ export function RightPanel({ children }: RightPanelProps) {
   // Default: Show module content (ModuleRouter)
   return (
     <div className="h-full min-w-0 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable] bg-background">
-      {children}
+        {centered ? <div className="max-w-4xl mx-auto">{children}</div> : children}
     </div>
   )
 }

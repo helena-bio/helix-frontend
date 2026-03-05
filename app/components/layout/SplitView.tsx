@@ -19,6 +19,7 @@
  */
 
 import { useRef, useState, useCallback } from 'react'
+import { useSession } from '@/contexts/SessionContext'
 import { LeftPanel } from './LeftPanel'
 import { RightPanel } from './RightPanel'
 
@@ -32,6 +33,7 @@ interface SplitViewProps {
 }
 
 export function SplitView({ children }: SplitViewProps) {
+  const { isChatVisible } = useSession()
   const containerRef = useRef<HTMLDivElement>(null)
   const leftRef = useRef<HTMLDivElement>(null)
   const rightRef = useRef<HTMLDivElement>(null)
@@ -88,7 +90,18 @@ export function SplitView({ children }: SplitViewProps) {
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
   }, [])
+    // Chat hidden -- centered content
+    if (!isChatVisible) {
+      return (
+        <div ref={containerRef} className="flex-1 h-full min-h-0 min-w-0 overflow-hidden">
+          <RightPanel centered>
+            {children}
+          </RightPanel>
+        </div>
+      )
+    }
 
+    // Chat visible -- resizable split
   return (
     <div ref={containerRef} className="flex-1 flex h-full min-h-0 min-w-0 overflow-hidden">
       <div
