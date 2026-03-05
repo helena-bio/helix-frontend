@@ -311,6 +311,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         organization_id: result.organization.id,
         role: result.user.role,
         is_platform_admin: result.user.is_platform_admin,
+        preferred_language: tokenUtils.getPreferredLanguage(),
       },
       isAuthenticated: true,
       isLoading: false,
