@@ -479,10 +479,10 @@ export function ChatPanel() {
     <div className="h-full flex flex-col bg-background border-r border-border">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4" ref={messagesContainerRef}>
-        <div className="space-y-6 max-w-4xl min-h-full">
+        <div className="space-y-6 max-w-4xl min-h-full flex flex-col">
           {/* Empty state */}
           {isEmpty && (
-            <div className="flex flex-col items-center justify-center h-full gap-8 select-none px-2">
+            <div className="flex flex-col items-center justify-center flex-1 gap-8 select-none px-2">
               <div className="flex flex-col items-center gap-2">
                 <h2 className="text-2xl font-bold tracking-tight text-foreground/70">
                   {chatPrompt.title}
