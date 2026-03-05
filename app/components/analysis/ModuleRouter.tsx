@@ -12,6 +12,7 @@ import { PhenotypeMatchingView } from '@/components/phenotype/PhenotypeMatchingV
 import { LiteratureMatchingView } from '@/components/literature/LiteratureMatchingView'
 import { ReviewBoardView } from '@/components/review-board'
 import { ClinicalReportView } from '@/components/report/ClinicalReportView'
+import { ScreeningReportView } from '@/components/screening/ScreeningReportView'
 
 interface ModuleRouterProps {
   sessionId: string
@@ -48,6 +49,11 @@ export function ModuleRouter({ sessionId }: ModuleRouterProps) {
   // Clinical Report
   if (selectedModule === 'report') {
     return <ClinicalReportView sessionId={sessionId} />
+  }
+
+  // Screening Findings Report
+  if (selectedModule === 'screening-report') {
+    return <ScreeningReportView sessionId={sessionId} />
   }
 
   // Fallback - should not reach here with current modules

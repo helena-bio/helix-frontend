@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useSession } from '@/contexts/SessionContext'
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import type { ScreeningGeneResult, ScreeningVariantResult } from '@/contexts/ScreeningResultsContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
@@ -458,6 +459,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
   const generateReport = useGenerateScreeningReport()
   const { data: existingReport, refetch: refetchReport } = useScreeningReport(sessionId)
   const [showFullReport, setShowFullReport] = useState(false)
+  const { setSelectedModule } = useSession()
 
   // Intersection Observer for lazy loading
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -679,7 +681,7 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        setShowFullReport(true)
+                        setSelectedModule('screening-report')
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent transition-colors"
                     >
