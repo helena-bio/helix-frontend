@@ -489,6 +489,9 @@ export function Sidebar() {
               </div>
             )}
 
+            {/* Divider */}
+            <div className="border-t border-border mx-1 my-1" />
+
             {/* Module icons */}
             <nav className="px-1 space-y-1 shrink-0">
               {MODULES.map((module) => {
@@ -535,6 +538,9 @@ export function Sidebar() {
                 )
               })}
             </nav>
+
+            {/* Divider */}
+            <div className="border-t border-border mx-1 my-1" />
 
             {/* Cases icon */}
             <div className="px-1 mt-1 shrink-0">
