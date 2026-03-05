@@ -19,6 +19,8 @@ import {
   AlertCircle,
   TrendingUp,
   Pill,
+  FileText,
+  ExternalLink,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,6 +29,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useScreeningResults } from '@/contexts/ScreeningResultsContext'
 import type { ScreeningGeneResult, ScreeningVariantResult } from '@/contexts/ScreeningResultsContext'
 import { VariantDetailPanel } from '@/components/analysis/VariantDetailPanel'
+import { useGenerateScreeningReport, useScreeningReport } from '@/hooks/mutations/use-screening-report'
 import {
   getTierColor,
   getACMGColor,
@@ -451,6 +454,11 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
   const [selectedGene, setSelectedGene] = useState<ScreeningGeneResult | null>(null)
   const [isContextOpen, setIsContextOpen] = useState(false)
 
+  // Screening Report
+  const generateReport = useGenerateScreeningReport()
+  const { data: existingReport, refetch: refetchReport } = useScreeningReport(sessionId)
+  const [showFullReport, setShowFullReport] = useState(false)
+
   // Intersection Observer for lazy loading
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
@@ -638,6 +646,86 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
                 Screening prioritizes variants based on age-specific disease onset, phenotype relevance,
                 ethnicity-specific prevalence, and clinical actionability. Click a gene to see individual variants.
               </p>
+            </div>
+
+            {/* Screening Report Section */}
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-base font-medium">Screening Findings Report</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!existingReport && !generateReport.isPending && (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        await generateReport.mutateAsync(sessionId)
+                        refetchReport()
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Generate Report
+                    </button>
+                  )}
+                  {generateReport.isPending && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Generating...
+                    </div>
+                  )}
+                  {existingReport && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFullReport(true)
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent transition-colors"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      View Full Report
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Report Summary Preview */}
+              {existingReport && existingReport.content && (
+                <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
+                  {existingReport.content
+                    .split("\n")
+                    .filter((line: string) => line.startsWith("### ") || line.startsWith("**Therapy"))
+                    .slice(0, 6)
+                    .map((line: string, i: number) => {
+                      if (line.startsWith("### ")) {
+                        return (
+                          <p key={i} className="font-semibold text-base">
+                            {line.replace("### ", "")}
+                          </p>
+                        )
+                      }
+                      return (
+                        <p key={i} className="text-muted-foreground">
+                          {line.replace(/\*\*/g, "")}
+                        </p>
+                      )
+                    })}
+                  {existingReport.content_length > 500 && (
+                    <p className="text-xs text-muted-foreground pt-1">
+                      Showing key findings only.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Error state */}
+              {generateReport.isError && (
+                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-md p-3">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>{generateReport.error?.message || "Report generation failed"}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         )}

@@ -214,17 +214,19 @@ export function Header() {
             })}
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            {currentSessionId && sessionDetail && (
-              <span className="text-md text-muted-foreground truncate max-w-xs">
-                {sessionDetail.case_label || sessionDetail.original_filename?.replace(/\.vcf(\.gz)?$/i, '') || currentSessionId.slice(0, 8)}
-              </span>
-            )}
-          </div>
+          <div className="flex-1" />
         )}
 
         {/* Right side buttons */}
         <div className="flex items-center gap-3 shrink-0 mr-6">
+            {currentSessionId && sessionDetail && (
+              <>
+                <span className="text-md text-muted-foreground truncate max-w-[200px]">
+                  {sessionDetail.case_label || sessionDetail.original_filename?.replace(/\.vcf(\.gz)?$/i, '') || currentSessionId.slice(0, 8)}
+                </span>
+                <div className="h-4 w-px bg-border" />
+              </>
+            )}
             {isAnalysisComplete && (
               <>
                 <Button
