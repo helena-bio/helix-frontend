@@ -467,9 +467,6 @@ export function ClinicalScreeningView({ sessionId }: ClinicalScreeningViewProps)
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-semibold">Clinical Screening</h1>
-          <p className="text-base text-muted-foreground mt-1">
-            Age-aware variant prioritization with clinical actionability tiers.
-          </p>
         </div>
 
         {hasResults && (
