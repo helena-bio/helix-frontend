@@ -82,11 +82,31 @@ export async function fetchScreeningReport(sessionId: string): Promise<Screening
  * Enabled only when sessionId is provided.
  */
 export function useScreeningReport(sessionId: string | null) {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['screening-report', sessionId],
     queryFn: () => fetchScreeningReport(sessionId!),
     enabled: !!sessionId,
     staleTime: 5 * 60 * 1000,
     retry: false,
   })
+
+  // Poll every 3s while report is not yet generated (null response from 404)
+  // Stops polling once report is found (data is not null)
+  const needsPolling = !!sessionId && query.isSuccess && query.data === null
+
+  useQuery({
+    queryKey: ['screening-report-poll', sessionId],
+    queryFn: async () => {
+      const result = await fetchScreeningReport(sessionId!)
+      if (result) {
+        query.refetch()
+      }
+      return result
+    },
+    enabled: needsPolling,
+    refetchInterval: needsPolling ? 3000 : false,
+    staleTime: 0,
+  })
+
+  return query
 }
