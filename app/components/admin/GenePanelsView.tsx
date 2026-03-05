@@ -433,7 +433,7 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
                       <div className="flex items-center gap-2">
                         <ListTree className="h-4 w-4 text-muted-foreground" />
                         <span className="text-base font-medium text-foreground">{panel.name}</span>
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                        <Badge variant="secondary" className="text-tiny px-1.5 py-0">
                           {panel.gene_count || 0} genes
                         </Badge>
                       </div>
@@ -593,8 +593,8 @@ export function GenePanelsContent({ mode = 'admin' }: GenePanelsContentProps) {
                       <div className="flex items-center gap-2">
                         <ListTree className="h-4 w-4 text-muted-foreground" />
                         <span className="text-base font-medium text-foreground">{panel.name}</span>
-                        <Badge variant="outline" className="text-xs px-1.5 py-0">Built-in</Badge>
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                        <Badge variant="outline" className="text-tiny px-1.5 py-0">Built-in</Badge>
+                        <Badge variant="secondary" className="text-tiny px-1.5 py-0">
                           {panel.gene_count || 0} genes
                         </Badge>
                       </div>
