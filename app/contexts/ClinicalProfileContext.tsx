@@ -86,7 +86,7 @@ interface ClinicalProfileContextValue {
   setCustomGenes: (genes: CustomGeneEntry[]) => void
 
   // Actions - disk persistence
-  saveProfile: (overrideData?: any) => Promise<void>
+  saveProfile: (overrideData?: any) => Promise<any>
 
   // Computed
   hpoTermIds: string[]
@@ -249,7 +249,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       custom_genes: customGenes.length > 0 ? customGenes : undefined,
     }
 
-    await saveMutation.mutateAsync({ sessionId, data })
+    return await saveMutation.mutateAsync({ sessionId, data })
   }, [
     sessionId, saveMutation,
     demographics, enableScreening, enablePhenotypeMatching, enableClinicalReport,

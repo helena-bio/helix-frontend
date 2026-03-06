@@ -100,6 +100,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // show ClinicalAnalysis directly instead of the form.
   const { data: sessionData } = useSessionQuery(sessionId, { staleTime: 0 })
   const [showAnalysis, setShowAnalysis] = useState(false)
+  const [profilingTaskId, setProfilingTaskId] = useState<string | null>(null)
   const recoveryCheckedRef = useRef(false)
 
   useEffect(() => {
@@ -605,7 +606,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
 
       setClinicalNotes(localClinicalNotes)
 
-      await saveProfile({
+      const saveResult = await saveProfile({
         demographics,
         modules: {
           enable_screening: enableScreening,
@@ -651,6 +652,8 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
       // Invalidate all session caches so sidebar reflects profiling status
       invalidateSessionCaches(queryClient, sessionId)
 
+      const taskId = saveResult?.profiling_task_id || null
+      setProfilingTaskId(taskId)
       toast.success('Clinical profile saved')
       setShowAnalysis(true)
 
@@ -680,7 +683,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // =========================================================================
 
   if (showAnalysis) {
-    return <ClinicalAnalysis sessionId={sessionId} onComplete={onComplete} />
+    return <ClinicalAnalysis sessionId={sessionId} profilingTaskId={profilingTaskId} onComplete={onComplete} />
   }
 
   // =========================================================================
