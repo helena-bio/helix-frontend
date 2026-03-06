@@ -359,7 +359,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
   // COMPUTED
   // =========================================================================
 
-  const hasRequiredFormData = !!(sex && (ageYears || ageDays))
+  const hasRequiredFormData = !!sex
 
   const demographicsComplete = hasRequiredFormData
   const clinicalInfoFilled = !!(ethnicity || indication || hasFamilyHistory || hasConsanguinity)
@@ -539,7 +539,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
     const ageY = ageYears ? parseInt(ageYears, 10) : undefined
     const ageD = ageDays ? parseInt(ageDays, 10) : undefined
 
-    if (!sex || (!ageY && !ageD)) {
+    if (!sex) {
       toast.error('Please fill required fields')
       setActiveSection('patient')
       return
