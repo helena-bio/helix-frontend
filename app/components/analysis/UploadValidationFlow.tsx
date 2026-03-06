@@ -142,7 +142,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   // -- File selection state --
   const [isDragging, setIsDragging] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [caseName, setCaseName] = useState<string>('')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [duplicateSession, setDuplicateSession] = useState<{ id: string; label: string } | null>(null)
@@ -157,18 +157,18 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   // -- Computed values --
   const fileSize = useMemo(() => {
-    const size = selectedFile?.size ?? upload.fileSize
+    const size = (selectedFiles.length > 0 ? selectedFiles.reduce((s, f) => s + f.size, 0) : null) ?? upload.fileSize
     if (!size) return null
     const mb = size / (1024 * 1024)
     const gb = size / (1024 * 1024 * 1024)
     if (gb >= 1) return `${gb.toFixed(2)} GB`
     if (mb < 1) return `${(size / 1024).toFixed(1)} KB`
     return `${mb.toFixed(2)} MB`
-  }, [selectedFile, upload.fileSize])
+  }, [selectedFiles, upload.fileSize])
 
   const canSubmit = useMemo(() => {
-    return !!(selectedFile && !upload.isActive && !validationError)
-  }, [selectedFile, upload.isActive, validationError])
+    return !!(selectedFiles.length > 0 && !upload.isActive && !validationError)
+  }, [selectedFiles, upload.isActive, validationError])
 
   const compressionProgress = upload.compressionProgress
   const uploadProgress = upload.uploadProgress
@@ -239,39 +239,61 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
     e.stopPropagation()
     setIsDragging(false)
     dragCounterRef.current = 0
-    const files = e.dataTransfer.files
-    if (files && files[0]) {
-      const file = files[0]
+    const droppedFiles = Array.from(e.dataTransfer.files).filter(f =>
+      f.name.endsWith('.vcf') || f.name.endsWith('.vcf.gz')
+    )
+    if (droppedFiles.length === 0) {
+      setValidationError('No valid VCF files found. Please upload .vcf or .vcf.gz files.')
+      return
+    }
+    for (const file of droppedFiles) {
       const error = validateFile(file)
       if (error) {
         setValidationError(error)
-        toast.error('Invalid file', { description: error })
+        toast.error('Invalid file', { description: `${file.name}: ${error}` })
         return
       }
-      setSelectedFile(file)
-      setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
-      setValidationError(null)
-      setDuplicateSession(checkDuplicate(file.name))
-      toast.success('File selected', { description: file.name })
     }
+    setSelectedFiles(droppedFiles)
+    const prefix = droppedFiles.length > 1
+      ? _extractCommonPrefix(droppedFiles.map(f => f.name))
+      : droppedFiles[0].name.replace(/\.vcf(\.gz)?$/, '')
+    setCaseName(prefix)
+    setValidationError(null)
+    setDuplicateSession(droppedFiles.length === 1 ? checkDuplicate(droppedFiles[0].name) : null)
+    const desc = droppedFiles.length > 1
+      ? `${droppedFiles.length} files selected`
+      : droppedFiles[0].name
+    toast.success('File(s) selected', { description: desc })
   }, [validateFile, checkDuplicate])
 
   const handleFileSelect = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files[0]) {
-      const file = files[0]
+    const fileList = e.target.files
+    if (!fileList || fileList.length === 0) return
+    const selected = Array.from(fileList).filter(f =>
+      f.name.endsWith('.vcf') || f.name.endsWith('.vcf.gz')
+    )
+    if (selected.length === 0) {
+      setValidationError('No valid VCF files found.')
+      return
+    }
+    for (const file of selected) {
       const error = validateFile(file)
       if (error) {
         setValidationError(error)
-        toast.error('Invalid file', { description: error })
+        toast.error('Invalid file', { description: `${file.name}: ${error}` })
         return
       }
-      setSelectedFile(file)
-      setCaseName(file.name.replace(/\.vcf(\.gz)?$/, ''))
-      setValidationError(null)
-      setDuplicateSession(checkDuplicate(file.name))
-      toast.success('File selected', { description: file.name })
     }
+    setSelectedFiles(selected)
+    const prefix = selected.length > 1
+      ? _extractCommonPrefix(selected.map(f => f.name))
+      : selected[0].name.replace(/\.vcf(\.gz)?$/, '')
+    setCaseName(prefix)
+    setValidationError(null)
+    setDuplicateSession(selected.length === 1 ? checkDuplicate(selected[0].name) : null)
+    const desc = selected.length > 1 ? `${selected.length} files selected` : selected[0].name
+    toast.success('File(s) selected', { description: desc })
   }, [validateFile, checkDuplicate])
 
   const handleBrowseClick = useCallback(() => {
@@ -279,7 +301,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   }, [])
 
   const handleRemoveFile = useCallback(() => {
-    setSelectedFile(null)
+    setSelectedFiles([])
     setCaseName('')
     setValidationError(null)
     setDuplicateSession(null)
@@ -288,9 +310,9 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
 
   // -- Submit handler --
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit || !selectedFile) return
-    upload.startUpload(selectedFile, caseName, retainFile)
-  }, [canSubmit, selectedFile, caseName, retainFile, upload])
+    if (!canSubmit || selectedFiles.length === 0) return
+    upload.startUpload(selectedFiles.length === 1 ? selectedFiles[0] : selectedFiles, caseName, retainFile)
+  }, [canSubmit, selectedFiles, caseName, retainFile, upload])
 
   // Sync sessionId from context to parent (for URL update) - fire once per sessionId
   const syncedSessionRef = useRef<string | null>(null)
@@ -304,7 +326,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   // -- Reset handler --
   const handleReset = useCallback(() => {
     upload.resetUpload()
-    setSelectedFile(null)
+    setSelectedFiles([])
     setCaseName('')
     setValidationError(null)
     setDuplicateSession(null)
@@ -721,7 +743,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                   </p>
                 </div>
                 <div className="flex gap-2 justify-center">
-                  <Button onClick={handleSubmit} disabled={!selectedFile}>
+                  <Button onClick={handleSubmit} disabled={selectedFiles.length === 0}>
                     <span className="text-base">Try Again</span>
                   </Button>
                   <Button variant="outline" onClick={handleReset}>
@@ -739,7 +761,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   // =====================================================================
   // RENDER: Active upload progress (navigated back, no file object)
   // =====================================================================
-  if (showUploadProgress && !selectedFile) {
+  if (showUploadProgress && selectedFiles.length === 0) {
     return (
       <div className="flex flex-col min-h-[600px] p-8">
         <div className="w-full max-w-2xl mx-auto space-y-6">
@@ -775,7 +797,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
   // =====================================================================
   // RENDER: File Selection / Upload Form (default)
   // =====================================================================
-  const isProcessing = showUploadProgress && !!selectedFile
+  const isProcessing = showUploadProgress && selectedFiles.length > 0
 
   return (
     <div className="flex flex-col min-h-[600px] p-8">
@@ -793,6 +815,7 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
               className="sr-only"
               disabled={isProcessing}
               aria-label="File input"
+              multiple
             />
 
               {isProcessing ? (
@@ -812,15 +835,15 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                     <span className="text-base">{getButtonText()}</span>
                   </Button>
                 </div>
-              ) : selectedFile ? (
-                /* -- File selected, not yet processing -- */
+              ) : selectedFiles.length > 0 ? (
+                /* -- File(s) selected, not yet processing -- */
                 <div className="space-y-5">
                   {/* File info row */}
                   <div className="flex items-center justify-between">
-                    <p className="text-lg font-semibold">File</p>
+                    <p className="text-lg font-semibold">{selectedFiles.length > 1 ? 'Files' : 'File'}</p>
                     <div className="flex items-center gap-2">
                       <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                      <p className="text-base font-medium">{selectedFile.name}</p>
+                      <p className="text-base font-medium">{selectedFiles.length > 1 ? `${selectedFiles.length} files` : selectedFiles[0].name}</p>
                       {fileSize && (
                         <>
                           <span className="text-muted-foreground">-</span>
@@ -931,13 +954,13 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                     <FileCode className="h-12 w-12 text-primary" />
                   </div>
                   <div>
-                    <p className="text-lg font-medium mb-2">Drag and drop your VCF file here</p>
+                    <p className="text-lg font-medium mb-2">Drag and drop your VCF file(s) here</p>
                     <p className="text-base text-muted-foreground mb-1">or click to browse</p>
                     <p className="text-md text-muted-foreground">Supports .vcf and .vcf.gz files (max 20GB)</p>
                   </div>
                   <Button size="lg" onClick={(e) => { e.stopPropagation(); handleBrowseClick(); }}>
                     <Upload className="h-5 w-5 mr-2" />
-                    <span className="text-base">Select File</span>
+                    <span className="text-base">Select File(s)</span>
                   </Button>
                 </div>
               </div>
@@ -955,4 +978,18 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
       </div>
     </div>
   )
+}
+
+
+function _extractCommonPrefix(filenames: string[]): string {
+  if (filenames.length === 0) return ''
+  if (filenames.length === 1) return filenames[0].replace(/\.vcf(\.gz)?$/, '')
+  let prefix = ''
+  const first = filenames[0]
+  for (let i = 0; i < first.length; i++) {
+    if (filenames.every(f => f[i] === first[i])) {
+      prefix += first[i]
+    } else break
+  }
+  return prefix.replace(/[_.\-]+$/, '') || filenames[0].replace(/\.vcf(\.gz)?$/, '')
 }

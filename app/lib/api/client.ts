@@ -290,7 +290,7 @@ export async function uploadFile<T>(
 
 export async function uploadFileWithProgress<T>(
   endpoint: string,
-  file: File,
+  file: File | File[],
   additionalFields?: Record<string, string>,
   onProgress?: (progress: number) => void
 ): Promise<T> {
@@ -300,7 +300,8 @@ export async function uploadFileWithProgress<T>(
 
     // Setup form data
     const formData = new FormData()
-    formData.append('file', file)
+    const fileArray = Array.isArray(file) ? file : [file]
+    fileArray.forEach(f => formData.append('files', f))
 
     if (additionalFields) {
       Object.entries(additionalFields).forEach(([key, value]) => {

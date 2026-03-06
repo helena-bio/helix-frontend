@@ -95,7 +95,7 @@ export interface UploadContextType {
   completedSessionId: string | null
 
   // Actions
-  startUpload: (file: File, caseName: string, retainFile: boolean) => void
+  startUpload: (file: File | File[], caseName: string, retainFile: boolean) => void
   resetUpload: () => void
 }
 
@@ -254,15 +254,17 @@ export function UploadProvider({ children }: { children: ReactNode }) {
   // -----------------------------------------------------------------------
 
   const startUpload = useCallback((
-    file: File,
+    file: File | File[],
     name: string,
     retainFile: boolean,
   ) => {
     // Reset everything before starting
+    const files = Array.isArray(file) ? file : [file]
+    const primaryFile = files[0]
     stopPolling()
-    setFileName(file.name)
+    setFileName(files.length > 1 ? `${files.length} files (${files.map(f => f.name).join(", ")})` : primaryFile.name)
     setCaseName(name)
-    setFileSize(file.size)
+    setFileSize(files.reduce((sum, f) => sum + f.size, 0))
     setSessionId(null)
     setTaskId(null)
     setErrorMessage(null)

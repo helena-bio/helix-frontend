@@ -35,7 +35,7 @@ interface UploadVCFBackendResponse {
  * Transforms backend response to match AnalysisSession type
  */
 export async function uploadVCFFile(
-  file: File,
+  file: File | File[],
   analysisType: string = 'germline',
   genomeBuild: string = 'GRCh38',
   caseLabel: string = '',
@@ -59,11 +59,11 @@ export async function uploadVCFFile(
     id: response.session_id,
     user_id: '',
     organization_id: '',
-    case_label: caseLabel || file.name.replace(/\.vcf(\.gz)?$/, ''),
+    case_label: caseLabel || (Array.isArray(file) ? file[0].name : file.name).replace(/\.vcf(\.gz)?$/, ''),
     analysis_type: response.analysis_type,
     status: response.status as AnalysisSession['status'],
     vcf_file_path: response.file_path,
-    original_filename: file.name,
+    original_filename: Array.isArray(file) ? file.map(f => f.name).join(', ') : file.name,
     genome_build: response.genome_build,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
