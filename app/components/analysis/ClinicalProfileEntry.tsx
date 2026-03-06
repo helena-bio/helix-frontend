@@ -59,6 +59,7 @@ import type {
 } from '@/types/clinical-profile.types'
 import { ETHNICITY_LABELS, INDICATION_LABELS, SAMPLE_TYPE_LABELS } from '@/types/clinical-profile.types'
 import { toast } from 'sonner'
+import { tokenUtils } from '@/lib/auth/token'
 
 // =========================================================================
 // TYPES
@@ -647,6 +648,7 @@ export function ClinicalProfileEntry({ sessionId, onComplete }: ClinicalProfileE
         },
         panel_ids: selectedPanelIds.length > 0 ? selectedPanelIds : undefined,
         custom_genes: customGenes.length > 0 ? customGenes : undefined,
+        language: tokenUtils.getPreferredLanguage(),
       })
 
       // Invalidate all session caches so sidebar reflects profiling status
