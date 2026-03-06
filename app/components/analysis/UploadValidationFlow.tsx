@@ -839,25 +839,42 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                 /* -- File(s) selected, not yet processing -- */
                 <div className="space-y-5">
                   {/* File info row */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-lg font-semibold">{selectedFiles.length > 1 ? 'Files' : 'File'}</p>
-                    <div className="flex items-center gap-2">
-                      <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                      <p className="text-base font-medium">{selectedFiles.length > 1 ? `${selectedFiles.length} files` : selectedFiles[0].name}</p>
-                      {fileSize && (
-                        <>
-                          <span className="text-muted-foreground">-</span>
-                          <p className="text-md text-muted-foreground">{fileSize}</p>
-                        </>
-                      )}
-                      <button
-                        onClick={handleRemoveFile}
-                        className="p-1 hover:bg-destructive/10 rounded-full transition-colors ml-1"
-                        aria-label="Remove file"
-                      >
-                        <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                      </button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-lg font-semibold">{selectedFiles.length > 1 ? `Files (${selectedFiles.length})` : 'File'}</p>
+                      <div className="flex items-center gap-2">
+                        <FileCode className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <p className="text-base font-medium">{selectedFiles.length > 1 ? `${selectedFiles.length} files` : selectedFiles[0].name}</p>
+                        {fileSize && (
+                          <>
+                            <span className="text-muted-foreground">-</span>
+                            <p className="text-md text-muted-foreground">{fileSize}</p>
+                          </>
+                        )}
+                        <button
+                          onClick={handleRemoveFile}
+                          className="p-1 hover:bg-destructive/10 rounded-full transition-colors ml-1"
+                          aria-label="Remove file"
+                        >
+                          <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </div>
                     </div>
+                    {selectedFiles.length > 1 && (
+                      <div className="border border-border rounded-lg p-3 bg-muted/30">
+                        <div className="space-y-1.5">
+                          {selectedFiles.map((f, i) => (
+                            <div key={i} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <FileCode className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                <span className="text-foreground">{f.name}</span>
+                              </div>
+                              <span className="text-muted-foreground">{(f.size / (1024 * 1024)).toFixed(1)} MB</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Case Name input */}
