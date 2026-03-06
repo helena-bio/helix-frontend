@@ -9,6 +9,7 @@ const platformLinks = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/for-geneticists', label: 'For Geneticists' },
   { href: '/methodology', label: 'Methodology' },
+  { href: '/screening-methodology', label: 'Screening Methodology' },
 ]
 
 const useCaseLinks = [
