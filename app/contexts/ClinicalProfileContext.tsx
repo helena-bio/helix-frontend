@@ -194,7 +194,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
       setConsent({ secondary_findings: true, carrier_results: true, pharmacogenomics: false })
       setEnableScreening(false)
       setEnablePhenotypeMatching(false)
-      setEnableClinicalReport(true)
+      setEnableClinicalReport(false)
       setSelectedPanelIds([])
       setCustomGenes([])
     }
