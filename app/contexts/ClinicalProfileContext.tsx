@@ -109,7 +109,7 @@ export function ClinicalProfileProvider({ sessionId, children }: ClinicalProfile
   // Module enablement (default: all disabled)
   const [enableScreening, setEnableScreening] = useState(false)
   const [enablePhenotypeMatching, setEnablePhenotypeMatching] = useState(false)
-  const [enableClinicalReport, setEnableClinicalReport] = useState(true)
+  const [enableClinicalReport, setEnableClinicalReport] = useState(false)
 
   // Local state
   const [demographics, setDemographics] = useState<Demographics>({ sex: 'female' })
