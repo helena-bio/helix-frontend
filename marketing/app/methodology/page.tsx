@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 
 export const metadata = {
-  title: 'ACMG ACMG Classification Methodology -- Bayesian Point-Based Framework | Helena',
+  title: 'ACMG ACMG Methodology -- Bayesian Point-Based Framework | Helena',
   description: '19 automated ACMG criteria using Tavtigian Bayesian point system, BayesDel_noAF with ClinGen SVI calibration, SpliceAI splice impact, and ClinVar integration.',
 }
 
@@ -812,7 +812,7 @@ export default function MethodologyPage() {
         <section className="pt-12 pb-8 px-6">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h1 className="text-3xl font-semibold tracking-tight text-primary">
-              ACMG Classification Methodology
+              ACMG Methodology
             </h1>
 
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full">
