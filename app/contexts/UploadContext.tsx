@@ -292,17 +292,32 @@ export function UploadProvider({ children }: { children: ReactNode }) {
         let fileToUpload: File | File[] = files.length > 1 ? files : primaryFile
         let compressed = false
 
-        // Step 1: Compression (only for single file)
-        if (files.length === 1 && isCompressionSupported() && shouldCompress(primaryFile)) {
-          setPhase('compressing')
-          persist({ ...base, phase: 'compressing' })
+        // Step 1: Compression (each file individually)
+        if (isCompressionSupported()) {
+          const compressibleFiles = files.filter(f => shouldCompress(f))
+          if (compressibleFiles.length > 0) {
+            setPhase('compressing')
+            persist({ ...base, phase: 'compressing' })
 
-          fileToUpload = await compressFile(primaryFile, (progress) => {
-            setCompressionProgress(progress)
-          })
-          compressed = true
-          setWasCompressed(true)
-          base.wasCompressed = true
+            const compressedFiles: File[] = []
+            for (let i = 0; i < files.length; i++) {
+              const f = files[i]
+              if (shouldCompress(f)) {
+                const compressedFile = await compressFile(f, (progress) => {
+                  // Scale progress across all files
+                  const fileProgress = ((i + progress / 100) / files.length) * 100
+                  setCompressionProgress(Math.round(fileProgress))
+                })
+                compressedFiles.push(compressedFile)
+              } else {
+                compressedFiles.push(f)
+              }
+            }
+            fileToUpload = compressedFiles.length === 1 ? compressedFiles[0] : compressedFiles
+            compressed = true
+            setWasCompressed(true)
+            base.wasCompressed = true
+          }
         }
 
         // Step 2: Upload to server
