@@ -463,11 +463,11 @@ export function UploadValidationFlow({ onComplete, onError, filteringPreset = 's
                   <p className="text-base">{genomeBuild}</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <p className="text-ml font-semibold mb-1">Mean Depth</p>
+                  <p className="text-ml font-semibold mb-1">Samples</p>
                   {false ? (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   ) : (
-                    <p className="text-base">{'-'}</p>
+                    <p className="text-base">{session.sample_count ?? '-'}</p>
                   )}
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg">
