@@ -277,9 +277,9 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     // Persistent baseline for this upload
     const base: PersistedState = {
       phase: 'idle',
-      fileName: file.name,
+      fileName: files.length > 1 ? `${files.length} files` : primaryFile.name,
       caseName: name,
-      fileSize: file.size,
+      fileSize: files.reduce((sum, f) => sum + f.size, 0),
       sessionId: null,
       taskId: null,
       errorMessage: null,
@@ -289,15 +289,15 @@ export function UploadProvider({ children }: { children: ReactNode }) {
     // Run the async pipeline (not awaited - fire and forget)
     ;(async () => {
       try {
-        let fileToUpload = file
+        let fileToUpload: File | File[] = files.length > 1 ? files : primaryFile
         let compressed = false
 
-        // Step 1: Compression (if needed)
-        if (isCompressionSupported() && shouldCompress(file)) {
+        // Step 1: Compression (only for single file)
+        if (files.length === 1 && isCompressionSupported() && shouldCompress(primaryFile)) {
           setPhase('compressing')
           persist({ ...base, phase: 'compressing' })
 
-          fileToUpload = await compressFile(file, (progress) => {
+          fileToUpload = await compressFile(primaryFile, (progress) => {
             setCompressionProgress(progress)
           })
           compressed = true
