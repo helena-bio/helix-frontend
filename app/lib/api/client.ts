@@ -10,6 +10,7 @@ import { tokenUtils } from '@/lib/auth/token'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost'
 const DEFAULT_TIMEOUT = 30000
+const UPLOAD_TIMEOUT = 3600000  // 60 minutes for large WGS files (4-8 GB over slow connections)
 
 export class ApiError extends Error {
   constructor(
@@ -309,7 +310,7 @@ export async function uploadFileWithProgress<T>(
 
     // CRITICAL: Open connection FIRST
     xhr.open('POST', url)
-    xhr.timeout = 300000 // 5 minutes for large files
+    xhr.timeout = UPLOAD_TIMEOUT
 
     // THEN set headers (after open)
     const token = getAuthToken()
@@ -365,7 +366,7 @@ export async function uploadFileWithProgress<T>(
 
     // Timeout handler
     xhr.addEventListener('timeout', () => {
-      reject(new TimeoutError('Upload timeout'))
+      reject(new TimeoutError('Upload timeout -- file too large for current connection speed. Please try again or use a faster network.'))
     })
 
     // Abort handler
