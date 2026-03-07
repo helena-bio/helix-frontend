@@ -407,13 +407,7 @@ export function ClinicalAnalysis({
           </CardContent>
         </Card>
 
-        {activeStages.length > 0 && (
-          <Alert>
-            <AlertDescription className="text-base">
-              {activeStages.map(s => s.name).join(' -> ')}
-            </AlertDescription>
-          </Alert>
-        )}
+
       </div>
 
     </div>
