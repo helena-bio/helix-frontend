@@ -504,18 +504,6 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack, panelMetadat
         )}
 
 
-          {/* Panel Therapy Note Banner */}
-          {panelMetadata?.therapy_note && (
-            <div className="border-b">
-              <div className={`flex items-start gap-2.5 px-4 py-2.5 ${/exceptional|first-line/i.test(panelMetadata.therapy_note) ? 'bg-green-50 border-l-4 border-green-400' : 'bg-blue-50 border-l-4 border-blue-400'}`}>
-                <Pill className={`h-4 w-4 mt-0.5 flex-shrink-0 ${/exceptional|first-line/i.test(panelMetadata.therapy_note) ? 'text-green-600' : 'text-blue-600'}`} />
-                <div>
-                  <p className="text-md text-muted-foreground">Therapy</p>
-                  <p className="text-base font-medium">{panelMetadata.therapy_note}</p>
-                </div>
-              </div>
-            </div>
-          )}
         <div className="p-4 space-y-4">
 
           {/* ============================================================
@@ -617,6 +605,12 @@ export function VariantDetailPanel({ sessionId, variantIdx, onBack, panelMetadat
                         {panelMetadata.clingen_status}
                       </Badge>
                     </Row>
+                  )}
+                  {panelMetadata?.therapy_note && (
+                    <div className="py-1.5 border-b border-border/50 last:border-0">
+                      <p className="text-base text-muted-foreground mb-1">Therapy Guidance</p>
+                      <p className="text-base text-foreground">{panelMetadata.therapy_note}</p>
+                    </div>
                   )}
                 </div>
               )}
